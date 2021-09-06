@@ -1,6 +1,7 @@
 ..
   Valid rubrics:
-  - Deprecated
+  - Deprecations
+  - Style changes
   - Features
   - Bug fixes
   - Internals
@@ -27,7 +28,7 @@ ProPlot v1.0.0 (2022-##-##)
 This will be published when more comprehensive testing is completed
 and stability is improved.
 
-ProPlot v0.8.2 (2021-##-##)
+ProPlot v0.9.0 (2021-##-##)
 ===========================
 
 Deprecations
@@ -35,10 +36,6 @@ Deprecations
 
 * Rename :rcraw:`cmap.edgefix` to :rcraw:`edgefix` (:commit:`515f5132`). It now
   applies to bar and area plot elements, not just scalar mappables (see below).
-* Control colorbar frame properties using same syntax as legend frame properties
-  -- `edgewidth`, `edgecolor`, and optional rounded box with ``fancybox=True``
-  (:commit:`58ce2c95`). Colorbar outline is now controlled with `linewidth`
-  and `color`. Previously these settings had to be in sync.
 * Deprecate recently-introduced `proplot.gridspec.SubplotGrid.legend` and
   `proplot.gridspec.SubplotGrid.colorbar` methods (:commit:`d21a61a3`). Idea
   was this could be used to add an auto-legend to each subplot with ``axs.legend()``
@@ -49,38 +46,52 @@ Deprecations
   (:commit:`80deb71a`). Idea was this could be used to add identical text to
   each subplot but that is pretty niche, does not need a dedicated command.
 
-Features
---------
+Style changes
+-------------
 
+* Fix issue where CSS colors matching "base" names overwrite base definitions,
+  resulting in e.g. ``'y'`` different from ``'yellow'`` (:commit:`01db1223`).
+* Use default ``discrete=False`` for `~proplot.axes.PlotAxes.hist2d` plots,
+  consistent with `~proplot.axes.PlotAxes.hexbin` (:commit:`267dd161`). Now
+  "discrete" levels are only enabled for pcolor/contour plots by default.
+* Trigger ``adjust_grays`` hue adjustments for gray-like color names passed to
+  `~proplot.colors.PerceptualColormap.from_list` that aren't technically pure
+  gray, including ``'charcoal'``, ``'light gray'``/``'light grey'``, and
+  ``'gray[0-9]'``/``'grey[0-9]'`` (:commit:`6cf42896`, :commit:`49bb9370`).
+* Implement "edgefix" and add `edgefix` keyword for ``bar``, ``hist``, and ``area``
+  to fix the "white-lines-between-patches" issue with saved vector
+  graphics, just like ``pcolor`` and ``contourf`` (:commit:`cc602349`).
+* Skip "edgefix" option when patch/collection `alpha` is less than ``1`` to prevent
+  appearance of overlapping edges (:commit:`5bf9b1cc`). Previously this was only
+  skipped if `ScalarMappable` colormap indicated transparency. Also remove
+  manual blending of colorbar solids (no longer needed) (:commit:`4d059a31`).
 * Revert back to matplotlib default behavior of ``edgecolor='none'`` for
   `bar` plots (:commit:`cc602349`). Previously this behavior often resulted
   in "white lines" issue but now `edgefix` is applied to these plots (see below).
 * Use built-in matplotlib logic for plotting multiple `hist` columns, with
   support for `stack` as alias of `stacked` and `width` as alias of `rwidth`
-  (consistent with `bar` keywords) (:commit:`###`). By default, histograms
-  for successive columns are now grouped side-by-side instead of overlaid, but
-  overlaid histograms can be triggered with `histtype`/`fill`/`filled` (see below).
-* Use default ``discrete=False`` for `~proplot.axes.PlotAxes.hist2d` plots,
-  consistent with `~proplot.axes.PlotAxes.hexbin` (:commit:`267dd161`). Now
-  "discrete" levels are only enabled for pcolor/contour plots by default.
+  (consistent with `bar` keywords) (:commit:`734329a5`). By default, histograms
+  for successive columns are now grouped side-by-side instead of overlaid.
+* Add `fill` and `filled` keywords to `~proplot.axes.PlotAxes.hist`, analogous to
+  `stack` and `stacked`, and make passage of these keywords set the corresponding
+  default `histtype` (:commit:`4a85773b`). Also add `filled` alias of `fill`
+  for `boxplot` for consistency (:commit:`b5caf550`).
+* Control colorbar frame properties using same syntax as legend frame properties
+  -- `edgewidth`, `edgecolor`, and optional rounded box with ``fancybox=True``
+  (:commit:`58ce2c95`). Colorbar outline is now controlled with `linewidth`
+  and `color`. Previously these settings had to be in sync.
+
+Features
+--------
+
 * Add `align` keyword with options ``'bottom'``, ``'top'``, ``'left'``, ``'right'``,
   or ``'center'`` (with optional single-char shorthands) to change alignment for
   outer legends/colorbars (:commit:`4a50b4b2`). Previously they had to be centered.
-* Add `fill` and `filled` keywords to `~proplot.axes.PlotAxes.hist`, analogous to
-  `stack` and `stacked` (:commit:`4a85773b`). Passing any of these 4 keywords
-  without explicitly passing `histtype` sets a default `histtype`. Also add
-  `filled` alias of `fill` for `boxplot` for consistency (:commit:`b5caf550`).
-* Add `edgefix` as option for ``bar``, ``hist``, and ``area`` plots to
-  fix the "white-lines-between-patches" issue with saved vector
-  graphics, just like ``pcolor`` and ``contourf`` (:commit:`cc602349`).
 * Add `handle_kw` to `~proplot.axes.Axes.legend` to optionally control
   handle settings that conflict with frame settings (:commit:`58ce2c95`).
   Example: ``handle_kw={'edgecolor': 'k'}``.
-* Trigger ``adjust_grays`` hue adjustments for gray-like color names passed to
-  `~proplot.colors.PerceptualColormap.from_list` that aren't technically pure gray,
-  including ``'charcoal'``, ``'light gray'``, and ``'gray[0-9]'`` (:commit:`6cf42896`).
-* Interpret ``'grey'`` as a synonym of ``'gray'`` by translating substrings
-  in color database (:commit:`6cf42896`). Permits e.g. ``color='grey1'``.
+* Interpret ``'grey'`` as a synonym of ``'gray'`` by translating substrings in color
+  database (:commit:`6cf42896`, :commit:`04538bad`). Permits e.g. ``color='grey1'``.
 * Permit loading color names from files without ``.txt`` extension
   (:commit:`55481a9c`). This restriction was unnecessary.
 * Add cartopy-based ``LongitudeLocator``, ``LatitudeLocator``, ``DegreeLocator``,
@@ -104,10 +115,16 @@ Bug fixes
   duplicate labels for histograms (:issue:`277`).
 * Fix issue where list-of-list style input to `~proplot.axes.Axes.legend`
   fails to trigger centered legend (:commit:`e598b470`).
+* Fix issue where `alpha` passed to contour/pcolor/vlines/hlines commands was
+  ignored due to translating as `alphas` rather than `alpha` (:commit:`e5faf4d6`).
 
 Internals
 ---------
 
+* Add helpful warning message when `legend` detects invalid inputs
+  rather than silently ignoring them (:commit:`b75ca185`).
+* Improve warning message when users pass both `colors` and `cmap`
+  by recommending they use `edgecolor` to set edges (:commit:`1067eddf`).
 * Remove unused, mostly undocumented :rcraw:`axes.titleabove` setting
   (:commit:`9d9d0db7`). Users should be using :rcraw:`title.above` instead.
 * Move `~proplot.gridspec.SubplotGrid` from ``figure.py`` to ``gridspec.py``
@@ -195,10 +212,6 @@ Deprecated
   `right`, `top`, and `bottom` are now interpreted as em-widths instead of inches
   (:commit:`20502345`). Unfortunately this is a major breaking change that cannot be
   "gently" phased in with warnings, but this will be much more convenient going forward.
-* Make default reference subplot size, panel widths, colorbar widths independent of
-  :rcraw:`font.size` (:commit:`a50d5264`). Default space size should definitely sync
-  with font size, since larger fonts produce larger labels between subplots, but the
-  same reasoning does not apply for subplot size.
 * Interpret ``sharex/sharey=True`` as ``3`` (i.e., "turn all sharing on") instead
   of ``1`` (integer conversion of ``True``) (:issue:`51967ce3`). This is more
   intuitive and matches convention elsewhere. Also allow specifying level 1 with
@@ -208,24 +221,9 @@ Deprecated
 * Deprecate arbitrary ``__getattr__`` override for `~proplot.figure.SubplotGrid`
   (:commit:`51967ce3`). Instead have dedicated ``format``, ``colorbar``, ``legend``,
   ``[alt|dual|twin][xy]``, ``panel[_axes]``, and ``inset[_axes]`` methods.
-* Deprecate scattershot `~proplot.figure.Figure` immutable/documented
-  properties (:commit:`51967ce3`). Really not necessary.
-* Remove ancient deprecated getters and setters for ``sharex``, ``spanx``, etc.
-  once used with figure objects (:commit:`51967ce3`).
-* Make `~proplot.axes.CartopyAxes` and `~proplot.axes.BasemapAxes` private and
-  remove documentation (:commit:`25e759b0`). These classes are just for internal
-  implementation of different cartographic "backends" -- behavior of public
-  methods is the same for both. Instead just document `proplot.axes.GeoAxes`.
-* Rename `~proplot.axes.Axes3D` to `~proplot.axes.ThreeAxes` so that class name
-  fits more nicely amongst other class names (:commit:`30a112bd`).
-* Sync 3D axes figure background color with axes background to avoid weird
-  misaligned white square behind axes (:commit:`30a112bd`).
-* Rename `~proplot.config.RcConfigurator` to `~proplot.config.Configurator`
-  (:commit:`5626bc88`). Previous name was redundant and needlessly verbose
-  (the ``c`` in ``rc`` already stands for "configuration"...).
-* Add :rcraw:`leftlabel.rotation`, :rcraw:`toplabel.rotation`,
-  :rcraw:`rightlabel.rotation`, :rcraw:`bottomlabel.rotation` settings, and make
-  default row label rotation match y label rotation (:commit:`bae85113`).
+* Rename setting :rcraw:`abc.style` to :rcraw:`abc` (:commit:`a50d5264`). Setting this
+  to ``False`` still "turns off" labels, setting to ``True`` "turns on" labels with
+  the default style ``'a'``, and setting to a string "turns on" labels with this style.
 * Rename ``image`` category settings to :rcraw:`cmap.inbounds`,
   :rcraw:`cmap.discrete`, :rcraw:`cmap.edgefix`, :rcraw:`cmap.levels`, and
   :rcraw:`cmap.lut` (:commit:`a50d5264`).
@@ -239,18 +237,19 @@ Deprecated
 * Rename vague shorthands :rcraw:`alpha` and :rcraw:`facecolor` back to native
   :rcraw:`axes.alpha` and :rcraw:`axes.facecolor` and rename :rcraw:`linewidth`
   and :rcraw:`color` to :rcraw:`meta.width` and :rcraw:`meta.color`
-  (:commit:`41b5e400`). However axes can still be updated by passing `alpha`,
-  `linewidth`, `facecolor`, and `edgecolor` to ``format``, and now ``format`` supports
-  *arbitrary* patch artist settings and aliases like `lw`, `ec`, `fc`, `hatch`, etc.
-* Treat :rcraw:`tick.label` and :rcraw:`grid.label` font size, color, and weight
-  settings as *synonyms* (:commit:`a50d5264`). In general the tick vs. grid distinction
-  is not meaningful for text labels. However we often want different padding so still
-  allow :rcraw:`tick.labelpad` and :rcraw:`grid.labelpad` to be distinct.
+  (:commit:`41b5e400`). Axes can still be updated by passing `alpha`, `linewidth`,
+  `facecolor`, and `edgecolor` to ``format``, and now ``format`` supports *arbitrary*
+  patch artist settings and aliases like `lw`, `ec`, `fc`, `hatch`, etc.
+* Change `~proplot.config.Configurator` iteration behavior to loop over keys, not
+  item pairs, and make it a `~collections.abc.MutableMapping` (:commit:`5626bc88`).
 * Rename `proplot.config.Configurator.load_file` to `proplot.config.Configurator.load`
   in order to match ``save`` (:commit:`1769d349`).
 * Change the default `~proplot.config.Configurator` save location from the home
   directory to the *current directory* and change the default filename to
   ``proplotrc`` (without the leading dot) (:commit:`41b5e400`).
+* Rename `~proplot.config.Configurator.get` to `~proplot.config.Configurator.find`
+  (:commit:`e8559f3d`). Confusing since ``get`` didn't accept a "fallback" second
+  positional argument. Now ``get`` is the "dictionary-like" inherited method.
 * Rename obscure `LinearSegmentedColormap`, `PerceptuallyUniformColormap`, and
   `ListedColormap` to more intuitive/succinct `~proplot.colors.ContinuousColormap`,
   `~proplot.colors.PerceptualColormap`, and `~proplot.colors.DiscreteColormap`
@@ -260,31 +259,65 @@ Deprecated
   rename `~proplot.constructor.Colormap` argument `to_listed` to `discrete`,
   change `listmode` options from ``'listed'``, ``'linear'`` to ``'discrete'``,
   ``'continuous'``, and add `filemode` option (:commit:`ade787f9`, :commit:`5ccd6c01`).
-* Capture `colors` passed to commands like ``contour`` and ``pcolor`` and use
-  it to build qualitative `~proplot.colors.DiscreteColormap` maps (:commit:`6382cf91`).
-  This matches the behavior of xarray plotting utilities. No longer use `color`
-  to change "edge color" of filled contours/grid boxes.
-* Set default linewidth to 0.3 when adding "edges" to filled contours
-  (:commit:`6382cf91`). This matches matplotlib behavior when passing
-  edgecolor to a ``pcolor`` command.
 * Deprecate ``boxes`` and ``violins`` shorthands in favor of singular
   `~proplot.axes.PlotAxes.box` and `~proplot.axes.PlotAxes.violin`
   (:commit:`6382cf91`). This feel analogous to existing ``bar`` and ``barh``.
-* Treat 2D ``scatter`` arguments by iterating over columns and default-styling each
-  column with the property cycle rather than unraveling 2D arguments into 1D
-  arrays (:commit:`6382cf91`). Can also iterate over ``s`` and ``c`` columns.
 * Rename the confusingly-capitalized `~proplot.constructor.Colors` to
   `~proplot.utils.get_colors` and move to ``utils.py`` (:commit:`51d480da`). This
   is not a "class constructor" -- it just returns lists of colors.
 * Rename the ``show`` function keyword `categories` to `include`,
   consistent with the new `ignore` keyword (:commit:`c45d5fa1`).
+
+Style changes
+-------------
+
+* Make default reference subplot size, panel widths, colorbar widths independent of
+  :rcraw:`font.size` (:commit:`a50d5264`). Default space size should definitely sync
+  with font size, since larger fonts produce larger labels between subplots, but the
+  same reasoning does not apply for subplot size.
+* Add :rcraw:`leftlabel.rotation`, :rcraw:`toplabel.rotation`,
+  :rcraw:`rightlabel.rotation`, :rcraw:`bottomlabel.rotation` settings, and make
+  default row label rotation match y label rotation (:commit:`bae85113`).
+* Treat 2D ``scatter`` arguments by iterating over columns and default-styling each
+  column with the property cycle rather than unraveling 2D arguments into 1D
+  arrays (:commit:`6382cf91`). Can also iterate over ``s`` and ``c`` columns.
+* Exclude out-of-bounds data when determining automatic y (x) axis limits when x (y)
+  limits have been explicitly set for `plot` and `scatter` plots (:commit:`6382cf91`).
+  Controlled by the :rcraw:`axes.inbounds` property, analogous to :rcraw:`cmap.inbounds`
+  used for cmap scaling. This feature leverages proplot's input standardization.
+* Capture `colors` passed to commands like ``contour`` and ``pcolor`` and use
+  it to build qualitative `~proplot.colors.DiscreteColormap` maps (:commit:`6382cf91`).
+  This matches the behavior of xarray plotting utilities. No longer use `color`
+  to change "edge color" of filled contours/grid boxes.
+* Add special qualitative cmap handling when ``colors=colors``, ``qualitative=True``,
+  or ``cmap=pcolors.DiscreteColormap(...)`` -- always apply ``DiscreteNorm`` (ignore
+  and warn if user passed ``discrete=False``), truncate or wrap colors if there are too
+  many/not enough for the levels, and add default extremes with ``set_under`` or
+  ``set_over`` depending on user `extend` (:commit:`6382cf91`).
+* Select :rcraw:`cmap.diverging` and apply `~proplot.colors.DivergingNorm` automatically
+  based on input data, similar to xarray and seaborn (:commit:`6382cf91`). This is
+  controlled with `autodiverging` and the :rcraw:`cmap.autodiverging` setting. It is
+  also disabled when a cmap is explicitly passed (unless it is a known diverging cmap).
+* Set default linewidth to 0.3 when adding "edges" to filled contours
+  (:commit:`6382cf91`). This matches matplotlib behavior when passing
+  edgecolor to a ``pcolor`` command.
+* Only modify `heatmap` major and minor tick locations if the
+  default tickers are active (:pr:`6382cf91`). Do not override user tickers.
+* Use default luminance of ``90`` rather than ``100`` for auto-colormaps generated
+  for barb, scatter, and streamline plots (:commit:`6382cf91`).
+* Sync 3D axes figure background color with axes background to avoid weird
+  misaligned white square behind axes (:commit:`30a112bd`).
+* Treat :rcraw:`tick.label` and :rcraw:`grid.label` font size, color, and weight
+  settings as *synonyms* (:commit:`a50d5264`). In general the tick vs. grid distinction
+  is not meaningful for text labels. However we often want different padding so still
+  allow :rcraw:`tick.labelpad` and :rcraw:`grid.labelpad` to be distinct.
+* Control edge width for legend frames with `ew` or `edgewidth` rather than
+  `lw` and `linewidth` to avoid conflict with feature that permits modifying
+  legend handle properties (:commit:`6382cf91`).
 * Change default :rcraw:`legend.facecolor` to white instead of inheriting from
   axes background (:commit:`6382cf91`). Also set default :rcraw:`legend.edgecolor`
   to :rcraw:`meta.color` (black by default) and have `legend` read from rc
   settings rather than setting default `legend` input arguments.
-* Control edge width for legend frames with `ew` or `edgewidth` rather than
-  `lw` and `linewidth` to avoid conflict with feature that permits modifying
-  legend handle properties (:commit:`6382cf91`).
 
 Features
 --------
@@ -339,9 +372,6 @@ Features
   matplotlib "tight layout" rc settings are toggled (:commit:`51967ce3`).
 * Add nicer string representations of figures, gridspecs, subplotspecs, and
   axes clearly showing the geometry and layout (:commit:`51967ce3`, :commit:`6382cf91`).
-* Rename setting :rcraw:`abc.style` to :rcraw:`abc` (:commit:`a50d5264`). Setting this
-  to ``False`` still "turns off" labels, setting to ``True`` "turns on" labels with
-  the default style ``'a'``, and setting to a string "turns on" labels with this style.
 * Set default location for new axes panels to ``'right'``, allowing for empty
   ``ax.panel_axes()`` calls (:commit:`51967ce3`).
 * Convert valid keyword arguments to positional arguments for virtually all
@@ -360,15 +390,6 @@ Features
   :rc:`cmap.qualitative` settings to control the default sequential, diverging,
   cyclic, and qualitative cmaps, and add boolean `sequential`, `diverging`, `cyclic`,
   and `qualitative` keywords to select corresponding default cmaps (:commit:`6382cf91`).
-* Add special qualitative cmap handling when ``colors=colors``, ``qualitative=True``,
-  or ``cmap=pcolors.DiscreteColormap(...)`` -- always apply ``DiscreteNorm`` (ignore
-  and warn if user passed ``discrete=False``), truncate or wrap colors if there are too
-  many/not enough for the levels, and add default extremes with ``set_under`` or
-  ``set_over`` depending on user `extend` (:commit:`6382cf91`).
-* Select :rcraw:`cmap.diverging` and apply `~proplot.colors.DivergingNorm` automatically
-  based on input data, similar to xarray and seaborn (:commit:`6382cf91`). This is
-  controlled with `autodiverging` and the :rcraw:`cmap.autodiverging` setting. It is
-  also disabled when a cmap is explicitly passed (unless it is a known diverging cmap).
 * Add `robust` keyword argument and :rc:`cmap.robust` setting to ignore
   outliers when selecting auto colormap ranges (:issue:`6382cf91`). It can take the
   value ``True``, a percentile range, or a 2-tuple percentile interval.
@@ -395,12 +416,6 @@ Features
 * Support case insensitivity when calling matplotlib's ``unregister_cmap``
   by improving `~proplot.colors.ColormapDatabase` so it derives from a
   `~collections.abc.MutableMapping` rather than `dict` (:commit:`ade787f9`).
-* Make `~proplot.config.Configurator` a `~collections.abc.MutableMapping`
-  subclass and change iteration behavior to loop over keys, not item
-  pairs (:commit:`5626bc88`).
-* Rename `~proplot.config.Configurator.get` to `~proplot.config.Configurator.find`
-  (:commit:`e8559f3d`). Confusing since ``get`` didn't accept a "fallback" second
-  positional argument. Now ``get`` is the "dictionary-like" inherited method.
 * Add public `~proplot.config.Configurator.changed` property to display a dictionary
   of settings changed from proplot defaults (:commit:`41b5e400`).
 * Add public `~proplot.config.Configurator.user_file` and
@@ -424,22 +439,14 @@ Features
   `~proplot.axes.PlotAxes.boxploth` (shorthand `~proplot.axes.PlotAxes.boxh`),
   and `~proplot.axes.PlotAxes.violinploth` (shorthand `~proplot.axes.PlotAxes.violinh`)
   commands analogous to `~proplot.axes.PlotAxes.barh` (:commit:`6382cf91`).
-* Exclude out-of-bounds data when determining automatic y (x) axis limits when x (y)
-  limits have been explicitly set for `plot` and `scatter` plots (:commit:`6382cf91`).
-  Controlled by the :rcraw:`axes.inbounds` property, analogous to :rcraw:`cmap.inbounds`
-  used for cmap scaling. This feature leverages proplot's input standardization.
 * Let 1D plotting commands iterate over columns of 2D *x* and *y* coordinate arrays
   instead of only 2D *y* coordinate arrays (:commit:`6382cf91`.)
-* Only modify `heatmap` major and minor tick locations if the
-  default tickers are active (:pr:`6382cf91`).
-* Support more artist synonyms throughout plotting overrides, e.g. ``ec``
-  for `edgecolor`, `lw` for `linewidth`, `fc` and `fillcolor` for
-  `facecolor` (:commit:`6382cf91`). This expands matplotlib synonyms.
+* Support expanded and consistent artist synonyms throughout plotting overrides,
+  e.g. ``ec`` for `edgecolor`, `lw` for `linewidth`, `fc` and `fillcolor` for
+  `facecolor` (:commit:`6382cf91`). This is a superset of matplotlib.
 * Support passing positional fifth-argument colors to `~proplot.axes.PlotAxes.barbs`
   and `~proplot.axes.PlotAxes.quiver`, just like `~proplot.axes.PlotAxes.scatter`
   (:commit:`6382cf91`). This was previously not possible.
-* Use default luminance of ``90`` rather than ``100`` for auto-colormaps generated
-  for barb, scatter, and streamline plots (:commit:`6382cf91`).
 * Support automatic labels for ``tricontour`` and ``tripcolor`` plots alongside
   the more common ``contour`` and ``pcolor``. (:commit:`6382cf91`).
 * Add `rasterize` keyword to `colorbar` so that colorbar solids rasterization can
@@ -459,7 +466,7 @@ Features
 * Support auto-detection of tuple-grouped `legend` handle labels when labels
   not passed explicitly (:commit:`6382cf91`).
 * Automatically pull out grouped tuples of artists passed to `legend` if they have
-  differing labels (:commit:`6382cf91`). This is useful for passing error shading to `legend`.
+  differing labels (:commit:`6382cf91`). This is useful for passing error shade groups.
 * Silently ignore non-artist and non-container `legend` input -- e.g., ignore the bins
   and values returned by `hist` (:commit:`6382cf91`).
 * Allow list-of-list "centered row" `legend` specification with e.g.
@@ -485,7 +492,8 @@ Features
   to `~proplot.axes.CartesianAxes.format` and read and apply changed
   :rcraw:`axes.labelpad` (:commit:`e7d86b8f`).
 * Add support for "minor" radial and azimuthal gridlines in
-  `proplot.axes.PolarAxes.format` (:commit:`59c85f0e`).
+  `proplot.axes.PolarAxes.format`, controlled with keywords like
+  `rminorlocator`, and `thetaminorlocator` (:commit:`59c85f0e`).
 * Add `thetagrid`, `rgrid`, `thetagridminor`, and `rgridminor` keys to
   `proplot.axes.PolarAxes.format` to toggle gridlines, and read and apply changed
   toggles from rc settings -- consistent with Cartesian axes (:commit:`59c85f0e`).
@@ -552,12 +560,12 @@ Internals
 * Convert all plotting wrappers to dedicated overrides of individual functions
   in `~proplot.axes.PlotAxes` class (:commit:`6382cf91`). This massively simplifies
   the internals and makes learning and adopting proplot much easier for users.
-* Implement interpretation of physical units and "panel" accounting directly
+* Implement "panel" tracking and translation of physical spacing units directly
   on the `~proplot.gridspec.GridSpec` instead of cumbersome hidden methods
   in `~proplot.figure.Figure` (:commit:`20502345`).
 * Validate all setting assignments to `~proplot.config.Configurator` using a new
   `~proplot.config.rc_proplot` dictionary, analogous to ``rcParams``
-  (:pr:`109`, :commit:`5626bc88`). This helps prevent bugs.
+  (:pr:`109`, :commit:`5626bc88`). This helps avoid mysterious delayed bugs.
 * Move ``text``, ``legend``, and ``colorbar`` overrides to base `~proplot.axes.Axes`
   class separate from `~proplot.axes.PlotAxes` (:commit:`6382cf91`).
 * Automatically redirect all internal plotting calls to native matplotlib methods
@@ -580,6 +588,21 @@ Documentation
   documentation for subclasses instead of just referencing it.
 * Document the relative font size scalings with a table in
   `~proplot.axes.Axes.text` (:commit:`6382cf91`).
+* Deprecate scattershot `~proplot.figure.Figure` immutable/documented
+  properties (:commit:`51967ce3`). These properties were just for documentation.
+* Remove ancient deprecated getters and setters for ``sharex``, ``spanx``, etc.
+  once used with figure objects (:commit:`51967ce3`). These properties were
+  just for introspection, did not add any functionality.
+* Rename `~proplot.config.RcConfigurator` to `~proplot.config.Configurator`
+  (:commit:`5626bc88`). Previous name was redundant and needlessly verbose
+  (the ``c`` in ``rc`` already stands for "configuration"...). This class
+  is public just for documentation -- was not directly used by users.
+* Rename `~proplot.axes.Axes3D` to `~proplot.axes.ThreeAxes` so that class name
+  fits more nicely amongst other class names (:commit:`30a112bd`).
+* Make `~proplot.axes.CartopyAxes` and `~proplot.axes.BasemapAxes` private and
+  remove the documentation (:commit:`25e759b0`). These classes are just for internal
+  implementation of different cartographic "backends" -- behavior of public
+  methods is the same for both. Instead just document `proplot.axes.GeoAxes`.
 
 ProPlot v0.7.0 (2021-07-11)
 ===========================
@@ -587,12 +610,6 @@ ProPlot v0.7.0 (2021-07-11)
 Deprecated
 ----------
 
-* Remove v0.6.0 renamed classes (e.g. `ProjAxes`) from top-level namespace
-  (:commit:`442e6aa6`). These were kept available just for documentation. The renamed
-  functions `shade`, `saturate`, and `inline_backend_fmt` remain available.
-* Change default :rcraw:`savefig.transparent` back to ``False`` (:pr:`252`). Dubious
-  justification for ``True`` in the first place, and makes default PNG proplot figures
-  unreadable wherever "dark mode" is enabled.
 * Rename SciVisColor colormaps from ``Blue1``, ``Blue2``, etc. to plurals ``Blues1``,
   ``Blues2``, etc. to avoid name conflict with open-color colors (:commit:`8be0473f`).
   Requesting the old names (case-sensitive) redirects to the new names
@@ -627,20 +644,44 @@ Deprecated
   be passed to `~proplot.contructor.Colormap` when it is called with positional arguments.
 * Rename seldom-used `Figure` argument `fallback_to_cm` to more understandable
   `mathtext_fallback` (:pr:`251`).
-* Reduce default :rcraw:`savefig.dpi` to 1000 (:commit:`bfda9c98`). Nature recommends
-  1000, Science recommends "more than 300", PNAS recommends 1000--1200. So 1000 is fine.
-* Increase default :rcraw:`colorbar.insetpad` to avoid recurring issue where ticklabels
-  run close to the background patch (:commit:`f5435976`)
-* Use proplot TeX Gyre fonts with `~proplot.config.use_style` styles unless specified
-  otherwise (:commit:`6d7444fe`). Styles otherwise build on matplotlib defaults.
-* When using ``medians=True`` or ``means=True`` with `indicate_error` plot simple
-  error bars by default instead of bars and "boxes" (:commit:`4e30f415`). Only plot
-  "boxes" with central "markers" by default for violin plots (:commit:`13b45ccd`).
 * `legend_extras` no longer returns the background patch generated for centered-row
   legends (:pr:`254`). This is consistent with `colorbar_extras` not returning
   background patches generated for inset colorbars. Until proplot adds new subclasses,
   it makes more sense if these functions only return `~matplotlib.legend.Legend` and
   `~matplotlib.colorbar.Colorbar` instances.
+
+Style changes
+-------------
+
+* Use proplot TeX Gyre fonts with `~proplot.config.use_style` styles unless
+  specified otherwise (:commit:`6d7444fe`). Styles build on matplotlib defaults
+  rather than proplot defaults for all other settings.
+* Change default :rcraw:`savefig.transparent` back to ``False`` (:pr:`252`). Dubious
+  justification for ``True`` in the first place, and makes default PNG proplot figures
+  unreadable wherever "dark mode" is enabled.
+* Reduce default :rcraw:`savefig.dpi` to 1000 (:commit:`bfda9c98`). Nature recommends
+  1000, Science recommends "more than 300", PNAS recommends 1000--1200. So 1000 is fine.
+* Increase default :rcraw:`colorbar.insetpad` to avoid recurring issue where ticklabels
+  run close to the background patch (:commit:`f5435976`)
+* When using ``medians=True`` or ``means=True`` with `indicate_error` plot simple
+  error bars by default instead of bars and "boxes" (:commit:`4e30f415`). Only plot
+  "boxes" with central "markers" by default for violin plots (:commit:`13b45ccd`).
+* Determine colormap levels using only in-bounds data if the *x* or *y* axis limits
+  were explicitly set (:issue:`209`). Add `inbounds` `~proplot.axes.apply_cmap`
+  keyword and :rcraw:`image.inbounds` setting to control this.
+* Use `Artist` labels for the default list-of-artist colorbar tick labels if `values`
+  was not passed -- and if labels are non-numeric, rotate them 90 degrees for horizontal
+  colorbars by default (:commit:`ed8e1314`). Makes the choice between "traditional"
+  legends and "colorbar-style" legends more seamless.
+* Use same default-level generation algorithm for contour plots without colormaps as for
+  all other colormap plots (:commit:`10e0f13b`). Makes automatically-generated
+  solid-color contours and colormap-style contours identical.
+* Use "sticky" edges in x-direction for lines drawn with `plot()` and in y-direction
+  for lines drawn with `plotx()` (:pr:`258`). This eliminates padding along the
+  "dependent" axis when limits are not specified, similar to histograms and
+  barplots and matching a feature we previously added to `fill_between` (:pr:`166`).
+* If available, use :rcraw:`pcolormesh.snap` to repair overlap in transparent colorbar
+  solids rather than manual-blending workaround (:commit:`c9f59e49`).
 
 Features
 --------
@@ -654,12 +695,9 @@ Features
   ``.proplotrc`` files with leading dot (:commit:`8a989aca`).
 * Add minimal support for "3D" `~matplotlib.mpl_toolkits.mplot3d.Axes3D` axes
   (:issue:`249`). Example usage: ``fig.subplots(proj='3d')``.
-* Add `wequal`, `hequal`, and `equal` options to still use automatic spacing but force
-  the tight layout algorithm to make spacings equal (:pr:`215`, :issue:`64`)
+* Add `wequal`, `hequal`, and `equal` options to still use automatic spacing but
+  force the tight layout algorithm to make spacings equal (:pr:`215`, :issue:`64`)
   by `Zachary Moon`_.
-* Determine colormap levels using only in-bounds data if the *x* or *y* axis limits
-  were explicitly set (:issue:`209`). Add `inbounds` `~proplot.axes.apply_cmap`
-  keyword and :rcraw:`image.inbounds` setting to control this.
 * Allow calling `proplot.colors.PerceptuallyUniformColormap.from_hsl` by passing
   `hue`, `saturation`, or `luminance` to `~proplot.constructor.Colormap` without
   any positional arguments (:commit:`3d8e7dd0`).
@@ -688,10 +726,6 @@ Features
   as allowed by matplotlib (:pr:`258`).
 * Add `absolute_width` keyword to `~proplot.plot.bar_extras` to make `width`
   argument absolute (:pr:`258`). Remains ``False`` by default.
-* Use "sticky" edges in x-direction for lines drawn with `plot()` and in y-direction
-  for lines drawn with `plotx()` (:pr:`258`). This eliminates padding along the
-  "dependent" axis when limits are not specified, similar to histograms and
-  barplots and matching a feature we previously added to `fill_between` (:pr:`166`).
 * Add support for "stacked" plots to `~matplotlib.axes.Axes.vlines` and
   `~matplotlib.axes.Axes.hlines` (:pr:`258`).
 * Add `stack` as alternative to `stacked` for bar and area plots (:commit:`4e30f415`).
@@ -751,17 +785,8 @@ Features
   in a `legend_kw` keyword argument (:commit:`a11d1813`).
 * Replace legends drawn in the same location by default rather than drawing two
   legends on top of each other (:pr:`254`).
-* Use `Artist` labels for the default list-of-artist colorbar tick labels if `values`
-  was not passed -- and if labels are non-numeric, rotate them 90 degrees for horizontal
-  colorbars by default (:commit:`ed8e1314`). Makes the choice between "traditional"
-  legends and "colorbar-style" legends more seamless.
-* Use same default-level generation algorithm for contour plots without colormaps as for
-  all other colormap plots (:commit:`10e0f13b`). Makes automatically-generated
-  solid-color contours and colormap-style contours identical.
 * Add suffix ``'_copy'`` to colormaps converted with `to_listed` and
   `to_linear_segmented` to avoid accidental overwriting (:commit:`91998e93`).
-* If available, use :rcraw:`pcolormesh.snap` to repair overlap in transparent colorbar
-  solids rather than manual-blending workaround (:commit:`c9f59e49`).
 * Add `xmin`, `xmax`, `ymin`, and `ymax` keyword args to
   `~proplot.axes.CartesianAxes.format` as alternatives to `xlim` and `ylim`
   (:commit:`ae0719b7`). Example usage: ``ax.format(xmin=0)`` as opposed to
@@ -875,6 +900,8 @@ Documentation
 * Major clean up of "Why ProPlot?" page and user guide pages.
 * Fix incomplete ``cmap.from_file`` docstrings (:commit:`54f1bc7c`).
 * Rename "Changelog" to "What's New?" and list all contributors in "About the Authors".
+* Remove v0.6.0 renamed classes (e.g. `ProjAxes`) from top-level namespace
+  (:commit:`442e6aa6`). These classes were public just for documentation.
 * Rename public/documented funcs ending in `_wrapper` to ending in `_extras` to avoid
   implication they are the only funcs wrapping those commands (:commit:`d1e1e85b`).
 * Rename public/documented func `make_mapping_array` to private function,
@@ -924,13 +951,6 @@ Bug fixes
 ProPlot v0.6.2 (2020-06-02)
 ===========================
 
-Deprecated
-----------
-
-* Remove `~proplot.figure.Figure` setters like `set_sharex`, replace with
-  read-only properties (:commit:`7b455008`). These did not work and did not
-  add critical functionality.
-
 Features
 --------
 
@@ -968,7 +988,8 @@ Bug fixes
   dependency and improving axis scale transforms (:commit:`432576d8`).
 * Fix panel sharing issue in presence of stacked or multiple panels
   (:commit:`28eaf0ca`).
-* Fix geographic feature toggling, zorder bugs (:commit:`acf0d5d4`, :commit:`ea151b25`).
+* Fix geographic feature toggling, zorder bugs
+  (:commit:`acf0d5d4`, :commit:`ea151b25`).
 * Fix `~matplotlib.axes.Axes.hist` bug due to ``bar(..., width=width)`` now
   being *relative* to the *x* step size (:commit:`e32ed0bc`).
 * Fix bug where `~matplotlib.figure.Figure.savefig` receives ``Path`` instead
@@ -981,6 +1002,10 @@ Documentation
 * Document `proplot.figure.Figure.save` method (:commit:`da25266a`).
 * Darker "dark mode" (:commit:`979c8188`).
 * Prevent website from flashing light mode when changing pages (:commit:`75e4d6a1`).
+* Remove `~proplot.figure.Figure` setters like `set_sharex`, replace with
+  read-only properties (:commit:`7b455008`). The getters were only for object
+  introspection. The setters never worked properly/were unused in examples.
+
 
 ProPlot v0.6.1 (2020-05-20)
 ===========================
@@ -1008,25 +1033,18 @@ Deprecated
 * Remove the ``lonstep`` and ``latstep`` settings -- we now use
   `~proplot.ticker.LongitudeLocator` and `~proplot.ticker.LatitudeLocator`
   to select "nice" gridline locations even when zoomed in (:pr:`168`)
-* Change default rc settings closer to matplotlib, including margins and line
-  width (:pr:`166`, :commit:`f801852b`). Many were changed for no good reason.
-* Change default line style for geographic gridlines from ``':'`` to ``'-'``
-  and match style from primary gridlines (:pr:`166`, :commit:`f801852b`).
-* Rename `add_errorbars` to `~proplot.axes.indicate_error` and rename
-  various keyword args (:pr:`166`, :commit:`d8c50a8d`).
+* Rename several "error indication" keyword arguments and rename `add_errorbars`
+  wrapper to `~proplot.axes.indicate_error` (:pr:`166`, :commit:`d8c50a8d`).
 * Remove ``'rgbcycle'`` setting (:pr:`166`, :commit:`6653b7f0`).
+  This was complicated to implement/did not add critical functionality.
 * Deprecate support for "parametric" plots inside `~matplotlib.axes.Axes.plot`,
   instead use `~proplot.axes.Axes.parametric` (:commit:`64210bce`).
 * Change `~proplot.utils.units` ``units`` keyword argument to more natural
   ``dest`` (:commit:`62903b48`).
-* Remove the public objects `normalizers`, `locators`, `formatters`,
-  `cartopy_projs`, `basemap_kwargs`, `cmaps`, `colors`, and `fonts` (:pr:`149`).
 * Drop support for ``.xrgb`` and ``.xrgba`` files (:commit:`4fa72b0c`).  Not
   sure if any online sources produce these kinds of files.
 * Drop support for ``.rgba`` files, but optionally read 4th opacity column
   from ``.rgb`` and ``.txt`` files (:commit:`4fa72b0c`).
-* Stop reversing the ``'Spectral'`` colormap when ProPlot is imported
-  (:pr:`149`, :commit:`ce4ef6a0`).
 * Remove ``'Blue0'`` SciVisColor colormap (:pr:`149`, :commit:`7cb4ce0f`). It was odd
   man out in the table, and not even really perceptually uniform.
 * Remove custom ProPlot cycles -- these should be thought out much more
@@ -1037,19 +1055,11 @@ Deprecated
   degree-shifted colormap, similar to ``'cmap_r'`` (:pr:`149`, :commit:`da4ccb08`).
 * Rename ``GrayCycle`` colormap to ``MonoCycle`` to more accurately reflect
   colormap design origins (:pr:`149`, :commit:`d67e45bf`).
-* Rename `~proplot.config.rc_configurator` and `~proplot.ui.subplot_grid` to
-  `~proplot.config.RcConfigurator` and `~proplot.ui.SubplotsContainer`
-  to match capitalized class naming convention (:pr:`149`).
 * Rename `~proplot.colors.MidpointNorm` to more intuitive
   `~proplot.colors.DivergingNorm`, and make "fair" color scaling the default
   behavior (:commit:`2f549c9`).
-* Rename `XYAxes` to `~proplot.axes.CartesianAxes`, `~proplot.axes.GeoAxes`
-  to `~proplot.axes.CartopyAxes`, and `~proplot.axes.ProjAxes` to
-  `~proplot.axes.GeoAxes` (:pr:`149`, :commit:`4a6a0e34`).
 * Rename `BinNorm` to `~proplot.styletools.DiscreteNorm`
   and fix issues with diverging norm color scaling (:pr:`149`, :commit:`98a976f1`).
-* Rename `ColorDict` to `~proplot.colors.ColorDatabase`, `CmapDict`
-  to `~proplot.colors.ColormapDatabase` (:pr:`149`, :commit:`9d7fd3e0`).
 * Rename `~proplot.styletools.LinearSegmentedColormap.concatenate` to
   `~proplot.styletools.LinearSegmentedColormap.append`,
   `~proplot.styletools.LinearSegmentedColormap.updated` to
@@ -1060,16 +1070,32 @@ Deprecated
   `~proplot.styletools.LinearSegmentedColormap.cut` (:pr:`149`, :commit:`e1a08930`).
   The old method names remain with a deprecation warning.
 
+Style changes
+-------------
+
+* Increase default :rcraw:`savefig.dpi` to 1200, matching recommendations from academic
+  journals (:pr:`167`, :commit:`c00e7314`). Also add detailed discussion to user guide.
+* Stop reversing the ``'Spectral'`` colormap when ProPlot is imported
+  (:pr:`149`, :commit:`ce4ef6a0`).
+* Change default rc settings closer to matplotlib, including margins and line
+  width (:pr:`166`, :commit:`f801852b`). Many were changed for no good reason.
+* Change default line style for geographic gridlines from ``':'`` to ``'-'``
+  and match style from primary gridlines (:pr:`166`, :commit:`f801852b`).
+* Make default `areax` and `areay` bounds "sticky", similar to
+  histograms and barplots (:pr:`166`). Also make `vlines` and `hlines`
+  perpendicular bounds sticky if either the min/max coordinates are scalar.
+* *Hide* bad colormaps like ``'jet'`` from the
+  `~proplot.styletools.show_cmaps` table instead of deleting them outright,
+  just like CSS4 colors (:pr:`149`, :commit:`ce4ef6a0`).
+
 Features
 --------
 
-* Add `~proplot.ticker.SigFigFormatter` (:pr:`149`, :commit:`da6105d2`)
-  and `~proplot.ticker.SciFormatter` (:pr:`175`, :commit:`c43f7f91`)
-  axis formatters.
-* Make default `areax` and `areay` bounds "sticky", similar to
-  histograms and barplots (:pr:`166`).
+* Permit drawing "outer" axes and figure legends without explicitly passing handles
+  (:pr:`149`, :commit:`a69b48eb`). Figure legends use the handles from all axes.
 * Use `_LonAxis` and `_LatAxis` dummy axes with custom `LongitudeLocator`
-  and `LatitudeLocator` to control geographic gridlines (:pr:`168`).
+  and `LatitudeLocator` to control geographic gridlines (:pr:`168`). This
+  improves accuracy of automatic gridline generation.
 * Add ``'dmslat'`` and ``'dmslon'`` as formatters for cartopy projections,
   along with ``dms`` `format` keyword argument. This labels points with
   degrees/minutes/seconds when appropriate (:pr:`168`).
@@ -1078,11 +1104,18 @@ Features
   used for minor gridlines is `~matplotlib.ticker.AutoMinorLocator`.
 * Add `loninline`, `latinline`, and `rotatelabels` keywords for controlling
   cartopy gridliner behavior (:pr:`168`).
+* Support `cartopy 0.18 <https://scitools.org.uk/cartopy/docs/latest/whats_new.html>`__
+  locators, formatters, deprecations, and new labelling features (:pr:`158`).
+* Add :rcraw:`geogrid.labelpad` and :rcraw:`geogrid.rotatelabels` settings
+  for cartopy gridline labels (:pr:`158`).
+* Add `~proplot.ticker.SigFigFormatter` (:pr:`149`, :commit:`da6105d2`) and
+  `~proplot.ticker.SciFormatter` (:pr:`175`, :commit:`c43f7f91`) axis formatters.
+* Support more `~proplot.ticker.AutoFormatter` features on
+  `~proplot.ticker.SimpleFormatter` (:pr:`152`, :commit:`6decf962`).
+* Enable passing callables to `~proplot.axistools.Formatter` to create a
+  `~proplot.axistools.FuncFormatter` instance.
 * Add `proplot.config.RcConfigurator.save` and
   `proplot.config.RcConfigurator.from_file` methods (:pr:`167`, :commit:`e6dd8314`).
-* Increase default :rcraw:`savefig.dpi` to 1200, matching recommendations
-  from academic journals (:pr:`167`, :commit:`c00e7314`). Also add detailed discussion
-  to user guide.
 * No longer distinguish between "quick" settings and proplot's "added"
   settings (:pr:`167`, :commit:`e6dd8314`). Quick settings, added settings, and
   matplotlib settings can all have "children" so the distinction no longer makes sense.
@@ -1104,28 +1137,16 @@ Features
 * Support `~matplotlib.axes.Axes.vlines` and `~matplotlib.axes.Axes.hlines`
   flexible arguments and add ``negpos`` feature
   (:pr:`166`, :commit:`1c53e947`, :commit:`e42ee913`).
-* Support `cartopy 0.18 <https://scitools.org.uk/cartopy/docs/latest/whats_new.html>`__
-  locators, formatters, deprecations, and new labelling features (:pr:`158`).
 * Support building a colormap and `DiscreteNorm` inside `~matplotlib.axes.Axes.scatter`,
   just like `contourf` and `pcolormesh` (:pr:`162`).
-* Add :rcraw:`geogrid.labelpad` and :rcraw:`geogrid.rotatelabels` settings
-  for cartopy gridline labels (:pr:`158`).
-* Support more `~proplot.ticker.AutoFormatter` features on
-  `~proplot.ticker.SimpleFormatter` (:pr:`152`, :commit:`6decf962`).
-* Support drawing colorbars with descending levels (:pr:`149`, :commit:`10763146`)
+* Permit special colormap normalization and level scaling for
+  colormap-colored contour plots, just like contourf (:pr:`149`, :commit:`054cceb5`).
+* Support drawing colorbars with descending levels when input `levels`/`values`
+  are monotonically descending lists (:pr:`149`, :commit:`10763146`)
 * Add support for matplotlib stylesheets with `~proplot.config.use_style`
   function and ``style`` rc param (:pr:`149`, :commit:`edc6f3c9`).
-* Add `categories` keyword arg to `~proplot.styletools.show_cmaps` and
-  `~proplot.styletools.show_cycles` (:pr:`149`, :commit:`79be642d`).
-* *Hide* bad colormaps like ``'jet'`` from the
-  `~proplot.styletools.show_cmaps` table instead of deleting them outright,
-  just like CSS4 colors (:pr:`149`, :commit:`ce4ef6a0`).
-* Draw `~proplot.styletools.show_colors` table as single figure with category
-  labels, similar to `~proplot.styletools.show_cmaps` (:pr:`149`, :commit:`c8ca2909`).
 * Make ``'Grays'`` and ``'Greys'`` synonyms for the same ColorBrewer colormap
   (:pr:`149`, :commit:`da4ccb08`).
-* Permit drawing "outer" axes and figure legends without explicitly passing
-  handles (:pr:`149`, :commit:`a69b48eb`). Figure legends use the handles from all axes.
 * Add `~proplot.styletools.LinearSegmentedColormap.to_listed` and
   `~proplot.styletools.PerceptuallyUniformColormap.to_linear_segmented`
   methods for handling conversions (:pr:`149`, :commit:`e1a08930`).
@@ -1135,17 +1156,19 @@ Features
   (:pr:`149`, :commit:`117e05f2`).
 * Permit 8-character hex strings with alpha channels when loading colormaps
   and color cycles from hex files (:pr:`149`, :commit:`381a84d4`).
-* Publicly support "filling" axes with colorbars using ``loc='fill'``
-  (:pr:`149`, :commit:`057c9895`).
+* Support sampling `~prolot.styletools.LinearSegmentedColormap` into
+  `~proplot.styletools.ListedColormap` inside of
+  `~proplot.styletools.Colormap` rather than `~proplot.styletools.Cycle`
+  (:issue:`84`, :commit:`972956b1`).
+* Add `categories` keyword arg to `~proplot.styletools.show_cmaps` and
+  `~proplot.styletools.show_cycles` (:pr:`149`, :commit:`79be642d`).
+* Draw `~proplot.styletools.show_colors` table as single figure with category
+  labels, similar to `~proplot.styletools.show_cmaps` (:pr:`149`, :commit:`c8ca2909`).
 * Return both figure and axes in ``show_`` functions; this gives users access
   to the axes and prevents drawing them twice in notebooks
   (:pr:`149`, :commit:`2f600bc9`).
-* Enable passing callables to `~proplot.axistools.Formatter` to create a
-  `~proplot.axistools.FuncFormatter` instance.
-* Support sampling `~prolot.styletools.LinearSegmentedColormap` into
-  `~proplot.styletools.ListedColormaps` inside of
-  `~proplot.styletools.Colormap` rather than `~proplot.styletools.Cycle`
-  (:issue:`84`, :commit:`972956b1`).
+* Publicly support "filling" axes with colorbars using ``loc='fill'``
+  (:pr:`149`, :commit:`057c9895`).
 
 Bug fixes
 ---------
@@ -1186,9 +1209,8 @@ Bug fixes
   to zero (:issue:`124`, :commit:`9b7f89fd`)
 * Fix `~proplot.axistools.AutoFormatter` bug with small negative
   numbers (:issue:`117`).
-* Label cyclic Scientific colour maps as cyclic (:commit:`e10a3109`).
-* Permit special colormap normalization and level scaling for
-  colormap-colored contour plots, just like contourf (:pr:`149`, :commit:`054cceb5`).
+* Fix issue where Scientific colour maps not interpreted as cyclic, so end
+  colors not standardized properly (:commit:`e10a3109`).
 
 Internals
 ---------
@@ -1214,6 +1236,20 @@ Documentation
 * Major clean up `~proplot.wrappers` documentation (:commit:`9648c18f`)
 * Fix dead "See Also" links (:commit:`d32c6506`).
 * Use "Other parameters" tables more often (:commit:`d32c6506`).
+* Remove the public objects `normalizers`, `locators`, `formatters`,
+  `cartopy_projs`, `basemap_kwargs`, `cmaps`, `colors`, and `fonts` (:pr:`149`).
+  These objects were public just for introspection/documentation.
+* Rename `~proplot.config.rc_configurator` and `~proplot.ui.subplot_grid` to
+  `~proplot.config.RcConfigurator` and `~proplot.ui.SubplotsContainer`
+  to match capitalized class naming convention (:pr:`149`). These
+  classes are public just for documentation.
+* Rename `XYAxes` to `~proplot.axes.CartesianAxes`, `~proplot.axes.GeoAxes`
+  to `~proplot.axes.CartopyAxes`, and `~proplot.axes.ProjAxes` to
+  `~proplot.axes.GeoAxes` (:pr:`149`, :commit:`4a6a0e34`). These classes
+  are public just for documentation.
+* Rename `ColorDict` to `~proplot.colors.ColorDatabase`, `CmapDict` to
+  `~proplot.colors.ColormapDatabase` (:pr:`149`, :commit:`9d7fd3e0`).
+  These classes are public just for documentation.
 
 
 ProPlot v0.5.0 (2020-02-10)
@@ -1271,8 +1307,8 @@ Internals
 ---------
 
 * Remove various unused keyword arguments (:commit:`33654a42`).
-* Major improvements to the API controlling axes titles and a-b-c labels
-  (:commit:`1ef7e65e`).
+* Major improvements to the API controlling axes titles and a-b-c
+  labels (:commit:`1ef7e65e`).
 * Always use full names ``left``, ``right``, ``top``, and ``bottom`` instead
   of ``l``, ``r``, ``b``, and ``t``, for clarity (:commit:`1ef7e65e`).
 * Improve ``GrayCycle`` colormap, is now much shorter and built from
@@ -1281,14 +1317,6 @@ Internals
 
 ProPlot v0.4.3 (2020-01-21)
 ===========================
-
-Deprecated
-----------
-
-* Remove `~proplot.rctools.ipython_autoreload`,
-  `~proplot.rctools.ipython_autosave`, and `~proplot.rctools.ipython_matplotlib`
-  (:issue:`112`, :pr:`113`). Move inline backend configuration to a hidden
-  method that gets called whenever the ``rc_configurator`` is initalized.
 
 Features
 --------
@@ -1304,6 +1332,10 @@ Internals
 * Use `~proplot.axes.Axes.colorbar` instead of `~matplotlib.axes.Axes.imshow`
   for `~proplot.styletools.show_cmaps` and `~proplot.styletools.show_cycles`
   displays (:pr:`107`).
+* Remove `~proplot.rctools.ipython_autoreload`,
+  `~proplot.rctools.ipython_autosave`, and `~proplot.rctools.ipython_matplotlib`
+  (:issue:`112`, :pr:`113`). Move inline backend configuration to a hidden
+  method that gets called whenever the ``rc_configurator`` is initalized.
 
 ProPlot v0.4.2 (2020-01-09)
 ===========================
@@ -1324,12 +1356,6 @@ Bug fixes
 
 ProPlot v0.4.1 (2020-01-08)
 ===========================
-
-Deprecation
------------
-
-* Change the default ``.proplotrc`` format from YAML to the ``.matplotlibrc``
-  syntax (:pr:`101`).
 
 Features
 --------
@@ -1352,6 +1378,8 @@ Internals
 
 * Add ``geogrid.color/linewidth/etc`` and ``gridminor.color/linewidth/etc``
   props as *children* of ``grid.color/linewidth/etc`` (:pr:`101`).
+* Change the default ``.proplotrc`` format from YAML to the ``.matplotlibrc``
+  syntax (:pr:`101`).
 * Various `~proplot.rctools.rc_configurator` improvements, remove outdated
   global variables (:pr:`101`).
 * Better error handling when loading colormap/cycle files, and calls to
@@ -1401,8 +1429,7 @@ Features
   `~proplot.axes.Axes.dualx` and `~proplot.axes.Axes.dualy` (:pr:`99`).
 * Add `~proplot.subplots.Figure` ``fallback_to_cm`` kwarg. This is used by
   `~proplot.styletools.show_fonts` to show dummy glyphs to clearly illustrate
-  when fonts are missing characters, but preserve graceful fallback for end
-  user.
+  when fonts are missing characters, but preserve graceful fallback for user.
 * Improve `~proplot.projs.Proj` constructor function. It now accepts
   `~cartopy.crs.Projection` and `~mpl_toolkits.basemap.Basemap` instances,
   just like other constructor functions, and returns only the projection
