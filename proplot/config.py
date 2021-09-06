@@ -673,7 +673,7 @@ def register_colors(*args, user=None, default=False, space=None, margin=None, **
     """
     # Add in base colors and CSS4 colors so user has no surprises
     from . import colors as pcolors
-    default = _not_none(space is not None, margin is not None, default)
+    default = default or space is not None or margin is not None
     margin = _not_none(margin, 0.1)
     space = _not_none(space, 'hcl')
     if default:
