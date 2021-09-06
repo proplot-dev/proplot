@@ -2697,6 +2697,10 @@ class PlotAxes(base.Axes):
             return
 
         # Skip when cmap has transparency
+        if hasattr(obj, 'get_alpha'):  # collections and contour sets use singular
+            alpha = obj.get_alpha()
+            if alpha is not None and alpha < 1:
+                return
         if isinstance(obj, mcm.ScalarMappable):
             cmap = obj.cmap
             if not cmap._isinit:
