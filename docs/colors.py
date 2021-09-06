@@ -43,12 +43,15 @@
 # selection is larger and the names are more likely to match your intuition
 # for what a color "should" look like.
 #
-# To reduce the number of registered color names to a more manageable size,
-# ProPlot filters the available XKCD colors so that they are *sufficiently
-# distinct* in a :ref:`perceptually uniform colorspace <ug_perceptual>`.
-# This makes it a bit easier to pick out colors from the table generated with
-# `~proplot.demos.show_colors`. Similar names were also cleaned up -- for
-# example, ``'reddish'`` and ``'reddy'`` are changed to ``'red'``.
+# For all colors, ProPlot ensures that ``'grey'`` is a synonym of ``'gray'``
+# (for example, ``'grey5'`` and ``'gray5'`` are both valid). ProPlot also
+# retricts the available XKCD colors with a filtering algorithm so they are
+# "distinct" in :ref:`perceptually uniform space <ug_perceptual>`. This
+# makes it a bit easier to pick out colors from the table generated with
+# `~proplot.demos.show_colors`. The filtering algorithm also cleans up similar
+# names -- for example, ``'reddish'`` and ``'reddy'`` are changed to ``'red'``.
+# You can adjust the filtering algorithm by calling `~proplot.config.register_colors`
+# with the `space` or `margin` keywords.
 
 # %%
 import proplot as pplt
