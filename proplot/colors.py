@@ -613,17 +613,19 @@ def _load_colors(path, ignore_base=True, warn_on_failure=True):
     return loaded
 
 
-def _standardize_colors(input, space='hcl', margin=0.10):
+def _standardize_colors(input, space, margin):
     """
     Standardize the input colors.
 
     Parameters
     ----------
+    input : dict
+        The colors.
     space : optional
         The colorspace used to filter colors.
     margin : optional
-        The proportional margin required for "unique" colors (e.g. 0.10
-        represents 36 hue units, 10 saturation units, 10 luminance units).
+        The proportional margin required for unique colors (e.g. 0.1
+        is 36 hue units, 10 saturation units, 10 luminance units).
     """
     output = {}
     colors = []

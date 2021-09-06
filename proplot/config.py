@@ -642,7 +642,7 @@ def register_cycles(*args, user=None, default=False):
 
 
 @docstring._snippet_manager
-def register_colors(*args, user=None, default=False, space='hcl', margin=0.1, **kwargs):
+def register_colors(*args, user=None, default=False, space=None, margin=None, **kwargs):
     """
     Register named colors. This is called on import.
 
@@ -651,13 +651,15 @@ def register_colors(*args, user=None, default=False, space='hcl', margin=0.1, **
     %(rc.color_args)s
     %(rc.color_params)s
     space : {'hcl', 'hsl', 'hpl'}, optional
-        Ignored if `default` is ``False``. The colorspace used to select "perceptually
-        distinct" colors from the XKCD `color survey <https://xkcd.com/color/rgb/>`_.
+        The colorspace used to select "perceptually distinct" colors from the XKCD
+        `color survey <https://xkcd.com/color/rgb/>`__. Default is ``'hcl'``. If
+        passed then `default` is set to ``True``.
     margin : float, optional
-        Ignored if `default` is ``False``. The margin by which the normalized hue,
-        saturation, and luminance of each XKCD color must differ from the channel
-        values of the other XKCD colors to be deemed "perceptually distinct" and
-        registered. Must be between ``0`` and ``1``. ``0`` will register all colors.
+        The margin by which the normalized hue, saturation, and luminance of each
+        XKCD color must differ from the channel values of the other XKCD colors to
+        be deemed "perceptually distinct" and registered. Must fall between ``0``
+        and ``1`` (``0`` will register all colors). Default is ``0.1``. If
+        passed then `default` is set to ``True``.
     **kwargs
         Additional color name specifications passed as keyword arguments rather
         than positional dictionaries.
@@ -671,6 +673,9 @@ def register_colors(*args, user=None, default=False, space='hcl', margin=0.1, **
     """
     # Add in base colors and CSS4 colors so user has no surprises
     from . import colors as pcolors
+    default = _not_none(space is not None, margin is not None, default)
+    margin = _not_none(margin, 0.1)
+    space = _not_none(space, 'hcl')
     if default:
         pcolors._color_database.clear()  # MutableMapping ensures cache also clears
         for src in (mcolors.CSS4_COLORS, pcolors.COLORS_BASE):
@@ -708,7 +713,7 @@ def register_colors(*args, user=None, default=False, space='hcl', margin=0.1, **
 
         # Add xkcd colors after filtering
         elif cat == 'xkcd':
-            loaded = pcolors._standardize_colors(loaded, space=space, margin=margin)
+            loaded = pcolors._standardize_colors(loaded, space, margin)
             pcolors._color_database.update(loaded)
             pcolors.COLORS_XKCD.update(loaded)
 
