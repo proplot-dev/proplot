@@ -2906,9 +2906,9 @@ class ColormapDatabase(MutableMapping, dict):
     colormap registry. See `~ColormapDatabase.__getitem__` and
     `~ColormapDatabase.__setitem__` for details.
     """
-    # NOTE: While usage of this is entirely internal (we just make it public for
-    # documentation) decided to go to the trouble of using MutableMapping so it is
-    # future-proof to cm.py changes. Also covers unregister_cmap() which uses pop().
+    _regex_grays = re.compile(r'\A(grays)(_r(_s)?|_s)?\Z')
+    _regex_suffix = re.compile(r'(_r(_s)?|_s)?\Z', flags=re.IGNORECASE)
+
     def __iter__(self):
         yield from dict.__iter__(self)
 
@@ -2960,7 +2960,7 @@ class ColormapDatabase(MutableMapping, dict):
         # helpfully "redirect" user to SciVisColor cmap when they are trying to
         # generate open-color monochromatic cmaps and would disallow some color names
         if isinstance(key, str):
-            test = re.sub(r'(_r(_s)?|_s)?\Z', '', key, flags=re.IGNORECASE)
+            test = self._regex_suffix.sub('', key)
         else:
             test = None
         found = dict.__contains__(self, test)
@@ -2984,8 +2984,7 @@ class ColormapDatabase(MutableMapping, dict):
         """
         if not isinstance(key, str):
             raise KeyError(f'Invalid key {key!r}. Key must be a string.')
-        key = key.lower()
-        key = re.sub(r'\A(grays)(_r(_s)?|_s)?\Z', r'greys\2', key)
+        key = self._regex_grays.sub(r'greys\2', key.lower())
         reverse = key[-2:] == '_r'
         if reverse:
             key = key[:-2]
