@@ -673,7 +673,7 @@ def register_colors(*args, user=None, default=False, space='hcl', margin=0.1, **
     from . import colors as pcolors
     if default:
         pcolors._color_database.clear()  # MutableMapping ensures cache also clears
-        for src in (pcolors.COLORS_BASE, mcolors.CSS4_COLORS):
+        for src in (mcolors.CSS4_COLORS, pcolors.COLORS_BASE):
             pcolors._color_database.update(src)
 
     # Register input colors
