@@ -12,14 +12,16 @@ except pkg.DistributionNotFound:
 
 # Import optional dependencies now to isolate import times
 from .internals import benchmarks, docstring, rcsetup, warnings  # noqa: F401
-with benchmarks._benchmark('basemap'):
-    try:
-        from mpl_toolkits import basemap  # noqa: F401
-    except ImportError:
-        pass
+with benchmarks._benchmark('pyplot'):
+    from matplotlib import pyplot  # noqa: F401
 with benchmarks._benchmark('cartopy'):
     try:
         import cartopy  # noqa: F401
+    except ImportError:
+        pass
+with benchmarks._benchmark('basemap'):
+    try:
+        from mpl_toolkits import basemap  # noqa: F401
     except ImportError:
         pass
 

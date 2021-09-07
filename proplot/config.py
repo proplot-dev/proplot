@@ -28,7 +28,7 @@ import numpy as np
 from matplotlib import RcParams
 
 from .internals import ic  # noqa: F401
-from .internals import _not_none, benchmarks, docstring, rcsetup, warnings
+from .internals import _not_none, docstring, rcsetup, warnings
 
 try:
     from IPython import get_ipython
@@ -1645,13 +1645,9 @@ rc_matplotlib = mpl.rcParams  # PEP8 4 lyfe
 #: validated and restricted to recognized setting names.
 rc_proplot = rcsetup._rc_proplot_default.copy()  # a validated rcParams-style dict
 
-# Initialize configurator
-with benchmarks._benchmark('rc'):
-    _ = Configurator(skip_cycle=True)
-
 #: Instance of `Configurator`. This controls both `rc_matplotlib` and `rc_proplot`
 #: settings. See the :ref:`configuration guide <ug_config>` for details.
-rc = _
+rc = Configurator(skip_cycle=True)
 
 # Deprecated
 RcConfigurator = warnings._rename_objs(

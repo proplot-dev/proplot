@@ -28,11 +28,11 @@ class _version(list):
             major, minor = int(major or 0), int(minor or 0)
         except Exception:
             warnings._warn_proplot(
-                f"Unexpected version {version!r}. Interpreting as '0.0'."
+                f'Unexpected version {version!r}. Interpreting as 0.0.'
             )
             major = minor = 0
         self._version = version
-        super().__init__([major, minor])  # then use builtin python list sorting
+        super().__init__((major, minor))  # then use builtin python list sorting
 
     def __eq__(self, other):
         return super().__eq__(_version(other))
