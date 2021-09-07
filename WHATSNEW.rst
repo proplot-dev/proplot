@@ -130,6 +130,9 @@ Bug fixes
   fails to trigger centered legend (:commit:`e598b470`).
 * Fix issue where `alpha` passed to contour/pcolor/vlines/hlines commands was
   ignored due to translating as `alphas` rather than `alpha` (:commit:`e5faf4d6`).
+* Fix unexpected behavior where `~proplot.axes.PlotAxes` tries to make
+  list-of-artist style colorbars from successive calls to 2D plotting
+  commands rather than making individual colorbars (:commit:`20ce93a1`).
 
 Internals
 ---------
