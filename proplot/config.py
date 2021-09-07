@@ -773,7 +773,10 @@ def register_fonts(*args, user=True, default=False):
     fnames_all = {font.fname for font in mfonts.fontManager.ttflist}
     fnames_proplot -= fnames_proplot_ttc
     if not fnames_all >= fnames_proplot:
-        warnings._warn_proplot('Rebuilding font cache.')
+        warnings._warn_proplot(
+            'Rebuilding font cache. This may increase import time. '
+            'Usually happens after importing proplot for the first time.'
+        )
         if hasattr(mfonts.fontManager, 'addfont'):
             # Newer API lets us add font files manually and deprecates TTFPATH. However
             # to cache fonts added this way, we must call json_dump explicitly.
