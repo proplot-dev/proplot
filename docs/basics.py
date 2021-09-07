@@ -284,7 +284,7 @@ fig.colorbar(m, loc='b', label='label')
 #      use e.g. ``xlim=(0, 5)``.
 #    * To change the radial bounds on a `~proplot.axes.PolarAxes`, use e.g.
 #      ``rlim=(0, 10)``.
-#    * To change the meridional bounds on a `~proplot.axes.GeoAxes`,
+#    * To change the zonal bounds on a `~proplot.axes.GeoAxes`,
 #      use e.g. ``lonlim=(-90, 0)``.
 #
 # 3. Remaining keyword arguments are passed to the base `proplot.axes.Axes.format`

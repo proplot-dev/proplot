@@ -284,13 +284,7 @@ def _default_precision_zerotrim(precision=None, zerotrim=None):
 
 class AutoFormatter(mticker.ScalarFormatter):
     """
-    The new default number formatter. Differs from
-    `~matplotlib.ticker.ScalarFormatter` in the following ways:
-
-    1. Trims trailing decimal zeros by default.
-    2. Permits specifying *range* within which major tick marks are labeled.
-    3. Permits adding arbitrary prefix or suffix to every tick label string.
-    4. Permits adding "negative" and "positive" indicator.
+    The new default tick label formatter.
     """
     @docstring._snippet_manager
     def __init__(
@@ -308,15 +302,16 @@ class AutoFormatter(mticker.ScalarFormatter):
         Other parameters
         ----------------
         **kwargs
-            Passed to `~matplotlib.ticker.ScalarFormatter`.
+            Passed to `matplotlib.ticker.ScalarFormatter`.
 
-        Warning
-        -------
-        The matplotlib `~matplotlib.ticker.ScalarFormatter` determines the
-        number of significant digits based on the axis limits, and therefore
-        may *truncate* digits while formatting ticks on highly non-linear
-        axis scales like `~proplot.scale.LogScale`. We try to correct
-        this behavior with a patch.
+        Note
+        ----
+        `matplotlib.ticker.ScalarFormatter` determines the number of
+        significant digits based on the axis limits, and therefore may
+        truncate digits while formatting ticks on highly non-linear axis
+        scales like `~proplot.scale.LogScale`. `AutoFormatter` corrects
+        this behavior, making it suitable for arbitrary axis scales. We
+        therefore use `AutoFormatter` with every axis scale by default.
         """
         tickrange = tickrange or (-np.inf, np.inf)
         super().__init__(**kwargs)

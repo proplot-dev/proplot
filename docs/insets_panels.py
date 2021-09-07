@@ -18,7 +18,6 @@
 # Insets and panels
 # =================
 
-
 # %% [raw] raw_mimetype="text/restructuredtext"
 # .. _ug_panels:
 #
@@ -40,12 +39,35 @@
 # Note that panels :ref:`do not interfere with the tight layout algorithm <ug_tight>`
 # and :ref:`do not affect the subplot aspect ratios <ug_autosize>`.
 #
-# In the first example below, the panel distance from the main subplot is
-# manually set to ``space=0``. In the second example, the distance is
-# automatically adjusted by the :ref:`tight layout algorithm <ug_tight>`.
-# Note that by default, panels are excluded when centering
-# :ref:`spanning axis labels <ug_share>` and super titles. To include
-# the panels, pass ``includepanels=True`` to `~proplot.figure.Figure`.
+# In the first example below, the distances are automatically adjusted by the
+# :ref:`tight layout algorithm <ug_tight>` according to the `pad` keyword
+# (the default is :rcraw:`subplots.panelpad` -- this can be changed for an entire
+# figure by passing `panelpad` to `~proplot.figure.Figure`). In the second example,
+# the tight layout algorithm is overriden by manually setting the `space` to ``0``.
+# Panel widths are specified in physical units, with the default controlled
+# by :rcraw:`subplots.panelwidth`. This helps preserve the look of the
+# figure if the figure size changes. Note that by default, panels are excluded
+# when centering :ref:`spanning axis labels <ug_share>` and super titles.
+# To include the panels, pass ``includepanels=True`` to `~proplot.figure.Figure`.
+
+# %%
+import proplot as pplt
+
+# Demonstrate that complex arrangements preserve
+# spacing, aspect ratios, and axis sharing
+gs = pplt.GridSpec(nrows=2, ncols=2)
+fig = pplt.figure(refwidth=1.5, share=False)
+for ss, side in zip(gs, 'tlbr'):
+    ax = fig.add_subplot(ss)
+    px = ax.panel_axes(side, width='3em')
+fig.format(
+    xlim=(0, 1), ylim=(0, 1),
+    xlabel='xlabel', ylabel='ylabel',
+    xticks=0.2, yticks=0.2,
+    title='Title', suptitle='Complex arrangement of panels',
+    toplabels=('Column 1', 'Column 2'),
+    abc=True, abcloc='ul', titleloc='uc', titleabove=False,
+)
 
 # %%
 import proplot as pplt
@@ -99,25 +121,6 @@ for cbarloc, ploc in ('rb', 'br'):
     for px in pxs:
         px.plot(x2, y2, color='gray7', ls='--')
 
-# %%
-import proplot as pplt
-
-# Demonstrate that complex arrangements preserve
-# spacing, aspect ratios, and axis sharing
-gs = pplt.GridSpec(nrows=2, ncols=2)
-fig = pplt.figure(refwidth=1.5, share=False)
-for ss, side in zip(gs, 'tlbr'):
-    ax = fig.add_subplot(ss)
-    px = ax.panel_axes(side, width='3em')
-fig.format(
-    xlim=(0, 1), ylim=(0, 1),
-    xlabel='xlabel', ylabel='ylabel',
-    xticks=0.2, yticks=0.2,
-    title='Title', suptitle='Complex arrangement of panels',
-    toplabels=('Column 1', 'Column 2'),
-    abc=True, abcloc='ul', titleloc='uc', titleabove=False,
-)
-
 
 # %% [raw] raw_mimetype="text/restructuredtext"
 # .. _ug_insets:
@@ -134,10 +137,10 @@ fig.format(
 # same projection as the parent axes, but you can also request a :ref:`different
 # projection <ug_proj>` (e.g., ``ax.inset_axes(bounds, proj='polar')``). When the
 # axes are both `~proplot.axes.Axes.CartesianAxes`, you can pass ``zoom=True``
-# to `~proplot.axes.Axes.inset_axes` to quickly  add "zoom indication" lines
-# (this uses `~matplotlib.axes.Axes.indicate_inset_zoom` internally). The lines
-# are automatically updated when the axis limits of the parent axes change. To
-# modify the zoom line properties, you can pass a dictionary to `zoom_kw`.
+# to `~proplot.axes.Axes.inset_axes` to quickly add a "zoom indication" box and
+# lines (this uses `~matplotlib.axes.Axes.indicate_inset_zoom` internally). The box
+# and line positions automatically follow the axis limits of the inset axes and parent
+# axes. To modify the zoom line properties, you can pass a dictionary to `zoom_kw`.
 
 # %%
 import proplot as pplt

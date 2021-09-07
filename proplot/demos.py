@@ -216,8 +216,10 @@ def show_channels(
 
     Returns
     -------
-    `~proplot.figure.Figure`
+    proplot.figure.Figure
         The figure.
+    proplot.gridspec.SubplotGrid
+        The subplot grid.
 
     See also
     --------
@@ -335,8 +337,10 @@ def show_colorspaces(*, luminance=None, saturation=None, hue=None, refwidth=2):
 
     Returns
     -------
-    `~proplot.figure.Figure`
+    proplot.figure.Figure
         The figure.
+    proplot.gridspec.SubplotGrid
+        The subplot grid.
 
     See also
     --------
@@ -539,8 +543,10 @@ def show_cmaps(*args, **kwargs):
 
     Returns
     -------
-    `~proplot.figure.Figure`
+    proplot.figure.Figure
         The figure.
+    proplot.gridspec.SubplotGrid
+        The subplot grid.
 
     See also
     --------
@@ -593,8 +599,10 @@ def show_cycles(*args, **kwargs):
 
     Returns
     -------
-    `~proplot.figure.Figure`
+    proplot.figure.Figure
         The figure.
+    proplot.gridspec.SubplotGrid
+        The subplot grid.
 
     See also
     --------
@@ -673,8 +681,10 @@ def show_colors(
 
     Returns
     -------
-    fig : `~proplot.figure.Figure`
+    proplot.figure.Figure
         The figure.
+    proplot.gridspec.SubplotGrid
+        The subplot grid.
     """
     # Tables of known colors to be plotted
     colordict = {}
@@ -828,6 +838,13 @@ def show_fonts(
         The font style.
     stretch : str, optional
         The font stretch.
+
+    Returns
+    -------
+    proplot.figure.Figure
+        The figure.
+    proplot.gridspec.SubplotGrid
+        The subplot grid.
 
     See also
     --------

@@ -1379,14 +1379,14 @@ class SubplotGrid(MutableSequence, list):
         Parameters
         ----------
         %(axes.format)s
+        **kwargs
+            Passed to the projection-specific ``format`` command for each axes.
+            Valid only if every axes in the grid belongs to the same class.
 
         Other parameters
         ----------------
         %(figure.format)s
         %(axes.rc)s
-        **kwargs
-            Passed to the projection-specific ``format`` command for each axes.
-            Valid only if every axes in the grid belongs to the same class.
 
         See also
         --------

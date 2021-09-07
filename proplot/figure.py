@@ -1419,13 +1419,13 @@ class Figure(mfigure.Figure):
         axs : sequence of `~proplot.axes.Axes`, optional
             The axes to format.
         %(figure.format)s
+        **kwargs
+            Passed to the projection-specific ``format`` command for each axes.
 
         Other parameters
         ----------------
         %(axes.format)s
         %(axes.rc)s
-        **kwargs
-            Passed to the projection-specific ``format`` command for each axes.
 
         Important
         ---------
