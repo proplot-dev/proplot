@@ -127,7 +127,7 @@ _args_2d_shared_docstring = """
 %(plot.args_1d_shared)s
 order : {{'C', 'F'}}, optional
     If ``'C'`` (C-style row-major order), `z` coordinates should be shaped
-    ``(y, x)``. If ``'F'`` (Fortran-style column-major order) `z` coordinates
+    ``(y, x)``. If ``'F'`` (fortran-style column-major order) `z` coordinates
     should be shaped ``(x, y)``. Default is ``'C'``.
 globe : bool, optional
     For `proplot.axes.GeoAxes` only. Whether to enforce global coverage.

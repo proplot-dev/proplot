@@ -1411,13 +1411,13 @@ class Figure(mfigure.Figure):
         rowlabels=None, collabels=None, **kwargs,  # aliases
     ):
         """
-        Call the ``format`` command for the input axes or
-        for every subplot in the figure.
+        Format the figure labels and title and call ``format`` for
+        the input axes. By default the numbered subplots are used.
 
         Parameters
         ----------
         axs : sequence of `~proplot.axes.Axes`, optional
-            A sequence of axes. By default the numbered subplots are used.
+            The axes to format.
         %(figure.format)s
 
         Other parameters
@@ -1425,7 +1425,15 @@ class Figure(mfigure.Figure):
         %(axes.format)s
         %(axes.rc)s
         **kwargs
-            Passed to the ``format`` command of each axes.
+            Passed to the projection-specific ``format`` command for each axes.
+
+        Important
+        ---------
+        `leftlabelpad`, `toplabelpad`, `rightlabelpad`, and `bottomlabelpad`
+        keywords are actually :ref:`configuration settings <ug_config>`.
+        We explicitly document these arguments here because it is common to
+        change them for specific figures. But many :ref:`other configuration
+        settings <ug_format>` can be passed to ``format`` too.
 
         See also
         --------
@@ -1433,6 +1441,8 @@ class Figure(mfigure.Figure):
         proplot.axes.CartesianAxes.format
         proplot.axes.PolarAxes.format
         proplot.axes.GeoAxes.format
+        proplot.gridspec.SubplotGrid.format
+        proplot.config.Configurator.context
         """
         # Initiate context block
         rc_kw, rc_mode, kwargs = _parse_format(**kwargs)

@@ -38,18 +38,23 @@ Parameters
 {args} : optional
     Prepended with ``'{x}'`` and passed to `Axes.format`.
 
+Returns
+-------
+CartesianAxes
+    The new axes.
+
 Note
 ----
 This enforces the following default settings:
 
-* Places the old *{x}* axis on the {x1} and the new *{x}*
+* Places the old {x} axis on the {x1} and the new {x}
   axis on the {x2}.
 * Makes the old {x2} spine invisible and the new {x1}, {y1},
   and {y2} spines invisible.
-* Adjusts the *{x}* axis tick, tick label, and axis label positions
+* Adjusts the {x} axis tick, tick label, and axis label positions
   according to the visible spine positions.
-* Syncs the old and new *{y}* axis limits and scales, and makes the
-  new *{y}* axis labels invisible.
+* Syncs the old and new {y} axis limits and scales, and makes the
+  new {y} axis labels invisible.
 """
 _shared_x_keys = dict(
     x='x', x1='bottom', x2='top',
@@ -65,29 +70,36 @@ _shared_y_keys = dict(
 )
 
 # Alt docstrings
+# NOTE: Used by SubplotGrid.altx
 _alt_descrip = """
-Return an axes in the same location as this one but whose {x}
-axis is on the {x2}. This is an alias and more intuitive name
-for `~CartesianAxes.twin{y}`, which generates two *{x}* axes
-with a shared ("twin") *{y}* axes.
+Add an axes locked to the same location with a
+distinct {x} axis.
+This is an alias and possibly more intuitive name for
+`~CartesianAxes.twin{y}`, which generates two {x} axes
+with a shared ("twin") {y} axes.
 """
 _alt_docstring = _shared_docstring % {'descrip': _alt_descrip, 'extra': ''}
 docstring._snippet_manager['axes.altx'] = _alt_docstring.format(**_shared_x_keys)
 docstring._snippet_manager['axes.alty'] = _alt_docstring.format(**_shared_y_keys)
 
 # Twin docstrings
+# NOTE: Used by SubplotGrid.twinx
 _twin_descrip = """
-Return an axes in the same location as this one but whose {x}
-axis is on the {x2}. Mimics `matplotlib.axes.Axes.twin{y}`.
+Add an axes locked to the same location with a
+distinct {x} axis.
+This builds upon `matplotlib.axes.Axes.twin{y}`.
 """
 _twin_docstring = _shared_docstring % {'descrip': _twin_descrip, 'extra': ''}
 docstring._snippet_manager['axes.twinx'] = _twin_docstring.format(**_shared_y_keys)
 docstring._snippet_manager['axes.twiny'] = _twin_docstring.format(**_shared_x_keys)
 
 # Dual docstrings
+# NOTE: Used by SubplotGrid.dualx
 _dual_descrip = """
-Return a secondary *{x}* axis for denoting equivalent *{x}*
-coordinates in *alternate units*.
+Add an axes locked to the same location whose {x} axis denotes
+equivalent coordinates in alternate units.
+This is an alternative to `matplotlib.axes.Axes.secondary_{x}axis` with
+additional convenience features.
 """
 _dual_extra = """
 funcscale : callable, 2-tuple of callables, or scale-spec
@@ -801,6 +813,7 @@ class CartesianAxes(shared._SharedAxes, plot.PlotAxes):
         See also
         --------
         proplot.axes.Axes.format
+        proplot.figure.Figure.format
         proplot.config.Configurator.context
 
         Note

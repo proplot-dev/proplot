@@ -5,6 +5,7 @@ The gridspec and subplot grid classes used throughout ProPlot.
 import functools
 import inspect
 import itertools
+import re
 from collections.abc import MutableSequence
 from numbers import Integral
 
@@ -1347,20 +1348,20 @@ class SubplotGrid(MutableSequence, list):
         gridspec = None
         message = (
             'SubplotGrid can only be filled with ProPlot subplots '
-            'belonging to the same GridSpec.'
+            'belonging to the same GridSpec. Instead got {!r}.'
         )
         items = np.atleast_1d(items)
         if self:
             gridspec = self.gridspec  # compare against existing gridspec
         for item in items.flat:
             if not isinstance(item, paxes.Axes):
-                raise ValueError(message)
+                raise ValueError(message.format(item))
             item = item._get_topmost_axes()
             if not isinstance(item, maxes.SubplotBase):
-                raise ValueError(message)  # noqa: E501
+                raise ValueError(message.format(item))
             gs = item.get_subplotspec().get_gridspec()
             if not isinstance(gs, GridSpec) or (gridspec and gs is not gridspec):
-                raise ValueError(message)
+                raise ValueError(message.format(gs))
             gridspec = gs
         if not scalar:
             items = tuple(items.flat)
@@ -1369,6 +1370,35 @@ class SubplotGrid(MutableSequence, list):
         else:
             raise ValueError('Input must be a single ProPlot axes.')
         return items
+
+    @docstring._snippet_manager
+    def format(self, *args, **kwargs):
+        """
+        Call the ``format`` command for every axes in the grid.
+
+        Parameters
+        ----------
+        %(axes.format)s
+
+        Other parameters
+        ----------------
+        %(figure.format)s
+        %(axes.rc)s
+        **kwargs
+            Passed to the projection-specific ``format`` command for each axes.
+            Valid only if every axes in the grid belongs to the same class.
+
+        See also
+        --------
+        proplot.axes.Axes.format
+        proplot.axes.CartesianAxes.format
+        proplot.axes.PolarAxes.format
+        proplot.axes.GeoAxes.format
+        proplot.figure.Figure.format
+        proplot.config.Configurator.context
+        """
+        for ax in self:
+            ax.format(*args, **kwargs)
 
     @property
     def gridspec(self):
@@ -1394,75 +1424,51 @@ class SubplotGrid(MutableSequence, list):
         return self.gridspec.get_subplot_geometry()
 
 
-def _add_grid_command(name, command=None, seealso=None, returns_grid=True):
-    # Build the docstring
-    seealso = seealso or command or ()
-    if isinstance(seealso, str):
-        seealso = (seealso,)  # clean list of commands
-    if command:
-        command = f'`~{command}`'  # sphinx link to command
-    else:
-        command = f'``{name}``'  # literal text
-    string = f"""
-    Call {command} for every axes in the grid.
-
-    Parameters
-    ----------
-    *args, **kwargs
-        Passed to {command}.
-    """
-    string = inspect.cleandoc(string)
-    string += '\n\nSee also\n--------\n' + '\n'.join(seealso)
-    string += '\n\nReturns\n-------\n'
-    if returns_grid:
-        string += '`SubplotGrid`\n    A subplot grid of the results.'
-
+def _add_grid_command(src, name):
     # Create the method
     def _grid_command(self, *args, **kwargs):
         objs = []
         for ax in self:
             obj = getattr(ax, name)(*args, **kwargs)
-            if obj is not None:
-                objs.append(obj)
-        if not objs:
-            return None
-        elif all(isinstance(obj, paxes.Axes) for obj in objs):
-            return SubplotGrid(objs)
-        elif len(objs) == 1:
-            return objs[0]
-        else:
-            return objs
+            objs.append(obj)
+        return SubplotGrid(objs)
+
+    # Clean the docstring
+    cls = getattr(paxes, src)
+    cmd = getattr(cls, name)
+    doc = inspect.cleandoc(cmd.__doc__)  # dedents
+    dot = doc.find('.')
+    if dot != -1:
+        doc = doc[:dot] + ' for every axes in the grid' + doc[dot:]
+    doc = re.sub(
+        r'^(Returns\n-------\n)(.+)(\n\s+)(.+)',
+        r'\1SubplotGrid\2A grid of the resulting axes.',
+        doc
+    )
 
     # Apply the method
+    _grid_command.__qualname__ = f'SubplotGrid.{name}'
     _grid_command.__name__ = name
-    _grid_command.__doc__ = string
+    _grid_command.__doc__ = doc
     setattr(SubplotGrid, name, _grid_command)
 
 
 # Dynamically add commands to generate twin or inset axes
-# TODO: Plot on axes in the grid along an extra input dimension?
-_add_grid_command(
-    'format',
-    seealso=(f'proplot.axes.{s}Axes.format' for s in ('', 'Cartesian', 'Geo', 'Polar')),
-    returns_grid=False,
-)
-for _name in (
-    'panel',
-    'panel_axes',
-    'inset',
-    'inset_axes',
-    'altx',
-    'alty',
-    'dualx',
-    'dualy',
-    'twinx',
-    'twiny',
+# TODO: Add commands that plot the input data for every
+# axes in the grid along a third dimension.
+for _src, _name in (
+    ('Axes', 'panel'),
+    ('Axes', 'panel_axes'),
+    ('Axes', 'inset'),
+    ('Axes', 'inset_axes'),
+    ('CartesianAxes', 'altx'),
+    ('CartesianAxes', 'alty'),
+    ('CartesianAxes', 'dualx'),
+    ('CartesianAxes', 'dualy'),
+    ('CartesianAxes', 'twinx'),
+    ('CartesianAxes', 'twiny'),
 ):
-    if _name in ('altx', 'alty', 'twinx', 'twiny', 'dualx', 'dualy'):
-        _command = f'proplot.axes.CartesianAxes.{_name}'
-    else:
-        _command = f'proplot.axes.Axes.{_name}'
-    _add_grid_command(_name, _command, returns_grid=True)
+    _add_grid_command(_src, _name)
 
 
 # Deprecated

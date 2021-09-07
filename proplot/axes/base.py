@@ -162,9 +162,10 @@ docstring._snippet_manager['axes.colorbar_space'] = _space_docstring.format(
 
 
 # Inset docstring
+# NOTE: Used by SubplotGrid.inset_axes
 _inset_docstring = """
-Return an inset `CartesianAxes`. This is similar to the builtin
-`~matplotlib.axes.Axes.inset_axes` but includes some extra options.
+Add an inset axes.
+This is similar to `matplotlib.axes.Axes.inset_axes`.
 
 Parameters
 ----------
@@ -187,6 +188,11 @@ zoom : bool, optional
 zoom_kw : dict, optional
     Passed to `~Axes.indicate_inset_zoom`.
 
+Returns
+-------
+proplot.axes.Axes
+    The inset axes.
+
 Other parameters
 ----------------
 **kwargs
@@ -196,6 +202,7 @@ docstring._snippet_manager['axes.inset'] = _inset_docstring
 
 
 # Panel docstring
+# NOTE: Used by SubplotGrid.panel_axes
 _panel_loc_docstring = """
     ==========  =====================
     Location    Valid keys
@@ -207,7 +214,7 @@ _panel_loc_docstring = """
     ==========  =====================
 """
 _panel_docstring = """
-Return a panel drawn along the edge of this axes.
+Add a panel along the edge of the axes.
 
 Parameters
 ----------
@@ -235,7 +242,7 @@ share : bool, optional
 
 Returns
 -------
-`~proplot.axes.CartesianAxes`
+proplot.axes.CartesianAxes
     The panel axes.
 """
 docstring._snippet_manager['axes.panel_loc'] = _panel_loc_docstring
@@ -320,11 +327,10 @@ leftlabels_kw, toplabels_kw, rightlabels_kw, bottomlabels_kw : dict-like, option
 figtitle
     Alias for `suptitle`.
 suptitle : str, optional
-    The figure "super" title, centered between the left edge of
-    the lefmost column of subplots and the right edge of the rightmost
-    column of subplots, and automatically offset above figure titles.
-    This is an improvement on matplotlib's "super" title, which just
-    centers the text between figure edges.
+    The figure "super" title, centered between the left edge of the lefmost
+    column of subplots and the right edge of the rightmost column of subplots, and
+    automatically offset above figure titles. This is an improvement on matplotlib's
+    "super" title, which just centers the text between figure edges.
 suptitlepad : float, optional
     The padding between the super title and the axes content in arbitrary
     units (default is points). Default is :rcraw:`suptitle.pad`.
@@ -1315,9 +1321,8 @@ class Axes(maxes.Axes):
         **kwargs
     ):
         """
-        Modify the axes title(s), the a-b-c label, row and column labels, and
-        the figure title. Called by the `~proplot.axes.CartesianAxes`,
-        `~proplot.axes.PolarAxes`, and `~proplot.axes.GeoAxes` ``format`` methods.
+        Format the a-b-c label, axes title(s), and background
+        patch, and call `proplot.figure.Figure.format`.
 
         Parameters
         ----------
@@ -1330,20 +1335,20 @@ class Axes(maxes.Axes):
 
         Important
         ---------
-        The `abc`, `abcstyle`, `abcloc`, `titleloc`, `titleabove`, `titlepad`,
-        `abctitlepad`, `leftlabelpad`, `toplabelpad`, `rightlabelpad`, and
-        `bottomlabelpad` keywords are :ref:`configuration settings <ug_config>`.
-        We explicitly document these arguments here because it is very common to change
-        them. But many :ref:`other configuration settings <ug_format>` can be passed
-        to ``format`` too.
+        `abc`, `abcstyle`, `abcloc`, `titleloc`, `titleabove`, `titlepad`, and
+        `abctitlepad` are actually :ref:`configuration settings <ug_config>`.
+        We explicitly document these arguments here because it is common to
+        change them for specific axes. But many :ref:`other configuration
+        settings <ug_format>` can be passed to ``format`` too.
 
         See also
         --------
-        proplot.config.Configurator.context
         proplot.axes.CartesianAxes.format
         proplot.axes.PolarAxes.format
         proplot.axes.GeoAxes.format
         proplot.figure.Figure.format
+        proplot.gridspec.SubplotGrid.format
+        proplot.config.Configurator.context
         """
         skip_figure = kwargs.pop('skip_figure', False)  # internal keyword arg
         rc_kw, rc_mode, kwargs = _parse_format(**kwargs)
@@ -1493,9 +1498,10 @@ class Axes(maxes.Axes):
 
     def indicate_inset_zoom(self, **kwargs):
         """
-        Draw lines indicating the zoom range of the inset axes. This is similar
-        to the builtin `~matplotlib.axes.Axes.indicate_inset_zoom` except
-        lines are *refreshed* at draw-time. This is also called automatically
+        Draw lines indicating the zoom range of the inset axes. Must be
+        called from the inset axes rather than the parent axes. This is
+        similar to `matplotlib.axes.Axes.indicate_inset_zoom` except line
+        positions are refreshed at drawtime. This is called automatically
         when ``zoom=True`` is passed to `~Axes.inset_axes`.
 
         Parameters
@@ -1508,7 +1514,7 @@ class Axes(maxes.Axes):
             The line style for the zoom lines and box outline.
         ec, edgecolor : color-spec, optional
             The color of the zoom lines and box outline.
-        capstyle : {'butt', 'round', 'projecting'}
+        cs, capstyle : {'butt', 'round', 'projecting'}
             The cap style for the zoom lines and box outline.
         zorder : float, optional
             The `zorder <https://matplotlib.org/stable/gallery/misc/zorder_demo.html>`__

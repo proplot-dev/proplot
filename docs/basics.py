@@ -339,7 +339,7 @@ axs.format(
 # figures with more than one column and row, a 1D `~numpy.ndarray` for single-column or
 # row figures, or an `~matplotlib.axes.Axes` for single-subplot figures. In ProPlot,
 # `~proplot.figure.Figure.subplots` returns a `~proplot.gridspec.SubplotGrid` that
-# unifies these three possible return values:
+# unifies these possible return values:
 #
 # * `~proplot.gridspec.SubplotGrid` permits array-like 2D indexing, e.g.
 #   ``axs[1, 0]``. Indexing the `~proplot.gridspec.SubplotGrid` is similar
@@ -387,7 +387,6 @@ axs[0].format(ec='black', fc='gray5', lw=1.4)
 axs[1, 1:].format(fc='blush')
 axs[1, :1].format(fc='sky blue')
 axs[-1, -1].format(fc='gray2', grid=False)
-
 
 # %% [raw] raw_mimetype="text/restructuredtext"
 # .. _ug_rc:
