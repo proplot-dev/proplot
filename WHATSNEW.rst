@@ -50,9 +50,9 @@ Style changes
 -------------
 
 * Fix issue where CSS colors matching "base" names overwrite base definitions,
-  resulting in e.g. ``'y'`` different from ``'yellow'`` (:commit:`01db1223`).
-* Make default label rotation for colorbar-of-artist colorbars ``0``, consistent
-  with autoformat application of tick labels (:commit:`3f191f3b`).
+  resulting in e.g. ``'yellow'`` different from ``'y'`` (:commit:`01db1223`).
+* Make default label rotation for colorbar-of-artist string labels ``0``, consistent
+  with string tick labels applied with ``autoformat=True`` (:commit:`3f191f3b`).
 * Use default ``discrete=False`` for `~proplot.axes.PlotAxes.hist2d` plots,
   consistent with `~proplot.axes.PlotAxes.hexbin` (:commit:`267dd161`). Now
   "discrete" levels are only enabled for pcolor/contour plots by default.
@@ -65,7 +65,7 @@ Style changes
   graphics, just like ``pcolor`` and ``contourf`` (:commit:`cc602349`).
 * Skip "edgefix" option when patch/collection `alpha` is less than ``1`` to prevent
   appearance of overlapping edges (:commit:`5bf9b1cc`). Previously this was only
-  skipped if `ScalarMappable` colormap indicated transparency. Also remove
+  skipped if `ScalarMappable` colormap included transparency. Also remove
   manual blending of colorbar solids (no longer needed) (:commit:`4d059a31`).
 * Revert back to matplotlib default behavior of ``edgecolor='none'`` for
   `bar` plots (:commit:`cc602349`). Previously this behavior often resulted
@@ -77,6 +77,9 @@ Features
 * Add `align` keyword with options ``'bottom'``, ``'top'``, ``'left'``, ``'right'``,
   or ``'center'`` (with optional single-char shorthands) to change alignment for
   outer legends/colorbars (:commit:`4a50b4b2`). Previously they had to be centered.
+* Return groupings of matplotlib artists (currently, negative-positive color
+  pairs and iteration-by-column groups) as `~matplotlib.cbook.silent_list` rather
+  than native lists to simplify resulting repr (:commit:`d59f9c40`).
 * Use built-in matplotlib logic for plotting multiple `hist` columns, with
   support for `stack` as alias of `stacked` and `width` as alias of `rwidth`
   (consistent with `bar` keywords) (:commit:`734329a5`). By default, histograms
@@ -84,11 +87,14 @@ Features
 * Add `fill` and `filled` keywords to `~proplot.axes.PlotAxes.hist`, analogous to
   `stack` and `stacked`, and make passage of these keywords set the corresponding
   default `histtype` (:commit:`4a85773b`). Also add `filled` alias of `fill`
-  for `boxplot` for consistency (:commit:`b5caf550`).
+  to `boxplot` for consistency (:commit:`b5caf550`).
 * Control colorbar frame properties using same syntax as legend frame properties
   -- `edgewidth`, `edgecolor`, and optional rounded box with ``fancybox=True``
   (:commit:`58ce2c95`). Colorbar outline is now controlled with `linewidth`
   and `color`. Previously these settings had to be in sync.
+* Auto-expand components of `~matplotlib.cbook.silent_list` and
+  `~matplotlib.collection.Collection` passed to `~proplot.axes.Axes.legend`
+  that have valid labels, similar to tuple group expansion (:issue:`277`)
 * Add `handle_kw` to `~proplot.axes.Axes.legend` to optionally control
   handle settings that conflict with frame settings (:commit:`58ce2c95`).
   Example: ``handle_kw={'edgecolor': 'k'}``.
@@ -130,6 +136,8 @@ Internals
   rather than silently ignoring them (:commit:`b75ca185`).
 * Improve warning message when users pass both `colors` and `cmap`
   by recommending they use `edgecolor` to set edges (:commit:`1067eddf`).
+* Improve universal "rebuilding font cache" warning message when new
+  users import proplot for the first time (:commit:`9abc894e`).
 * Remove unused, mostly undocumented :rcraw:`axes.titleabove` setting
   (:commit:`9d9d0db7`). Users should be using :rcraw:`title.above` instead.
 * Move `~proplot.gridspec.SubplotGrid` from ``figure.py`` to ``gridspec.py``
@@ -148,6 +156,8 @@ Documentation
   instead of `list` wherever params accept arbitrary sequences (:commit:`e627e95b`).
 * Improve documentation of style-type arguments like `lw`, `linewidth`,
   etc. on plotting commands (:commit:`cc602349`).
+* Improve documentation of `proplot.gridspec.SubplotGrid` methods
+  (:commit:`902502cc`). Docstrings are no longer stubs.
 
 ProPlot v0.8.1 (2021-08-22)
 ===========================
