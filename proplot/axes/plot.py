@@ -153,16 +153,19 @@ docstring._snippet_manager['plot.args_2d_shared'] = _args_2d_shared_docstring
 _guide_docstring = """
 colorbar : bool, int, or str, optional
     If not ``None``, this is a location specifying where to draw an
-    *inset* or *panel* colorbar from the resulting object(s). If ``True``,
-    the default :rc:`colorbar.loc` is used. Valid locations are described
-    in `~proplot.axes.Axes.colorbar`.
+    *inner* or *outer* colorbar from the resulting object(s). If ``True``,
+    the default :rc:`colorbar.loc` is used. If the same location is
+    used in successive plotting calls, object(s) will be added to the
+    existing colorbar in that location (valid for colorbars built from lists
+    of artists). Valid locations are shown in in `~proplot.axes.Axes.colorbar`.
 colorbar_kw : dict-like, optional
     Extra keyword args for the call to `~proplot.axes.Axes.colorbar`.
 legend : bool, int, or str, optional
-    If not ``None``, this is a location specifying where to draw an *inset*
-    or *panel* legend from the resulting object(s). If ``True``, the default
-    :rc:`legend.loc` is used. Valid locations are described in
-    `~proplot.axes.Axes.legend`.
+    Location specifying where to draw an *inner* or *outer* legend from the
+    resulting object(s). If ``True``, the default :rc:`legend.loc` is used.
+    If the same location is used in successive plotting calls, object(s)
+    will be added to existing legend in that location. Valid locations
+    are shown in `~proplot.axes.Axes.legend`.
 legend_kw : dict-like, optional
     Extra keyword args for the call to `~proplot.axes.Axes.legend`.
 """
@@ -1767,18 +1770,23 @@ class PlotAxes(base.Axes):
             )
 
     def _update_guide(
-        self, objs, colorbar=None, colorbar_kw=None, legend=None, legend_kw=None,
+        self, objs, colorbar=None, colorbar_kw=None, queue_colorbar=True,
+        legend=None, legend_kw=None,
     ):
         """
         Update the queued artists for an on-the-fly legends and colorbars or track
-        the input keyword arguments on the artists for retrieval later on.
+        the input keyword arguments on the artists for retrieval later on. The
+        `queue` argument indicates whether to draw colorbars immediately.
         """
+        # TODO: Support auto-splitting artists passed to legend into
+        # their legend elements. Play with this.
         # WARNING: This should generally be last in the pipeline before calling
         # the plot function or looping over data columns. The colormap parser
         # and standardize functions both modify colorbar_kw and legend_kw.
         if colorbar:
             colorbar_kw = colorbar_kw or {}
-            self.colorbar(objs, loc=colorbar, queue=True, **colorbar_kw)
+            colorbar_kw.setdefault('queue', queue_colorbar)
+            self.colorbar(objs, loc=colorbar, **colorbar_kw)
         else:
             _guide_kw_to_obj(objs, 'colorbar', colorbar_kw)  # save for later
         if legend:
@@ -3120,7 +3128,7 @@ class PlotAxes(base.Axes):
             self._inbounds_xylim(extents, x, y)
             objs.append((*eb, *es, obj) if eb or es else obj)
 
-        self._update_guide(objs, **guide_kw)
+        self._update_guide(objs, queue_colorbar=False, **guide_kw)
         return (
             objs[0] if len(objs) == 1
             else cbook.silent_list('PathCollection', objs)
@@ -3656,7 +3664,7 @@ class PlotAxes(base.Axes):
         guide_kw = _pop_params(kw, self._update_guide)
         m = self._plot_native('hexbin', x, y, weights, **kw)
         self._add_auto_labels(m, **labels_kw)
-        self._update_guide(m, **guide_kw)
+        self._update_guide(m, queue_colorbar=False, **guide_kw)
         return m
 
     @data._preprocess('x', 'y', 'z')
@@ -3680,7 +3688,7 @@ class PlotAxes(base.Axes):
         m = self._plot_native('contour', x, y, z, **kw)
         m._legend_label = label
         self._add_auto_labels(m, **labels_kw)
-        self._update_guide(m, **guide_kw)
+        self._update_guide(m, queue_colorbar=False, **guide_kw)
         return m
 
     @data._preprocess('x', 'y', 'z')
@@ -3704,7 +3712,7 @@ class PlotAxes(base.Axes):
         if contour_kw or labels_kw:
             cm = self._plot_filledge('contour', x, y, z, **kw, **contour_kw)
         self._add_auto_labels(m, cm, **labels_kw)
-        self._update_guide(m, **guide_kw)
+        self._update_guide(m, queue_colorbar=False, **guide_kw)
         return m
 
     @data._preprocess('x', 'y', 'z')
@@ -3723,7 +3731,7 @@ class PlotAxes(base.Axes):
         m = self._plot_native('pcolor', x, y, z, **kw)
         self._apply_edgefix(m, **edgefix_kw, **kw)
         self._add_auto_labels(m, **labels_kw)
-        self._update_guide(m, **guide_kw)
+        self._update_guide(m, queue_colorbar=False, **guide_kw)
         return m
 
     @data._preprocess('x', 'y', 'z')
@@ -3742,7 +3750,7 @@ class PlotAxes(base.Axes):
         m = self._plot_native('pcolormesh', x, y, z, **kw)
         self._apply_edgefix(m, **edgefix_kw, **kw)
         self._add_auto_labels(m, **labels_kw)
-        self._update_guide(m, **guide_kw)
+        self._update_guide(m, queue_colorbar=False, **guide_kw)
         return m
 
     @data._preprocess('x', 'y', 'z')
@@ -3761,7 +3769,7 @@ class PlotAxes(base.Axes):
         m = self._plot_native('pcolorfast', x, y, z, **kw)
         self._apply_edgefix(m, **edgefix_kw, **kw)
         self._add_auto_labels(m, **labels_kw)
-        self._update_guide(m, **guide_kw)
+        self._update_guide(m, queue_colorbar=False, **guide_kw)
         return m
 
     @docstring._snippet_manager
@@ -3863,7 +3871,7 @@ class PlotAxes(base.Axes):
         label = kw.pop('label', None)
         m = self._plot_native('streamplot', x, y, u, v, **kw)
         m.lines.set_label(label)  # the collection label
-        self._update_guide(m.lines, **guide_kw)  # lines inside StreamplotSet
+        self._update_guide(m.lines, queue_colorbar=False, **guide_kw)  # use lines
         return m
 
     @data._preprocess('x', 'y', 'z')
@@ -3889,7 +3897,7 @@ class PlotAxes(base.Axes):
         m = self._plot_native('tricontour', x, y, z, **kw)
         m._legend_label = label
         self._add_auto_labels(m, **labels_kw)
-        self._update_guide(m, **guide_kw)
+        self._update_guide(m, queue_colorbar=False, **guide_kw)
         return m
 
     @data._preprocess('x', 'y', 'z')
@@ -3915,7 +3923,7 @@ class PlotAxes(base.Axes):
         if contour_kw or labels_kw:
             cm = self._plot_filledge('tricontour', x, y, z, **kw, **contour_kw)
         self._add_auto_labels(m, cm, **labels_kw)
-        self._update_guide(m, **guide_kw)
+        self._update_guide(m, queue_colorbar=False, **guide_kw)
         return m
 
     @data._preprocess('x', 'y', 'z')
@@ -3936,7 +3944,7 @@ class PlotAxes(base.Axes):
         m = self._plot_native('tripcolor', x, y, z, **kw)
         self._apply_edgefix(m, **edgefix_kw, **kw)
         self._add_auto_labels(m, **labels_kw)
-        self._update_guide(m, **guide_kw)
+        self._update_guide(m, queue_colorbar=False, **guide_kw)
         return m
 
     # WARNING: breaking change from native 'X'
@@ -3951,7 +3959,7 @@ class PlotAxes(base.Axes):
         kw = self._parse_cmap(z, default_discrete=False, **kw)
         guide_kw = _pop_params(kw, self._update_guide)
         m = self._plot_native('imshow', z, **kw)
-        self._update_guide(m, **guide_kw)
+        self._update_guide(m, queue_colorbar=False, **guide_kw)
         return m
 
     # WARNING: breaking change from native 'Z'
@@ -3979,7 +3987,7 @@ class PlotAxes(base.Axes):
         kw = self._parse_cmap(z, default_cmap=default_cmap, **kw)
         guide_kw = _pop_params(kw, self._update_guide)
         m = self._plot_native('spy', z, **kw)
-        self._update_guide(m, **guide_kw)
+        self._update_guide(m, queue_colorbar=False, **guide_kw)
         return m
 
     def set_prop_cycle(self, *args, **kwargs):

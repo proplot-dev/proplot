@@ -2045,6 +2045,8 @@ class Axes(maxes.Axes):
             # Generate colormap from colors and infer tick labels
             colors = []
             for obj in mappable:
+                if hasattr(obj, 'update_scalarmappable'):  # for e.g. pcolor
+                    obj.update_scalarmappable()
                 color = obj.get_color() if hasattr(obj, 'get_color') else obj.get_facecolor()  # noqa: E501
                 if isinstance(color, np.ndarray):
                     color = color.squeeze()  # e.g. single color scatter plot
