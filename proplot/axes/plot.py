@@ -125,10 +125,14 @@ autoformat : bool, optional
 """
 _args_2d_shared_docstring = """
 %(plot.args_1d_shared)s
+transpose : bool, optional
+    Whether to transpose the input data. This should be used when
+    passing datasets with column-major dimension order ``(x, y)``.
+    Otherwise row-major dimension order ``(y, x)`` is expected.
 order : {{'C', 'F'}}, optional
-    If ``'C'`` (C-style row-major order), `z` coordinates should be shaped
-    ``(y, x)``. If ``'F'`` (fortran-style column-major order) `z` coordinates
-    should be shaped ``(x, y)``. Default is ``'C'``.
+    Alternative to `transpose`. ``'C'`` corresponds to the default C-cyle
+    row-major ordering (equivalent to ``transpose=False``). ``'F'`` corresponds
+    to Fortran-style column-major ordering (equivalent to ``transpose=True``).
 globe : bool, optional
     For `proplot.axes.GeoAxes` only. Whether to enforce global coverage.
     Default is ``False``. When set to ``True`` this does the following:
@@ -1793,7 +1797,7 @@ class PlotAxes(base.Axes):
         formatting. Also update the keyword arguments.
         """
         # Parse input
-        y = max(ys, key=lambda y: y.size)  # try to find a non-scalar y for metadata
+        y = max(ys, key=lambda y: y.size)  # find a non-scalar y for inferring metadata
         autox = autox and not zerox  # so far just relevant for hist()
         autoformat = _not_none(autoformat, rc['autoformat'])
         kwargs, vert = _get_vert(**kwargs)
@@ -1975,8 +1979,8 @@ class PlotAxes(base.Axes):
         return (x, y, *zs, kwargs)
 
     def _parse_plot2d(
-        self, x, y, *zs, globe=False, edges=False, allow1d=False, order='C',
-        **kwargs
+        self, x, y, *zs, globe=False, edges=False, allow1d=False,
+        transpose=None, order=None, **kwargs
     ):
         """
         Interpret positional arguments for all "2D" plotting commands.
@@ -1992,7 +1996,13 @@ class PlotAxes(base.Axes):
             x = data._to_duck_array(x)
         if y is not None:
             y = data._to_duck_array(y)
-        if order == 'F':
+        if order is not None:
+            if not isinstance(order, str) or order not in 'CF':
+                raise ValueError(f"Invalid order={order!r}. Options are 'C' or 'F'.")
+            transpose = _not_none(
+                transpose=transpose, transpose_order=bool('CF'.index(order))
+            )
+        if transpose:
             zs = tuple(z.T for z in zs)
             if x is not None:
                 x = x.T

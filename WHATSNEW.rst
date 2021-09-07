@@ -77,6 +77,8 @@ Features
 * Add `align` keyword with options ``'bottom'``, ``'top'``, ``'left'``, ``'right'``,
   or ``'center'`` (with optional single-char shorthands) to change alignment for
   outer legends/colorbars (:commit:`4a50b4b2`). Previously they had to be centered.
+* Add `transpose` keyword as alternative to `order` for 2d plotting commands
+  (:issue:`72`). ``transpose=True`` is equivalent to ``order='F'``.
 * Return groupings of matplotlib artists (currently, negative-positive color
   pairs and iteration-by-column groups) as `~matplotlib.cbook.silent_list` rather
   than native lists to simplify resulting repr (:commit:`d59f9c40`).
