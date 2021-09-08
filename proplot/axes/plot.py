@@ -3412,7 +3412,7 @@ class PlotAxes(base.Axes):
                 'plotting command multiple times with different edge colors instead.'
             )
             edgecolor = edgecolor[0]
-        return fillcolor, fillalpha, edgecolor
+        return fillcolor, fillalpha, edgecolor, kw
 
     def _apply_boxplot(
         self, x, y, *, mean=None, means=None, vert=True,
@@ -3430,7 +3430,7 @@ class PlotAxes(base.Axes):
         edgecolor = kw.pop('edgecolor', 'black')
         fillcolor = kw.pop('facecolor', None)
         fillalpha = kw.pop('alpha', None)
-        fillcolor, fillalpha, edgecolor = self._parse_box_violin(
+        fillcolor, fillalpha, edgecolor, kw = self._parse_box_violin(
             fillcolor, fillalpha, edgecolor, **kw
         )
         if fill is None:
@@ -3555,7 +3555,7 @@ class PlotAxes(base.Axes):
         edgecolor = kw.pop('edgecolor', 'black')
         fillcolor = kw.pop('facecolor', None)
         fillalpha = kw.pop('alpha', None)
-        fillcolor, fillalpha, edgecolor = self._parse_box_violin(
+        fillcolor, fillalpha, edgecolor, kw = self._parse_box_violin(
             fillcolor, fillalpha, edgecolor, **kw
         )
 
