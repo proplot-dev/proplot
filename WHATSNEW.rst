@@ -28,7 +28,7 @@ ProPlot v1.0.0 (2022-##-##)
 This will be published when more comprehensive testing is completed
 and stability is improved.
 
-ProPlot v0.9.0 (2021-##-##)
+ProPlot v0.9.0 (2021-09-08)
 ===========================
 
 Deprecations
