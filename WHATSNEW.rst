@@ -60,16 +60,16 @@ Style changes
   `~proplot.colors.PerceptualColormap.from_list` that aren't technically pure
   gray, including ``'charcoal'``, ``'light gray'``/``'light grey'``, and
   ``'gray[0-9]'``/``'grey[0-9]'`` (:commit:`6cf42896`, :commit:`49bb9370`).
-* Implement "edgefix" and add `edgefix` keyword for ``bar``, ``hist``, and ``area``
-  to fix the "white-lines-between-patches" issue with saved vector
-  graphics, just like ``pcolor`` and ``contourf`` (:commit:`cc602349`).
 * Skip "edgefix" option when patch/collection `alpha` is less than ``1`` to prevent
   appearance of overlapping edges (:commit:`5bf9b1cc`). Previously this was only
   skipped if `ScalarMappable` colormap included transparency. Also remove
   manual blending of colorbar solids (no longer needed) (:commit:`4d059a31`).
-* Revert back to matplotlib default behavior of ``edgecolor='none'`` for
-  `bar` plots (:commit:`cc602349`). Previously this behavior often resulted
-  in "white lines" issue but now `edgefix` is applied to these plots (see below).
+* Revert back to matplotlib default behavior of ``edgecolor='none'`` for `bar` and
+  `pie` plots (:commit:`cc602349`, :commit:`b291b2be`). Previously this behavior often
+  resulted in "white lines" issue but now `edgefix` is applied to these plots.
+* Implement "edgefix" and add `edgefix` keyword for ``bar``, ``hist``, ``area``, and
+  ``pie`` to fix the "white-lines-between-patches" issue with saved vector graphics,
+  just like ``pcolor`` and ``contourf`` (:commit:`cc602349`, :commit:`b291b2be`).
 
 Features
 --------
