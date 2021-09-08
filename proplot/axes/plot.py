@@ -2767,9 +2767,9 @@ class PlotAxes(base.Axes):
             ys, kw = data._dist_reduce(ys, **kw)
             guide_kw = _pop_params(kw, self._update_guide)  # after standardize
             for _, n, x, y, kw in self._iter_arg_cols(xs, ys, **kw):
+                kw = self._parse_cycle(n, **kw)
                 *eb, kw = self._plot_errorbars(x, y, vert=vert, **kw)
                 *es, kw = self._plot_errorshading(x, y, vert=vert, **kw)
-                kw = self._parse_cycle(n, **kw)
                 if not vert:
                     x, y = y, x
                 a = [x, y]
@@ -3138,9 +3138,9 @@ class PlotAxes(base.Axes):
         objs = []
         for _, n, x, y, s, c, kw in self._iter_arg_cols(xs, ys, ss, cc, **kw):
             kw['s'], kw['c'] = s, c  # make _parse_cycle() detect these
+            kw = self._parse_cycle(n, cycle_manually=cycle_manually, **kw)
             *eb, kw = self._plot_errorbars(x, y, vert=vert, **kw)
             *es, kw = self._plot_errorshading(x, y, vert=vert, color_key='c', **kw)
-            kw = self._parse_cycle(n, cycle_manually=cycle_manually, **kw)
             if not vert:
                 x, y = y, x
             obj = self._plot_native('scatter', x, y, **kw)
@@ -3521,8 +3521,8 @@ class PlotAxes(base.Axes):
         # Parse and control error bars
         x, y, kw = self._parse_plot1d(x, y, autoy=False, autoguide=False, vert=vert, **kw)  # noqa: E501
         y, kw = data._dist_reduce(y, **kw)
-        *eb, kw = self._plot_errorbars(x, y, vert=vert, default_boxes=True, **kw)  # noqa: E501
         kw = self._parse_cycle(**kw)
+        *eb, kw = self._plot_errorbars(x, y, vert=vert, default_boxes=True, **kw)  # noqa: E501
 
         # Call function
         kw.pop('labels', None)  # already applied in _parse_plot1d
