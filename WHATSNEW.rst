@@ -49,8 +49,8 @@ Deprecations
 Style changes
 -------------
 
-* Fix issue where CSS colors matching "base" names overwrite base definitions,
-  resulting in e.g. ``'yellow'`` different from ``'y'`` (:commit:`01db1223`).
+* Fix issue where CSS/XKCD colors overwrite "base" color definitions, resulting in
+  e.g. ``'yellow'`` different from ``'y'`` (:commit:`01db1223`, :commit:`b90bee8c`).
 * Make default label rotation for colorbar-of-artist string labels ``0``, consistent
   with string tick labels applied with ``autoformat=True`` (:commit:`3f191f3b`).
 * Use default ``discrete=False`` for `~proplot.axes.PlotAxes.hist2d` plots,
