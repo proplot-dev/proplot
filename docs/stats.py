@@ -146,7 +146,8 @@ for orientation, array in zip(('horizontal', 'vertical'), (harray, varray)):
 # ProPlot versions employ aesthetically pleasing defaults and permit flexible
 # configuration using keywords like `color`, `barcolor`, and `fillcolor`.
 # They also automatically apply axis labels based on the `~pandas.DataFrame`
-# or `~xarray.DataArray` column labels.
+# or `~xarray.DataArray` column labels. Violin plot error bars are controlled
+# with the same keywords used for :ref:`on-the-fly error bars <ug_errorbars>`.
 
 # %%
 import proplot as pplt
@@ -170,18 +171,18 @@ axs.format(
 
 # Box plots
 ax = axs[0]
-obj1 = ax.boxplot(data1, means=True, marker='x', meancolor='r', fillcolor='gray4')
+obj1 = ax.box(data1, means=True, marker='x', meancolor='r', fillcolor='gray4')
 ax.format(title='Box plots')
 
 # Violin plots
 ax = axs[1]
-obj2 = ax.violinplot(data1, fillcolor='gray6', means=True, points=100)
+obj2 = ax.violin(data1, fillcolor='gray6', means=True, points=100)
 ax.format(title='Violin plots')
 
 # Boxes with different colors
 ax = axs[2]
 colors = pplt.get_colors('pastel2')  # list of colors from the cycle
-ax.boxplot(data2, fillcolor=colors, orientation='horizontal')
+ax.boxh(data2, fillcolor=colors)
 ax.format(title='Multiple colors', ymargin=0.15)
 
 

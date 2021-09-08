@@ -151,6 +151,8 @@ Bug fixes
   only to axis-limit scaling, not cmap normalization scaling (:commit:`3d7636f2`).
 * Fix issue with color-parsing due to ``_plot_errorshading`` coming after
   ``_parse_cycle`` rather than before (:commit:`acf545e2`).
+* Fix issue where violin plots cannot be drawn without adding error bars
+  (e.g., with ``means=True``) or an error is raised (:commit:`c0d04835`).
 
 Internals
 ---------
