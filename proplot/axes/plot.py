@@ -3635,7 +3635,8 @@ class PlotAxes(base.Axes):
         # non-bar-type histograms. Because consistency.
         res = obj[2]
         if type(res) is list:  # 'step' histtype plots
-            res = obj[2] = cbook.silent_list('Polygon', res)
+            res = cbook.silent_list('Polygon', res)
+            obj = (*obj[:2], res)
         else:
             for i, sub in enumerate(res):
                 if type(sub) is list:
