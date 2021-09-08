@@ -2047,28 +2047,35 @@ class PlotAxes(base.Axes):
             extents = list(self.dataLim.extents)  # ensure modifiable
         return kwargs, extents
 
-    def _parse_color(self, x, y, c, *, apply_cycle=True, **kwargs):
+    def _parse_color(self, x, y, c, *, apply_cycle=True, infer_rgb=False, **kwargs):
         """
         Parse either a colormap or color cycler. Colormap will be discrete and fade
         to subwhite luminance by default. Returns a HEX string if needed so we don't
         get ambiguous color warnings. Used with scatter, streamplot, quiver, barbs.
         """
-        # NOTE: This function is positioned right above all _parse_cmap and
-        # _parse_cycle functions and helper functions.
+        # NOTE: This function is positioned above the _parse_cmap and _parse_cycle
+        # functions and helper functions.
+        methods = (
+            self._parse_cmap, self._parse_levels, self._parse_autolev, self._parse_vlim
+        )
         if c is None or mcolors.is_color_like(c):
-            if c is not None:
+            if infer_rgb and c is not None:
                 c = pcolors.to_hex(c)  # avoid scatter() ambiguous color warning
             if apply_cycle:  # False for scatter() so we can wait to get correct 'N'
                 kwargs = self._parse_cycle(**kwargs)
-            methods = (self._parse_cmap, self._parse_levels, self._parse_autolev, self._parse_vlim)  # noqa: E501
         else:
-            kwargs = self._parse_cmap(
-                x, y, c, line_plot=True, default_discrete=False, **kwargs
-            )
-            methods = (self._parse_cycle,)
+            c = np.atleast_1d(c)  # should only have effect on 'scatter' input
+            if infer_rgb and c.ndim == 2 and c.shape[1] in (3, 4):
+                c = list(map(pcolors.to_hex, c))  # avoid iterating over columns
+                methods += (self._parse_cycle,)
+            else:
+                kwargs = self._parse_cmap(
+                    x, y, c, plot_lines=True, default_discrete=False, **kwargs
+                )
+                methods = (self._parse_cycle,)
         pop = _pop_params(kwargs, *methods, ignore_internal=True)
         if pop:
-            warnings._warn_proplot(f'Ignoring bad unused keyword arg(s): {pop}')
+            warnings._warn_proplot(f'Ignoring unused keyword arg(s): {pop}')
         return (c, kwargs)
 
     def _parse_vlim(
@@ -2487,7 +2494,7 @@ class PlotAxes(base.Axes):
         norm=None, norm_kw=None, extend='neither', vmin=None, vmax=None,
         sequential=None, diverging=None, qualitative=None, cyclic=None,
         discrete=None, default_discrete=True, skip_autolev=False,
-        line_plot=False, contour_plot=False, **kwargs
+        plot_lines=False, plot_contours=False, **kwargs
     ):
         """
         Parse colormap and normalizer arguments.
@@ -2530,7 +2537,7 @@ class PlotAxes(base.Axes):
 
         # Create the user-input colormap
         # Also force options in special cases
-        if line_plot:
+        if plot_lines:
             cmap_kw['default_luminance'] = pcolors.CYCLE_LUMINANCE
         if cmap is not None:
             cmap = constructor.Colormap(cmap, **cmap_kw)  # for testing only
@@ -2546,7 +2553,7 @@ class PlotAxes(base.Axes):
                 'Qualitative colormaps require discrete=True. Ignoring discrete=False.'
             )
             discrete = True
-        if contour_plot and discrete is not None and not discrete:
+        if plot_contours and discrete is not None and not discrete:
             warnings._warn_proplot(
                 'Contoured plots require discrete=True. Ignoring discrete=False.'
             )
@@ -2637,7 +2644,7 @@ class PlotAxes(base.Axes):
         # Update outgoing args
         # NOTE: With contour(..., discrete=False, levels=levels) users can bypass
         # proplot's level selection and use native matplotlib level selection
-        if contour_plot:
+        if plot_contours:
             kwargs['levels'] = levels
             kwargs['extend'] = extend
         kwargs.update({'cmap': cmap, 'norm': norm})
@@ -2992,7 +2999,7 @@ class PlotAxes(base.Axes):
             a = (x, y, c)  # pick levels from vmin and vmax, possibly limiting range
         else:
             a, kw['values'] = (), c
-        kw = self._parse_cmap(*a, line_plot=True, **kw)
+        kw = self._parse_cmap(*a, plot_lines=True, **kw)
         cmap, norm = kw.pop('cmap'), kw.pop('norm')
 
         # Add collection with some custom attributes
@@ -3108,12 +3115,16 @@ class PlotAxes(base.Axes):
         }
 
         # Iterate over the columns
+        # NOTE: Use 'inbounds' for both cmap and axes 'inbounds' restriction
         kw = kwargs.copy()
+        inbounds = kw.pop('inbounds', None)
         _process_props(kw, 'collection')
-        kw, extents = self._parse_inbounds(**kw)
+        kw, extents = self._parse_inbounds(inbounds=inbounds, **kw)
         xs, ys, kw = self._parse_plot1d(xs, ys, vert=vert, autoreverse=False, **kw)
         ss, kw = self._parse_markersize(ss, **kw)  # parse 's'
-        cc, kw = self._parse_color(xs, ys, cc, apply_cycle=False, **kw)  # parse 'c'
+        cc, kw = self._parse_color(
+            xs, ys, cc, inbounds=inbounds, apply_cycle=False, infer_rgb=True, **kw
+        )
         ys, kw = data._dist_reduce(ys, **kw)
         guide_kw = _pop_params(kw, self._update_guide)
         objs = []
@@ -3676,7 +3687,7 @@ class PlotAxes(base.Axes):
         """
         x, y, z, kw = self._parse_plot2d(x, y, z, **kwargs)
         _process_props(kw, 'collection')
-        kw = self._parse_cmap(x, y, z, minlength=1, contour_plot=True, **kw)
+        kw = self._parse_cmap(x, y, z, minlength=1, plot_contours=True, **kw)
         labels_kw = _pop_params(kw, self._add_auto_labels)
         guide_kw = _pop_params(kw, self._update_guide)
         label = kw.pop('label', None)
@@ -3695,7 +3706,7 @@ class PlotAxes(base.Axes):
         """
         x, y, z, kw = self._parse_plot2d(x, y, z, **kwargs)
         _process_props(kw, 'collection')
-        kw = self._parse_cmap(x, y, z, contour_plot=True, **kw)
+        kw = self._parse_cmap(x, y, z, plot_contours=True, **kw)
         contour_kw = _pop_kwargs(kw, 'edgecolors', 'linewidths', 'linestyles')
         edgefix_kw = _pop_params(kw, self._apply_edgefix)
         labels_kw = _pop_params(kw, self._add_auto_labels)
@@ -3880,7 +3891,7 @@ class PlotAxes(base.Axes):
         if x is None or y is None or z is None:
             raise ValueError('Three input arguments are required.')
         _process_props(kw, 'collection')
-        kw = self._parse_cmap(x, y, z, minlength=1, contour_plot=True, **kw)
+        kw = self._parse_cmap(x, y, z, minlength=1, plot_contours=True, **kw)
         labels_kw = _pop_params(kw, self._add_auto_labels)
         guide_kw = _pop_params(kw, self._update_guide)
         label = kw.pop('label', None)
@@ -3902,7 +3913,7 @@ class PlotAxes(base.Axes):
             raise ValueError('Three input arguments are required.')
         _process_props(kw, 'collection')
         contour_kw = _pop_kwargs(kw, 'edgecolors', 'linewidths', 'linestyles')
-        kw = self._parse_cmap(x, y, z, contour_plot=True, **kw)
+        kw = self._parse_cmap(x, y, z, plot_contours=True, **kw)
         edgefix_kw = _pop_params(kw, self._apply_edgefix)
         labels_kw = _pop_params(kw, self._add_auto_labels)
         guide_kw = _pop_params(kw, self._update_guide)

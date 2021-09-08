@@ -145,12 +145,13 @@ def _pop_params(kwargs, *funcs, ignore_internal=False):
     Pop parameters of the input functions or methods.
     """
     internal_params = {
-        'to_centers',
-        'line_plot',
-        'contour_plot',
         'default_cmap',
         'default_discrete',
+        'inbounds',
+        'plot_contours',
+        'plot_lines',
         'skip_autolev',
+        'to_centers',
     }
     output = {}
     for func in funcs:
