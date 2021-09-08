@@ -404,9 +404,9 @@ def Colormap(
           ``'luminance'``, and optionally ``'alpha'``, or their aliases (see below).
 
     name : str, optional
-        Name under which the final colormap is registered. It can then be
-        reused by passing ``cmap='name'`` to plotting functions like
-        `~matplotlib.axes.Axes.contourf`.
+        Name under which the final colormap is registered. It can
+        then be reused by passing ``cmap='name'`` to plotting
+        functions. Names with leading underscores are ignored.
     filemode : {'perceptual', 'continuous', 'discrete'}, optional
         Controls how colormaps are generated when you input list(s) of colors.
         The options are as follows:
@@ -688,13 +688,14 @@ def Colormap(
         cmap._init()
 
     # Register the colormap
-    # TODO: Make this optional? However we are very careful to avoid name conflicts
-    # so harmless. This usually just assigns dummy names like _Blues_copy.
     if name is None:
         name = cmap.name  # may have been modified by e.g. .shifted()
     else:
         cmap.name = name
-    pcolors._cmap_database[name] = cmap
+    if not isinstance(name, str):
+        raise ValueError('Colormap name must be a string.')
+    if name and name[0] != '_':
+        pcolors._cmap_database[name] = cmap
 
     # Save the colormap
     if save:
