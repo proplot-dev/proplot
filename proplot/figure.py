@@ -1182,16 +1182,18 @@ class Figure(mfigure.Figure):
             orows, ocols = gs.get_subplot_geometry()
             if orows % nrows:
                 raise ValueError(
-                    f'Input rows {nrows} do not divide figure gridspec rows {orows}.'
+                    f'The input number of rows {nrows} does not divide the '
+                    f'figure gridspec number of rows {orows}.'
                 )
             if ocols % ncols:
                 raise ValueError(
-                    f'Input cols {ncols} do not divide figure gridspec cols {ocols}.'
+                    f'The input number of columns {ncols} does not divide the '
+                    f'figure gridspec number of columns {ocols}.'
                 )
             if any(_ < 1 or _ > nrows * ncols for _ in (i, j)):
                 raise ValueError(
-                    f'Input subplot indices must fall between 1 and {nrows * ncols}. '
-                    f'Instead got {i} and {j}.'
+                    'The input subplot indices must fall between '
+                    f'1 and {nrows * ncols}. Instead got {i} and {j}.'
                 )
             rowfact, colfact = orows // nrows, ocols // ncols
             irow, icol = divmod(i - 1, ncols)  # convert to zero-based
