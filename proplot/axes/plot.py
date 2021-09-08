@@ -3310,7 +3310,6 @@ class PlotAxes(base.Axes):
         b0 = 0
         objs = []
         _process_props(kw, 'patch')
-        # kw.setdefault('edgecolor', 'black')
         hs, kw = data._dist_reduce(hs, **kw)
         guide_kw = _pop_params(kw, self._update_guide)
         for i, n, x, h, w, b, kw in self._iter_arg_cols(xs, hs, ws, bs, **kw):
@@ -3375,16 +3374,17 @@ class PlotAxes(base.Axes):
         """
         %(plot.pie)s
         """
+        kw = kwargs.copy()
         pad = _not_none(labeldistance=labeldistance, labelpad=labelpad, default=1.15)
-        props = _pop_props(kwargs, 'patch')
-        props.setdefault('edgecolor', 'k')  # sensible default
-        _, x, kwargs = self._parse_plot1d(
-            x, autox=False, autoy=False, **kwargs
-        )
-        kwargs = self._parse_cycle(**kwargs)
-        kwargs['labeldistance'] = pad
-        obj = self._plot_native('pie', x, explode, wedgeprops=props, **kwargs)
-        return obj
+        props = _pop_props(kw, 'patch')
+        edgefix_kw = _pop_params(kw, self._apply_edgefix)
+        _, x, kw = self._parse_plot1d(x, autox=False, autoy=False, **kw)
+        kw = self._parse_cycle(**kw)
+        kw['labeldistance'] = pad
+        objs = self._plot_native('pie', x, explode, wedgeprops=props, **kw)
+        objs = tuple(cbook.silent_list(type(seq[0]).__name__, seq) for seq in objs)
+        self._apply_edgefix(objs[0], **edgefix_kw, **kw)
+        return objs
 
     def _apply_boxplot(
         self, x, y, *, mean=None, means=None, vert=True,
