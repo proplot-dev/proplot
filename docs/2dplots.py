@@ -118,13 +118,13 @@ for i, ax in enumerate(axs):
     ax.format(
         xlim=(None if i == 0 else xlim),
         ylim=(None if i == 0 else ylim),
-        title=('Auto axis limits' if i == 0 else title),
+        title=('Default axis limits' if i == 0 else title),
     )
     ax.pcolor(x, y, data, cmap=cmap, inbounds=inbounds)
 fig.format(
     xlabel='xlabel',
     ylabel='ylabel',
-    suptitle='Auto cmap normalization with in-bounds data'
+    suptitle='Default vmin/vmax restricted to in-bounds data'
 )
 
 # %% [raw] raw_mimetype="text/restructuredtext"

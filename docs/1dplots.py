@@ -112,17 +112,17 @@ axs[0].axvspan(
 )
 for i, ax in enumerate(axs):
     inbounds = i == 1
-    title = f'Manual limits inbounds={inbounds}'
+    title = f'Manual xlim inbounds={inbounds}'
     title += ' (default)' if inbounds else ''
     ax.format(
         xmax=(None if i == 0 else xmax),
-        title=('Auto x axis limits' if i == 0 else title),
+        title=('Default xlim' if i == 0 else title),
     )
     ax.plot(x, y, cycle=cycle, inbounds=inbounds)
 fig.format(
     xlabel='xlabel',
     ylabel='ylabel',
-    suptitle='Auto y limits with in-bounds data'
+    suptitle='Default ylim restricted to in-bounds data'
 )
 
 

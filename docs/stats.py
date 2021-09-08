@@ -7,9 +7,9 @@
 #       format_version: '1.3'
 #       jupytext_version: 1.11.4
 #   kernelspec:
-#     display_name: Python 3
+#     display_name: Python [conda env:proplot-dev]
 #     language: python
-#     name: python3
+#     name: conda-env-proplot-dev-py
 # ---
 
 # %% [raw] raw_mimetype="text/restructuredtext"
@@ -28,8 +28,9 @@
 # that can be useful for statistical analysis. The :ref:`1D plotting <ug_1dplots>`
 # section should be read before this section. Some of these tools will be
 # expanded in the future, but for a more comprehensive suite of statistical
-# plotting utilities, you may be interested in `seaborn`_ (you should also be
-# able to use ProPlot axes and figures with most seaborn plotting commands).
+# plotting utilities, you may be interested in `seaborn`_ (we try to ensure
+# that seaborn plotting commands are compatible with ProPlot axes
+# and figures but this is a work in progress).
 
 # %% [raw] raw_mimetype="text/restructuredtext"
 # .. _ug_errorbars:
