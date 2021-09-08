@@ -212,7 +212,7 @@ ax.plot(df, cycle=cycle, lw=3, legend='t', legend_kw={'frame': False})
 # ---------------
 #
 # It is often useful to create on-the-fly `property cycles
-# <https://matplotlib.org/tutorials/intermediate/color_cycle.html#sphx-glr-tutorials-intermediate-color-cycle-py>`__
+# <https://matplotlib.org/stable/tutorials/intermediate/color_cycle.html#sphx-glr-tutorials-intermediate-color-cycle-py>`__
 # and use different property cycles for different plot elements. You can create and
 # apply property cycles on-the-fly using the `cycle` and `cycle_kw` keywords, available
 # with most `~proplot.axes.PlotAxes` 1D plot commands. `cycle` and `cycle_kw` are
@@ -220,22 +220,22 @@ ax.plot(df, cycle=cycle, lw=3, legend='t', legend_kw={'frame': False})
 # <why_constructor>`, and the resulting property cycle is used for the plot. You
 # can specify `cycle` once with 2D input data (in which case each column is
 # plotted in succession according to the property cycle) or call a plotting
-# command multiple times with the same `cycle` argument each time (the property
+# command multiple times with the same `cycle` argument (the property
 # cycle is not reset). You can also disable property cycling with
 # ``cycle=False``, ``cycle='none'``, or ``cycle=()`` and re-enable the default
 # property cycle with ``cycle=True``. For more information on property cycling,
 # see the :ref:`color cycles section <ug_cycles>` and `this matplotlib tutorial
-# <https://matplotlib.org/tutorials/intermediate/color_cycle.html#sphx-glr-tutorials-intermediate-color-cycle-py>`__.
+# <https://matplotlib.org/stable/tutorials/intermediate/color_cycle.html#sphx-glr-tutorials-intermediate-color-cycle-py>`__.
 
 # %%
 import proplot as pplt
 import numpy as np
 
 # Sample data
-M, N = 50, 4
+M, N = 50, 5
 state = np.random.RandomState(51423)
-data1 = (state.rand(M, N) - 0.5).cumsum(axis=0)
-data2 = (state.rand(M, N) - 0.5).cumsum(axis=0) * 1.5
+data1 = (state.rand(M, N) - 0.48).cumsum(axis=1).cumsum(axis=0)
+data2 = (state.rand(M, N) - 0.48).cumsum(axis=1).cumsum(axis=0) * 1.5
 data1 += state.rand(M, N)
 data2 += state.rand(M, N)
 
@@ -243,21 +243,23 @@ with pplt.rc.context({'lines.linewidth': 3}):
     # Use property cycle for columns of 2D input data
     fig = pplt.figure(share=False)
     ax = fig.subplot(121)
-    ax.format(title='Grayscale cycle')
+    ax.format(title='Single plot call')
     ax.plot(
-        data1 * data2,
+        2 * data1 + data2,
         cycle='black',  # cycle from monochromatic colormap
         cycle_kw={'ls': ('-', '--', '-.', ':')}
     )
 
     # Use property cycle with successive plot() calls
     ax = fig.subplot(122)
-    ax.format(title='Colorful cycle')
+    ax.format(title='Multiple plot calls')
     for i in range(data1.shape[1]):
         ax.plot(data1[:, i], cycle='Reds', cycle_kw={'N': N, 'left': 0.3})
     for i in range(data1.shape[1]):
         ax.plot(data2[:, i], cycle='Blues', cycle_kw={'N': N, 'left': 0.3})
-    fig.format(xlabel='xlabel', ylabel='ylabel', suptitle='Local property cycles demo')
+    fig.format(
+        xlabel='xlabel', ylabel='ylabel', suptitle='On-the-fly property cycles'
+    )
 
 
 # %% [raw] raw_mimetype="text/restructuredtext"
