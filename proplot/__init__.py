@@ -11,44 +11,44 @@ except pkg.DistributionNotFound:
     version = __version__ = 'unknown'
 
 # Import optional dependencies now to isolate import times
-from .internals import benchmarks, docstring, rcsetup, warnings  # noqa: F401
-with benchmarks._benchmark('pyplot'):
+from .internals.benchmarks import _benchmark
+with _benchmark('pyplot'):
     from matplotlib import pyplot  # noqa: F401
-with benchmarks._benchmark('cartopy'):
+with _benchmark('cartopy'):
     try:
         import cartopy  # noqa: F401
     except ImportError:
         pass
-with benchmarks._benchmark('basemap'):
+with _benchmark('basemap'):
     try:
         from mpl_toolkits import basemap  # noqa: F401
     except ImportError:
         pass
 
 # Import everything to top level
-with benchmarks._benchmark('config'):
+with _benchmark('config'):
     from .config import *  # noqa: F401 F403
-with benchmarks._benchmark('crs'):
+with _benchmark('crs'):
     from .crs import *  # noqa: F401 F403
-with benchmarks._benchmark('utils'):
+with _benchmark('utils'):
     from .utils import *  # noqa: F401 F403
-with benchmarks._benchmark('colors'):
+with _benchmark('colors'):
     from .colors import *  # noqa: F401 F403
-with benchmarks._benchmark('ticker'):
+with _benchmark('ticker'):
     from .ticker import *  # noqa: F401 F403
-with benchmarks._benchmark('scale'):
+with _benchmark('scale'):
     from .scale import *  # noqa: F401 F403
-with benchmarks._benchmark('axes'):
+with _benchmark('axes'):
     from .axes import *  # noqa: F401 F403
-with benchmarks._benchmark('gridspec'):
+with _benchmark('gridspec'):
     from .gridspec import *  # noqa: F401 F403
-with benchmarks._benchmark('figure'):
+with _benchmark('figure'):
     from .figure import *  # noqa: F401 F403
-with benchmarks._benchmark('constructor'):
+with _benchmark('constructor'):
     from .constructor import *  # noqa: F401 F403
-with benchmarks._benchmark('ui'):
+with _benchmark('ui'):
     from .ui import *  # noqa: F401 F403
-with benchmarks._benchmark('demos'):
+with _benchmark('demos'):
     from .demos import *  # noqa: F401 F403
 
 # Dynamically add registered classes to top-level namespace
@@ -61,18 +61,19 @@ for _src in (NORMS, LOCATORS, FORMATTERS, SCALES, PROJS):
 
 # Register objects
 from .config import register_cmaps, register_cycles, register_colors, register_fonts
-with benchmarks._benchmark('cmaps'):
+with _benchmark('cmaps'):
     register_cmaps(default=True)
-with benchmarks._benchmark('cycles'):
+with _benchmark('cycles'):
     register_cycles(default=True)
-with benchmarks._benchmark('colors'):
+with _benchmark('colors'):
     register_colors(default=True)
-with benchmarks._benchmark('fonts'):
+with _benchmark('fonts'):
     register_fonts(default=True)
 
 # Validate colormap names and propagate 'cycle' to 'axes.prop_cycle'
 # NOTE: cmap.sequential also updates siblings 'cmap' and 'image.cmap'
 from .config import rc
+from .internals import rcsetup, warnings
 rcsetup.VALIDATE_REGISTERED_CMAPS = True
 for _key in ('cycle', 'cmap.sequential', 'cmap.diverging', 'cmap.cyclic', 'cmap.qualitative'):  # noqa: E501
     try:
