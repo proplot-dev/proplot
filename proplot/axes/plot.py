@@ -3433,6 +3433,9 @@ class PlotAxes(base.Axes):
         fillcolor, fillalpha, edgecolor = self._parse_box_violin(
             fillcolor, fillalpha, edgecolor, **kw
         )
+        if fill is None:
+            fill = fillcolor is not None or fillalpha is not None
+            fill = fill or kw.get('cycle') is not None
 
         # Parse non-color properties
         # NOTE: Output dict keys are plural but we use singular for keyword args
