@@ -79,9 +79,9 @@ Features
   outer legends/colorbars (:commit:`4a50b4b2`). Previously they had to be centered.
 * Add `transpose` keyword as alternative to `order` for 2d plotting commands
   (:issue:`72`). ``transpose=True`` is equivalent to ``order='F'``.
-* Return groupings of matplotlib artists (currently, negative-positive color
-  pairs and iteration-by-column groups) as `~matplotlib.cbook.silent_list` rather
-  than native lists to simplify resulting repr (:commit:`d59f9c40`).
+* Return homogeneous groupings of matplotlib artists in `~matplotlib.cbook.silent_list`
+  objects to simplify repr (:commit:`d59f9c40`, :commit:`667cc068`,
+  :commit:`240f0b31`, :commit:`0a6d74b7`).
 * Use built-in matplotlib logic for plotting multiple `hist` columns, with
   support for `stack` as alias of `stacked` and `width` as alias of `rwidth`
   (consistent with `bar` keywords) (:commit:`734329a5`). By default, histograms
