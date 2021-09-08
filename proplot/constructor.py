@@ -670,10 +670,8 @@ def Colormap(
     # Merge the resulting colormaps
     if len(cmaps) > 1:  # more than one map and modify arbitrary properties
         cmap = cmaps[0].append(*cmaps[1:], **kwargs)
-    elif kwargs:  # modify arbitrary properties
-        cmap = cmaps[0].copy(**kwargs)
     else:
-        cmap = cmaps[0]
+        cmap = cmaps[0].copy(**kwargs)
 
     # Modify the colormap
     if discrete and isinstance(cmap, pcolors.ContinuousColormap):  # noqa: E501
