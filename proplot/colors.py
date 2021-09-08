@@ -36,7 +36,7 @@ from .internals import (
     docstring,
     warnings,
 )
-from .utils import to_hex, to_rgb, to_rgba, to_xyz, to_xyza
+from .utils import set_alpha, to_hex, to_rgb, to_rgba, to_xyz, to_xyza
 
 __all__ = [
     'DiscreteColormap',
@@ -1698,10 +1698,7 @@ class DiscreteColormap(mcolors.ListedColormap, _Colormap):
         --------
         ContinuousColormap.set_alpha
         """
-        colors = [list(to_rgba(color)) for color in self.colors]
-        for color in colors:
-            color[3] = alpha
-        self.colors = colors
+        self.colors = [set_alpha(color, alpha) for color in self.colors]
         self._init()
 
     def shifted(self, shift=1, name=None):
