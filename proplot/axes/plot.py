@@ -3121,11 +3121,19 @@ class PlotAxes(base.Axes):
         _process_props(kw, 'collection')
         kw, extents = self._parse_inbounds(inbounds=inbounds, **kw)
         xs, ys, kw = self._parse_plot1d(xs, ys, vert=vert, autoreverse=False, **kw)
-        ss, kw = self._parse_markersize(ss, **kw)  # parse 's'
-        cc, kw = self._parse_color(
-            xs, ys, cc, inbounds=inbounds, apply_cycle=False, infer_rgb=True, **kw
-        )
         ys, kw = data._dist_reduce(ys, **kw)
+        ss, kw = self._parse_markersize(ss, **kw)  # parse 's'
+        infer_rgb = True
+        if cc is not None:
+            cc = np.atleast_1d(cc)  # preserves masked arrays
+            if (
+                any(_.ndim == 2 and _.shape[1] in (3, 4) for _ in (xs, ys))
+                and cc.ndim == 2 and cc.shape[1] in (3, 4)
+            ):
+                infer_rgb = False
+        cc, kw = self._parse_color(
+            xs, ys, cc, inbounds=inbounds, apply_cycle=False, infer_rgb=infer_rgb, **kw
+        )
         guide_kw = _pop_params(kw, self._update_guide)
         objs = []
         for _, n, x, y, s, c, kw in self._iter_arg_cols(xs, ys, ss, cc, **kw):
