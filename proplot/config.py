@@ -697,28 +697,19 @@ def register_colors(*args, user=None, default=False, space=None, margin=None, **
 
     # Load colors from file and get their HCL values
     # NOTE: Colors that come *later* overwrite colors that come earlier.
+    srcs = {'opencolor': pcolors.COLORS_OPEN, 'xkcd': pcolors.COLORS_XKCD}
     for i, path in _iter_data_objects('colors', *paths, user=user, default=default):
-        # Read colors
-        loaded = pcolors._load_colors(path, ignore_base=(i == 0), warn_on_failure=True)
-
-        # Add user colors
-        cat, _ = os.path.splitext(os.path.basename(path))
-        if i != 0:
-            pcolors._color_database.update(loaded)
-
-        # Add open-color colors
-        elif cat == 'opencolor':
-            pcolors._color_database.update(loaded)
-            pcolors.COLORS_OPEN.update(loaded)
-
-        # Add xkcd colors after filtering
-        elif cat == 'xkcd':
-            loaded = pcolors._standardize_colors(loaded, space, margin)
-            pcolors._color_database.update(loaded)
-            pcolors.COLORS_XKCD.update(loaded)
-
-        else:
-            raise RuntimeError(f'Unknown proplot color database {path!r}.')
+        loaded = pcolors._load_colors(path, warn_on_failure=True)
+        if i == 0:
+            cat, _ = os.path.splitext(os.path.basename(path))
+            if cat not in srcs:
+                raise RuntimeError(f'Unknown proplot color database {path!r}.')
+            src = srcs[cat]
+            if cat == 'xkcd':
+                loaded = pcolors._standardize_colors(loaded, space, margin)
+            loaded = {k: c for k, c in loaded.items() if k not in pcolors.COLORS_BASE}
+            src.update(loaded)  # needed for demos.show_colors()
+        pcolors._color_database.update(loaded)
 
 
 @docstring._snippet_manager

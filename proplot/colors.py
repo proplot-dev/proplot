@@ -567,18 +567,14 @@ def _make_lookup_table(N, data, gamma=1.0, inverse=False):
     return lut
 
 
-def _load_colors(path, ignore_base=True, warn_on_failure=True):
+def _load_colors(path, warn_on_failure=True):
     """
     Read colors from the input file.
 
     Parameters
     ----------
-    ignore_base : bool, optional
-        If ``True``, ignore colors matching "base" color names like
-        ``'red'`` and ``'blue'``.
     warn_on_failure : bool, optional
-        If ``True``, issue a warning when loading fails instead of
-        raising an error.
+        If ``True``, issue a warning when loading fails instead of raising an error.
     """
     # Warn or raise error (matches Colormap._from_file behavior)
     if not os.path.exists(path):
@@ -605,10 +601,8 @@ def _load_colors(path, ignore_base=True, warn_on_failure=True):
                     f'Lines must be formatted as "name: hexcolor".'
                 )
                 continue
-            # Never overwrite "base" colors with proplot defaults
+            # Add color
             name, color = pair
-            if ignore_base and name in COLORS_BASE:
-                continue
             loaded[name] = color
 
     return loaded
