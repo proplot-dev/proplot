@@ -3124,11 +3124,11 @@ class PlotAxes(base.Axes):
         ys, kw = data._dist_reduce(ys, **kw)
         ss, kw = self._parse_markersize(ss, **kw)  # parse 's'
         infer_rgb = True
-        if cc is not None:
-            cc = np.atleast_1d(cc)  # preserves masked arrays
+        if cc is not None and not isinstance(cc, str):
+            test = np.atleast_1d(cc)  # for testing only
             if (
                 any(_.ndim == 2 and _.shape[1] in (3, 4) for _ in (xs, ys))
-                and cc.ndim == 2 and cc.shape[1] in (3, 4)
+                and test.ndim == 2 and test.shape[1] in (3, 4)
             ):
                 infer_rgb = False
         cc, kw = self._parse_color(
