@@ -891,6 +891,14 @@ class _Colormap(object):
             data = [(x, color) for x, color in zip(x, data)]
             return ContinuousColormap.from_list(name, data)
 
+    @property
+    def _copy_name(self):
+        # The name used when making copies
+        name = self.name or ''
+        if name and name[0] != '_':
+            name = '_' + name
+        return name + '_copy'
+
 
 class ContinuousColormap(mcolors.LinearSegmentedColormap, _Colormap):
     r"""
@@ -1012,7 +1020,7 @@ class ContinuousColormap(mcolors.LinearSegmentedColormap, _Colormap):
         # we never interpolate between end colors of different colormaps
         segmentdata = {}
         if name is None:
-            name = '_'.join(cmap.name for cmap in cmaps)
+            name = '_' + '_'.join(cmap.name for cmap in cmaps)
         if not np.iterable(ratios):
             ratios = [1] * len(cmaps)
         ratios = np.asarray(ratios) / np.sum(ratios)
@@ -1101,7 +1109,7 @@ class ContinuousColormap(mcolors.LinearSegmentedColormap, _Colormap):
             ``cut=0.1`` cuts the central 10%, or ``cut=-0.1`` fills the ctranl 10%
             of the colormap with the current central color (usually white).
         name : str, optional
-            The name of the new colormap. Default is ``self.name + '_copy'``.
+            The name of the new colormap. Default is ``'_name_copy'``.
         left, right : float, optional
             The colormap indices for the "leftmost" and "rightmost" colors.
             Defaults are ``0`` and ``1``. See
@@ -1140,7 +1148,7 @@ class ContinuousColormap(mcolors.LinearSegmentedColormap, _Colormap):
                 f'Invalid combination cut={cut} for left={left} and right={right}.'
             )
         if name is None:
-            name = self.name + '_copy'
+            name = self._copy_name
         cmap_left = self.truncate(left, 0.5 - offset)
         cmap_right = self.truncate(0.5 + offset, right)
 
@@ -1167,7 +1175,7 @@ class ContinuousColormap(mcolors.LinearSegmentedColormap, _Colormap):
         Parameters
         ----------
         name : str, optional
-            The name of the new colormap. Default is ``self.name + '_r'``.
+            The name of the new colormap. Default is ``'_name_r'``.
 
         Other parameters
         ----------------
@@ -1197,7 +1205,7 @@ class ContinuousColormap(mcolors.LinearSegmentedColormap, _Colormap):
             if gamma is not None and np.iterable(gamma):
                 kwargs[key] = gamma[::-1]
         if name is None:
-            name = self.name + '_r'
+            name = '_' + self.name + '_r'
 
         cmap = self.copy(name, segmentdata, **kwargs)
         cmap._rgba_under, cmap._rgba_over = cmap._rgba_over, cmap._rgba_under
@@ -1303,7 +1311,7 @@ class ContinuousColormap(mcolors.LinearSegmentedColormap, _Colormap):
             The number of degrees to shift, out of 360 degrees.
             The default is ``180``.
         name : str, optional
-            The name of the new colormap. Default is ``self.name + '_s'``.
+            The name of the new colormap. Default is ``'_name_s'``.
 
         Other parameters
         ----------------
@@ -1318,7 +1326,7 @@ class ContinuousColormap(mcolors.LinearSegmentedColormap, _Colormap):
         if shift == 0:
             return self
         if name is None:
-            name = self.name + '_s'
+            name = '_' + self.name + '_s'
         if not self._cyclic:
             warnings._warn_proplot(
                 f'Shifting non-cyclic colormap {self.name!r}. Use cmap.set_cyclic(True)'
@@ -1346,7 +1354,7 @@ class ContinuousColormap(mcolors.LinearSegmentedColormap, _Colormap):
             The colormap index for the new "rightmost" color. Must fall between ``0``
             and ``1``. For example, ``right=0.9`` cuts the leftmost 10%% of the colors.
         name : str, optional
-            The name of the new colormap. Default is ``self.name + '_copy'``.
+            The name of the new colormap. Default is ``'_name_copy'``.
 
         Other parameters
         ----------------
@@ -1364,7 +1372,7 @@ class ContinuousColormap(mcolors.LinearSegmentedColormap, _Colormap):
         if left == 0 and right == 1:
             return self
         if name is None:
-            name = self.name + '_copy'
+            name = self._copy_name
 
         # Resample the segmentdata arrays
         segmentdata = {}
@@ -1436,7 +1444,7 @@ class ContinuousColormap(mcolors.LinearSegmentedColormap, _Colormap):
         Parameters
         ----------
         name : str
-            The name of the new colormap. Default is ``self.name + '_copy'``.
+            The name of the new colormap. Default is ``'_name_copy'``.
         segmentdata, N, alpha, gamma, cyclic : optional
             See `ContinuousColormap`. If not provided, these are copied from
             the current colormap.
@@ -1447,7 +1455,7 @@ class ContinuousColormap(mcolors.LinearSegmentedColormap, _Colormap):
         PerceptualColormap.copy
         """
         if name is None:
-            name = self.name + '_copy'
+            name = self._copy_name
         if segmentdata is None:
             segmentdata = self._segmentdata.copy()
         if gamma is None:
@@ -1477,7 +1485,7 @@ class ContinuousColormap(mcolors.LinearSegmentedColormap, _Colormap):
             ``np.linspace(0, 1, samples)``. If sequence of float,
             draw samples at the specified points.
         name : str, optional
-            The name of the new colormap. Default is ``self.name + '_copy'``.
+            The name of the new colormap. Default is ``'_name_copy'``.
 
         Other parameters
         ----------------
@@ -1495,7 +1503,7 @@ class ContinuousColormap(mcolors.LinearSegmentedColormap, _Colormap):
         samples = np.asarray(samples)
         colors = self(samples)
         if name is None:
-            name = self.name + '_copy'
+            name = self._copy_name
         return DiscreteColormap(colors, name=name, **kwargs)
 
     @classmethod
@@ -1661,9 +1669,10 @@ class DiscreteColormap(mcolors.ListedColormap, _Colormap):
             raise TypeError(f'Arguments {args!r} must be DiscreteColormap.')
         cmaps = (self, *args)
         if name is None:
-            name = '_'.join(cmap.name for cmap in cmaps)
+            name = '_' + '_'.join(cmap.name for cmap in cmaps)
         colors = [color for cmap in cmaps for color in cmap.colors]
-        return self.copy(colors, name, N or len(colors), **kwargs)
+        N = _not_none(N, len(colors))
+        return self.copy(colors, name, N, **kwargs)
 
     @docstring._snippet_manager
     def save(self, path=None, alpha=True):
@@ -1711,6 +1720,31 @@ class DiscreteColormap(mcolors.ListedColormap, _Colormap):
         self.colors = [set_alpha(color, alpha) for color in self.colors]
         self._init()
 
+    def reversed(self, name=None, **kwargs):
+        """
+        Return a reversed version of the colormap.
+
+        Parameters
+        ----------
+        name : str, optional
+            The name of the new colormap. Default is ``'_name_r'``.
+
+        Other parameters
+        ----------------
+        **kwargs
+            Passed to `DiscreteColormap.copy`
+
+        See also
+        --------
+        matplotlib.colors.ListedColormap.reversed
+        """
+        if name is None:
+            name = '_' + self.name + '_r'
+        colors = self.colors[::-1]
+        cmap = self.copy(colors, name, **kwargs)
+        cmap._rgba_under, cmap._rgba_over = cmap._rgba_over, cmap._rgba_under
+        return cmap
+
     def shifted(self, shift=1, name=None):
         """
         Return a cyclically shifted version of the colormap.
@@ -1721,7 +1755,7 @@ class DiscreteColormap(mcolors.ListedColormap, _Colormap):
             The number of places to shift, between ``-self.N`` and ``self.N``.
             The default is ``1``.
         name : str, optional
-            The name of the new colormap. Default is ``self.name + '_s'``.
+            The name of the new colormap. Default is ``'_name_s'``.
 
         See also
         --------
@@ -1730,7 +1764,7 @@ class DiscreteColormap(mcolors.ListedColormap, _Colormap):
         if not shift:
             return self
         if name is None:
-            name = self.name + '_s'
+            name = '_' + self.name + '_s'
         shift = shift % len(self.colors)
         colors = list(self.colors)
         colors = colors[shift:] + colors[:shift]
@@ -1751,7 +1785,7 @@ class DiscreteColormap(mcolors.ListedColormap, _Colormap):
             ``0`` and ``self.N``. For example,
             ``right=4`` deletes colors after the fourth color.
         name : str, optional
-            The name of the new colormap. Default is ``self.name + '_copy'``.
+            The name of the new colormap. Default is ``'_name_copy'``.
 
         See also
         --------
@@ -1760,7 +1794,7 @@ class DiscreteColormap(mcolors.ListedColormap, _Colormap):
         if left is None and right is None:
             return self
         if name is None:
-            name = self.name + '_copy'
+            name = self._copy_name
         colors = self.colors[left:right]
         return self.copy(colors, name, len(colors))
 
@@ -1772,7 +1806,7 @@ class DiscreteColormap(mcolors.ListedColormap, _Colormap):
         Parameters
         ----------
         name : str
-            The name of the new colormap. Default is ``self.name + '_copy'``.
+            The name of the new colormap. Default is ``'_name_copy'``.
         colors, N, alpha : optional
             See `DiscreteColormap`. If not provided,
             these are copied from the current colormap.
@@ -1783,7 +1817,7 @@ class DiscreteColormap(mcolors.ListedColormap, _Colormap):
         PerceptualColormap.copy
         """
         if name is None:
-            name = self.name + '_copy'
+            name = self._copy_name
         if colors is None:
             colors = list(self.colors)  # copy
         if N is None:
@@ -1965,7 +1999,7 @@ class PerceptualColormap(ContinuousColormap, _Colormap):
         Parameters
         ----------
         name : str
-            The name of the new colormap. Default is ``self.name + '_copy'``.
+            The name of the new colormap. Default is ``'_name_copy'``.
         segmentdata, N, alpha, clip, cyclic, gamma, gamma1, gamma2, space : optional
             See `PerceptualColormap`. If not provided,
             these are copied from the current colormap.
@@ -1976,7 +2010,7 @@ class PerceptualColormap(ContinuousColormap, _Colormap):
         ContinuousColormap.copy
         """
         if name is None:
-            name = self.name + '_copy'
+            name = self._copy_name
         if segmentdata is None:
             segmentdata = self._segmentdata.copy()
         if space is None:
@@ -2011,7 +2045,7 @@ class PerceptualColormap(ContinuousColormap, _Colormap):
         Parameters
         ----------
         name : str, optional
-            The name of the new colormap. Default is ``self.name + '_copy'``.
+            The name of the new colormap. Default is ``'_name_copy'``.
 
         Other parameters
         ----------------
@@ -2025,7 +2059,7 @@ class PerceptualColormap(ContinuousColormap, _Colormap):
         if not self._isinit:
             self._init()
         if name is None:
-            name = self.name + '_copy'
+            name = self._copy_name
         return ContinuousColormap.from_list(name, self._lut[:-3, :], **kwargs)
 
     @classmethod
