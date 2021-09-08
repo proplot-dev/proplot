@@ -1820,7 +1820,8 @@ if dependencies._version_mpl >= 3.4:
     _rc_matplotlib_default['xtick.labelcolor'] = BLACK
     _rc_matplotlib_default['ytick.labelcolor'] = BLACK
     _rc_children['meta.color'] += ('xtick.labelcolor', 'ytick.labelcolor')
-    _rc_children['tick.labelcolor'] = ('xtick.labelcolor', 'ytick.labelcolor')
+    _rc_children['tick.labelcolor'] += ('xtick.labelcolor', 'ytick.labelcolor')
+    _rc_children['grid.labelcolor'] += ('xtick.labelcolor', 'ytick.labelcolor')
 
 # Deprecated settings. Add renamed settings to children dictionary so that
 # pplt.rc[deprecated] = value updates the correct children. We don't natively
