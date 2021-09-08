@@ -3424,7 +3424,9 @@ class PlotAxes(base.Axes):
             kw['showmeans'] = kw['meanline'] = True
 
         # Call function
-        x, y, kw = self._parse_plot1d(x, y, autoy=False, autoguide=False, vert=vert, **kw)  # noqa: E501
+        x, y, kw = self._parse_plot1d(
+            x, y, autoy=False, autoguide=False, vert=vert, **kw
+        )
         kw.setdefault('positions', x)
         artists = self._plot_native('boxplot', y, vert=vert, **kw)
 
@@ -3530,7 +3532,7 @@ class PlotAxes(base.Axes):
         x, y, kw = self._parse_plot1d(x, y, autoy=False, autoguide=False, vert=vert, **kw)  # noqa: E501
         y, kw = data._dist_reduce(y, **kw)
         kw = self._parse_cycle(**kw)
-        *eb, kw = self._plot_errorbars(x, y, vert=vert, default_boxes=True, **kw)  # noqa: E501
+        *eb, kw = self._plot_errorbars(x, y, vert=vert, default_boxes=True, **kw)
         kw.pop('labels', None)  # already applied in _parse_plot1d
         kw.setdefault('positions', x)
         y = _not_none(kw.pop('distribution'), y)  # might not have reduced the data
@@ -3541,11 +3543,9 @@ class PlotAxes(base.Axes):
 
         # Modify body settings
         artists = artists or {}  # necessary?
-        artists = {
-            key: cbook.silent_list(type(objs[0]).__name__, objs) if objs else objs
-            for key, objs in artists.items()
-        }
-        bodies = artists.get('bodies', ())
+        bodies = artists.pop('bodies', ())  # should be no other entries
+        if bodies:
+            bodies = cbook.silent_list(type(bodies[0]).__name__, bodies)
         if not isinstance(fillalpha, list):
             fillalpha = [fillalpha] * len(bodies)
         if not isinstance(fillcolor, list):
@@ -3560,7 +3560,7 @@ class PlotAxes(base.Axes):
                 body.set_facecolor(fillcolor[i])
             if edgecolor[i] is not None:
                 body.set_edgecolor(edgecolor[i])
-        return artists
+        return (bodies, *eb) if eb else bodies
 
     @docstring._snippet_manager
     def violin(self, *args, **kwargs):
