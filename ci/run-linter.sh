@@ -15,5 +15,5 @@ isort --recursive --check-only --line-width=88 --skip __init__.py --multi-line=3
 # echo '[black]'
 # black --check -S proplot
 
-echo '[doc8]'
-doc8 ./*.rst docs/*.rst --ignore D001  # ignore line-too-long due to RST tables
+# echo '[doc8]'
+# doc8 ./*.rst docs/*.rst --ignore D001  # ignore line-too-long due to RST tables
