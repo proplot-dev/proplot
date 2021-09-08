@@ -436,15 +436,12 @@ a, alpha, alphas : float, optional
 _patches_docstring = """
 lw, linewidth, linewidths : float, optional
     The edge width for the {objects}. Default is :rc:`patch.linewidth`.
-c, color, colors, ec, edgecolor, edgecolors : color-spec or sequence, optional
-    The edge color for the {objects}. Default is ``'black'``. If a
-    sequence, should be the same length as the number of {objects}.
-fc, facecolor, fillcolor, facecolors, fillcolors : color-spec or sequence, optional
-    The fill color for the {objects}. Default is the next color cycler color. If
-    a sequence, it should be the same length as the number of {objects}.
-a, alpha, fa, facealpha, fillalpha, facealphas, fillalphas : float, optional
-    The opacity of the {objects}. Default is ``1.0``. If a sequence, should
-    be the same length as the number of {objects}.
+c, color, colors, ec, edgecolor, edgecolors : color-spec, optional
+    The edge color for the {objects}. Default is ``'black'``.
+fc, facecolor, fillcolor, facecolors, fillcolors : color-spec, optional
+    The fill color for the {objects}. Default is to use the property `cycle`.
+a, alpha, alphas : float, optional
+    The opacity of the {objects}. Default is ``1.0``.
 """
 _pcolor_collection_docstring = """
 lw, linewidth, linewidths : float, optional
@@ -3391,6 +3388,32 @@ class PlotAxes(base.Axes):
         self._apply_edgefix(objs[0], **edgefix_kw, **props)
         return objs
 
+    @staticmethod
+    def _parse_box_violin(fillcolor, fillalpha, edgecolor, **kw):
+        """
+        Parse common boxplot and violinplot arguments.
+        """
+        if isinstance(fillcolor, list):
+            warnings._warn_proplot(
+                'Passing lists to fillcolor was deprecated in v0.9. Please use '
+                f'the property cycler with e.g. cycle={fillcolor!r} instead.'
+            )
+            kw['cycle'] = _not_none(cycle=kw.get('cycle', None), fillcolor=fillcolor)
+            fillcolor = None
+        if isinstance(fillalpha, list):
+            warnings._warn_proplot(
+                'Passing lists to fillalpha was removed in v0.9. Please specify '
+                'different opacities using the property cycle colors instead.'
+            )
+            fillalpha = fillalpha[0]  # too complicated to try to apply this
+        if isinstance(edgecolor, list):
+            warnings._warn_proplot(
+                'Passing lists of edgecolors was removed in v0.9. Please call the '
+                'plotting command multiple times with different edge colors instead.'
+            )
+            edgecolor = edgecolor[0]
+        return fillcolor, fillalpha, edgecolor
+
     def _apply_boxplot(
         self, x, y, *, mean=None, means=None, vert=True,
         fill=None, filled=None, marker=None, markersize=None, **kwargs
@@ -3401,18 +3424,17 @@ class PlotAxes(base.Axes):
         # Global and fill properties
         kw = kwargs.copy()
         _process_props(kw, 'patch')
+        fill = _not_none(fill=fill, filled=filled)
+        means = _not_none(mean=mean, means=means, showmeans=kw.get('showmeans'))
         linewidth = kw.pop('linewidth', rc['patch.linewidth'])
         edgecolor = kw.pop('edgecolor', 'black')
         fillcolor = kw.pop('facecolor', None)
         fillalpha = kw.pop('alpha', None)
-        fill = _not_none(fill=fill, filled=filled)
-        fill = fill or fillcolor is not None or fillalpha is not None
-        fillalpha = _not_none(fillalpha, 1)
-        if fill and fillcolor is None:  # TODO: support e.g. 'facecolor' cycle?
-            parser = self._get_patches_for_fill
-            fillcolor = parser.get_next_color()
+        fillcolor, fillalpha, edgecolor = self._parse_box_violin(
+            fillcolor, fillalpha, edgecolor, **kw
+        )
 
-        # Arist-specific properties
+        # Parse non-color properties
         # NOTE: Output dict keys are plural but we use singular for keyword args
         props = {}
         for key in ('boxes', 'whiskers', 'caps', 'fliers', 'medians', 'means'):
@@ -3421,31 +3443,34 @@ class PlotAxes(base.Axes):
             iprops.setdefault('color', edgecolor)
             iprops.setdefault('linewidth', linewidth)
             iprops.setdefault('markeredgecolor', edgecolor)
-        means = _not_none(mean=mean, means=means, showmeans=kw.get('showmeans'))
-        if means:
-            kw['showmeans'] = kw['meanline'] = True
 
-        # Call function
+        # Parse color properties
         x, y, kw = self._parse_plot1d(
             x, y, autoy=False, autoguide=False, vert=vert, **kw
         )
-        kw.setdefault('positions', x)
-        artists = self._plot_native('boxplot', y, vert=vert, **kw)
+        kw = self._parse_cycle(x.size, **kw)  # possibly apply cycle
+        if fill and fillcolor is None:
+            parser = self._get_patches_for_fill
+            fillcolor = [parser.get_next_color() for _ in range(x.size)]
+        else:
+            fillcolor = [fillcolor] * x.size
 
-        # Modify artist settings
+        # Plot boxes
+        kw.setdefault('positions', x)
+        if means:
+            kw['showmeans'] = kw['meanline'] = True
+        artists = self._plot_native('boxplot', y, vert=vert, **kw)
         artists = artists or {}  # necessary?
         artists = {
             key: cbook.silent_list(type(objs[0]).__name__, objs) if objs else objs
             for key, objs in artists.items()
         }
+
+        # Modify artist settings
         for key, aprops in props.items():
             if key not in artists:  # possible if not rendered
                 continue
             objs = artists[key]
-            if not isinstance(fillalpha, list):
-                fillalpha = [fillalpha] * len(objs)
-            if not isinstance(fillcolor, list):
-                fillcolor = [fillcolor] * len(objs)
             for i, obj in enumerate(objs):
                 # Update lines used for boxplot components
                 # TODO: Test this thoroughly!
@@ -3459,17 +3484,16 @@ class PlotAxes(base.Axes):
                 }
                 obj.update(iprops)
                 # "Filled" boxplot by adding patch beneath line path
-                if key == 'boxes':
-                    ifillcolor = fillcolor[i]  # must stay within the if statement
-                    ifillalpha = fillalpha[i]
-                    if ifillcolor is not None or ifillalpha is not None:
-                        patch = mpatches.PathPatch(
-                            obj.get_path(),
-                            linewidth=0,
-                            facecolor=ifillcolor,
-                            alpha=ifillalpha,
-                        )
-                        self.add_artist(patch)
+                if key == 'boxes' and (
+                    fillcolor[i] is not None or fillalpha is not None
+                ):
+                    patch = mpatches.PathPatch(
+                        obj.get_path(),
+                        linewidth=0.0,
+                        facecolor=fillcolor[i],
+                        alpha=fillalpha,
+                    )
+                    self.add_artist(patch)
                 # Outlier markers
                 if key == 'fliers':
                     if marker is not None:
@@ -3519,16 +3543,18 @@ class PlotAxes(base.Axes):
         # Parse keyword args
         kw = kwargs.copy()
         _process_props(kw, 'patch')
-        linewidth = kw.pop('linewidth', rc['patch.linewidth'])
-        edgecolor = kw.pop('edgecolor', 'black')
-        fillcolor = kw.pop('facecolor', None)
-        fillalpha = kw.pop('alpha', None)
-        fillalpha = _not_none(fillalpha, 1)
         kw.setdefault('capsize', 0)  # caps are redundant for violin plots
         kw.setdefault('means', kw.pop('showmeans', None))  # for _indicate_error
         kw.setdefault('medians', kw.pop('showmedians', None))
         if kw.pop('showextrema', None):
             warnings._warn_proplot('Ignoring showextrema=True.')
+        linewidth = kw.pop('linewidth', None)
+        edgecolor = kw.pop('edgecolor', 'black')
+        fillcolor = kw.pop('facecolor', None)
+        fillalpha = kw.pop('alpha', None)
+        fillcolor, fillalpha, edgecolor = self._parse_box_violin(
+            fillcolor, fillalpha, edgecolor, **kw
+        )
 
         # Add error bars and violins
         x, y, kw = self._parse_plot1d(x, y, autoy=False, autoguide=False, vert=vert, **kw)  # noqa: E501
@@ -3548,20 +3574,21 @@ class PlotAxes(base.Axes):
         bodies = artists.pop('bodies', ())  # should be no other entries
         if bodies:
             bodies = cbook.silent_list(type(bodies[0]).__name__, bodies)
-        if not isinstance(fillalpha, list):
-            fillalpha = [fillalpha] * len(bodies)
-        if not isinstance(fillcolor, list):
-            fillcolor = [fillcolor] * len(bodies)
-        if not isinstance(edgecolor, list):
-            edgecolor = [edgecolor] * len(bodies)
+        if fillcolor is None:
+            parser = self._get_patches_for_fill
+            fillcolor = [parser.get_next_color() for _ in range(x.size)]
+        else:
+            fillcolor = [fillcolor] * x.size
         for i, body in enumerate(bodies):
-            body.set_linewidths(linewidth)
-            if fillalpha[i] is not None:
-                body.set_alpha(fillalpha[i])
+            body.set_alpha(1.0)  # change default to 1.0
             if fillcolor[i] is not None:
                 body.set_facecolor(fillcolor[i])
-            if edgecolor[i] is not None:
-                body.set_edgecolor(edgecolor[i])
+            if fillalpha is not None:
+                body.set_alpha(fillalpha[i])
+            if edgecolor is not None:
+                body.set_edgecolor(edgecolor)
+            if linewidth is not None:
+                body.set_linewidths(linewidth)
         return (bodies, *eb) if eb else bodies
 
     @docstring._snippet_manager
