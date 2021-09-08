@@ -36,6 +36,9 @@ Deprecations
 
 * Rename :rcraw:`cmap.edgefix` to :rcraw:`edgefix` (:commit:`515f5132`). It now
   applies to bar and area plot elements, not just scalar mappables (see below).
+* The ``violinplot`` functions now return `~matplotlib.collection.PolyCollection`
+  of violin bodies or tuples of (bodies, error bars) instead of a singleton
+  dictionary containing just the ``'bodies'`` entry (:commit:`45774536`).
 * Deprecate recently-introduced `proplot.gridspec.SubplotGrid.legend` and
   `proplot.gridspec.SubplotGrid.colorbar` methods (:commit:`d21a61a3`). Idea
   was this could be used to add an auto-legend to each subplot with ``axs.legend()``
