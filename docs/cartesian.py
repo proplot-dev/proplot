@@ -44,8 +44,8 @@
 # `~matplotlib.ticker.MultipleLocator` (e.g., ``xlocator=2``), or to tick the
 # specific locations in a list using `~matplotlib.ticker.FixedLocator` (just
 # like `~matplotlib.axes.Axes.set_xticks` and `~matplotlib.axes.Axes.set_yticks`).
-# If you want to work directly with the locator classes, they are also imported
-# into the top-level namespace (e.g., ``pplt.MultipleLocator(5)`` is allowed).
+# If you want to work with the locator classes directly, they are available in the
+# top-level namespace (e.g., ``xlocator=pplt.MultipleLocator(...)`` is allowed).
 #
 # To generate lists of tick locations, we recommend using ProPlot's
 # `~proplot.utils.arange` function -- it’s basically an *endpoint-inclusive*
@@ -139,9 +139,9 @@ pplt.rc.reset()
 # new tick formatters -- for example, ``xformatter='deglat'`` to label ticks
 # as geographic latitude coordinates, ``xformatter='pi'`` to label ticks as
 # fractions of :math:`\pi`, or ``xformatter='sci'`` to label ticks with
-# scientific notation. If you want to work directly with the formatter classes,
-# they are also imported into the top-level namespace
-# (e.g., ``pplt.SciFormatter()`` is allowed).
+# scientific notation. If you want to work with the formatter classes
+# directly, they are available in the top-level namespace
+# (e.g., ``xformatter=pplt.SciFormatter(...)`` is allowed).
 #
 # ProPlot also changes the default tick formatter to
 # `~proplot.ticker.AutoFormatter`. This class trims trailing zeros by
@@ -355,8 +355,8 @@ pplt.rc.reset()
 # scales the axis with the Mercator projection latitude coordinate. The
 # ``'inverse'`` scale `~proplot.scale.InverseScale` can be useful when
 # working with spectral data, especially with :ref:`"dual" unit axes <ug_dual>`.
-# If you want to work with these axis scales directly, they are also imported
-# into the top-level namespace (e.g., ``pplt.CutoffScale(...)`` is allowed).
+# If you want to work with the axis scale classes directly, they are available
+# in the top-level namespace (e.g., ``xscale=pplt.CutoffScale(...)`` is allowed).
 
 # %%
 import proplot as pplt

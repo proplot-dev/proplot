@@ -232,8 +232,8 @@ ax.format(xtickminor=False, yreverse=True, yformatter='%b', ytickminor=False)
 # `~proplot.constructor.Norm` :ref:`constructor function <why_constructor>`. You
 # can also build a normalizer on-the-fly using the `norm` and `norm_kw` keywords,
 # again available with most `~proplot.axes.PlotAxes` 2D plot commands.
-# If you want to work with normalizer classes directly, they are also imported
-# into the top-level namespace (e.g., ``pplt.LogNorm(...)`` is allowed). To
+# If you want to work with the normalizer classes directly, they are available in
+# the top-level namespace (e.g., ``norm=pplt.LogNorm(...)`` is allowed). To
 # explicitly set the normalization range, you can pass the usual `vmin` and `vmax`
 # keywords to the plotting command. See the :ref:`next section <ug_discrete>` for
 # more details on colormap normalization.

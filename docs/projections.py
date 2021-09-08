@@ -85,7 +85,9 @@ axs.format(
 #   features using `~cartopy.mpl.geoaxes.GeoAxes.add_feature`. If you prefer, you can
 #   use the standard `cartopy.mpl.geoaxes.GeoAxes` methods just like you would in
 #   cartopy. If you need to use the underlying `~cartopy.crs.Projection` instance, it
-#   is available via the `~proplot.axes.GeoAxes.projection` attribute.
+#   is available via the `~proplot.axes.GeoAxes.projection` attribute. If you want
+#   to work with the projection classes directly, they are available in the
+#   top-level namespace (e.g., ``proj=pplt.PlateCarre()`` is allowed).
 #
 # * Basemap is an alternative backend. To use basemap, set :rcraw:`basemap` to
 #   ``True`` or pass ``basemap=True`` to the axes-creation command. When you
