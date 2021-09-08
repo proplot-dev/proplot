@@ -3677,11 +3677,6 @@ class PlotAxes(base.Axes):
         x, y, z, kw = self._parse_plot2d(x, y, z, **kwargs)
         _process_props(kw, 'collection')
         kw = self._parse_cmap(x, y, z, minlength=1, contour_plot=True, **kw)
-        cmap = kw.pop('cmap', None)
-        if isinstance(cmap, pcolors.DiscreteColormap) and len(set(cmap.colors)) == 1:
-            kw['colors'] = cmap.colors[0]  # otherwise negative linestyle fails
-        else:
-            kw['cmap'] = cmap
         labels_kw = _pop_params(kw, self._add_auto_labels)
         guide_kw = _pop_params(kw, self._update_guide)
         label = kw.pop('label', None)
@@ -3886,11 +3881,6 @@ class PlotAxes(base.Axes):
             raise ValueError('Three input arguments are required.')
         _process_props(kw, 'collection')
         kw = self._parse_cmap(x, y, z, minlength=1, contour_plot=True, **kw)
-        cmap = kw.pop('cmap', None)
-        if isinstance(cmap, pcolors.DiscreteColormap) and len(set(cmap.colors)) == 1:
-            kw['colors'] = cmap.colors[0]  # otherwise negative linestyle fails
-        else:
-            kw['cmap'] = cmap
         labels_kw = _pop_params(kw, self._add_auto_labels)
         guide_kw = _pop_params(kw, self._update_guide)
         label = kw.pop('label', None)
