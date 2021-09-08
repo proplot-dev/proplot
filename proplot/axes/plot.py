@@ -3386,7 +3386,7 @@ class PlotAxes(base.Axes):
         kw['labeldistance'] = pad
         objs = self._plot_native('pie', x, explode, wedgeprops=props, **kw)
         objs = tuple(cbook.silent_list(type(seq[0]).__name__, seq) for seq in objs)
-        self._apply_edgefix(objs[0], **edgefix_kw, **kw)
+        self._apply_edgefix(objs[0], **edgefix_kw, **props)
         return objs
 
     def _apply_boxplot(
