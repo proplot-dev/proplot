@@ -90,6 +90,14 @@ Features
   `stack` and `stacked`, and make passage of these keywords set the corresponding
   default `histtype` (:commit:`4a85773b`). Also add `filled` alias of `fill`
   to `boxplot` for consistency (:commit:`b5caf550`).
+* Always copy colormaps returned by `~proplot.constructor.Colormap`
+  to avoid subsequently changing global colormap properties with e.g.
+  ``set_alpha`` (:commit:`7a3c3f64`).
+* Add leading underscore to all default colormap names (``_name_r`` for reversed,
+  ``_name_s`` for shifted, ``_name1_name2`` for merged, and ``_name_copy`` for all
+  other modifications) and never register colormaps returned by `~contructor.Colormap`
+  that begin with underscore (:commit:`a6fab19f`, :commit:`1f6e6188`). This is
+  analogous to `legend` ignoring labels with leading underscore.
 * Control colorbar frame properties using same syntax as legend frame properties
   -- `edgewidth`, `edgecolor`, and optional rounded box with ``fancybox=True``
   (:commit:`58ce2c95`). Colorbar outline is now controlled with `linewidth`
@@ -133,6 +141,8 @@ Bug fixes
 * Fix unexpected behavior where `~proplot.axes.PlotAxes` tries to make
   list-of-artist style colorbars from successive calls to 2D plotting
   commands rather than making individual colorbars (:commit:`20ce93a1`).
+* Fix issue where importing seaborn issues 100 warnings due to overwriting
+  seaborn colormaps added by proplot (:commit:`006aef5f`).
 
 Internals
 ---------
