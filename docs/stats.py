@@ -253,8 +253,8 @@ for ax, which, color, title in zip(axs, 'lr', colors, titles):
     )
     color = pplt.scale_luminance(color, 1.5)  # histogram colors
     px = ax.panel(which, space=0)
-    px.histh(y, bins, color=color, edgefix=True)
+    px.histh(y, bins, color=color, fill=True, ec='k')
     px.format(grid=False, xlocator=[], xreverse=(which == 'l'))
     px = ax.panel('t', space=0)
-    px.hist(x, bins, color=color, edgefix=True)
+    px.hist(x, bins, color=color, fill=True, ec='k')
     px.format(grid=False, ylocator=[], title=title, titleloc='l')
