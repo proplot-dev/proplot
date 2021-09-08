@@ -149,6 +149,8 @@ Bug fixes
   seaborn colormaps added by proplot (:commit:`006aef5f`).
 * Fix issue where `inbounds` passed to `~proplot.axes.PlotAxes.scatter` applies
   only to axis-limit scaling, not cmap normalization scaling (:commit:`3d7636f2`).
+* Fix issue with color-parsing due to ``_plot_errorshading`` coming after
+  ``_parse_cycle`` rather than before (:commit:`acf545e2`).
 
 Internals
 ---------
