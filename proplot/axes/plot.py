@@ -3382,7 +3382,7 @@ class PlotAxes(base.Axes):
         props = _pop_props(kw, 'patch')
         edgefix_kw = _pop_params(kw, self._apply_edgefix)
         _, x, kw = self._parse_plot1d(x, autox=False, autoy=False, **kw)
-        kw = self._parse_cycle(**kw)
+        kw = self._parse_cycle(x.size, **kw)
         kw['labeldistance'] = pad
         objs = self._plot_native('pie', x, explode, wedgeprops=props, **kw)
         objs = tuple(cbook.silent_list(type(seq[0]).__name__, seq) for seq in objs)
