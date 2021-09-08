@@ -2576,7 +2576,7 @@ class PlotAxes(base.Axes):
                 if counts[counts > 1].size > 1:
                     default_diverging = True
             elif vmin is not None and vmax is not None:
-                if np.sign(vmin) != np.sign(vmax):
+                if abs(np.sign(vmax) - np.sign(vmin)) == 2:
                     default_diverging = True
             diverging = _not_none(diverging, default_diverging)
 
