@@ -141,8 +141,14 @@ Bug fixes
 * Fix unexpected behavior where `~proplot.axes.PlotAxes` tries to make
   list-of-artist style colorbars from successive calls to 2D plotting
   commands rather than making individual colorbars (:commit:`20ce93a1`).
+* Fix issue where ``diverging=True`` is applied for datasets with both
+  ``discrete=False`` and `vmin` or `vmax` equivalent to ``0`` (:commit:`84b9f86e`).
+* Fix issue where `~proplot.axes.PlotAxes.scatter` does not accept N x 3 or
+  N x 4 RGB[A] style arrays (:commit:`13df1841`).
 * Fix issue where importing seaborn issues 100 warnings due to overwriting
   seaborn colormaps added by proplot (:commit:`006aef5f`).
+* Fix issue where `inbounds` passed to `~proplot.axes.PlotAxes.scatter` applies
+  only to axis-limit scaling, not cmap normalization scaling (:commit:`3d7636f2`).
 
 Internals
 ---------
