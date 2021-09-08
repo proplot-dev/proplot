@@ -3426,18 +3426,23 @@ class PlotAxes(base.Axes):
         # Call function
         x, y, kw = self._parse_plot1d(x, y, autoy=False, autoguide=False, vert=vert, **kw)  # noqa: E501
         kw.setdefault('positions', x)
-        obj = self._plot_native('boxplot', y, vert=vert, **kw)
+        artists = self._plot_native('boxplot', y, vert=vert, **kw)
 
         # Modify artist settings
+        artists = artists or {}  # necessary?
+        artists = {
+            key: cbook.silent_list(type(objs[0]).__name__, objs) if objs else objs
+            for key, objs in artists.items()
+        }
         for key, aprops in props.items():
-            if key not in obj:  # possible if not rendered
+            if key not in artists:  # possible if not rendered
                 continue
-            artists = obj[key]
+            objs = artists[key]
             if not isinstance(fillalpha, list):
-                fillalpha = [fillalpha] * len(artists)
+                fillalpha = [fillalpha] * len(objs)
             if not isinstance(fillcolor, list):
-                fillcolor = [fillcolor] * len(artists)
-            for i, artist in enumerate(artists):
+                fillcolor = [fillcolor] * len(objs)
+            for i, obj in enumerate(objs):
                 # Update lines used for boxplot components
                 # TODO: Test this thoroughly!
                 iprops = {
@@ -3448,14 +3453,14 @@ class PlotAxes(base.Axes):
                     )
                     for key, value in aprops.items()
                 }
-                artist.update(iprops)
+                obj.update(iprops)
                 # "Filled" boxplot by adding patch beneath line path
                 if key == 'boxes':
                     ifillcolor = fillcolor[i]  # must stay within the if statement
                     ifillalpha = fillalpha[i]
                     if ifillcolor is not None or ifillalpha is not None:
                         patch = mpatches.PathPatch(
-                            artist.get_path(),
+                            obj.get_path(),
                             linewidth=0,
                             facecolor=ifillcolor,
                             alpha=ifillalpha,
@@ -3464,11 +3469,11 @@ class PlotAxes(base.Axes):
                 # Outlier markers
                 if key == 'fliers':
                     if marker is not None:
-                        artist.set_marker(marker)
+                        obj.set_marker(marker)
                     if markersize is not None:
-                        artist.set_markersize(markersize)
+                        obj.set_markersize(markersize)
 
-        return obj
+        return artists
 
     @docstring._snippet_manager
     def box(self, *args, **kwargs):
@@ -3529,29 +3534,33 @@ class PlotAxes(base.Axes):
         kw.pop('labels', None)  # already applied in _parse_plot1d
         kw.setdefault('positions', x)
         y = _not_none(kw.pop('distribution'), y)  # might not have reduced the data
-        obj = self._plot_native(
+        artists = self._plot_native(
             'violinplot', y, vert=vert,
             showmeans=False, showmedians=False, showextrema=False, **kw
         )
 
         # Modify body settings
-        artists = (obj or {}).get('bodies', ())
+        artists = artists or {}  # necessary?
+        artists = {
+            key: cbook.silent_list(type(objs[0]).__name__, objs) if objs else objs
+            for key, objs in artists.items()
+        }
+        bodies = artists.get('bodies', ())
         if not isinstance(fillalpha, list):
-            fillalpha = [fillalpha] * len(artists)
+            fillalpha = [fillalpha] * len(bodies)
         if not isinstance(fillcolor, list):
-            fillcolor = [fillcolor] * len(artists)
+            fillcolor = [fillcolor] * len(bodies)
         if not isinstance(edgecolor, list):
-            edgecolor = [edgecolor] * len(artists)
-        for i, artist in enumerate(artists):
-            artist.set_linewidths(linewidth)
+            edgecolor = [edgecolor] * len(bodies)
+        for i, body in enumerate(bodies):
+            body.set_linewidths(linewidth)
             if fillalpha[i] is not None:
-                artist.set_alpha(fillalpha[i])
+                body.set_alpha(fillalpha[i])
             if fillcolor[i] is not None:
-                artist.set_facecolor(fillcolor[i])
+                body.set_facecolor(fillcolor[i])
             if edgecolor[i] is not None:
-                artist.set_edgecolor(edgecolor[i])
-
-        return obj
+                body.set_edgecolor(edgecolor[i])
+        return artists
 
     @docstring._snippet_manager
     def violin(self, *args, **kwargs):
