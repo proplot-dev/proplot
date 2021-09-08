@@ -3521,18 +3521,18 @@ class PlotAxes(base.Axes):
         if kw.pop('showextrema', None):
             warnings._warn_proplot('Ignoring showextrema=True.')
 
-        # Parse and control error bars
+        # Add error bars and violins
         x, y, kw = self._parse_plot1d(x, y, autoy=False, autoguide=False, vert=vert, **kw)  # noqa: E501
         y, kw = data._dist_reduce(y, **kw)
         kw = self._parse_cycle(**kw)
         *eb, kw = self._plot_errorbars(x, y, vert=vert, default_boxes=True, **kw)  # noqa: E501
-
-        # Call function
         kw.pop('labels', None)  # already applied in _parse_plot1d
-        kw.update({'showmeans': False, 'showmedians': False, 'showextrema': False})
         kw.setdefault('positions', x)
-        y = kw.pop('distribution', None)  # 'y' was changes in data._dist_reduce
-        obj = self._plot_native('violinplot', y, vert=vert, **kw)
+        y = _not_none(kw.pop('distribution'), y)  # might not have reduced the data
+        obj = self._plot_native(
+            'violinplot', y, vert=vert,
+            showmeans=False, showmedians=False, showextrema=False, **kw
+        )
 
         # Modify body settings
         artists = (obj or {}).get('bodies', ())
