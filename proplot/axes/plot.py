@@ -1373,9 +1373,11 @@ class PlotAxes(base.Axes):
             prefix + suffix in key for key in kwargs
             for prefix in ('shade', 'fade') for suffix in ('std', 'pctile', 'data')
         )
-        if distribution is not None and not bars and not boxes and not shade:
-            barstds = bars = default_bars
-            boxstds = boxes = default_boxes
+        if distribution is not None and not shade:
+            if not bars:
+                barstds = bars = default_bars
+            if not boxes:
+                boxstds = boxes = default_boxes
 
         # Error bar properties
         edgecolor = kwargs.get('edgecolor', rc['boxplot.whiskerprops.color'])
