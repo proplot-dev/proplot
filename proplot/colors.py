@@ -15,6 +15,7 @@ Various colormap classes and colormap normalization classes.
 # transitions because specifying N greater than len(colors) will cyclically loop around
 # the colors or truncate colors. Therefore we always encode smooth color transitions
 # with LinearSegmentedColormap and translate cmaps accordingly (rc['cmap.listedthesh'])
+import functools
 import json
 import os
 import re
@@ -2717,6 +2718,8 @@ def _init_cmap_database():
     database = getattr(mcm, attr)
     if mcm.get_cmap is not _get_cmap:
         mcm.get_cmap = _get_cmap
+    if mcm.register_cmap is not _register_cmap:
+        mcm.register_cmap = _register_cmap
     if not isinstance(database, ColormapDatabase):
         database = {
             key: value for key, value in database.items()
@@ -2727,23 +2730,26 @@ def _init_cmap_database():
     return database
 
 
+_mpl_register_cmap = mcm.register_cmap
+@functools.wraps(_mpl_register_cmap)  # noqa: E302
+def _register_cmap(*args, **kwargs):
+    """
+    Monkey patch for `~matplotlib.cm.register_cmap`. Ignores warning
+    message when re-registering existing colormaps. This is unnecessary
+    and triggers 100 warnings when importing seaborn.
+    """
+    with warnings.catch_warnings():
+        warnings.simplefilter('ignore', UserWarning)
+        return _mpl_register_cmap(*args, **kwargs)
+
+
+@functools.wraps(mcm.get_cmap)  # noqa: E302
 def _get_cmap(name=None, lut=None):
     """
-    Return the registered colormap instance.
-
-    Parameters
-    ----------
-    name : `matplotlib.colors.Colormap` or str or None, optional
-        If a `~matplotlib.colors.Colormap` instance, it will be returned. Otherwise,
-        the name of the registered colormap will be looked up and resampled by `lut`.
-        If ``None``, the default colormap :rc:`image.cmap` is returned.
-    lut : int or None, optional
-        If `name` is not already a `~matplotlib.colors.Colormap` instance
-        and `lut` is not None, the colormap will be resampled to have `lut`
-        entries in the lookup table.
+    Monkey patch for `~matplotlib.cm.get_cmap`. Permits case-insensitive
+    search of monkey-patched colormap database. This was broken in v3.2.0
+    because matplotlib now uses _check_in_list with cmap dictionary keys.
     """
-    # Monkey patch for matplotlib `~matplotlib.get_cmap`. Permits case-insensitive
-    # search of monkey-patched colormap database (which was broken in v3.2.0).
     if name is None:
         name = rc['image.cmap']
     if isinstance(name, mcolors.Colormap):
