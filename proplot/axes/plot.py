@@ -3559,10 +3559,19 @@ class PlotAxes(base.Axes):
             fillcolor, fillalpha, edgecolor, **kw
         )
 
-        # Add error bars and violins
-        x, y, kw = self._parse_plot1d(x, y, autoy=False, autoguide=False, vert=vert, **kw)  # noqa: E501
+        # Parse color properties
+        x, y, kw = self._parse_plot1d(
+            x, y, autoy=False, autoguide=False, vert=vert, **kw
+        )
+        kw = self._parse_cycle(x.size, **kw)
+        if fillcolor is None:
+            parser = self._get_patches_for_fill
+            fillcolor = [parser.get_next_color() for _ in range(x.size)]
+        else:
+            fillcolor = [fillcolor] * x.size
+
+        # Plot violins
         y, kw = data._dist_reduce(y, **kw)
-        kw = self._parse_cycle(**kw)
         *eb, kw = self._plot_errorbars(x, y, vert=vert, default_boxes=True, **kw)
         kw.pop('labels', None)  # already applied in _parse_plot1d
         kw.setdefault('positions', x)
@@ -3577,11 +3586,6 @@ class PlotAxes(base.Axes):
         bodies = artists.pop('bodies', ())  # should be no other entries
         if bodies:
             bodies = cbook.silent_list(type(bodies[0]).__name__, bodies)
-        if fillcolor is None:
-            parser = self._get_patches_for_fill
-            fillcolor = [parser.get_next_color() for _ in range(x.size)]
-        else:
-            fillcolor = [fillcolor] * x.size
         for i, body in enumerate(bodies):
             body.set_alpha(1.0)  # change default to 1.0
             if fillcolor[i] is not None:
