@@ -400,7 +400,8 @@ for i, (ax, title, cut) in enumerate(zip(axs, titles, (None, None, 0.2, -0.1))):
     else:
         kw = {'values': pplt.arange(-10, 10, 2)}  # dedicated center
     if cut is not None:
-        title = f'{title}\ncut = {cut}'
+        fmt = pplt.SimpleFormatter()  # a proper minus sign
+        title = f'{title}\ncut = {fmt(cut)}'
     ax.format(title=title)
     m = ax.contourf(
         data, cmap='Div', cmap_kw={'cut': cut}, extend='both',

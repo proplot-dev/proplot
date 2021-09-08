@@ -48,7 +48,7 @@
 # top-level namespace (e.g., ``xlocator=pplt.MultipleLocator(...)`` is allowed).
 #
 # To generate lists of tick locations, we recommend using ProPlot's
-# `~proplot.utils.arange` function -- it’s basically an *endpoint-inclusive*
+# `~proplot.utils.arange` function -- it’s basically an endpoint-inclusive
 # version of `numpy.arange`, which is usually what you'll want in this context.
 
 # %%
@@ -145,8 +145,8 @@ pplt.rc.reset()
 #
 # ProPlot also changes the default tick formatter to
 # `~proplot.ticker.AutoFormatter`. This class trims trailing zeros by
-# default, can be used to *omit tick labels* outside of some data range, and
-# can add arbitrary prefixes and suffixes to each label. See
+# default, can optionally omit or wrap tick values within particular
+# number ranges, and can add prefixes and suffixes to each label. See
 # `~proplot.ticker.AutoFormatter` for details. To disable the trailing
 # zero-trimming feature, set :rcraw:`formatter.zerotrim` to ``False``.
 
@@ -489,7 +489,7 @@ ax.format(ymin=0.05, yscale=('power', 0.5), title=title)
 # axes and an identical twin *x* axes). The ProPlot versions can be quickly
 # formatted by passing `proplot.axes.CartesianAxes.format` keyword arguments
 # to the commands (e.g., ``ax.alty(ycolor='red')`` or, since the ``y`` prefix in
-# this context is redundant, just ``ax.alty(color='red')``. They also enforce
+# this context is redundant, just ``ax.alty(color='red')``). They also enforce
 # sensible default locations for the spines, ticks, and labels, and disable
 # the twin axes background patch and gridlines by default.
 
