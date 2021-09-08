@@ -418,6 +418,8 @@ ls, linestyle, linestyles : str, optional
     The line style.
 c, color, colors : color-spec, optional
     The line color.
+a, alpha, alphas : float, optional
+    The opacity.
 """
 _patch_docstring = """
 lw, linewidth, linewidths : float, optional
@@ -451,6 +453,8 @@ ls, linestyle, linestyles : str, optional
     The style of lines between grid boxes.
 ec, edgecolor, edgecolors : color-spec, optional
     The color for lines between grid boxes.
+a, alpha, alphas : float, optional
+    The opacity of the grid boxes.
 """
 _contour_collection_docstring = """
 lw, linewidth, linewidths : float, optional
@@ -462,6 +466,8 @@ ls, linestyle, linestyles : str, optional
 ec, edgecolor, edgecolors : color-spec, optional
     The color for the contour lines. For `contourf` plots,
     lines are added between the filled contours.
+a, alpha, alpha : float, optional
+    The opacity of the contours.
 """
 docstring._snippet_manager['plot.line'] = _line_docstring
 docstring._snippet_manager['plot.patch'] = _patch_docstring
@@ -505,12 +511,12 @@ Other parameters
 ----------------
 %(plot.cycle)s
 %(plot.line)s
-%(plot.labels_1d)s
-%(plot.guide)s
 %(plot.error_means_{y})s
 %(plot.error_bars)s
 %(plot.error_shading)s
 %(plot.inbounds)s
+%(plot.labels_1d)s
+%(plot.guide)s
 **kwargs
     Passed to `~matplotlib.axes.Axes.plot`.
 
@@ -538,9 +544,9 @@ Other parameters
 ----------------
 %(plot.cycle)s
 %(plot.line)s
+%(plot.inbounds)s
 %(plot.labels_1d)s
 %(plot.guide)s
-%(plot.inbounds)s
 **kwargs
     Passed to `~matplotlib.axes.Axes.step`.
 
@@ -566,8 +572,8 @@ Parameters
 Other parameters
 ----------------
 %(plot.cycle)s
-%(plot.guide)s
 %(plot.inbounds)s
+%(plot.guide)s
 **kwargs
     Passed to `~matplotlib.axes.Axes.stem`.
 """
@@ -592,9 +598,9 @@ stack, stacked : bool, optional
 %(plot.cycle)s
 %(plot.line)s
 %(plot.negpos_lines)s
+%(plot.inbounds)s
 %(plot.labels_1d)s
 %(plot.guide)s
-%(plot.inbounds)s
 **kwargs
     Passed to `~matplotlib.axes.Axes.{prefix}lines`.
 
@@ -621,25 +627,24 @@ Parameters
 ----------
 %(plot.args_1d_y)s
 c, color, colors, values : array-like, optional
-    The parametric coordinate. These can be passed as a third
-    positional argument or as a keyword argument. They can also
-    be string labels instead of numbers and the resulting
-    colorbar ticks will be labeled accordingly.
+    The parametric coordinate. These can be passed as a third positional
+    argument or as a keyword argument. They can also be string labels instead
+    of numbers and the resulting colorbar ticks will be labeled accordingly.
+interp : int, optional
+    Interpolate to this many additional points between the parametric
+    coordinates. Default is ``0``. This can be increased to make the color
+    gradations between a small number of coordinates appear "smooth".
 %(plot.args_1d_shared)s
 
 Other parameters
 ----------------
 %(plot.cmap_norm)s
 %(plot.vmin_vmax)s
-%(plot.guide)s
-interp : int, optional
-    Interpolate to this many additional points between the parametric
-    coordinates. Default is ``0``. This can be increased to make the color
-    gradations between a small number of coordinates appear "smooth".
+%(plot.inbounds)s
 scalex, scaley : bool, optional
     Whether the view limits are adapted to the data limits. The values are
     passed on to `~matplotlib.axes.Axes.autoscale_view`.
-%(plot.inbounds)s
+%(plot.guide)s
 **kwargs
     Valid `~matplotlib.collections.LineCollection` properties.
 
@@ -668,7 +673,7 @@ Parameters
 s, size, ms, markersize : float or sequence of float, optional
     The marker size(s). If this is an array matching the shape of `x` and `y`,
     the units are scaled by `smin` and `smax`.
-c, color, colors, mc, markercolor, markercolors \
+c, color, colors, mc, markercolor, markercolors, fc, facecolor, facecolors \
 : array-like or color-spec, optional
     The marker color(s). If this is an array matching the shape of `x` and `y`,
     the colors are generated using `cmap`, `norm`, `vmin`, and `vmax`.
@@ -680,22 +685,22 @@ smin, smax : float, optional
 
 Other parameters
 ----------------
-lw, linewidth, linewidths, markeredgewidth, markeredgewidths \
-: float or sequence, optional
-    The marker edge width.
-edgecolors, markeredgecolor, markeredgecolors \
-: color-spec or sequence, optional
-    The marker edge color.
 %(plot.cmap_norm)s
 %(plot.levels_manual)s
 %(plot.levels_auto)s
 %(plot.cycle)s
-%(plot.labels_1d)s
-%(plot.guide)s
+lw, linewidth, linewidths, mew, markeredgewidth, markeredgewidths \
+: float or sequence, optional
+    The marker edge width(s).
+edgecolors, markeredgecolor, markeredgecolors \
+: color-spec or sequence, optional
+    The marker edge color(s).
 %(plot.error_means_{y})s
 %(plot.error_bars)s
 %(plot.error_shading)s
 %(plot.inbounds)s
+%(plot.labels_1d)s
+%(plot.guide)s
 **kwargs
     Passed to `~matplotlib.axes.Axes.scatter`.
 
@@ -736,11 +741,11 @@ Other parameters
 %(plot.patch)s
 %(plot.negpos_bar)s
 %(axes.edgefix)s
-%(plot.labels_1d)s
-%(plot.guide)s
 %(plot.error_means_{y})s
 %(plot.error_bars)s
 %(plot.inbounds)s
+%(plot.labels_1d)s
+%(plot.guide)s
 **kwargs
     Passed to `~matplotlib.axes.Axes.bar{suffix}`.
 
@@ -766,10 +771,10 @@ Plot individual, grouped, or overlaid shading patches.
 Parameters
 ----------
 %(plot.args_1d_multi{y})s
-%(plot.args_1d_shared)s
 stack, stacked : bool, optional
     Whether to "stack" area patches from successive columns of {y} data
     or plot area patches on top of each other. Default is ``False``.
+%(plot.args_1d_shared)s
 
 Other parameters
 ----------------
@@ -781,9 +786,9 @@ where : ndarray, optional
 %(plot.patch)s
 %(plot.negpos_fill)s
 %(axes.edgefix)s
+%(plot.inbounds)s
 %(plot.labels_1d)s
 %(plot.guide)s
-%(plot.inbounds)s
 **kwargs
     Passed to `~matplotlib.axes.Axes.fill_between{suffix}`.
 
@@ -916,13 +921,13 @@ bins : int or sequence of float, optional
 %(plot.weights)s
 histtype : {{'bar', 'barstacked', 'step', 'stepfilled'}}, optional
     The histogram type. See `matplotlib.axes.Axes.hist` for details.
+width, rwidth : float, optional
+    The bar width(s) for bar-type histograms relative to the bin size. Default
+    is ``0.8`` for multiple columns of unstacked data and ``1`` otherwise.
 stack, stacked : bool, optional
     Whether to "stack" successive columns of {y} data for bar-type histograms
     or show side-by-side in groups. Setting this to ``False`` is equivalent to
     ``histtype='bar'`` and to ``True`` is equivalent to ``histtype='barstacked'``.
-width, rwidth : float, optional
-    The bar width(s) for bar-type histograms relative to the bin size. Default
-    is ``0.8`` for multiple columns of unstacked data and ``1`` otherwise.
 fill, filled : bool, optional
     Whether to "fill" step-type histograms or just plot the edges. Setting
     this to ``False`` is equivalent to ``histtype='step'`` and to ``True``
@@ -1011,13 +1016,11 @@ Parameters
 Other parameters
 ----------------
 %(plot.cycle)s
+%(plot.patch)s
+%(axes.edgefix)s
 %(plot.labels_1d)s
 labelpad, labeldistance : float, optional
     The distance at which labels are drawn in radial coordinates.
-lw, linewidth, linewidths : float, optional
-    The edge width for the pie sectors.
-ec, edgecolor, edgecolors : color-spec, optional
-    The edge color for the pie sectors.
 
 See also
 --------
@@ -1042,9 +1045,9 @@ Other parameters
 %(plot.levels_manual)s
 %(plot.vmin_vmax)s
 %(plot.levels_auto)s
+%(plot.contour_collection)s{edgefix}
 %(plot.labels_2d)s
 %(plot.guide)s
-%(plot.contour_collection)s{edgefix}
 **kwargs
     Passed to `matplotlib.axes.Axes.{command}`.
 
@@ -1086,10 +1089,10 @@ Other parameters
 %(plot.levels_manual)s
 %(plot.vmin_vmax)s
 %(plot.levels_auto)s
-%(plot.labels_2d)s
-%(plot.guide)s
 %(plot.pcolor_collection)s
 %(axes.edgefix)s
+%(plot.labels_2d)s
+%(plot.guide)s
 **kwargs
     Passed to `matplotlib.axes.Axes.{command}`.
 
