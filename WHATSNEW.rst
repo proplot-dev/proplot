@@ -36,6 +36,8 @@ Deprecations
 
 * Rename :rcraw:`cmap.edgefix` to :rcraw:`edgefix` (:commit:`515f5132`). It now
   applies to bar and area plot elements, not just scalar mappables (see below).
+* Deprecate passing lists of colors to ``boxplot`` and ``violinplot`` in favor
+  of using the property cycler instead (see below) (:commit:`67d95349`).
 * The ``violinplot`` functions now return `~matplotlib.collection.PolyCollection`
   of violin bodies or tuples of (bodies, error bars) instead of a singleton
   dictionary containing just the ``'bodies'`` entry (:commit:`45774536`).
@@ -73,6 +75,9 @@ Style changes
 * Implement "edgefix" and add `edgefix` keyword for ``bar``, ``hist``, ``area``, and
   ``pie`` to fix the "white-lines-between-patches" issue with saved vector graphics,
   just like ``pcolor`` and ``contourf`` (:commit:`cc602349`, :commit:`b291b2be`).
+* The ``boxplot`` and ``violinplot`` functions now iterate through the property
+  cycler for each box/violin by default (similar to seaborn) (:commit:`67d95349`).
+  The cycle can be changed with `cycle` and `cycle_kw` arguments.
 
 Features
 --------
@@ -156,6 +161,9 @@ Bug fixes
   ``_parse_cycle`` rather than before (:commit:`acf545e2`).
 * Fix issue where violin plots cannot be drawn without adding error bars
   (e.g., with ``means=True``) or an error is raised (:commit:`c0d04835`).
+* Fix issue where explicitly specifying ``bar[stds|pctiles]`` for
+  ``violinplot`` turns off the boxes if they were not specified
+  (and vice versa for ``box[stds|pctiles]``) (:commit:`0edfff4e`)
 
 Internals
 ---------

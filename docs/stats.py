@@ -181,8 +181,7 @@ ax.format(title='Violin plots')
 
 # Boxes with different colors
 ax = axs[2]
-colors = pplt.get_colors('pastel2')  # list of colors from the cycle
-ax.boxh(data2, fillcolor=colors)
+ax.boxh(data2, cycle='pastel2')
 ax.format(title='Multiple colors', ymargin=0.15)
 
 
