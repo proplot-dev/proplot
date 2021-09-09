@@ -32,6 +32,7 @@ from ..internals import (
     _pop_kwargs,
     _pop_params,
     _pop_props,
+    _process_props,
     dependencies,
     docstring,
     guides,
@@ -179,8 +180,8 @@ zorder : float, optional
     of elements in the parent axes. Default is ``4``.
 zoom : bool, optional
     Whether to draw lines indicating the inset zoom using
-    `~Axes.indicate_inset_zoom`. The lines will automatically adjust
-    whenever the parent axes or inset axes limits are changed. Default
+    `~Axes.indicate_inset_zoom`. The line positions will automatically
+    adjust when the parent or inset axes limits change. Default
     is ``True`` only if both axes are `~proplot.axes.CartesianAxes`.
 zoom_kw : dict, optional
     Passed to `~Axes.indicate_inset_zoom`.
@@ -203,9 +204,8 @@ matplotlib.axes.Axes.indicate_inset
 matplotlib.axes.Axes.indicate_inset_zoom
 """
 _indicate_inset_docstring = """
-Draw lines indicating the zoom range of the inset axes. Must be
-called from the inset axes rather than the parent axes. This is
-called automatically when ``zoom=True`` is passed to `~Axes.inset_axes`.
+Add indicators denoting the zoom range of the inset axes.
+This will replace previously drawn zoom indicators.
 
 Parameters
 ----------
@@ -218,7 +218,14 @@ zorder : float, optional
 Other parameters
 ----------------
 **kwargs
-    Passed to `~matplotlib.axes.Axes.indicate_inset`.
+    Passed to `~matplotlib.patches.Patch`.
+
+Note
+----
+This command must be called from the inset axes rather than the parent axes.
+It is called automatically when ``zoom=True`` is passed to `~Axes.inset_axes`
+and whenever the axes are drawn (so the line positions always track the axis
+limits even if they are later changed).
 
 See also
 --------
@@ -657,7 +664,7 @@ class Axes(maxes.Axes):
         self._alty_parent = None
         self._inset_parent = None
         self._inset_zoom = False
-        self._inset_zoom_data = None
+        self._inset_zoom_artists = None
         self._panel_hidden = False  # True when "filled" with cbar/legend
         self._panel_parent = None
         self._panel_share = False
@@ -1539,37 +1546,34 @@ class Axes(maxes.Axes):
         """
         %(axes.indicate_inset)s
         """
-        # Should be called from the inset axes
+        # Add the inset indicators
         parent = self._inset_parent
-        props = _pop_props(kwargs, 'patch')
-        props.setdefault('zorder', 3.5)
-        props.setdefault('linewidth', rc['axes.linewidth'])
-        props.setdefault('edgecolor', rc['axes.edgecolor'])
-        kwargs.setdefault('capstyle', 'round')  # match zoom capstyle
         if not parent:
-            raise ValueError(f'{self} is not an inset axes.')
+            raise ValueError('This command can only be called from an inset axes.')
+        _process_props(kwargs, 'patch')  # impose alternative defaults after norm
+        if not self._inset_zoom_artists:
+            kwargs.setdefault('zorder', 3.5)
+            kwargs.setdefault('linewidth', rc['axes.linewidth'])
+            kwargs.setdefault('edgecolor', rc['axes.edgecolor'])
         xlim, ylim = self.get_xlim(), self.get_ylim()
         rect = (xlim[0], ylim[0], xlim[1] - xlim[0], ylim[1] - ylim[0])
+        rectpatch, connects = parent.indicate_inset(rect, self)
 
-        # Call indicate_inset
-        rectpatch, connects = parent.indicate_inset(
-            rect, self, **props, **kwargs
-        )
-
-        # Update zoom or adopt properties from old one
-        if self._inset_zoom_data is None:
-            for line in connects:
-                line.update(props)
-        else:
-            rectpatch_prev, connects_prev = self._inset_zoom_data
+        # Update indicator properties
+        # NOTE: Unlike matplotlib we sync zoom box properties with connection lines.
+        if self._inset_zoom_artists:
+            rectpatch_prev, connects_prev = self._inset_zoom_artists
             rectpatch.update_from(rectpatch_prev)
-            rectpatch_prev.set_visible(False)
+            rectpatch.set_zorder(rectpatch_prev.get_zorder())
+            rectpatch_prev.remove()
             for line, line_prev in zip(connects, connects_prev):
-                visible = line.get_visible()
                 line.update_from(line_prev)
-                line.set_visible(visible)
-                line_prev.set_visible(False)
-        self._inset_zoom_data = (rectpatch, connects)
+                line.set_zorder(line_prev.get_zorder())  # not included in update_from
+                line_prev.remove()
+        rectpatch.update(kwargs)
+        for line in connects:
+            line.update(kwargs)
+        self._inset_zoom_artists = (rectpatch, connects)
         return rectpatch, connects
 
     @docstring._snippet_manager
