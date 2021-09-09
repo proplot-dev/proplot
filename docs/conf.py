@@ -26,13 +26,13 @@ sys.path.append(os.path.abspath('.'))
 # See: https://github.com/readthedocs/readthedocs.org/issues/5339
 if os.environ.get('READTHEDOCS', None) == 'True':
     os.environ['GEOS_DIR'] = os.path.join(
-        os.environ['CONDA_ENVS_PATH'], os.environ['CONDA_DEFAULT_ENV'], 'lib',
+        os.environ['CONDA_ENVS_PATH'], os.environ['CONDA_DEFAULT_ENV']
     )
     os.environ['PROJ_LIB'] = os.path.join(
         os.environ['CONDA_ENVS_PATH'], os.environ['CONDA_DEFAULT_ENV'], 'share', 'proj'
     )
 else:
-    os.environ['GEOS_DIR'] = os.path.join(os.environ['CONDA_PREFIX'], 'lib')
+    os.environ['GEOS_DIR'] = os.environ['CONDA_PREFIX']
     os.environ['PROJ_LIB'] = os.path.join(os.environ['CONDA_PREFIX'], 'share', 'proj')
 
 # Install basemap if does not exist
