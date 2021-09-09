@@ -1,24 +1,26 @@
 # Hard requirements for notebook examples and documentation build
-# NOTE: Keep up-to-date with ci/environment.yml!
-# NOTE: Basemap is broken as of matplotlib >=3.3 so for documentation
-# use 3.2.1. Probably lots of basemap holdouts for next ~5 years.
-# NOTE: PyQt5 is needed by pyplot, RTD server *happens* to already have it
-# but creating local environment will fail.
-# NOTE: Jinja >= 3.0 and nbsphinx >= 0.8.2 seem to break default ReST roles when
-# jupytext notebooks are converted to HTML. Interpreted as italics instead.
+# WARNING: Keep this up-to-date with ci/environment.yml
+# * Basemap is broken as of matplotlib >=3.3 so for documentation
+#   use 3.2.1. Probably lots of basemap holdouts for next ~5 years.
+# * PyQt5 is needed by pyplot, RTD server *happens* to already have it
+#   but creating local environment will fail.
+# * Jinja >= 3.0 and nbsphinx >= 0.8.2 seem to break default ReST roles when
+#   jupytext notebooks are converted to HTML. Interpreted as italics instead.
+# * For testing use conda create --name proplot-dev --no-default-packages followed
+#   by mamba env update --name proplot-dev --file environment.yml for speed.
+#   Making env from file fails. See: https://github.com/mamba-org/mamba/issues/633
 name: proplot-dev
 channels:
   - conda-forge
 dependencies:
   - python>=3.6
   - numpy
-  - xarray
   - pandas
+  - xarray
   - matplotlib==3.2.1
-  - cartopy==0.18.0
-  - basemap
-  - pandoc
+  - cartopy==0.19.0.post1
   - ipykernel
+  - pandoc
   - pip
   - pip:
     - ..
@@ -26,7 +28,8 @@ dependencies:
     - sphinx>=3.0
     - sphinx-copybutton
     - sphinx_rtd_theme==0.4.3
-    - jupytext
     - jinja2==2.11.3
     - nbsphinx==0.8.1
-    - git+https://github.com/lukelbd/sphinx-automodapi
+    - jupytext
+    - git+https://github.com/matplotlib/basemap@v1.2.2rel
+    - git+https://github.com/lukelbd/sphinx-automodapi@proplot-mods

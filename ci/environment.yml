@@ -1,30 +1,23 @@
 # Hard requirements for running tests
-# NOTE: Keep up-to-date with docs/environment.yml!
-# NOTE: Basemap is broken as of matplotlib >= 3.3 so for documentation
-# use 3.2.1. Probably lots of basemap holdouts for next ~5 years.
-# NOTE: PyQt5 is needed by pyplot, RTD server *happens* to already have it
-# but creating local environment will fail.
-# NOTE: Jinja >= 3.0 and nbsphinx >= 0.8.2 seem to break default ReST roles when
-# jupytext notebooks are converted to HTML. Interpreted as italics instead.
+# See docs/environment.yml for dependency notes
 name: proplot-dev
 channels:
   - conda-forge
 dependencies:
   - python>=3.6
   - numpy
-  - xarray
   - pandas
+  - xarray
   - matplotlib==3.2.1
-  - cartopy==0.18.0
-  - basemap
-  - pandoc
+  - cartopy==0.19.0.post1
   - ipykernel
+  - pandoc
   - pip
+  - python-build
   - setuptools
-  - wheel
   - setuptools_scm
   - setuptools_scm_git_archive
-  - python-build
+  - wheel
   - pip:
     - ..
     - flake8
@@ -37,7 +30,8 @@ dependencies:
     - sphinx>=3.0
     - sphinx-copybutton
     - sphinx_rtd_theme==0.4.3
-    - jupytext
     - jinja2==2.11.3
     - nbsphinx==0.8.1
+    - jupytext
+    - git+https://github.com/matplotlib/basemap@v1.2.2rel
     - git+https://github.com/lukelbd/sphinx-automodapi@v0.10.proplot-mods

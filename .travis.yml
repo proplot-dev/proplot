@@ -27,7 +27,7 @@ before_install:
   - conda info -a
 
 install:
-  - conda env create --name proplot-dev --file ci/environment.yml
+  - conda env create --file ci/environment.yml
   - source activate proplot-dev
   - conda list
   - which conda
