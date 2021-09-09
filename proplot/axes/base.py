@@ -27,17 +27,14 @@ from .. import constructor
 from ..config import _parse_format, _translate_loc, rc
 from ..internals import ic  # noqa: F401
 from ..internals import (
-    _fill_guide_kw,
-    _guide_kw_from_obj,
-    _iter_children,
-    _iter_iterables,
-    _keyword_to_positional,
+    _kwargs_to_args,
     _not_none,
     _pop_kwargs,
     _pop_params,
     _pop_props,
     dependencies,
     docstring,
+    guides,
     rcsetup,
     text,
     warnings,
@@ -178,27 +175,58 @@ bounds : 4-tuple of float
 %(axes.basemap)s
 zorder : float, optional
     The `zorder <https://matplotlib.org/stable/gallery/misc/zorder_demo.html>`__
-    of the axes, should be greater than the zorder of elements in the parent
-    axes. Default is ``4``.
+    of the axes. Should be greater than the zorder
+    of elements in the parent axes. Default is ``4``.
 zoom : bool, optional
     Whether to draw lines indicating the inset zoom using
-    `~Axes.indicate_inset_zoom`. The lines will automatically
-    adjust whenever the parent axes or inset axes limits are
-    changed. Default is ``True``.
+    `~Axes.indicate_inset_zoom`. The lines will automatically adjust
+    whenever the parent axes or inset axes limits are changed. Default
+    is ``True`` only if both axes are `~proplot.axes.CartesianAxes`.
 zoom_kw : dict, optional
     Passed to `~Axes.indicate_inset_zoom`.
+
+Other parameters
+----------------
+**kwargs
+    Passed to `proplot.axes.Axes`.
 
 Returns
 -------
 proplot.axes.Axes
     The inset axes.
 
+See also
+--------
+Axes.indicate_inset_zoom
+matplotlib.axes.Axes.inset_axes
+matplotlib.axes.Axes.indicate_inset
+matplotlib.axes.Axes.indicate_inset_zoom
+"""
+_indicate_inset_docstring = """
+Draw lines indicating the zoom range of the inset axes. Must be
+called from the inset axes rather than the parent axes. This is
+called automatically when ``zoom=True`` is passed to `~Axes.inset_axes`.
+
+Parameters
+----------
+%(artist.patch)s
+zorder : float, optional
+    The `zorder <https://matplotlib.org/stable/gallery/misc/zorder_demo.html>`__
+    of the indicators. Should be greater than the zorder
+    of elements in the parent axes. Default is ``3.5``.
+
 Other parameters
 ----------------
 **kwargs
-    Passed to `CartesianAxes`.
+    Passed to `~matplotlib.axes.Axes.indicate_inset`.
+
+See also
+--------
+matplotlib.axes.Axes.indicate_inset
+matplotlib.axes.Axes.indicate_inset_zoom
 """
 docstring._snippet_manager['axes.inset'] = _inset_docstring
+docstring._snippet_manager['axes.indicate_inset'] = _indicate_inset_docstring
 
 
 # Panel docstring
@@ -239,6 +267,11 @@ share : bool, optional
     main subplot and the panel long axes for each panel in the stack.
     Sharing between the panel short axis and other panel short axes
     is determined by figure-wide `sharex` and `sharey` settings.
+
+Other parameters
+----------------
+**kwargs
+    Passed to `proplot.axes.CartesianAxes`.
 
 Returns
 -------
@@ -1463,7 +1496,7 @@ class Axes(maxes.Axes):
     @docstring._snippet_manager
     def inset_axes(
         self, bounds, transform=None, *, proj=None, projection=None,
-        zoom=None, zoom_kw=None, zorder=4, **kwargs
+        zoom=None, zoom_kw=None, zorder=None, **kwargs
     ):
         """
         %(axes.inset)s
@@ -1473,6 +1506,7 @@ class Axes(maxes.Axes):
         locator = self._make_inset_locator(bounds, transform)
         bb = locator(None, None)
         label = kwargs.pop('label', 'inset_axes')
+        zorder = _not_none(zorder, 4)
 
         # Get projection, inherit from current axes by default
         # NOTE: The _parse_proj method also accepts axes classes.
@@ -1500,35 +1534,10 @@ class Axes(maxes.Axes):
             ax.indicate_inset_zoom(**zoom_kw)
         return ax
 
+    @docstring._snippet_manager
     def indicate_inset_zoom(self, **kwargs):
         """
-        Draw lines indicating the zoom range of the inset axes. Must be
-        called from the inset axes rather than the parent axes. This is
-        similar to `matplotlib.axes.Axes.indicate_inset_zoom` except line
-        positions are refreshed at drawtime. This is called automatically
-        when ``zoom=True`` is passed to `~Axes.inset_axes`.
-
-        Parameters
-        ----------
-        alpha : float, optional
-            The transparency of the zoom box fill.
-        lw, linewidth : float, optional
-            The width of the zoom lines and box outline in points.
-        ls, linestyle : linestyle-spec, optional
-            The line style for the zoom lines and box outline.
-        ec, edgecolor : color-spec, optional
-            The color of the zoom lines and box outline.
-        cs, capstyle : {'butt', 'round', 'projecting'}
-            The cap style for the zoom lines and box outline.
-        zorder : float, optional
-            The `zorder <https://matplotlib.org/stable/gallery/misc/zorder_demo.html>`__
-            of the zoom lines. Should be greater than the zorder of
-            elements in the parent axes. Default is ``3.5``.
-
-        Other parameters
-        ----------------
-        **kwargs
-            Passed to `~matplotlib.axes.Axes.indicate_inset`.
+        %(axes.indicate_inset)s
         """
         # Should be called from the inset axes
         parent = self._inset_parent
@@ -2100,7 +2109,7 @@ class Axes(maxes.Axes):
         # Return ad hoc ScalarMappable and update locator and formatter
         # NOTE: If value list doesn't match this may cycle over colors.
         mappable = mcm.ScalarMappable(norm, cmap)
-        _fill_guide_kw(kwargs, locator=locator, formatter=formatter)
+        guides._fill_guide_kw(kwargs, locator=locator, formatter=formatter)
         return mappable, kwargs
 
     def _draw_colorbar(
@@ -2339,7 +2348,7 @@ class Axes(maxes.Axes):
         # to a list later used for colorbar levels. Same as legend.
         loc = _not_none(loc=loc, location=location)
         loc = _translate_loc(loc, 'colorbar', default=rc['colorbar.loc'])
-        kwargs = _guide_kw_from_obj(mappable, 'colorbar', kwargs)
+        kwargs = guides._guide_kw_from_obj(mappable, 'colorbar', kwargs)
         if queue:
             self._register_guide('colorbar', (mappable, values), loc, **kwargs)
         else:
@@ -2403,7 +2412,8 @@ class Axes(maxes.Axes):
                         obj = hs[len(hs) // 2]
                         obj.set_label(label)
                 if isinstance(obj, containers):  # extract labeled elements
-                    hs = tuple(filter(_legend_label, (obj, *_iter_iterables(obj))))
+                    hs = (obj, *guides._iter_iterables(obj))
+                    hs = tuple(filter(_legend_label, hs))
                     if hs:
                         handles.extend(hs)
                     elif obj:  # fallback to first element
@@ -2733,7 +2743,7 @@ class Axes(maxes.Axes):
         # returns the first artist. Instead we try to iterate through offset boxes.
         for obj in objs:
             box = getattr(obj, '_legend_handle_box', None)
-            for obj in _iter_children(box):
+            for obj in guides._iter_children(box):
                 if isinstance(obj, mtext.Text):
                     kw = kw_text
                 else:
@@ -2809,7 +2819,7 @@ class Axes(maxes.Axes):
         # is used internally for on-the-fly legends.
         loc = _not_none(loc=loc, location=location)
         loc = _translate_loc(loc, 'legend', default=rc['legend.loc'])
-        kwargs = _guide_kw_from_obj(handles, 'legend', kwargs)
+        kwargs = guides._guide_kw_from_obj(handles, 'legend', kwargs)
         if queue:
             self._register_guide('legend', (handles, labels), loc, **kwargs)
         else:
@@ -2903,7 +2913,7 @@ class Axes(maxes.Axes):
         # NOTE: The transform must be passed positionally for 3D axes with 2D coords
         keys = tuple('xyz' if self._name == 'three' else 'xy')
         keys += (('s', 'text'),)  # interpret both 's' and 'text'
-        args, kwargs = _keyword_to_positional(keys, *args, **kwargs)
+        args, kwargs = _kwargs_to_args(keys, *args, **kwargs)
         if len(args) == len(keys) + 1:
             add_text = super().text
             *args, transform = args

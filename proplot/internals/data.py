@@ -192,7 +192,7 @@ def _from_data(data, *args):
     return args
 
 
-def _preprocess(*keys, keywords=None, allow_extra=True):
+def _preprocess_args(*keys, keywords=None, allow_extra=True):
     """
     Redirect internal plotting calls to native matplotlib methods. Also convert
     keyword args to positional and pass arguments through 'data' dictionary.
@@ -208,10 +208,9 @@ def _preprocess(*keys, keywords=None, allow_extra=True):
 
         @functools.wraps(func)
         def _redirect_or_standardize(self, *args, **kwargs):
-            from ..axes import PlotAxes
-            from . import _keyword_to_positional
             if getattr(self, '_internal_call', None):
                 # Redirect internal matplotlib call to native function
+                from ..axes import PlotAxes
                 func_native = getattr(super(PlotAxes, self), name)
                 return func_native(*args, **kwargs)
             else:
@@ -231,7 +230,8 @@ def _preprocess(*keys, keywords=None, allow_extra=True):
 
                 # Process data args
                 # NOTE: Raises error if there are more args than keys
-                args, kwargs = _keyword_to_positional(
+                from .. import _kwargs_to_args
+                args, kwargs = _kwargs_to_args(
                     keys, *args, allow_extra=allow_extra, **kwargs
                 )
                 data = kwargs.pop('data', None)

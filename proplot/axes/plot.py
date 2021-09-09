@@ -26,9 +26,6 @@ from ..config import rc
 from ..internals import ic  # noqa: F401
 from ..internals import (
     _get_aliases,
-    _guide_kw_to_arg,
-    _guide_kw_to_obj,
-    _iter_iterables,
     _not_none,
     _pop_kwargs,
     _pop_params,
@@ -37,6 +34,7 @@ from ..internals import (
     context,
     data,
     docstring,
+    guides,
     warnings,
 )
 from . import base
@@ -410,70 +408,6 @@ docstring._snippet_manager['plot.labels_1d'] = _labels_1d_docstring
 docstring._snippet_manager['plot.labels_2d'] = _labels_2d_docstring
 
 
-# Style docstrings
-_line_docstring = """
-lw, linewidth, linewidths : float, optional
-    The line width.
-ls, linestyle, linestyles : str, optional
-    The line style.
-c, color, colors : color-spec, optional
-    The line color.
-a, alpha, alphas : float, optional
-    The opacity.
-"""
-_patch_docstring = """
-lw, linewidth, linewidths : float, optional
-    The edge width for the patches.
-ls, linestyle, linestyles : str, optional
-    The edge style for the patches.
-ec, edgecolor, edgecolors : color-spec, optional
-    The edge color for the patches.
-fc, facecolor, facecolors, fillcolor, fillcolors : color-spec, optional
-    The face color for the patches.
-a, alpha, alphas : float, optional
-    The face opacity for the patches.
-"""
-_patches_docstring = """
-lw, linewidth, linewidths : float, optional
-    The edge width for the {objects}. Default is :rc:`patch.linewidth`.
-c, color, colors, ec, edgecolor, edgecolors : color-spec, optional
-    The edge color for the {objects}. Default is ``'black'``.
-fc, facecolor, fillcolor, facecolors, fillcolors : color-spec, optional
-    The fill color for the {objects}. Default is to use the property `cycle`.
-a, alpha, alphas : float, optional
-    The opacity of the {objects}. Default is ``1.0``.
-"""
-_pcolor_collection_docstring = """
-lw, linewidth, linewidths : float, optional
-    The width of lines between grid boxes.
-ls, linestyle, linestyles : str, optional
-    The style of lines between grid boxes.
-ec, edgecolor, edgecolors : color-spec, optional
-    The color for lines between grid boxes.
-a, alpha, alphas : float, optional
-    The opacity of the grid boxes.
-"""
-_contour_collection_docstring = """
-lw, linewidth, linewidths : float, optional
-    The width of the contour lines. For `contourf` plots,
-    lines are added between the filled contours.
-ls, linestyle, linestyles : str, optional
-    The style of the contour lines. For `contourf` plots,
-    lines are added between the filled contours.
-ec, edgecolor, edgecolors : color-spec, optional
-    The color for the contour lines. For `contourf` plots,
-    lines are added between the filled contours.
-a, alpha, alpha : float, optional
-    The opacity of the contours.
-"""
-docstring._snippet_manager['plot.line'] = _line_docstring
-docstring._snippet_manager['plot.patch'] = _patch_docstring
-docstring._snippet_manager['plot.box_patches'] = _patches_docstring.format(objects='boxes')  # noqa: E501
-docstring._snippet_manager['plot.violin_patches'] = _patches_docstring.format(objects='violins')  # noqa: E501
-docstring._snippet_manager['plot.pcolor_collection'] = _pcolor_collection_docstring
-docstring._snippet_manager['plot.contour_collection'] = _contour_collection_docstring
-
-
 # Negative-positive colors
 _negpos_docstring = """
 negpos : bool, optional
@@ -507,7 +441,7 @@ Parameters
 Other parameters
 ----------------
 %(plot.cycle)s
-%(plot.line)s
+%(artist.line)s
 %(plot.error_means_{y})s
 %(plot.error_bars)s
 %(plot.error_shading)s
@@ -540,7 +474,7 @@ Parameters
 Other parameters
 ----------------
 %(plot.cycle)s
-%(plot.line)s
+%(artist.line)s
 %(plot.inbounds)s
 %(plot.labels_1d)s
 %(plot.guide)s
@@ -593,7 +527,7 @@ stack, stacked : bool, optional
     Whether to "stack" lines from successive columns of {y} data
     or plot lines on top of each other. Default is ``False``.
 %(plot.cycle)s
-%(plot.line)s
+%(artist.line)s
 %(plot.negpos_lines)s
 %(plot.inbounds)s
 %(plot.labels_1d)s
@@ -735,7 +669,7 @@ stack, stacked : bool, optional
 Other parameters
 ----------------
 %(plot.cycle)s
-%(plot.patch)s
+%(artist.patch)s
 %(plot.negpos_bar)s
 %(axes.edgefix)s
 %(plot.error_means_{y})s
@@ -780,7 +714,7 @@ where : ndarray, optional
     See `this matplotlib example \
 <https://matplotlib.org/stable/gallery/pyplots/whats_new_98_4_fill_between.html>`__.
 %(plot.cycle)s
-%(plot.patch)s
+%(artist.patch)s
 %(plot.negpos_fill)s
 %(axes.edgefix)s
 %(plot.inbounds)s
@@ -823,7 +757,7 @@ mean, means : bool, optional
     If ``True``, this passes ``showmeans=True`` and ``meanline=True``
     to `~matplotlib.axes.Axes.boxplot`.
 %(plot.cycle)s
-%(plot.box_patches)s
+%(artist.patch_black)s
 m, marker, ms, markersize : float or str, optional
     Marker style and size for the 'fliers', i.e. outliers. Default is
     determined by :rcraw:`boxplot.flierprops`.
@@ -878,7 +812,7 @@ Parameters
 Other parameters
 ----------------
 %(plot.cycle)s
-%(plot.violin_patches)s
+%(artist.patch_black)s
 %(plot.labels_1d)s
 %(plot.error_bars)s
 **kwargs
@@ -934,7 +868,7 @@ fill, filled : bool, optional
 Other parameters
 ----------------
 %(plot.cycle)s
-%(plot.patch)s
+%(artist.patch)s
 %(axes.edgefix)s
 %(plot.labels_1d)s
 %(plot.guide)s
@@ -1013,7 +947,7 @@ Parameters
 Other parameters
 ----------------
 %(plot.cycle)s
-%(plot.patch)s
+%(artist.patch)s
 %(axes.edgefix)s
 %(plot.labels_1d)s
 labelpad, labeldistance : float, optional
@@ -1042,7 +976,7 @@ Other parameters
 %(plot.levels_manual)s
 %(plot.vmin_vmax)s
 %(plot.levels_auto)s
-%(plot.contour_collection)s{edgefix}
+%(artist.collection_contour)s{edgefix}
 %(plot.labels_2d)s
 %(plot.guide)s
 **kwargs
@@ -1086,7 +1020,7 @@ Other parameters
 %(plot.levels_manual)s
 %(plot.vmin_vmax)s
 %(plot.levels_auto)s
-%(plot.pcolor_collection)s
+%(artist.collection_pcolor)s
 %(axes.edgefix)s
 %(plot.labels_2d)s
 %(plot.guide)s
@@ -1511,7 +1445,7 @@ class PlotAxes(base.Axes):
             min_, max_ = data._safe_range(sides)
             if min_ is None or max_ is None:
                 continue
-            for obj in _iter_iterables(objs):
+            for obj in guides._iter_iterables(objs):
                 convert = getattr(self, 'convert_' + axis + 'units')
                 edges = getattr(obj.sticky_edges, axis)
                 edges.extend(convert((min_, max_)))
@@ -1790,12 +1724,12 @@ class PlotAxes(base.Axes):
             colorbar_kw.setdefault('queue', queue_colorbar)
             self.colorbar(objs, loc=colorbar, **colorbar_kw)
         else:
-            _guide_kw_to_obj(objs, 'colorbar', colorbar_kw)  # save for later
+            guides._guide_kw_to_obj(objs, 'colorbar', colorbar_kw)  # save for later
         if legend:
             legend_kw = legend_kw or {}
             self.legend(objs, loc=legend, queue=True, **legend_kw)
         else:
-            _guide_kw_to_obj(objs, 'legend', legend_kw)  # save for later
+            guides._guide_kw_to_obj(objs, 'legend', legend_kw)  # save for later
 
     def _parse_format1d(
         self, x, *ys, zerox=False, autox=True, autoy=True, autoformat=None,
@@ -1858,8 +1792,8 @@ class PlotAxes(base.Axes):
         if autoguide and autoformat:
             title = data._meta_title(labels)
             if title:  # safely update legend_kw and colorbar_kw
-                _guide_kw_to_arg('legend', kwargs, title=title)
-                _guide_kw_to_arg('colorbar', kwargs, label=title)
+                guides._guide_kw_to_arg('legend', kwargs, title=title)
+                guides._guide_kw_to_arg('colorbar', kwargs, label=title)
 
         # Apply the basic x and y settings
         autox = autox and self._name == 'cartesian'
@@ -1979,8 +1913,8 @@ class PlotAxes(base.Axes):
         if autoguide and autoformat:
             title = data._meta_title(zs[0])
             if title:  # safely update legend_kw and colorbar_kw
-                _guide_kw_to_arg('legend', kwargs, title=title)
-                _guide_kw_to_arg('colorbar', kwargs, label=title)
+                guides._guide_kw_to_arg('legend', kwargs, title=title)
+                guides._guide_kw_to_arg('colorbar', kwargs, label=title)
 
         # Finally strip metadata
         x = data._to_numpy_array(x)
@@ -2382,7 +2316,7 @@ class PlotAxes(base.Axes):
         if descending is not None:
             kwargs.setdefault('descending', descending)  # for _parse_discrete
         if ticks is not None and np.iterable(ticks):
-            _guide_kw_to_arg('colorbar', kwargs, locator=ticks)
+            guides._guide_kw_to_arg('colorbar', kwargs, locator=ticks)
 
         # Filter the level boundaries
         if levels is not None and np.iterable(levels):
@@ -2650,7 +2584,7 @@ class PlotAxes(base.Axes):
             kwargs['levels'] = levels
             kwargs['extend'] = extend
         kwargs.update({'cmap': cmap, 'norm': norm})
-        _guide_kw_to_arg('colorbar', kwargs, extend=extend)
+        guides._guide_kw_to_arg('colorbar', kwargs, extend=extend)
 
         return kwargs
 
@@ -2814,7 +2748,7 @@ class PlotAxes(base.Axes):
         """
         return self.plotx(*args, **kwargs)
 
-    @data._preprocess('x', 'y', allow_extra=True)
+    @data._preprocess_args('x', 'y', allow_extra=True)
     @docstring._concatenate_original
     @docstring._snippet_manager
     def plot(self, *args, **kwargs):
@@ -2824,7 +2758,7 @@ class PlotAxes(base.Axes):
         kwargs = _parse_vert(default_vert=True, **kwargs)
         return self._apply_plot(*args, **kwargs)
 
-    @data._preprocess('y', 'x', allow_extra=True)
+    @data._preprocess_args('y', 'x', allow_extra=True)
     @docstring._snippet_manager
     def plotx(self, *args, **kwargs):
         """
@@ -2865,7 +2799,7 @@ class PlotAxes(base.Axes):
         self._update_guide(objs, **guide_kw)
         return cbook.silent_list('Line2D', objs)  # always return list
 
-    @data._preprocess('x', 'y', allow_extra=True)
+    @data._preprocess_args('x', 'y', allow_extra=True)
     @docstring._concatenate_original
     @docstring._snippet_manager
     def step(self, *args, **kwargs):
@@ -2875,7 +2809,7 @@ class PlotAxes(base.Axes):
         kwargs = _parse_vert(default_vert=True, **kwargs)
         return self._apply_step(*args, **kwargs)
 
-    @data._preprocess('y', 'x', allow_extra=True)
+    @data._preprocess_args('y', 'x', allow_extra=True)
     @docstring._snippet_manager
     def stepx(self, *args, **kwargs):
         """
@@ -2930,7 +2864,7 @@ class PlotAxes(base.Axes):
         self._update_guide(obj, **guide_kw)
         return obj
 
-    @data._preprocess('x', 'y')
+    @data._preprocess_args('x', 'y')
     @docstring._concatenate_original
     @docstring._snippet_manager
     def stem(self, *args, **kwargs):
@@ -2940,7 +2874,7 @@ class PlotAxes(base.Axes):
         kwargs = _parse_vert(default_orientation='vertical', **kwargs)
         return self._apply_stem(*args, **kwargs)
 
-    @data._preprocess('x', 'y')
+    @data._preprocess_args('x', 'y')
     @docstring._snippet_manager
     def stemx(self, *args, **kwargs):
         """
@@ -2949,7 +2883,7 @@ class PlotAxes(base.Axes):
         kwargs = _parse_vert(default_orientation='horizontal', **kwargs)
         return self._apply_stem(*args, **kwargs)
 
-    @data._preprocess('x', 'y', ('c', 'color', 'colors', 'values'))
+    @data._preprocess_args('x', 'y', ('c', 'color', 'colors', 'values'))
     @docstring._snippet_manager
     def parametric(self, x, y, c, *, interp=0, scalex=True, scaley=True, **kwargs):
         """
@@ -2965,8 +2899,8 @@ class PlotAxes(base.Axes):
         c = kw.pop('values', None)  # permits inferring values e.g. a simple ordinate
         c = np.arange(y.size) if c is None else data._to_numpy_array(c)
         c, colorbar_kw = data._meta_coords(c, which='')
-        _guide_kw_to_arg('colorbar', kw, **colorbar_kw)
-        _guide_kw_to_arg('colorbar', kw, locator=c)
+        guides._guide_kw_to_arg('colorbar', kw, **colorbar_kw)
+        guides._guide_kw_to_arg('colorbar', kw, locator=c)
 
         # Interpolate values to allow for smooth gradations between values or just
         # to color siwtchover halfway between points (interp True, False respectively)
@@ -3067,7 +3001,7 @@ class PlotAxes(base.Axes):
         )
 
     # WARNING: breaking change from native 'ymin' and 'ymax'
-    @data._preprocess('x', 'y1', 'y2', ('c', 'color', 'colors'))
+    @data._preprocess_args('x', 'y1', 'y2', ('c', 'color', 'colors'))
     @docstring._snippet_manager
     def vlines(self, *args, **kwargs):
         """
@@ -3077,7 +3011,7 @@ class PlotAxes(base.Axes):
         return self._apply_lines(*args, **kwargs)
 
     # WARNING: breaking change from native 'xmin' and 'xmax'
-    @data._preprocess('y', 'x1', 'x2', ('c', 'color', 'colors'))
+    @data._preprocess_args('y', 'x1', 'x2', ('c', 'color', 'colors'))
     @docstring._snippet_manager
     def hlines(self, *args, **kwargs):
         """
@@ -3158,7 +3092,7 @@ class PlotAxes(base.Axes):
     # NOTE: Matplotlib internally applies scatter 'c' arguments as the
     # 'facecolors' argument to PathCollection. So perfectly reasonable to
     # point both 'color' and 'facecolor' arguments to the 'c' keyword here.
-    @data._preprocess(
+    @data._preprocess_args(
         'x',
         'y',
         _get_aliases('collection', 'sizes'),
@@ -3174,7 +3108,7 @@ class PlotAxes(base.Axes):
         kwargs = _parse_vert(default_vert=True, **kwargs)
         return self._apply_scatter(*args, **kwargs)
 
-    @data._preprocess(
+    @data._preprocess_args(
         'y',
         'x',
         _get_aliases('collection', 'sizes'),
@@ -3250,7 +3184,7 @@ class PlotAxes(base.Axes):
         """
         return self.fill_betweenx(*args, **kwargs)
 
-    @data._preprocess('x', 'y1', 'y2', 'where')
+    @data._preprocess_args('x', 'y1', 'y2', 'where')
     @docstring._concatenate_original
     @docstring._snippet_manager
     def fill_between(self, *args, **kwargs):
@@ -3260,7 +3194,7 @@ class PlotAxes(base.Axes):
         kwargs = _parse_vert(default_vert=True, **kwargs)
         return self._apply_fill(*args, **kwargs)
 
-    @data._preprocess('y', 'x1', 'x2', 'where')
+    @data._preprocess_args('y', 'x1', 'x2', 'where')
     @docstring._concatenate_original
     @docstring._snippet_manager
     def fill_betweenx(self, *args, **kwargs):
@@ -3345,7 +3279,7 @@ class PlotAxes(base.Axes):
             else cbook.silent_list('BarContainer', objs)
         )
 
-    @data._preprocess('x', 'height', 'width', 'bottom')
+    @data._preprocess_args('x', 'height', 'width', 'bottom')
     @docstring._concatenate_original
     @docstring._snippet_manager
     def bar(self, *args, **kwargs):
@@ -3357,7 +3291,7 @@ class PlotAxes(base.Axes):
 
     # WARNING: Swap 'height' and 'width' here so that they are always relative
     # to the 'tall' axis. This lets people always pass 'width' as keyword
-    @data._preprocess('y', 'height', 'width', 'left')
+    @data._preprocess_args('y', 'height', 'width', 'left')
     @docstring._concatenate_original
     @docstring._snippet_manager
     def barh(self, *args, **kwargs):
@@ -3369,7 +3303,7 @@ class PlotAxes(base.Axes):
 
     # WARNING: 'labels' and 'colors' no longer passed through `data` (seems like
     # extremely niche usage... `data` variables should be data-like)
-    @data._preprocess('x', 'explode')
+    @data._preprocess_args('x', 'explode')
     @docstring._concatenate_original
     @docstring._snippet_manager
     def pie(self, x, explode, *, labelpad=None, labeldistance=None, **kwargs):
@@ -3520,7 +3454,7 @@ class PlotAxes(base.Axes):
         """
         return self.boxploth(*args, **kwargs)
 
-    @data._preprocess('positions', 'y')
+    @data._preprocess_args('positions', 'y')
     @docstring._concatenate_original
     @docstring._snippet_manager
     def boxplot(self, *args, **kwargs):
@@ -3530,7 +3464,7 @@ class PlotAxes(base.Axes):
         kwargs = _parse_vert(default_vert=True, **kwargs)
         return self._apply_boxplot(*args, **kwargs)
 
-    @data._preprocess('positions', 'x')
+    @data._preprocess_args('positions', 'x')
     @docstring._snippet_manager
     def boxploth(self, *args, **kwargs):
         """
@@ -3617,7 +3551,7 @@ class PlotAxes(base.Axes):
         """
         return self.violinploth(*args, **kwargs)
 
-    @data._preprocess('positions', 'y')
+    @data._preprocess_args('positions', 'y')
     @docstring._concatenate_original
     @docstring._snippet_manager
     def violinplot(self, *args, **kwargs):
@@ -3627,7 +3561,7 @@ class PlotAxes(base.Axes):
         kwargs = _parse_vert(default_vert=True, **kwargs)
         return self._apply_violinplot(*args, **kwargs)
 
-    @data._preprocess('positions', 'x')
+    @data._preprocess_args('positions', 'x')
     @docstring._snippet_manager
     def violinploth(self, *args, **kwargs):
         """
@@ -3680,7 +3614,7 @@ class PlotAxes(base.Axes):
         self._update_guide(res, **guide_kw)
         return obj
 
-    @data._preprocess('x', 'bins', keywords='weights')
+    @data._preprocess_args('x', 'bins', keywords='weights')
     @docstring._concatenate_original
     @docstring._snippet_manager
     def hist(self, *args, **kwargs):
@@ -3690,7 +3624,7 @@ class PlotAxes(base.Axes):
         kwargs = _parse_vert(default_orientation='vertical', **kwargs)
         return self._apply_hist(*args, **kwargs)
 
-    @data._preprocess('y', 'bins', keywords='weights')
+    @data._preprocess_args('y', 'bins', keywords='weights')
     @docstring._snippet_manager
     def histh(self, *args, **kwargs):
         """
@@ -3699,7 +3633,7 @@ class PlotAxes(base.Axes):
         kwargs = _parse_vert(default_orientation='horizontal', **kwargs)
         return self._apply_hist(*args, **kwargs)
 
-    @data._preprocess('x', 'y', 'bins', keywords='weights')
+    @data._preprocess_args('x', 'y', 'bins', keywords='weights')
     @docstring._concatenate_original
     @docstring._snippet_manager
     def hist2d(self, x, y, bins, **kwargs):
@@ -3712,7 +3646,7 @@ class PlotAxes(base.Axes):
         return super().hist2d(x, y, default_discrete=False, **kwargs)
 
     # WARNING: breaking change from native 'C'
-    @data._preprocess('x', 'y', 'weights')
+    @data._preprocess_args('x', 'y', 'weights')
     @docstring._concatenate_original
     @docstring._snippet_manager
     def hexbin(self, x, y, weights, **kwargs):
@@ -3735,7 +3669,7 @@ class PlotAxes(base.Axes):
         self._update_guide(m, queue_colorbar=False, **guide_kw)
         return m
 
-    @data._preprocess('x', 'y', 'z')
+    @data._preprocess_args('x', 'y', 'z')
     @docstring._concatenate_original
     @docstring._snippet_manager
     def contour(self, x, y, z, **kwargs):
@@ -3754,7 +3688,7 @@ class PlotAxes(base.Axes):
         self._update_guide(m, queue_colorbar=False, **guide_kw)
         return m
 
-    @data._preprocess('x', 'y', 'z')
+    @data._preprocess_args('x', 'y', 'z')
     @docstring._concatenate_original
     @docstring._snippet_manager
     def contourf(self, x, y, z, **kwargs):
@@ -3778,7 +3712,7 @@ class PlotAxes(base.Axes):
         self._update_guide(m, queue_colorbar=False, **guide_kw)
         return m
 
-    @data._preprocess('x', 'y', 'z')
+    @data._preprocess_args('x', 'y', 'z')
     @docstring._concatenate_original
     @docstring._snippet_manager
     def pcolor(self, x, y, z, **kwargs):
@@ -3797,7 +3731,7 @@ class PlotAxes(base.Axes):
         self._update_guide(m, queue_colorbar=False, **guide_kw)
         return m
 
-    @data._preprocess('x', 'y', 'z')
+    @data._preprocess_args('x', 'y', 'z')
     @docstring._concatenate_original
     @docstring._snippet_manager
     def pcolormesh(self, x, y, z, **kwargs):
@@ -3816,7 +3750,7 @@ class PlotAxes(base.Axes):
         self._update_guide(m, queue_colorbar=False, **guide_kw)
         return m
 
-    @data._preprocess('x', 'y', 'z')
+    @data._preprocess_args('x', 'y', 'z')
     @docstring._concatenate_original
     @docstring._snippet_manager
     def pcolorfast(self, x, y, z, **kwargs):
@@ -3866,7 +3800,7 @@ class PlotAxes(base.Axes):
             )
         return obj
 
-    @data._preprocess('x', 'y', 'u', 'v', ('c', 'color', 'colors'))
+    @data._preprocess_args('x', 'y', 'u', 'v', ('c', 'color', 'colors'))
     @docstring._concatenate_original
     @docstring._snippet_manager
     def barbs(self, x, y, u, v, c, **kwargs):
@@ -3885,7 +3819,7 @@ class PlotAxes(base.Axes):
         m = self._plot_native('barbs', *a, **kw)
         return m
 
-    @data._preprocess('x', 'y', 'u', 'v', ('c', 'color', 'colors'))
+    @data._preprocess_args('x', 'y', 'u', 'v', ('c', 'color', 'colors'))
     @docstring._concatenate_original
     @docstring._snippet_manager
     def quiver(self, x, y, u, v, c, **kwargs):
@@ -3915,7 +3849,7 @@ class PlotAxes(base.Axes):
         return self.streamplot(*args, **kwargs)
 
     # WARNING: breaking change from native streamplot() fifth positional arg 'density'
-    @data._preprocess(
+    @data._preprocess_args(
         'x', 'y', 'u', 'v', ('c', 'color', 'colors'), keywords='start_points'
     )
     @docstring._concatenate_original
@@ -3937,7 +3871,7 @@ class PlotAxes(base.Axes):
         self._update_guide(m.lines, queue_colorbar=False, **guide_kw)  # use lines
         return m
 
-    @data._preprocess('x', 'y', 'z')
+    @data._preprocess_args('x', 'y', 'z')
     @docstring._concatenate_original
     @docstring._snippet_manager
     def tricontour(self, x, y, z, **kwargs):
@@ -3958,7 +3892,7 @@ class PlotAxes(base.Axes):
         self._update_guide(m, queue_colorbar=False, **guide_kw)
         return m
 
-    @data._preprocess('x', 'y', 'z')
+    @data._preprocess_args('x', 'y', 'z')
     @docstring._concatenate_original
     @docstring._snippet_manager
     def tricontourf(self, x, y, z, **kwargs):
@@ -3984,7 +3918,7 @@ class PlotAxes(base.Axes):
         self._update_guide(m, queue_colorbar=False, **guide_kw)
         return m
 
-    @data._preprocess('x', 'y', 'z')
+    @data._preprocess_args('x', 'y', 'z')
     @docstring._concatenate_original
     @docstring._snippet_manager
     def tripcolor(self, x, y, z, **kwargs):
@@ -4006,7 +3940,7 @@ class PlotAxes(base.Axes):
         return m
 
     # WARNING: breaking change from native 'X'
-    @data._preprocess('z')
+    @data._preprocess_args('z')
     @docstring._concatenate_original
     @docstring._snippet_manager
     def imshow(self, z, **kwargs):
@@ -4021,7 +3955,7 @@ class PlotAxes(base.Axes):
         return m
 
     # WARNING: breaking change from native 'Z'
-    @data._preprocess('z')
+    @data._preprocess_args('z')
     @docstring._concatenate_original
     @docstring._snippet_manager
     def matshow(self, z, **kwargs):
@@ -4032,7 +3966,7 @@ class PlotAxes(base.Axes):
         return super().matshow(z, **kwargs)
 
     # WARNING: breaking change from native 'Z'
-    @data._preprocess('z')
+    @data._preprocess_args('z')
     @docstring._concatenate_original
     @docstring._snippet_manager
     def spy(self, z, **kwargs):

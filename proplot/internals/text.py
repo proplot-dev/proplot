@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Utilities for matplotlib text objects.
+Utilities related to matplotlib text objects.
 """
 import matplotlib.patheffects as mpatheffects
 import matplotlib.text as mtext

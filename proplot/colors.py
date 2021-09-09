@@ -30,13 +30,7 @@ import numpy.ma as ma
 
 from .config import rc
 from .internals import ic  # noqa: F401
-from .internals import (
-    _keyword_to_positional,
-    _not_none,
-    _pop_props,
-    docstring,
-    warnings,
-)
+from .internals import _kwargs_to_args, _not_none, _pop_props, docstring, warnings
 from .utils import set_alpha, to_hex, to_rgb, to_rgba, to_xyz, to_xyza
 
 __all__ = [
@@ -737,7 +731,7 @@ class _Colormap(object):
         if isinstance(names, str):
             names = (names,)
         names = ('name', *names)
-        args, kwargs = _keyword_to_positional(names, *args, **kwargs)
+        args, kwargs = _kwargs_to_args(names, *args, **kwargs)
         if args[0] is not None and args[1] is None:
             args[:2] = (DEFAULT_NAME, args[0])
         if args[0] is None:
