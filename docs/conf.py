@@ -11,9 +11,10 @@
 
 # -- Path setup --------------------------------------------------------------
 
-import os
-import sys
 import datetime
+import os
+import subprocess
+import sys
 
 # Add proplot to path for sphinx-automodapi
 sys.path.insert(0, os.path.abspath('..'))
@@ -23,8 +24,7 @@ sys.path.append(os.path.abspath('.'))
 
 # Hack to get basemap to work
 # See: https://github.com/readthedocs/readthedocs.org/issues/5339
-on_rtd = os.environ.get('READTHEDOCS', None) == 'True'
-if on_rtd:
+if os.environ.get('READTHEDOCS', None) == 'True':
     os.environ['GEOS_DIR'] = os.path.join(
         os.environ['CONDA_ENVS_PATH'], os.environ['CONDA_DEFAULT_ENV'], 'lib',
     )
@@ -34,6 +34,16 @@ if on_rtd:
 else:
     os.environ['GEOS_DIR'] = os.path.join(os.environ['CONDA_PREFIX'], 'lib')
     os.environ['PROJ_LIB'] = os.path.join(os.environ['CONDA_PREFIX'], 'share', 'proj')
+
+# Install basemap if does not exist
+# Extremely ugly but this is only way. Need GEOS_DIR before installing
+# and basemap conflicts with cartopy so cannot install with conda.
+try:
+    import mpl_toolkits.basemap  # noqa: F401
+except ImportError:
+    subprocess.run(
+        ['pip', 'install', 'git+https://github.com/matplotlib/basemap@v1.2.2rel']
+    )
 
 # -- Project information -----------------------------------------------------
 

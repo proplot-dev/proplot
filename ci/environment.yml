@@ -33,5 +33,4 @@ dependencies:
     - jinja2==2.11.3
     - nbsphinx==0.8.1
     - jupytext
-    - git+https://github.com/matplotlib/basemap@v1.2.2rel
-    - git+https://github.com/lukelbd/sphinx-automodapi@v0.10.proplot-mods
+    - git+https://github.com/lukelbd/sphinx-automodapi@proplot-mods
