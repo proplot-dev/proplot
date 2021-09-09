@@ -205,6 +205,7 @@ def _preprocess_args(*keys, keywords=None, allow_extra=True):
 
     def decorator(func):
         name = func.__name__
+        from . import _kwargs_to_args
 
         @functools.wraps(func)
         def _redirect_or_standardize(self, *args, **kwargs):
@@ -230,7 +231,6 @@ def _preprocess_args(*keys, keywords=None, allow_extra=True):
 
                 # Process data args
                 # NOTE: Raises error if there are more args than keys
-                from .. import _kwargs_to_args
                 args, kwargs = _kwargs_to_args(
                     keys, *args, allow_extra=allow_extra, **kwargs
                 )
