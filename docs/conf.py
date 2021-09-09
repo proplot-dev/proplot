@@ -36,14 +36,17 @@ else:
     os.environ['PROJ_LIB'] = os.path.join(os.environ['CONDA_PREFIX'], 'share', 'proj')
 
 # Install basemap if does not exist
-# Extremely ugly but this is only way. Need GEOS_DIR before installing
-# and basemap conflicts with cartopy so cannot install with conda.
+# Extremely ugly but impossible to install in environment.yml. Must set
+# GEOS_DIR before installing so cannot install with pip and basemap conflicts
+# with conda > 0.19 so cannot install with conda in environment.yml.
 try:
     import mpl_toolkits.basemap  # noqa: F401
+    result = 0
 except ImportError:
-    subprocess.run(
-        ['pip', 'install', 'git+https://github.com/matplotlib/basemap@v1.2.2rel']
-    )
+    cmd = ['pip', 'install', 'git+https://github.com/matplotlib/basemap@v1.2.2rel']
+    result = subprocess.check_output(cmd)
+if result:
+    raise RuntimeError('Failed to import basemap')
 
 # -- Project information -----------------------------------------------------
 
