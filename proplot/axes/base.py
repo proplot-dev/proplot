@@ -1437,14 +1437,18 @@ class Axes(maxes.Axes):
         # NOTE: In *principle* these steps go here. But should already be
         # complete because auto_layout() (called by figure pre-processor) has
         # to run them before aligning labels. So these are harmless no-ops.
-        self._apply_title_above()
         self._draw_guides()
+        self._apply_title_above()
+        if self._inset_parent is not None and self._inset_zoom:
+            self.indicate_inset_zoom()
         super().draw(renderer, *args, **kwargs)
 
     def get_tightbbox(self, renderer, *args, **kwargs):
         # Perform extra post-processing steps and cache the bounding box
-        self._apply_title_above()
         self._draw_guides()
+        self._apply_title_above()
+        if self._inset_parent is not None and self._inset_zoom:
+            self.indicate_inset_zoom()
         bbox = super().get_tightbbox(renderer, *args, **kwargs)
         self._tight_bbox = bbox
         return bbox

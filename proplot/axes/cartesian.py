@@ -1120,8 +1120,6 @@ class CartesianAxes(shared._SharedAxes, plot.PlotAxes):
         self._dualy_scale()
         self._apply_axis_sharing()
         self._update_rotation('x')
-        if self._inset_parent is not None and self._inset_zoom:
-            self.indicate_inset_zoom()
         super().draw(renderer, *args, **kwargs)
 
     def get_tightbbox(self, renderer, *args, **kwargs):
@@ -1130,6 +1128,4 @@ class CartesianAxes(shared._SharedAxes, plot.PlotAxes):
         self._dualy_scale()
         self._apply_axis_sharing()
         self._update_rotation('x')
-        if self._inset_parent is not None and self._inset_zoom:
-            self.indicate_inset_zoom()
         return super().get_tightbbox(renderer, *args, **kwargs)
