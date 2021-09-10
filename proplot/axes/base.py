@@ -607,12 +607,12 @@ class Axes(maxes.Axes):
         ax = self._get_topmost_axes()
         try:
             nrows, ncols, num1, num2 = ax.get_subplotspec()._get_subplot_geometry()
-            params = {'nrows': nrows, 'ncols': ncols, 'index': (num1, num2)}
-        except (IndexError, ValueError, AttributeError):  # e.g. a panel axes
+            params = {'index': (num1, num2)}
+        except (IndexError, ValueError, AttributeError):  # e.g. a loose axes
             left, bottom, width, height = np.round(self._position.bounds, 2)
             params = {'left': left, 'bottom': bottom, 'size': (width, height)}
-        if self.number:
-            params['number'] = self.number
+        if ax.number:
+            params['number'] = ax.number
         name = type(self).__name__
         if self._panel_side:
             name = name.replace('Subplot', 'Panel')  # e.g. CartesianAxesPanel
