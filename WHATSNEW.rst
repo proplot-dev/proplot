@@ -28,6 +28,17 @@ ProPlot v1.0.0 (2022-##-##)
 This will be published when more comprehensive testing is completed
 and stability is improved.
 
+ProPlot v0.9.1 (2021-##-##)
+===========================
+
+Bug fixes
+---------
+
+* Fix issue with dictionaries passed to `proj` when calling
+  `~proplot.figure.Figure.add_subplots` (:commit:`21b165df`).
+* Fix issue with `includepanels` disabling spanning
+  axis labels (:commit:`332ba702`).
+
 ProPlot v0.9.0 (2021-09-08)
 ===========================
 
