@@ -679,33 +679,30 @@ class _CartopyAxes(GeoAxes, _GeoAxes):
         **kwargs
             Passed to `GeoAxes`.
         """
-        # GeoAxes initialization. Note that critical attributes like
-        # outline_patch needed by _format_apply are added before it is called.
-        # NOTE: Initial extent is configured in _update_extent
+        # Initialize axes. Note that critical attributes like outline_patch
+        # needed by _format_apply are added before it is called.
         import cartopy  # noqa: F401 verify package is available
-        if not isinstance(map_projection, ccrs.Projection):
-            raise ValueError(
-                'Cartopy axes require map_projection=cartopy.crs.Projection.'
-            )
-        latmax = 90
-        boundinglat = None
         polar = isinstance(map_projection, self._proj_polar)
-        if polar:
+        if not polar:
+            latmax = 90
+            boundinglat = None
+        else:
             latmax = 80
-            boundinglat = 0
             if isinstance(map_projection, pcrs.NorthPolarGnomonic):
                 boundinglat = 30  # *default* bounding latitudes
             elif isinstance(map_projection, pcrs.SouthPolarGnomonic):
                 boundinglat = -30
-
-        # Initialize axes
+            else:
+                boundinglat = 0
+        self.projection = map_projection  # verify
         self._boundinglat = None  # NOTE: must start at None so _update_extent acts
-        self._map_projection = map_projection  # cartopy also does this
         self._gridlines_major = None
         self._gridlines_minor = None
         self._lonaxis = _LonAxis(self, projection=map_projection)
         self._lataxis = _LatAxis(self, latmax=latmax, projection=map_projection)
-        super().__init__(*args, map_projection=map_projection, **kwargs)
+        super().__init__(*args, **kwargs)
+        for axis in (self.xaxis, self.yaxis):
+            axis.set_tick_params(which='both', size=0)  # prevent extra label offset
 
         # Apply circular map boundary for polar projections. Apply default
         # global extent for other projections.
@@ -723,10 +720,6 @@ class _CartopyAxes(GeoAxes, _GeoAxes):
             self._update_extent(boundinglat=boundinglat)
         else:
             self.set_global()
-
-        # Zero out ticks to prevent extra label offset
-        for axis in (self.xaxis, self.yaxis):
-            axis.set_tick_params(which='both', size=0)
 
     def _apply_axis_sharing(self):  # noqa: U100
         """
@@ -1149,22 +1142,18 @@ class _BasemapAxes(GeoAxes):
         # twice with updated proj kwargs to modify map bounds after creation
         # and python immmediately crashes. Do not try again.
         import mpl_toolkits.basemap  # noqa: F401 verify package is available
-        if not isinstance(map_projection, mbasemap.Basemap):
-            raise ValueError(
-                'Basemap axes require map_projection=mpl_toolkits.basemap.Basemap.'
-            )
-        map_projection = self._map_projection = copy.copy(map_projection)
+        self.projection = copy.copy(map_projection)  # verify
         lon0 = self._get_lon0()
-        if map_projection.projection in self._proj_polar:
+        if self.projection.projection in self._proj_polar:
             latmax = 80  # default latmax for gridlines
             extent = [-180 + lon0, 180 + lon0]
-            bound = getattr(map_projection, 'boundinglat', 0)
-            north = map_projection.projection in self._proj_north
+            bound = getattr(self.projection, 'boundinglat', 0)
+            north = self.projection.projection in self._proj_north
             extent.extend([bound, 90] if north else [-90, bound])
         else:
             latmax = 90
             attrs = ('lonmin', 'lonmax', 'latmin', 'latmax')
-            extent = [getattr(map_projection, attr, None) for attr in attrs]
+            extent = [getattr(self.projection, attr, None) for attr in attrs]
             if any(_ is None for _ in extent):
                 extent = [180 - lon0, 180 + lon0, -90, 90]  # fallback
 
@@ -1209,7 +1198,7 @@ class _BasemapAxes(GeoAxes):
                 f'boundinglat={boundinglat!r}, but you cannot "zoom into" a '
                 'basemap projection after creating it. Add any of the following '
                 "keyword args in your call to pplt.Proj('name', basemap=True, ...): "
-                "'boundinglat', 'llcrnrlon', 'llcrnrlat', "
+                "'boundinglat', 'lonlim', 'latlim', 'llcrnrlon', 'llcrnrlat', "
                 "'urcrnrlon', 'urcrnrlat', 'llcrnrx', 'llcrnry', "
                 "'urcrnrx', 'urcrnry', 'width', or 'height'."
             )
