@@ -1242,19 +1242,19 @@ class Figure(mfigure.Figure):
         """
         # Clunky helper function
         # TODO: Consider deprecating and asking users to use add_subplot()
-        def _axes_dict(naxs, input, kw=False, default=None):
+        def _axes_dict(naxs, value, kw=False, default=None):
             # First build up dictionary
             # 1. 'string' or {1: 'string1', (2, 3): 'string2'}
             if not kw:
-                if np.iterable(input) and not isinstance(input, (str, dict)):
-                    value = {num + 1: item for num, item in enumerate(input)}
-                elif not isinstance(input, dict):
-                    value = {range(1, naxs + 1): input}
+                if np.iterable(value) and not isinstance(value, (str, dict)):
+                    value = {num + 1: item for num, item in enumerate(value)}
+                elif not isinstance(value, dict):
+                    value = {range(1, naxs + 1): value}
             # 2. {'prop': value} or {1: {'prop': value1}, (2, 3): {'prop': value2}}
             else:
-                nested = [isinstance(_, dict) for _ in input.values()]
+                nested = [isinstance(_, dict) for _ in value.values()]
                 if not any(nested):  # any([]) == False
-                    value = {range(1, naxs + 1): input.copy()}
+                    value = {range(1, naxs + 1): value.copy()}
                 elif not all(nested):
                     raise ValueError(f'Invalid input {value!r}.')
             # Unfurl keys that contain multiple axes numbers
