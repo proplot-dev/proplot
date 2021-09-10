@@ -814,9 +814,7 @@ class Figure(mfigure.Figure):
         else:
             pos = 0.5 * (box_lo.y1 + box_hi.y0)  # 'lo' is actually on top of figure
         ax = axs[(np.argmin(ranges[:, 0]) + np.argmax(ranges[:, 1])) // 2]
-        other = getattr(ax, f'_share{s}')
-        if other and other._panel_parent:  # deflect to shared panel axes
-            ax = other
+        ax = ax._panel_parent or ax  # always use main subplot for spanning labels
         return pos, ax
 
     def _get_offset_coord(self, side, axs, renderer, *, pad=None, extra=None):
