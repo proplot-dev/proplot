@@ -1242,24 +1242,24 @@ class Figure(mfigure.Figure):
         """
         # Clunky helper function
         # TODO: Consider deprecating and asking users to use add_subplot()
-        def _axes_dict(naxs, value, kw=False, default=None):
+        def _axes_dict(naxs, input, kw=False, default=None):
             # First build up dictionary
             # 1. 'string' or {1: 'string1', (2, 3): 'string2'}
             if not kw:
-                if np.iterable(value) and not isinstance(value, (str, dict)):
-                    value = {num + 1: item for num, item in enumerate(value)}
-                elif not isinstance(value, dict):
-                    value = {range(1, naxs + 1): value}
+                if np.iterable(input) and not isinstance(input, (str, dict)):
+                    input = {num + 1: item for num, item in enumerate(input)}
+                elif not isinstance(input, dict):
+                    input = {range(1, naxs + 1): input}
             # 2. {'prop': value} or {1: {'prop': value1}, (2, 3): {'prop': value2}}
             else:
-                nested = [isinstance(_, dict) for _ in value.values()]
+                nested = [isinstance(_, dict) for _ in input.values()]
                 if not any(nested):  # any([]) == False
-                    value = {range(1, naxs + 1): value.copy()}
+                    input = {range(1, naxs + 1): input.copy()}
                 elif not all(nested):
-                    raise ValueError(f'Invalid input {value!r}.')
+                    raise ValueError(f'Invalid input {input!r}.')
             # Unfurl keys that contain multiple axes numbers
             output = {}
-            for nums, item in value.items():
+            for nums, item in input.items():
                 nums = np.atleast_1d(nums)
                 for num in nums.flat:
                     output[num] = item.copy() if kw else item
@@ -1269,7 +1269,7 @@ class Figure(mfigure.Figure):
                     output[num] = {} if kw else default
             if output.keys() != set(range(1, naxs + 1)):
                 raise ValueError(
-                    f'Have {naxs} axes, but {value!r} includes props for the axes: '
+                    f'Have {naxs} axes, but {input!r} includes props for the axes: '
                     + ', '.join(map(repr, sorted(output))) + '.'
                 )
             return output
