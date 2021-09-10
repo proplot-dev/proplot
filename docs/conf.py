@@ -41,12 +41,9 @@ else:
 # with conda > 0.19 so cannot install with conda in environment.yml.
 try:
     import mpl_toolkits.basemap  # noqa: F401
-    result = 0
 except ImportError:
     cmd = ['pip', 'install', 'git+https://github.com/matplotlib/basemap@v1.2.2rel']
-    result = subprocess.check_output(cmd)
-if result:
-    raise RuntimeError('Failed to import basemap')
+    subprocess.check_call(cmd)
 
 # -- Project information -----------------------------------------------------
 
