@@ -86,7 +86,14 @@ ALIGN_OPTS = {
 
 # Axes init keys. All others are passed to format()
 AXES_KEYS = (
-    'fig', 'rect', 'sharex', 'sharey', 'frameon', 'box_aspect', 'label'
+    'fig',
+    'rect',
+    'sharex',
+    'sharey',
+    'frameon',
+    'box_aspect',
+    'label',
+    'map_projection',
 )
 
 

@@ -1768,7 +1768,7 @@ class Figure(mfigure.Figure):
         )
 
     # Apply signature obfuscation after getting keys
-    # WARNING: This is needed so we can omit leading x/y for alt commands
+    # NOTE: This is needed for axes and figure instantiation.
     _format_signature = inspect.signature(format)
     format = docstring._obfuscate_signature(format)
 

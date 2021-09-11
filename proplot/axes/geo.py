@@ -195,6 +195,11 @@ class _GeoAxis(object):
         self.isDefault_majloc = True
         self.isDefault_minloc = True
         self._interval = None
+        self._use_dms = (
+            ccrs is not None
+            and isinstance(axes.projection, (ccrs._RectangularProjection, ccrs.Mercator))  # noqa: E501
+            and dependencies._version_cartopy >= 0.18
+        )
 
     def _get_extent(self):
         # Try to get extent but bail out for projections where this is
@@ -219,17 +224,6 @@ class _GeoAxis(object):
         ticks_hi = np.arange(ticks[-1], vmax, step)[1:].tolist()
         ticks = ticks_lo + ticks + ticks_hi
         return ticks
-
-    @staticmethod
-    def _use_dms(projection=None):
-        # Return whether dms locators/formatters are available for the
-        # cartopy projection and the user cartopy version. Basemap axes will
-        # provide projection==None and so will always be false.
-        return (
-            dependencies._version_cartopy >= 0.18
-            and cticker is not None
-            and isinstance(projection, (ccrs._RectangularProjection, ccrs.Mercator))
-        )
 
     def get_scale(self):
         return 'linear'
@@ -283,9 +277,9 @@ class _LonAxis(_GeoAxis):
     # NOTE: Basemap accepts tick formatters with drawmeridians(fmt=Formatter())
     # Try to use cartopy formatter if cartopy installed. Otherwise use
     # default builtin basemap formatting.
-    def __init__(self, axes, projection=None):
+    def __init__(self, axes):
         super().__init__(axes)
-        if self._use_dms(projection):
+        if self._use_dms:
             locator = formatter = 'dmslon'
         else:
             locator = formatter = 'deglon'
@@ -325,13 +319,13 @@ class _LatAxis(_GeoAxis):
     """
     Axis with default latitude locator.
     """
-    def __init__(self, axes, latmax=90, projection=None):
+    def __init__(self, axes, latmax=90):
         # NOTE: Need to pass projection because lataxis/lonaxis are
         # initialized before geoaxes is initialized, because format() needs
         # the axes and format() is called by proplot.axes.Axes.__init__()
         self._latmax = latmax
         super().__init__(axes)
-        if self._use_dms(projection):
+        if self._use_dms:
             locator = formatter = 'dmslat'
         else:
             locator = formatter = 'deglat'
@@ -694,25 +688,25 @@ class _CartopyAxes(GeoAxes, _GeoAxes):
         # Initialize axes. Note that critical attributes like outline_patch
         # needed by _format_apply are added before it is called.
         import cartopy  # noqa: F401 verify package is available
-        polar = isinstance(map_projection, self._proj_polar)
+        self.projection = map_projection  # verify
+        polar = isinstance(self.projection, self._proj_polar)
         if not polar:
             latmax = 90
             boundinglat = None
         else:
             latmax = 80
-            if isinstance(map_projection, pcrs.NorthPolarGnomonic):
+            if isinstance(self.projection, pcrs.NorthPolarGnomonic):
                 boundinglat = 30  # *default* bounding latitudes
-            elif isinstance(map_projection, pcrs.SouthPolarGnomonic):
+            elif isinstance(self.projection, pcrs.SouthPolarGnomonic):
                 boundinglat = -30
             else:
                 boundinglat = 0
-        self.projection = map_projection  # verify
         self._boundinglat = None  # NOTE: must start at None so _update_extent acts
         self._gridlines_major = None
         self._gridlines_minor = None
-        self._lonaxis = _LonAxis(self, projection=map_projection)
-        self._lataxis = _LatAxis(self, latmax=latmax, projection=map_projection)
-        super().__init__(*args, **kwargs)
+        self._lonaxis = _LonAxis(self)
+        self._lataxis = _LatAxis(self, latmax=latmax)
+        super().__init__(*args, map_projection=self.projection, **kwargs)
         for axis in (self.xaxis, self.yaxis):
             axis.set_tick_params(which='both', size=0)  # prevent extra label offset
 
@@ -1181,7 +1175,7 @@ class _BasemapAxes(GeoAxes):
         self._lonaxis = _LonAxis(self)
         self._lataxis = _LatAxis(self, latmax=latmax)
         self._set_view_intervals(extent)
-        super().__init__(*args, **kwargs)
+        super().__init__(*args, map_projection=self.projection, **kwargs)
 
     def _get_lon0(self):
         """
