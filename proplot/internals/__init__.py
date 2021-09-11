@@ -216,7 +216,12 @@ def _pop_params(kwargs, *funcs, ignore_internal=False):
     }
     output = {}
     for func in funcs:
-        sig = inspect.signature(func)
+        if isinstance(func, inspect.Signature):
+            sig = func
+        elif callable(func):
+            sig = inspect.signature(func)
+        else:
+            raise RuntimeError(f'Internal error. Invalid function {func!r}.')
         for key in sig.parameters:
             value = kwargs.pop(key, None)
             if ignore_internal and key in internal_params:

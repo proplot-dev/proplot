@@ -3,6 +3,7 @@
 The figure class used for all ProPlot figures.
 """
 import functools
+import inspect
 import os
 from numbers import Integral
 
@@ -518,15 +519,15 @@ class Figure(mfigure.Figure):
 
         Other parameters
         ----------------
+        %(figure.format)s
         **kwargs
             Passed to `matplotlib.figure.Figure`.
 
         See also
         --------
+        Figure.format
         proplot.ui.figure
         proplot.ui.subplots
-        proplot.figure.Figure.add_subplot
-        proplot.figure.Figure.subplots
         matplotlib.figure.Figure
         """
         # Add figure sizing settings
@@ -686,6 +687,7 @@ class Figure(mfigure.Figure):
         self._subplot_counter = 0  # avoid add_subplot() returning an existing subplot
         self._is_adjusting = False
         self._is_authorized = False
+        kw_format = _pop_params(kwargs, self._format_signature)
         with self._context_authorized():
             super().__init__(**kwargs)
 
@@ -717,7 +719,7 @@ class Figure(mfigure.Figure):
         else:
             context = {'mathtext.fallback_to_cm': bool(mathtext_fallback)}
         self._mathtext_context = context
-        self.format(rc_mode=1)  # initiate super label and title settings
+        self.format(rc_mode=1, skip_axes=True, **kw_format)
 
     def _context_adjusting(self, cache=True):
         """
@@ -1401,7 +1403,6 @@ class Figure(mfigure.Figure):
             gs._auto_layout_space(renderer)
         _align_content()
 
-    @docstring._obfuscate_signature
     @docstring._snippet_manager
     def format(
         self, axs=None,
@@ -1413,8 +1414,8 @@ class Figure(mfigure.Figure):
         rowlabels=None, collabels=None, **kwargs,  # aliases
     ):
         """
-        Format the figure labels and title and call ``format`` for
-        the input axes. By default the numbered subplots are used.
+        Modify figure-wide labels and call ``format`` for the
+        input axes. By default the numbered subplots are used.
 
         Parameters
         ----------
@@ -1765,6 +1766,11 @@ class Figure(mfigure.Figure):
         return pgridspec.SubplotGrid(
             [ax for num, ax in sorted(self._subplot_dict.items())]
         )
+
+    # Apply signature obfuscation after getting keys
+    # WARNING: This is needed so we can omit leading x/y for alt commands
+    _format_signature = inspect.signature(format)
+    format = docstring._obfuscate_signature(format)
 
 
 # Add deprecated properties. There are *lots* of properties we pass to Figure

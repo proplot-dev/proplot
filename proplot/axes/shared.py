@@ -5,6 +5,7 @@ An axes used to jointly format Cartesian and polar axes.
 # NOTE: We could define these in base.py but idea is projection-specific formatters
 # should never be defined on the base class. Might add to this class later anyway.
 from ..config import rc
+from ..internals import ic  # noqa: F401
 from ..internals import _pop_kwargs
 from ..utils import _fontsize_to_pt, _not_none, units
 
@@ -66,7 +67,8 @@ class _SharedAxes(object):
             if labelpad is not None:
                 kwticks['pad'] = labelpad
             if tickcolor is not None:
-                kwticks['labelcolor'] = kwticks['color'] = tickcolor
+                kwticks['color'] = tickcolor
+                kwtext.setdefault('labelcolor', tickcolor)
             if ticklen is not None:
                 kwticks['size'] = units(ticklen, 'pt')
                 if which == 'minor':

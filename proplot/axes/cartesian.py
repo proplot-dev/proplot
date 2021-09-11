@@ -2,6 +2,8 @@
 """
 The standard Cartesian axes used for most ProPlot figures.
 """
+import inspect
+
 import matplotlib.dates as mdates
 import matplotlib.ticker as mticker
 import numpy as np
@@ -11,37 +13,164 @@ from .. import scale as pscale
 from .. import ticker as pticker
 from ..config import _parse_format, rc
 from ..internals import ic  # noqa: F401
-from ..internals import _not_none, docstring, rcsetup, text, warnings
+from ..internals import _not_none, docstring, text, warnings
 from . import plot, shared
 
 __all__ = ['CartesianAxes']
 
 
-_alt_kwargs = (  # TODO: More systematic approach?
-    'lim', 'min', 'max', 'reverse', 'scale', 'label',
-    'tickdir', 'grid', 'gridminor',
-    'tickminor', 'ticklabeldir', 'tickrange', 'wraprange',
-    'rotation', 'formatter', 'ticklabels',
-    'ticks', 'locator', 'minorticks', 'minorlocator',
-    'bounds', 'margin', 'color', 'linewidth', 'ticklen', 'gridcolor',
-    'label_kw', 'scale_kw', 'locator_kw', 'formatter_kw', 'minorlocator_kw',
-)
+# Format docstring
+_format_docstring = """
+aspect : {'auto', 'equal'} or float, optional
+    The data aspect ratio. See `~matplotlib.axes.Axes.set_aspect`
+    for details.
+xlabel, ylabel : str, optional
+    The x and y axis labels. Applied with `~matplotlib.axes.Axes.set_xlabel`
+    and `~matplotlib.axes.Axes.set_ylabel`.
+xlabelpad, ylabelpad : unit-spec, optional
+    The padding between the x and y axis bounding box and the
+    x and y axis labels. Default is :rc:`label.pad`.
+    %(units.pt)s
+xlabel_kw, ylabel_kw : dict-like, optional
+    Additional settings used to update the axis labels with ``text.update()``.
+xlim, ylim : 2-tuple of floats or None, optional
+    The x and y axis data limits. Applied with
+    `~matplotlib.axes.Axes.set_xlim` and
+    `~matplotlib.axes.Axes.set_ylim`.
+xmin, ymin : float, optional
+    The x and y minimum data limits. Useful if you do not want
+    to set the maximum limits.
+xmax, ymax : float, optional
+    The x and y maximum data limits. Useful if you do not want
+    to set the minimum limits.
+xreverse, yreverse : bool, optional
+    Whether to "reverse" the x and y axis direction. Makes the x and
+    y axes ascend left-to-right and top-to-bottom, respectively.
+xscale, yscale : scale-spec, optional
+    The x and y axis scales. Passed to the `~proplot.scale.Scale` constructor.
+    For example, ``xscale='log'`` applies logarithmic scaling, and
+    ``xscale=('cutoff', 100, 2)`` applies a `~proplot.scale.CutoffScale`.
+xscale_kw, yscale_kw : dict-like, optional
+    The x and y axis scale settings. Passed to `~proplot.scale.Scale`.
+xloc, yloc : optional
+    Aliases for `xspineloc`, `yspineloc`.
+xspineloc, yspineloc \
+: {'both', 'bottom', 'top', 'left', 'right', 'neither', 'center', 'zero'}, optional
+    The x and y axis spine locations.
+xtickloc, ytickloc \
+: {'both', 'bottom', 'top', 'left', 'right', 'neither'}, optional
+    Which x and y axis spines should have major and minor tick marks.
+xtickminor, ytickminor, tickminor : bool, optional
+    Whether to draw minor ticks on the x and y axes.
+xtickdir, ytickdir, tickdir : {'out', 'in', 'inout'}
+    Direction that major and minor tick marks point for the x and y axis.
+    Use `tickdir` to control both.
+xticklabeldir, yticklabeldir : {'in', 'out'}
+    Whether to place x and y axis tick label text inside
+    or outside the axes.
+xticklabelpad, yticklabelpad : unit-spec, optional
+    The padding between the x and y axis ticks and
+    tick labels. Default is :rcraw:`tick.labelpad`.
+    %(units.pt)s
+xgrid, ygrid, grid : bool, optional
+    Whether to draw major gridlines on the x and y axis.
+    Use `grid` to toggle both.
+xgridminor, ygridminor, gridminor : bool, optional
+    Whether to draw minor gridlines for the x and y axis.
+    Use `gridminor` to toggle both.
+xticks, yticks : optional
+    Aliases for `xlocator`, `ylocator`.
+xlocator, ylocator : locator-spec, optional
+    Used to determine the x and y axis tick mark positions. Passed
+    to the `~proplot.constructor.Locator` constructor.  Can be float,
+    list of float, string, or `matplotlib.ticker.Locator` instance.
+    Use ``[]``, ``'null'``, or ``'none'`` for no ticks.
+xlocator_kw, ylocator_kw : dict-like, optional
+    Keyword arguments passed to the `matplotlib.ticker.Locator` class.
+xminorticks, yminorticks : optional
+    Aliases for `xminorlocator`, `yminorlocator`.
+xminorlocator, yminorlocator : optional
+    As for `xlocator`, `ylocator`, but for the minor ticks.
+xminorlocator_kw, yminorlocator_kw
+    As for `xlocator_kw`, `ylocator_kw`, but for the minor locator.
+xticklabels, yticklabels : optional
+    Aliases for `xformatter`, `yformatter`.
+xformatter, yformatter : formatter-spec, optional
+    Used to determine the x and y axis tick label string format.
+    Passed to the `~proplot.constructor.Formatter` constructor.
+    Can be string, list of strings, or `matplotlib.ticker.Formatter`
+    instance. Use ``[]``, ``'null'``, or ``'none'`` for no labels.
+xformatter_kw, yformatter_kw : dict-like, optional
+    Keyword arguments passed to the `matplotlib.ticker.Formatter` class.
+xrotation, yrotation : float, optional
+    The rotation for x and y axis tick labels. Default is ``0``
+    for normal axes, :rc:`formatter.timerotation` for time x axes.
+xbounds, ybounds : 2-tuple of float, optional
+    The x and y axis data bounds within which to draw the spines.
+    For example, the axis range ``(0, 4)`` with bounds ``(1, 4)``
+    will prevent the spines from meeting at the origin.
+xtickrange, ytickrange : 2-tuple of float, optional
+    The x and y axis data ranges within which major tick marks
+    are labelled. For example, the tick range ``(-1, 1)`` with
+    axis range ``(-5, 5)`` and a tick interval of 1 will only
+    label the ticks marks at -1, 0, and 1. See
+    `~proplot.ticker.AutoFormatter` for details.
+xwraprange, ywraprange : 2-tuple of float, optional
+    The x and y axis data ranges with which major tick mark values are
+    wrapped. For example, the wrap range ``(0, 3)`` causes the values 0
+    through 9 to be formatted as 0, 1, 2, 0, 1, 2, 0, 1, 2, 0. See
+    `~proplot.ticker.AutoFormatter` for details.
+xmargin, ymargin, margin : float, optional
+    The default margin between plotted content and the x and y axis
+    spines. Value is proportional to the width, height of the axes.
+    Use this if you want whitespace between plotted content
+    and the spines, but don't want to explicitly set `xlim` or `ylim`.
+xticklen, yticklen, ticklen : float or str, optional
+    Tick lengths for the x and y axis. Default is :rc:`ticklen`.
+    %(units.pt)s
+    Minor tick lengths are scaled according to :rc:`tick.lenratio`.
+    Use `ticklen` and `ticklenratio` to set both at once.
+xlinewidth, ylinewidth, linewidth : color-spec, optional
+    Line width for the x and y axis spines and major ticks.
+    Use `linewidth` to set both at once.
+xcolor, ycolor, color : color-spec, optional
+    Color for the x and y axis spines, ticks, tick labels, and
+    axis labels. Use `color` to set both at once.
+xgridcolor, ygridcolor, gridcolor : color-spec, optional
+    Color for the x and y axis major and minor gridlines.
+    Use `gridcolor` to set both at once.
+fixticks : bool, optional
+    Whether to always transform the tick locators to a
+    `~matplotlib.ticker.FixedLocator` instance. Default is ``False``.
+    If your axis ticks are doing weird things (for example, ticks
+    drawn outside of the axis spine), try setting this to ``True``.
+"""
+docstring._snippet_manager['cartesian.format'] = _format_docstring
 
 
 # Shared docstring
+_shared_x_keys = {
+    'x': 'x', 'x1': 'bottom', 'x2': 'top',
+    'y': 'y', 'y1': 'left', 'y2': 'right',
+}
+_shared_y_keys = {
+    'x': 'y', 'x1': 'left', 'x2': 'right',
+    'y': 'x', 'y1': 'bottom', 'y2': 'top',
+}
 _shared_docstring = """
 %(descrip)s
 Parameters
 ----------
-%(extra)s{xargs} : optional
-    Passed to `Axes.format`.
-{args} : optional
-    Prepended with ``'{x}'`` and passed to `Axes.format`.
+%(extra)s**kwargs
+    Passed to `CartesianAxes`. You can optionally omit the {x}
+    from `CartesianAxes.format` keywords beginning with ``{x}``.
+    For example: ``ax.alt{x}(lim=(0, 10))`` is equivalent
+    to ``ax.alt{x}({x}lim=(0, 10))``.
 
 Returns
 -------
 CartesianAxes
-    The new axes.
+    The resulting axes.
 
 Note
 ----
@@ -56,18 +185,6 @@ This enforces the following default settings:
 * Syncs the old and new {y} axis limits and scales, and makes the
   new {y} axis labels invisible.
 """
-_shared_x_keys = dict(
-    x='x', x1='bottom', x2='top',
-    y='y', y1='left', y2='right',
-    args=', '.join(_alt_kwargs),
-    xargs=', '.join('x' + key for key in _alt_kwargs),
-)
-_shared_y_keys = dict(
-    x='y', x1='left', x2='right',
-    y='x', y1='bottom', y2='top',
-    args=', '.join(_alt_kwargs),
-    xargs=', '.join('y' + key for key in _alt_kwargs),
-)
 
 # Alt docstrings
 # NOTE: Used by SubplotGrid.altx
@@ -126,23 +243,41 @@ class CartesianAxes(shared._SharedAxes, plot.PlotAxes):
 
     def __init__(self, *args, **kwargs):
         """
+        Parameters
+        ----------
+        %(cartesian.format)s
+        *args, **kwargs
+            Passed to `proplot.axes.Axes`.
+
+        Other parameters
+        ----------------
+        %(axes.format)s
+        %(axes.rc)s
+
         See also
         --------
-        proplot.ui.subplots
+        CartesianAxes.format
         proplot.axes.Axes
         proplot.axes.PlotAxes
+        proplot.figure.Figure.subplot
+        proplot.figure.Figure.add_subplot
         """
-        # Impose default formatter
+        # Initialize axes
         self._xaxis_current_rotation = 'horizontal'  # current rotation
         self._yaxis_current_rotation = 'horizontal'
         self._xaxis_isdefault_rotation = True  # whether to auto rotate the axis
         self._yaxis_isdefault_rotation = True
         super().__init__(*args, **kwargs)
-        formatter = pticker.AutoFormatter()
-        self.xaxis.set_major_formatter(formatter)
-        self.yaxis.set_major_formatter(formatter)
-        self.xaxis.isDefault_majfmt = True
-        self.yaxis.isDefault_majfmt = True
+
+        # Apply default formatter
+        if self.xaxis.isDefault_majfmt:
+            self.xaxis.set_major_formatter(pticker.AutoFormatter())
+            self.xaxis.isDefault_majfmt = True
+        if self.yaxis.isDefault_majfmt:
+            self.yaxis.set_major_formatter(pticker.AutoFormatter())
+            self.yaxis.isDefault_majfmt = True
+
+        # Dual axes utilities
         self._dualx_funcscale = None  # for scaling units on dual axes
         self._dualx_prevstate = None  # prevent excess _dualy_scale calls
         self._dualy_funcscale = None
@@ -243,29 +378,6 @@ class CartesianAxes(shared._SharedAxes, plot.PlotAxes):
             or other._panel_parent and self._panel_parent  # ...
             and other._panel_parent is self._panel_parent  # other is sibling panel
         )
-
-    @staticmethod
-    def _parse_alt(x, kwargs):
-        """
-        Interpret keyword args passed to all "twin axis" methods so they
-        can be passed to Axes.format.
-        """
-        kw_bad, kw_out = {}, {}
-        for key, value in kwargs.items():
-            if key in _alt_kwargs:
-                kw_out[x + key] = value
-            elif key[0] == x and key[1:] in _alt_kwargs:
-                # NOTE: We permit both e.g. 'locator' and 'xlocator' because
-                # while is more elegant and consistent with e.g. colorbar() syntax
-                # but latter is more consistent and easier to use when refactoring.
-                kw_out[key] = value
-            elif key in rcsetup._rc_nodots:
-                kw_out[key] = value
-            else:
-                kw_bad[key] = value
-        if kw_bad:
-            raise TypeError(f'Unexpected keyword argument(s): {kw_bad!r}')
-        return kw_out
 
     def _sharex_limits(self, sharex):
         """
@@ -628,7 +740,6 @@ class CartesianAxes(shared._SharedAxes, plot.PlotAxes):
         if labelloc is not None:
             getattr(self, x + 'axis').set_label_position(labelloc)
 
-    @docstring._obfuscate_signature
     @docstring._snippet_manager
     def format(
         self, *,
@@ -674,135 +785,12 @@ class CartesianAxes(shared._SharedAxes, plot.PlotAxes):
         **kwargs
     ):
         """
-        Modify the x and y axis labels, tick locations, tick labels, axis scales,
-        spine settings, and more. Additional keyword arguments are passed to
-        `Axes.format` and `~proplot.config.Configurator.context`.
+        Modify axes limits, axis scales, axis labels, spine locations,
+        tick locations, tick labels, and more.
 
         Parameters
         ----------
-        aspect : {'auto', 'equal'}, optional
-            The aspect ratio mode. See `~matplotlib.axes.Axes.set_aspect`
-            for details.
-        xlabel, ylabel : str, optional
-            The x and y axis labels. Applied with `~matplotlib.axes.Axes.set_xlabel`
-            and `~matplotlib.axes.Axes.set_ylabel`.
-        xlabelpad, ylabelpad : unit-spec, optional
-            The padding between the x and y axis bounding box and the
-            x and y axis labels. Default is :rc:`label.pad`.
-            %(units.pt)s
-        xlabel_kw, ylabel_kw : dict-like, optional
-            Additional settings used to update the axis labels with ``text.update()``.
-        xlim, ylim : 2-tuple of floats or None, optional
-            The x and y axis data limits. Applied with
-            `~matplotlib.axes.Axes.set_xlim` and
-            `~matplotlib.axes.Axes.set_ylim`.
-        xmin, ymin : float, optional
-            The x and y minimum data limits. Useful if you do not want
-            to set the maximum limits.
-        xmax, ymax : float, optional
-            The x and y maximum data limits. Useful if you do not want
-            to set the minimum limits.
-        xreverse, yreverse : bool, optional
-            Whether to "reverse" the x and y axis direction. Makes the x and
-            y axes ascend left-to-right and top-to-bottom, respectively.
-        xscale, yscale : scale-spec, optional
-            The x and y axis scales. Passed to the `~proplot.scale.Scale` constructor.
-            For example, ``xscale='log'`` applies logarithmic scaling, and
-            ``xscale=('cutoff', 100, 2)`` applies a `~proplot.scale.CutoffScale`.
-        xscale_kw, yscale_kw : dict-like, optional
-            The x and y axis scale settings. Passed to `~proplot.scale.Scale`.
-        xspineloc, yspineloc \
-: {'both', 'bottom', 'top', 'left', 'right', 'neither', 'center', 'zero'}, optional
-            The x and y axis spine locations.
-        xloc, yloc : optional
-            Aliases for `xspineloc`, `yspineloc`.
-        xtickloc, ytickloc \
-: {'both', 'bottom', 'top', 'left', 'right', 'neither'}, optional
-            Which x and y axis spines should have major and minor tick marks.
-        xtickminor, ytickminor, tickminor : bool, optional
-            Whether to draw minor ticks on the x and y axes.
-        xtickdir, ytickdir, tickdir : {'out', 'in', 'inout'}
-            Direction that major and minor tick marks point for the x and y axis.
-            Use `tickdir` to control both.
-        xticklabeldir, yticklabeldir : {'in', 'out'}
-            Whether to place x and y axis tick label text inside
-            or outside the axes.
-        xticklabelpad, yticklabelpad : unit-spec, optional
-            The padding between the x and y axis ticks and
-            tick labels. Default is :rcraw:`tick.labelpad`.
-            %(units.pt)s
-        xgrid, ygrid, grid : bool, optional
-            Whether to draw major gridlines on the x and y axis.
-            Use `grid` to toggle both.
-        xgridminor, ygridminor, gridminor : bool, optional
-            Whether to draw minor gridlines for the x and y axis.
-            Use `gridminor` to toggle both.
-        xlocator, ylocator : locator-spec, optional
-            Used to determine the x and y axis tick mark positions. Passed
-            to the `~proplot.constructor.Locator` constructor.  Can be float,
-            list of float, string, or `matplotlib.ticker.Locator` instance.
-            Use ``[]``, ``'null'``, or ``'none'`` for no ticks.
-        xticks, yticks : optional
-            Aliases for `xlocator`, `ylocator`.
-        xlocator_kw, ylocator_kw : dict-like, optional
-            Keyword arguments passed to the `matplotlib.ticker.Locator` class.
-        xminorlocator, yminorlocator : optional
-            As for `xlocator`, `ylocator`, but for the minor ticks.
-        xminorticks, yminorticks : optional
-            Aliases for `xminorlocator`, `yminorlocator`.
-        xminorlocator_kw, yminorlocator_kw
-            As for `xlocator_kw`, `ylocator_kw`, but for the minor locator.
-        xformatter, yformatter : formatter-spec, optional
-            Used to determine the x and y axis tick label string format.
-            Passed to the `~proplot.constructor.Formatter` constructor.
-            Can be string, list of strings, or `matplotlib.ticker.Formatter`
-            instance. Use ``[]``, ``'null'``, or ``'none'`` for no labels.
-        xticklabels, yticklabels : optional
-            Aliases for `xformatter`, `yformatter`.
-        xformatter_kw, yformatter_kw : dict-like, optional
-            Keyword arguments passed to the `matplotlib.ticker.Formatter` class.
-        xrotation, yrotation : float, optional
-            The rotation for x and y axis tick labels. Default is ``0``
-            for normal axes, :rc:`formatter.timerotation` for time x axes.
-        xbounds, ybounds : 2-tuple of float, optional
-            The x and y axis data bounds within which to draw the spines.
-            For example, the axis range ``(0, 4)`` with bounds ``(1, 4)``
-            will prevent the spines from meeting at the origin.
-        xtickrange, ytickrange : 2-tuple of float, optional
-            The x and y axis data ranges within which major tick marks
-            are labelled. For example, the tick range ``(-1, 1)`` with
-            axis range ``(-5, 5)`` and a tick interval of 1 will only
-            label the ticks marks at -1, 0, and 1. See
-            `~proplot.ticker.AutoFormatter` for details.
-        xwraprange, ywraprange : 2-tuple of float, optional
-            The x and y axis data ranges with which major tick mark values are
-            wrapped. For example, the wrap range ``(0, 3)`` causes the values 0
-            through 9 to be formatted as 0, 1, 2, 0, 1, 2, 0, 1, 2, 0. See
-            `~proplot.ticker.AutoFormatter` for details.
-        xmargin, ymargin, margin : float, optional
-            The default margin between plotted content and the x and y axis
-            spines. Value is proportional to the width, height of the axes.
-            Use this if you want whitespace between plotted content
-            and the spines, but don't want to explicitly set `xlim` or `ylim`.
-        xticklen, yticklen, ticklen : float or str, optional
-            Tick lengths for the x and y axis. Default is :rc:`ticklen`.
-            %(units.pt)s
-            Minor tick lengths are scaled according to :rc:`tick.lenratio`.
-            Use `ticklen` and `ticklenratio` to set both at once.
-        xlinewidth, ylinewidth, linewidth : color-spec, optional
-            Line width for the x and y axis spines and major ticks.
-            Use `linewidth` to set both at once.
-        xcolor, ycolor, color : color-spec, optional
-            Color for the x and y axis spines, ticks, tick labels, and
-            axis labels. Use `color` to set both at once.
-        xgridcolor, ygridcolor, gridcolor : color-spec, optional
-            Color for the x and y axis major and minor gridlines.
-            Use `gridcolor` to set both at once.
-        fixticks : bool, optional
-            Whether to always transform the tick locators to a
-            `~matplotlib.ticker.FixedLocator` instance. Default is ``False``.
-            If your axis ticks are doing weird things (for example, ticks
-            drawn outside of the axis spine), try setting this to ``True``.
+        %(cartesian.format)s
 
         Other parameters
         ----------------
@@ -824,7 +812,9 @@ class CartesianAxes(shared._SharedAxes, plot.PlotAxes):
         or `datetime.datetime` array as the x or y axis coordinate, the axis ticks
         and tick labels will be automatically formatted as dates.
         """
+        ic(kwargs)
         rc_kw, rc_mode, kwargs = _parse_format(**kwargs)
+        ic(kwargs)
         with rc.context(rc_kw, mode=rc_mode):
             # No mutable default args
             xlabel_kw = xlabel_kw or {}
@@ -983,19 +973,25 @@ class CartesianAxes(shared._SharedAxes, plot.PlotAxes):
             self.set_aspect(aspect)
         super().format(rc_kw=rc_kw, rc_mode=rc_mode, **kwargs)
 
+    def _parse_alt(self, kwargs, x):
+        """
+        Optionally omit the leading x or y from "twin axes" methods.
+        """
+        keys = tuple(
+            key[1:] for key in self._format_signature.parameters if key[0] == x
+        )
+        kw = {
+            (x + key if key in keys else key): val for key, val in kwargs.items()
+        }
+        ic(kw)
+        return kw
+
     @docstring._snippet_manager
     def altx(self, **kwargs):
         """
         %(axes.altx)s
         """
-        # WARNING: This repairs a matplotlib bug where twins fail to inherit the minor
-        # locator due to application of `AutoMinorLocator` when `ytick.minor.visible`
-        # is ``True`` in `Axes.cla` and due to the fact that passing ``sharey=self``
-        # to the alternate axes means that they share the same major and minor Tickers.
-        # >>> import matplotlib.pyplot as plt
-        # ... fig, ax = plt.subplots()
-        # ... ax.set_yscale('log')
-        # ... ax.twiny()
+        # Initialize axes
         # WARNING: We add axes as children for tight layout algorithm convenience and
         # to support eventual paradigm of arbitrarily many duplicates with spines
         # arranged in an edge stack. However this means all artists drawn there take
@@ -1003,15 +999,15 @@ class CartesianAxes(shared._SharedAxes, plot.PlotAxes):
         # To restore matplotlib behavior, which draws "child" artists on top simply
         # because the axes was created after the "parent" one, use the inset_axes
         # zorder of 4 and make the background transparent.
-        minorlocator = self.yaxis.get_minor_locator()
+        kwargs = self._parse_alt(kwargs, 'x')
         ax = self._make_twin_axes(
-            sharey=self, number=False, autoshare=False, projection='cartesian'
+            sharey=self, number=False, autoshare=False, projection='cartesian', **kwargs
         )
 
         # Child defaults
+        # NOTE: This is not completely ideal since e.g. users passing labelloc
+        # will get overwritten. But mostly not a huge deal.
         ax._altx_parent = self
-        ax.yaxis.set_minor_locator(minorlocator)
-        ax.yaxis.isDefault_minloc = True
         for side, spine in ax.spines.items():
             spine.set_visible(side == 'top')
         ax.xaxis.tick_top()
@@ -1031,7 +1027,6 @@ class CartesianAxes(shared._SharedAxes, plot.PlotAxes):
         # Add axes
         self.add_child_axes(ax)  # to facilitate tight layout
         self.figure._axstack.remove(ax)  # or gets drawn twice!
-        ax.format(**self._parse_alt('x', kwargs))
 
         return ax
 
@@ -1040,16 +1035,14 @@ class CartesianAxes(shared._SharedAxes, plot.PlotAxes):
         """
         %(axes.alty)s
         """
-        # See altx() comments
-        minorlocator = self.xaxis.get_minor_locator()
+        # Initialize axes
+        kwargs = self._parse_alt(kwargs, 'y')
         ax = self._make_twin_axes(
-            sharex=self, number=False, autoshare=False, projection='cartesian'
+            sharex=self, number=False, autoshare=False, projection='cartesian', **kwargs
         )
 
         # Child defaults
         ax._alty_parent = self
-        ax.xaxis.set_minor_locator(minorlocator)
-        ax.xaxis.isDefault_minloc = True
         for side, spine in ax.spines.items():
             spine.set_visible(side == 'right')
         ax.yaxis.tick_right()
@@ -1069,7 +1062,6 @@ class CartesianAxes(shared._SharedAxes, plot.PlotAxes):
         # Add axes
         self.add_child_axes(ax)  # to facilitate tight layout
         self.figure._axstack.remove(ax)  # or gets drawn twice!
-        ax.format(**self._parse_alt('y', kwargs))
 
         return ax
 
@@ -1091,7 +1083,6 @@ class CartesianAxes(shared._SharedAxes, plot.PlotAxes):
         """
         %(axes.dualy)s
         """
-        # See dualx comments
         ax = self.alty(**kwargs)
         ax._dualy_funcscale = funcscale
         ax._dualy_scale()
@@ -1129,3 +1120,8 @@ class CartesianAxes(shared._SharedAxes, plot.PlotAxes):
         self._apply_axis_sharing()
         self._update_rotation('x')
         return super().get_tightbbox(renderer, *args, **kwargs)
+
+    # Apply signature obfuscation after getting keys
+    # WARNING: This is needed so we can omit leading x/y for alt commands
+    _format_signature = inspect.signature(format)
+    format = docstring._obfuscate_signature(format)

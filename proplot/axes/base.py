@@ -84,18 +84,10 @@ ALIGN_OPTS = {
     },
 }
 
-
-# Transform docstring
-# Used for text and add_axes
-_transform_docstring = """
-transform : {'data', 'axes', 'figure'} or `~matplotlib.transforms.Transform`, optional
-    The transform used to interpret the bounds. Can be a
-    `~matplotlib.transforms.Transform` instance
-    or a string representing the `~matplotlib.axes.Axes.transData`,
-    `~matplotlib.axes.Axes.transAxes`, or `~matplotlib.figure.Figure.transFigure`
-    transforms. Default is ``'axes'``, i.e. `bounds` is in axes-relative coordinates.
-"""
-docstring._snippet_manager['axes.transform'] = _transform_docstring
+# Axes init keys. All others are passed to format()
+AXES_KEYS = (
+    'fig', 'rect', 'sharex', 'sharey', 'frameon', 'box_aspect', 'label'
+)
 
 
 # Projection docstring
@@ -157,6 +149,19 @@ docstring._snippet_manager['axes.legend_space'] = _space_docstring.format(
 docstring._snippet_manager['axes.colorbar_space'] = _space_docstring.format(
     name='colorbar', default='colorbar.insetpad'
 )
+
+
+# Transform docstring
+# Used for text and add_axes
+_transform_docstring = """
+transform : {'data', 'axes', 'figure'} or `~matplotlib.transforms.Transform`, optional
+    The transform used to interpret the bounds. Can be a
+    `~matplotlib.transforms.Transform` instance
+    or a string representing the `~matplotlib.axes.Axes.transData`,
+    `~matplotlib.axes.Axes.transAxes`, or `~matplotlib.figure.Figure.transFigure`
+    transforms. Default is ``'axes'``, i.e. `bounds` is in axes-relative coordinates.
+"""
+docstring._snippet_manager['axes.transform'] = _transform_docstring
 
 
 # Inset docstring
@@ -626,20 +631,30 @@ class Axes(maxes.Axes):
     def __str__(self):  # override matplotlib
         return self.__repr__()
 
+    @docstring._snippet_manager
     def __init__(self, *args, **kwargs):
         """
         Parameters
         ----------
+        %(axes.format)s
         *args, **kwargs
-            Passed to `~matplotlib.axes.Axes`.
+            Passed to `~matplotlib.axes.Axes` or the
+            projection-specific ``format`` command.
+
+        Other parameters
+        ----------------
+        %(axes.rc)s
 
         See also
         --------
+        Axes.format
         matplotlib.axes.Axes
         proplot.axes.PlotAxes
         proplot.axes.CartesianAxes
         proplot.axes.PolarAxes
         proplot.axes.GeoAxes
+        proplot.figure.Figure.subplot
+        proplot.figure.Figure.add_subplot
         """
         # Initialize parent after removing args
         # NOTE: These are really "subplot" features so documented on add_subplot().
@@ -647,7 +662,8 @@ class Axes(maxes.Axes):
         number = kwargs.pop('number', None)
         autoshare = kwargs.pop('autoshare', None)
         autoshare = _not_none(autoshare, True)
-        super().__init__(*args, **kwargs)
+        kw_init = {key: kwargs.pop(key) for key in tuple(kwargs) if key in AXES_KEYS}
+        super().__init__(*args, **kw_init)
 
         # Varous scalar properties
         self._active_cycle = rc['axes.prop_cycle']
@@ -716,7 +732,7 @@ class Axes(maxes.Axes):
         # Default formatting
         # NOTE: rc_mode == 1 applies the proplot settings. This is necessary
         # just on the first run. Default calls to format() use rc_mode == 2
-        self.format(rc_mode=1)  # 1 applies the custom proplot params
+        self.format(rc_mode=1, skip_figure=True, **kwargs)
 
     @staticmethod
     def _axisbelow_to_zorder(axisbelow):
@@ -1361,8 +1377,8 @@ class Axes(maxes.Axes):
         **kwargs
     ):
         """
-        Format the a-b-c label, axes title(s), and background
-        patch, and call `proplot.figure.Figure.format`.
+        Modify the a-b-c label, axes title(s), and background patch,
+        and call `proplot.figure.Figure.format` on the axes figure.
 
         Parameters
         ----------
@@ -1392,7 +1408,7 @@ class Axes(maxes.Axes):
         """
         skip_figure = kwargs.pop('skip_figure', False)  # internal keyword arg
         rc_kw, rc_mode, kwargs = _parse_format(**kwargs)
-        params = _pop_params(kwargs, self.figure.format)
+        params = _pop_params(kwargs, self.figure._format_signature)
 
         # Initiate context block
         with rc.context(rc_kw, mode=rc_mode):
@@ -2848,13 +2864,7 @@ class Axes(maxes.Axes):
             The coordinates for the text
         s : str
             The string for the text.
-        transform \
-: {{'data', 'axes', 'figure'}} or `~matplotlib.transforms.Transform`, optional
-            The transform used to interpret `x` and `y`. This can be a
-            `~matplotlib.transforms.Transform` object or a string corresponding to
-            `~matplotlib.axes.Axes.transData`, `~matplotlib.axes.Axes.transAxes`,
-            or `~matplotlib.figure.Figure.transFigure`. Default is ``'data'``,
-            i.e. the text is positioned in data coordinates.
+        %(axes.transform)s
 
         Other parameters
         ----------------

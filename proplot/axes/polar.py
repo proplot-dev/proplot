@@ -15,6 +15,73 @@ from . import plot, shared
 __all__ = ['PolarAxes']
 
 
+# Format docstring
+_format_docstring = """
+r0 : float, optional
+    The radial origin. Default is ``0``.
+theta0 : {'N', 'NW', 'W', 'SW', 'S', 'SE', 'E', 'NE'}
+    The zero azimuth location. Default is ``N``.
+thetadir : {1, -1, 'anticlockwise', 'counterclockwise', 'clockwise'}, optional
+    The positive azimuth direction. Clockwise corresponds to ``-1``
+    and anticlockwise corresponds to ``1``. Default is ``1``.
+thetamin, thetamax : float, optional
+    The lower and upper azimuthal bounds in degrees. If
+    ``thetamax != thetamin + 360``, this produces a sector plot.
+thetalim : 2-tuple of float or None, optional
+    Specifies `thetamin` and `thetamax` at once.
+rmin, rmax : float, optional
+    The inner and outer radial limits. If ``r0 != rmin``, this
+    produces an annular plot.
+rlim : 2-tuple of float or None, optional
+    Specifies `rmin` and `rmax` at once.
+rborder : bool, optional
+    Whether to draw the polar axes border. Visibility of the "inner"
+    radial spine and "start" and "end" azimuthal spines is controlled
+    automatically by matplotlib.
+thetagrid, rgrid, grid : bool, optional
+    Whether to draw major gridlines for the azimuthal and radial axis.
+    Use `grid` to toggle both.
+thetagridminor, rgridminor, gridminor : bool, optional
+    Whether to draw minor gridlines for the azimuthal and radial axis.
+    Use `gridminor` to toggle both.
+thetagridcolor, rgridcolor, gridcolor : color-spec, optional
+    Color for the major and minor azimuthal and radial gridlines.
+    Use `gridcolor` to set both at once.
+thetalocator, rlocator : locator-spec, optional
+    Used to determine the azimuthal and radial gridline positions.
+    Passed to the `~proplot.constructor.Locator` constructor. Can be
+    float, list of float, string, or `matplotlib.ticker.Locator` instance.
+thetalines, rlines
+    Aliases for `thetalocator`, `rlocator`.
+thetalocator_kw, rlocator_kw : dict-like, optional
+    The azimuthal and radial locator settings. Passed to
+    `~proplot.constructor.Locator`.
+thetaminorlocator, rminorlocator : optional
+    As for `thetalocator`, `rlocator`, but for the minor gridlines.
+thetaminorticks, rminorticks : optional
+    Aliases for `thetaminorlocator`, `rminorlocator`.
+thetaminorlocator_kw, rminorlocator_kw
+    As for `thetalocator_kw`, `rlocator_kw`, but for the minor locator.
+rlabelpos : float, optional
+    The azimuth at which radial coordinates are labeled.
+thetaformatter, rformatter : formatter-spec, optional
+    Used to determine the azimuthal and radial label format.
+    Passed to the `~proplot.constructor.Formatter` constructor.
+    Can be string, list of string, or `matplotlib.ticker.Formatter`
+    instance. Use ``[]``, ``'null'``, or ``'none'`` for no labels.
+thetalabels, rlabels : optional
+    Aliases for `thetaformatter`, `rformatter`.
+thetaformatter_kw, rformatter_kw : dict-like, optional
+    The azimuthal and radial label formatter settings. Passed to
+    `~proplot.constructor.Formatter`.
+labelpad : unit-spec, optional
+    The padding between the axes edge and the radial and
+    azimuthal labels. Default is :rcraw:`grid.labelpad`.
+    %(units.pt)s
+"""
+docstring._snippet_manager['polar.format'] = _format_docstring
+
+
 class PolarAxes(shared._SharedAxes, plot.PlotAxes, mproj.PolarAxes):
     """
     Axes subclass for plotting in polar coordinates. Adds the `~PolarAxes.format`
@@ -24,18 +91,30 @@ class PolarAxes(shared._SharedAxes, plot.PlotAxes, mproj.PolarAxes):
 
     def __init__(self, *args, **kwargs):
         """
+        Parameters
+        ----------
+        %(polar.format)s
+        *args, **kwargs
+            Passed to `proplot.axes.Axes`.
+
+        Other parameters
+        ----------------
+        %(axes.format)s
+        %(axes.rc)s
+
         See also
         --------
-        proplot.ui.subplots
+        PolarAxes.format
         proplot.axes.Axes
         proplot.axes.PlotAxes
         matplotlib.projections.PolarAxes
+        proplot.figure.Figure.subplot
+        proplot.figure.Figure.add_subplot
         """
         # Set tick length to zero so azimuthal labels are not too offset
         # Change default radial axis formatter but keep default theta one
         super().__init__(*args, **kwargs)
-        formatter = pticker.AutoFormatter()
-        self.yaxis.set_major_formatter(formatter)
+        self.yaxis.set_major_formatter(pticker.AutoFormatter())
         self.yaxis.isDefault_majfmt = True
         for axis in (self.xaxis, self.yaxis):
             axis.set_tick_params(which='both', size=0)
@@ -60,14 +139,14 @@ class PolarAxes(shared._SharedAxes, plot.PlotAxes, mproj.PolarAxes):
         if lim is not None:
             if min_ is not None or max_ is not None:
                 warnings._warn_proplot(
-                    f'Overriding {r}min={min_} and {r}max={max_} '
-                    f'with {r}lim={lim}.'
+                    f'Overriding {r}min={min_} and '
+                    f'{r}max={max_} with {r}lim={lim}.'
                 )
             min_, max_ = lim
         if min_ is not None:
-            getattr(self, 'set_' + r + 'min')(min_)
+            getattr(self, f'set_{r}min')(min_)
         if max_ is not None:
-            getattr(self, 'set_' + r + 'max')(max_)
+            getattr(self, f'set_{r}max')(max_)
 
     def _update_locators(
         self, x, *,
@@ -80,8 +159,8 @@ class PolarAxes(shared._SharedAxes, plot.PlotAxes, mproj.PolarAxes):
         # NOTE: Must convert theta locator input to radians, then back to deg.
         r = 'theta' if x == 'x' else 'r'
         axis = getattr(self, x + 'axis')
-        min_ = getattr(self, 'get_' + r + 'min')()
-        max_ = getattr(self, 'get_' + r + 'max')()
+        min_ = getattr(self, f'get_{r}min')()
+        max_ = getattr(self, f'get_{r}max')()
         for i, (loc, loc_kw) in enumerate(
             zip((locator, minorlocator), (locator_kw, minorlocator_kw))
         ):
@@ -123,74 +202,12 @@ class PolarAxes(shared._SharedAxes, plot.PlotAxes, mproj.PolarAxes):
         **kwargs
     ):
         """
-        Modify radial gridline locations, gridline labels, limits, and more.
-        Additional keyword argulents are passed to `Axes.format` and
-        `~proplot.config.Configurator.context`. Note that all ``theta``
-        arguments are specified in degrees, not radians.
+        Modify axes limits, radial and azimuthal gridlines, and more. Note that
+        all of the ``theta`` arguments are specified in degrees, not radians.
 
         Parameters
         ----------
-        r0 : float, optional
-            The radial origin. Default is ``0``.
-        theta0 : {'N', 'NW', 'W', 'SW', 'S', 'SE', 'E', 'NE'}
-            The zero azimuth location. Default is ``N``.
-        thetadir : {1, -1, 'anticlockwise', 'counterclockwise', 'clockwise'}, optional
-            The positive azimuth direction. Clockwise corresponds to ``-1``
-            and anticlockwise corresponds to ``1``. Default is ``1``.
-        thetamin, thetamax : float, optional
-            The lower and upper azimuthal bounds in degrees. If
-            ``thetamax != thetamin + 360``, this produces a sector plot.
-        thetalim : 2-tuple of float or None, optional
-            Specifies `thetamin` and `thetamax` at once.
-        rmin, rmax : float, optional
-            The inner and outer radial limits. If ``r0 != rmin``, this
-            produces an annular plot.
-        rlim : 2-tuple of float or None, optional
-            Specifies `rmin` and `rmax` at once.
-        rborder : bool, optional
-            Whether to draw the polar axes border. Visibility of the "inner"
-            radial spine and "start" and "end" azimuthal spines is controlled
-            automatically by matplotlib.
-        thetagrid, rgrid, grid : bool, optional
-            Whether to draw major gridlines for the azimuthal and radial axis.
-            Use `grid` to toggle both.
-        thetagridminor, rgridminor, gridminor : bool, optional
-            Whether to draw minor gridlines for the azimuthal and radial axis.
-            Use `gridminor` to toggle both.
-        thetagridcolor, rgridcolor, gridcolor : color-spec, optional
-            Color for the major and minor azimuthal and radial gridlines.
-            Use `gridcolor` to set both at once.
-        thetalocator, rlocator : locator-spec, optional
-            Used to determine the azimuthal and radial gridline positions.
-            Passed to the `~proplot.constructor.Locator` constructor. Can be
-            float, list of float, string, or `matplotlib.ticker.Locator` instance.
-        thetalines, rlines
-            Aliases for `thetalocator`, `rlocator`.
-        thetalocator_kw, rlocator_kw : dict-like, optional
-            The azimuthal and radial locator settings. Passed to
-            `~proplot.constructor.Locator`.
-        thetaminorlocator, rminorlocator : optional
-            As for `thetalocator`, `rlocator`, but for the minor gridlines.
-        thetaminorticks, rminorticks : optional
-            Aliases for `thetaminorlocator`, `rminorlocator`.
-        thetaminorlocator_kw, rminorlocator_kw
-            As for `thetalocator_kw`, `rlocator_kw`, but for the minor locator.
-        rlabelpos : float, optional
-            The azimuth at which radial coordinates are labeled.
-        thetaformatter, rformatter : formatter-spec, optional
-            Used to determine the azimuthal and radial label format.
-            Passed to the `~proplot.constructor.Formatter` constructor.
-            Can be string, list of string, or `matplotlib.ticker.Formatter`
-            instance. Use ``[]``, ``'null'``, or ``'none'`` for no labels.
-        thetalabels, rlabels : optional
-            Aliases for `thetaformatter`, `rformatter`.
-        thetaformatter_kw, rformatter_kw : dict-like, optional
-            The azimuthal and radial label formatter settings. Passed to
-            `~proplot.constructor.Formatter`.
-        labelpad : unit-spec, optional
-            The padding between the axes edge and the radial and azimuthal
-            labels. Default is :rcraw:`grid.labelpad`.
-            %(units.pt)s
+        %(polar.format)s
 
         Other parameters
         ----------------
