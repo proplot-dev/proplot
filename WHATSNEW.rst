@@ -48,6 +48,12 @@ Bug fixes
 * Fix issue with `includepanels` disabling spanning
   axis labels (:commit:`332ba702`).
 
+Documentation
+-------------
+
+* Fix documentation compiling issue due to Natural
+  Earth server change (:commit:`d1d47911`).
+
 ProPlot v0.9.0 (2021-09-08)
 ===========================
 
