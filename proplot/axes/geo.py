@@ -1175,7 +1175,7 @@ class _BasemapAxes(GeoAxes):
         self._lonaxis = _LonAxis(self)
         self._lataxis = _LatAxis(self, latmax=latmax)
         self._set_view_intervals(extent)
-        super().__init__(*args, map_projection=self.projection, **kwargs)
+        super().__init__(*args, **kwargs)
 
     def _get_lon0(self):
         """
