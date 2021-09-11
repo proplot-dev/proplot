@@ -23,7 +23,7 @@ class _version(list):
             if isinstance(version, Real):
                 version = str(version)
             if not isinstance(version, str):
-                version = '.'.join(version)
+                version = '.'.join(map(str, version))
             major, minor, *_ = version.split('.')
             major, minor = int(major or 0), int(minor or 0)
         except Exception:
