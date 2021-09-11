@@ -1401,6 +1401,8 @@ class Figure(mfigure.Figure):
             gs._auto_layout_space(renderer)
         _align_content()
 
+    @docstring._obfuscate_signature
+    @docstring._snippet_manager
     def format(
         self, axs=None,
         figtitle=None, suptitle=None, suptitle_kw=None,
