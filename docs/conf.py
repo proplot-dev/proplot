@@ -9,6 +9,7 @@
 # full list see the documentation:
 # http://www.sphinx-doc.org/en/master/config
 
+
 # -- Path setup --------------------------------------------------------------
 
 import datetime
@@ -45,6 +46,7 @@ except ImportError:
     cmd = ['pip', 'install', 'git+https://github.com/matplotlib/basemap@v1.2.2rel']
     subprocess.check_call(cmd)
 
+
 # -- Project information -----------------------------------------------------
 
 _today = datetime.datetime.today()
@@ -57,6 +59,7 @@ version = ''
 
 # The full version, including alpha/beta/rc tags
 release = ''
+
 
 # -- General configuration ---------------------------------------------------
 
@@ -256,6 +259,7 @@ rc._save_yaml(os.path.join('_static', 'proplotrc'))
 # :func:`name`, :module:`name`, etc.
 default_role = 'py:obj'
 
+
 # -- Options for HTML output -------------------------------------------------
 
 # Add any paths that contain custom static files (such as style sheets) here,
@@ -291,6 +295,7 @@ html_theme_options = {
     'navigation_depth': 4,
     'prev_next_buttons_location': 'bottom',  # top and bottom
 }
+
 
 # -- Options for HTMLHelp output ---------------------------------------------
 
@@ -356,8 +361,6 @@ texinfo_documents = [
     )
 ]
 
-
-# -- Extension configuration -------------------------------------------------
 
 # -- Options for todo extension ----------------------------------------------
 
