@@ -31,9 +31,18 @@ and stability is improved.
 ProPlot v0.9.1 (2021-##-##)
 ===========================
 
+Features
+--------
+
+* Allow passing ``format`` keywords when instantiating figures and axes
+  (:commit:`ae98378d`). For example, ``pplt.figure(suptitle='Super title')``
+  and ``fig.add_subplot(111, xcolor='gray', xticks=10)`` are both valid.
+
 Bug fixes
 ---------
 
+* Fix "unexpected version" warning issues when cartopy
+  is not installed (:commit:`6dbab1bc`).
 * Fix issue with dictionaries passed to `proj` when calling
   `~proplot.figure.Figure.add_subplots` (:commit:`21b165df`).
 * Fix issue with `includepanels` disabling spanning
