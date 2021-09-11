@@ -266,48 +266,65 @@ fig.colorbar(m, loc='b', label='label')
 # Formatting stuff
 # ----------------
 #
-# Every `~matplotlib.axes.Axes` returned by `~proplot.ui.subplots` has a
-# ``format`` method. This is your one-stop-shop for changing axes settings.
-# Keyword arguments passed to ``format`` are interpreted as follows:
+# ProPlot's ``format`` command is your one-stop-shop for changing figure and axes
+# settings. While one-liner matplotlib setters like ``set_xlabel`` and ``set_title``
+# still work, ``format`` is usually more succinct -- it only needs to be called once.
+# The keyword arguments accepted by ``format`` fall into the following groups:
 #
-# 1. Any keyword matching the name of an `~proplot.config.rc` setting
-#    is used to update the axes. If the name has "dots", you can omit them
-#    (e.g., ``titleloc='left'`` changes the :rcraw:`title.loc` property).
-#    See the :ref:`configuration section <ug_config>` for details.
+# * Figure settings. These are related to row labels, column labels, and
+#   figure "super" titles -- for example, ``fig.format(suptitle='Super title')``
+#   changes the "super" title. See e.g. `proplot.figure.Figure.format` for details.
 #
-# 2. Valid keywords arguments are passed to
-#    `proplot.axes.CartesianAxes.format`, `proplot.axes.PolarAxes.format`,
-#    or `proplot.axes.GeoAxes.format`. These change settings that are
-#    specific to the axes type. For example:
+# * General axes settings. These are related to background patches,
+#   a-b-c labels, and axes titles -- for example, ``ax.format(title='Title')``
+#   changes the axes title. See e.g. `proplot.axes.Axes.format` for details.
 #
-#    * To change the *x* axis bounds on a `~proplot.axes.CartesianAxes`,
-#      use e.g. ``xlim=(0, 5)``.
-#    * To change the radial bounds on a `~proplot.axes.PolarAxes`, use e.g.
-#      ``rlim=(0, 10)``.
-#    * To change the zonal bounds on a `~proplot.axes.GeoAxes`,
-#      use e.g. ``lonlim=(-90, 0)``.
+# * Cartesian axes settings (valid only for `~proplot.axes.CartesianAxes`).
+#   These are related to *x* and *y* axis ticks, spines, bounds, and labels --
+#   for example, ``ax.format(xlim=(0, 5))`` changes the x axis bounds.
+#   See `proplot.axes.CartesianAxes.format`
+#   and :ref:`this section <ug_cartesian>` for details.
 #
-# 3. Remaining keyword arguments are passed to the base `proplot.axes.Axes.format`
-#    method. `~proplot.axes.Axes` is the base class for all other axes classes.
-#    This changes things that are the same for all axes types, like titles and
-#    a-b-c subplot labels (e.g., ``title='Title'``).
+# * Polar axes settings (valid only for `~proplot.axes.PolarAxes`).
+#   These are related to azimuthal and radial grid lines, bounds, and labels --
+#   for example, ``ax.format(rlim=(0, 10))`` changes the radial bounds.
+#   See `proplot.axes.PolarAxes.format`
+#   and :ref:`this section <ug_polar>` for details.
 #
-# The ``format`` methods let you use simple shorthands for changing all kinds
-# of settings at once, instead of one-liner setter methods like
-# ``ax.set_title()`` and ``ax.set_xlabel()``. They are also integrated with
-# the `~proplot.constructor.Locator`, `~proplot.constructor.Formatter`,
-# and `~proplot.constructor.Scale` :ref:`constructor functions <ug_cartesian>`.
-# You can also call ``format`` for several subplots at once using
-# `proplot.figure.Figure.format` or `proplot.gridspec.SubplotGrid.format` (see below).
+# * Geographic axes settings (valid only for `~proplot.axes.GeoAxes`).
+#   These are related to meridional and parallel grid lines, bounds, and labels,
+#   along with basic geographic features -- for example,
+#   ``ax.format(latlim=(0, 90))`` changes the meridional bounds.
+#   See `proplot.axes.GeoAxes.format`
+#   and :ref:`this section <ug_geoformat>` for details.
 #
-# The below example shows the many different keyword arguments accepted by
-# ``format``, and demonstrates how ``format`` can be used to succinctly and
-# efficiently customize your plots.
+# * `~proplot.config.rc` settings. Any keyword matching the name
+#   of an rc setting is locally applied to the figure and axes.
+#   If the name has "dots", you can pass it as a keyword argument with
+#   the "dots" omitted or pass it to `rc_kw` in a dictionary. For example, the
+#   default a-b-c label location is controlled by :rcraw:`abc.loc`. To change
+#   this for an entire figure, you can use ``fig.format(abcloc='right')``
+#   or ``fig.format(rc_kw={'abc.loc': 'right'})``.
+#   See :ref:`this section <ug_config>` for more on rc settings.
+#
+# A ``format`` command is available on every figure and axes.
+# `proplot.figure.Figure.format` accepts both figure and axes
+# settings (applying them to each numbered subplot by default). Likewise,
+# `proplot.axes.Axes.format` accepts both axes and figure settings.
+# There is also a `proplot.gridspec.SubplotGrid.format` command
+# that can be used to change settings for a subset of subplots
+# -- for example, ``axs[:2].format(xtickminor=True)``
+# turns on minor ticks for the first two subplots. See
+# :ref:`this section <ug_subplotgrid>` for more on subplot grids.
+#
+# The below example shows the many different keyword arguments
+# accepted by ``format``, and demonstrates how ``format`` can be
+# used to succinctly and efficiently customize plots.
 
 # %%
 import proplot as pplt
 import numpy as np
-fig, axs = pplt.subplots(ncols=2, nrows=2, refwidth=2, share=False, tight=True)
+fig, axs = pplt.subplots(ncols=2, nrows=2, refwidth=2, share=False)
 state = np.random.RandomState(51423)
 N = 60
 x = np.linspace(1, 10, N)
@@ -359,8 +376,8 @@ axs.format(
 # property. `~proplot.gridspec.SubplotGrid` is especially useful because it lets you
 # call ``format``, ``colorbar``, ``legend``, ``panel``, ``inset``, and the various
 # twin axis commands simultaneously for all subplots in the grid. In the below
-# example, we use `~proplot.gridspec.SubplotGrid.format` command on the grid
-# returned by `~proplot.ui.subplots` to format several subplots all at once.
+# example, we use `proplot.gridspec.SubplotGrid.format` on the grid returned
+# by `~proplot.ui.subplots` to format several subplots all at once.
 
 # %%
 import proplot as pplt
