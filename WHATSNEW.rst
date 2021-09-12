@@ -36,6 +36,8 @@ Style changes
 
 * Revert back to original color names for ``'cyan'``, ``'magenta'``, and ``'yellow'``
   rather than overwriting with ``'c'``, ``'m'``, and ``'y'`` (:issue:`280`).
+* Treat ``'ochre'`` and ``'ocher'`` as synonyms (similar to ``'grey'`` and ``'gray'``)
+  (:commit:`c949e505`). Also remove the color survey misspelling ``'ocre'``.
 
 Features
 --------
