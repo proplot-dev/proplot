@@ -166,7 +166,7 @@ COLORS_ORIG = (  # always use these colors as XKCD colors
 COLORS_KEEP = (
     *(  # always load these XKCD colors regardless of settings
         'charcoal', 'tomato', 'burgundy', 'maroon', 'burgundy', 'lavendar',
-        'taupe', 'ocre', 'sand', 'stone', 'earth', 'sand brown', 'sienna',
+        'taupe', 'sand', 'stone', 'earth', 'sand brown', 'sienna',
         'terracotta', 'moss', 'crimson', 'mauve', 'rose', 'teal', 'forest',
         'grass', 'sage', 'pine', 'vermillion', 'russet', 'cerise', 'avocado',
         'wine', 'brick', 'umber', 'mahogany', 'puce', 'grape', 'blurple',
@@ -207,14 +207,16 @@ COLORS_REMOVE = (
     'icky',
     'sickly',
 )
-COLORS_TRANSLATE = (
+COLORS_SUBS = (
     # prevent registering similar-sounding names
     # these can all be combined
     ('/', ' '),  # convert [color1]/[color2] to compound (e.g. grey/blue to grey blue)
     ("'s", 's'),  # robin's egg
     ('egg blue', 'egg'),  # robin's egg blue
     ('grey', 'gray'),  # 'Murica
-    ('forrest', 'forest'),  # survey typo?
+    ('ochre', 'ocher'),  # ...
+    ('forrest', 'forest'),  # ...
+    ('ocre', 'ocher'),  # typo
     ('reddish', 'red'),  # remove [color]ish where it modifies the spelling of color
     ('purplish', 'purple'),  # ...
     ('pinkish', 'pink'),
@@ -623,10 +625,10 @@ def _standardize_colors(input, space, margin):
     # Translate remaining colors and remove bad names
     # WARNING: Unique axis argument requires numpy version >=1.13
     for name, color in input.items():
-        for string, replace in COLORS_TRANSLATE:
-            if string in name:
-                name = name.replace(string, replace)
-        if any(string in name for string in COLORS_REMOVE):
+        for sub, rep in COLORS_SUBS:
+            if sub in name:
+                name = name.replace(sub, rep)
+        if any(sub in name for sub in COLORS_REMOVE):
             continue  # remove "unpofessional" names
         if name in output:
             continue  # prioritize names that come first
@@ -2856,7 +2858,10 @@ class ColorDatabase(MutableMapping, dict):
     Dictionary subclass used to replace the builtin matplotlib color database.
     See `~ColorDatabase.__getitem__` for details.
     """
-    _regex_grey = re.compile('grey')  # permit e.g. 'slategrey' and 'greyish'
+    _colors_subs = (  # British --> American synonyms
+        ('grey', 'gray'),
+        ('ochre', 'ocher'),
+    )
 
     def __iter__(self):
         yield from dict.__iter__(self)
@@ -2915,7 +2920,9 @@ class ColorDatabase(MutableMapping, dict):
         if not isinstance(key, str):
             raise ValueError(f'Invalid color name {key!r}. Must be string.')
         if isinstance(key, str) and len(key) > 1:  # ignore base colors
-            key = self._regex_grey.sub('gray', key.lower())
+            key = key.lower()
+            for sub, rep in self._colors_subs:
+                key = key.replace(sub, rep)
         return key
 
     @property
