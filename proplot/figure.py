@@ -687,6 +687,7 @@ class Figure(mfigure.Figure):
         self._subplot_counter = 0  # avoid add_subplot() returning an existing subplot
         self._is_adjusting = False
         self._is_authorized = False
+        rc_kw, rc_mode, kwargs = _parse_format(**kwargs)
         kw_format = _pop_params(kwargs, self._format_signature)
         with self._context_authorized():
             super().__init__(**kwargs)
@@ -719,7 +720,7 @@ class Figure(mfigure.Figure):
         else:
             context = {'mathtext.fallback_to_cm': bool(mathtext_fallback)}
         self._mathtext_context = context
-        self.format(rc_mode=1, skip_axes=True, **kw_format)
+        self.format(rc_mode=1, skip_axes=True, rc_kw=rc_kw, **kw_format)
 
     def _context_adjusting(self, cache=True):
         """
