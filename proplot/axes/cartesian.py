@@ -812,7 +812,7 @@ class CartesianAxes(shared._SharedAxes, plot.PlotAxes):
         or `datetime.datetime` array as the x or y axis coordinate, the axis ticks
         and tick labels will be automatically formatted as dates.
         """
-        rc_kw, rc_mode, kwargs = _parse_format(**kwargs)
+        rc_mode, rc_kw, kwargs = _parse_format(**kwargs)
         with rc.context(rc_kw, mode=rc_mode):
             # No mutable default args
             xlabel_kw = xlabel_kw or {}

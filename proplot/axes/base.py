@@ -1414,7 +1414,7 @@ class Axes(maxes.Axes):
         proplot.config.Configurator.context
         """
         skip_figure = kwargs.pop('skip_figure', False)  # internal keyword arg
-        rc_kw, rc_mode, kwargs = _parse_format(**kwargs)
+        rc_mode, rc_kw, kwargs = _parse_format(**kwargs)
         params = _pop_params(kwargs, self.figure._format_signature)
 
         # Initiate context block

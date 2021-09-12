@@ -548,7 +548,7 @@ class GeoAxes(plot.PlotAxes):
                 self._map_boundary = object()  # sentinel
 
         # Initiate context block
-        rc_kw, rc_mode, kwargs = _parse_format(**kwargs)
+        rc_mode, rc_kw, kwargs = _parse_format(**kwargs)
         with rc.context(rc_kw, mode=rc_mode):
             # Label toggles
             labels = _not_none(labels, rc.find('grid.labels', context=True))

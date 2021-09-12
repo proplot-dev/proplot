@@ -222,7 +222,7 @@ class PolarAxes(shared._SharedAxes, plot.PlotAxes, mproj.PolarAxes):
         """
         # NOTE: Here we capture 'label.pad' rc argument normally used for
         # x and y axis labels as shorthand for 'tick.labelpad'.
-        rc_kw, rc_mode, kwargs = _parse_format(**kwargs)
+        rc_mode, rc_kw, kwargs = _parse_format(**kwargs)
         with rc.context(rc_kw, mode=rc_mode):
             # Not mutable default args
             thetalocator_kw = thetalocator_kw or {}

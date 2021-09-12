@@ -387,7 +387,7 @@ def _parse_format(rc_kw=None, rc_mode=None, **kwargs):
             kw[key] = value
         else:
             rc_kw[rc_key] = value
-    return rc_kw, rc_mode, kw
+    return rc_mode, rc_kw, kw
 
 
 def _translate_loc(loc, mode, *, default=None, **kwargs):
