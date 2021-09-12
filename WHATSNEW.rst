@@ -31,12 +31,18 @@ and stability is improved.
 ProPlot v0.9.1 (2021-##-##)
 ===========================
 
+Style changes
+-------------
+
+* Revert back to original color names for ``'cyan'``, ``'magenta'``, and ``'yellow'``
+  rather than overwriting with ``'c'``, ``'m'``, and ``'y'`` (:issue:`280`).
+
 Features
 --------
 
-* Allow passing ``format`` keywords when instantiating figures and axes
-  (:commit:`ae98378d`). For example, ``pplt.figure(suptitle='Super title')``
-  and ``fig.add_subplot(111, xcolor='gray', xticks=10)`` are both valid.
+* Permit passing ``format`` keywords when instantiating figures
+  and axes, for example ``pplt.figure(suptitle='Super title')`` or
+  ``fig.add_subplot(111, xcolor='gray', xticks=10)`` (:commit:`ae98378d`).
 
 Bug fixes
 ---------

@@ -671,15 +671,19 @@ def register_colors(*args, user=None, default=False, space=None, margin=None, **
     register_fonts
     proplot.demos.show_colors
     """
-    # Add in base colors and CSS4 colors so user has no surprises
     from . import colors as pcolors
     default = default or space is not None or margin is not None
     margin = _not_none(margin, 0.1)
     space = _not_none(space, 'hcl')
-    if default:
-        pcolors._color_database.clear()  # MutableMapping ensures cache also clears
-        for src in (mcolors.CSS4_COLORS, pcolors.COLORS_BASE):
-            pcolors._color_database.update(src)
+
+    # Remove previously registered colors
+    # NOTE: Add
+    srcs = {'xkcd': pcolors.COLORS_XKCD, 'opencolor': pcolors.COLORS_OPEN}
+    if default:  # possibly slow but not these dicts are empty on startup
+        for src in srcs.values():
+            for key in src:
+                pcolors._color_database.pop(key, None)  # MutableMapping clears cache
+            src.clear()
 
     # Register input colors
     user = _not_none(user, not bool(args) and not bool(kwargs))  # skip if args passed
@@ -697,7 +701,6 @@ def register_colors(*args, user=None, default=False, space=None, margin=None, **
 
     # Load colors from file and get their HCL values
     # NOTE: Colors that come *later* overwrite colors that come earlier.
-    srcs = {'opencolor': pcolors.COLORS_OPEN, 'xkcd': pcolors.COLORS_XKCD}
     for i, path in _iter_data_objects('colors', *paths, user=user, default=default):
         loaded = pcolors._load_colors(path, warn_on_failure=True)
         if i == 0:
@@ -706,8 +709,10 @@ def register_colors(*args, user=None, default=False, space=None, margin=None, **
                 raise RuntimeError(f'Unknown proplot color database {path!r}.')
             src = srcs[cat]
             if cat == 'xkcd':
+                for key in pcolors.COLORS_ORIG:  # noqa: E501
+                    loaded[key] = pcolors._color_database[key]  # keep the same
                 loaded = pcolors._standardize_colors(loaded, space, margin)
-            loaded = {k: c for k, c in loaded.items() if k not in pcolors.COLORS_BASE}
+            src.clear()
             src.update(loaded)  # needed for demos.show_colors()
         pcolors._color_database.update(loaded)
 

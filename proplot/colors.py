@@ -160,19 +160,11 @@ CMAPS_RENAMED = {
 # Color constants
 COLORS_OPEN = {}  # populated during register_colors
 COLORS_XKCD = {}  # populated during register_colors
-COLORS_BASE = {
-    **mcolors.BASE_COLORS,  # shorthand names like 'r', 'g', etc.
-    'blue': (0, 0, 1),
-    'green': (0, 0.5, 0),
-    'red': (1, 0, 0),
-    'cyan': (0, 0.75, 0.75),
-    'magenta': (0.75, 0, 0.75),
-    'yellow': (0.75, 0.75, 0),
-    'black': (0, 0, 0),
-    'white': (1, 1, 1),
-}
+COLORS_ORIG = (  # always use these colors as XKCD colors
+    'red', 'green', 'blue', 'cyan', 'yellow', 'magenta', 'white', 'black'
+)
 COLORS_KEEP = (
-    *(  # common fancy names or natural names
+    *(  # always load these XKCD colors regardless of settings
         'charcoal', 'tomato', 'burgundy', 'maroon', 'burgundy', 'lavendar',
         'taupe', 'ocre', 'sand', 'stone', 'earth', 'sand brown', 'sienna',
         'terracotta', 'moss', 'crimson', 'mauve', 'rose', 'teal', 'forest',
@@ -186,7 +178,7 @@ COLORS_KEEP = (
         'gunmetal', 'midnight', 'chartreuse', 'ivory', 'khaki', 'plum',
         'silver', 'tan', 'wheat', 'buff', 'bisque', 'cerulean',
     ),
-    *(  # common combos
+    *(  # common combinations
         'red orange', 'yellow orange', 'yellow green',
         'blue green', 'blue violet', 'red violet',
     ),
@@ -253,7 +245,7 @@ COLORS_TRANSLATE = (
     ('stormy', 'storm'),
     ('cloudy', 'cloud'),
     ('grayblue', 'gray blue'),  # separate merge compounds
-    ('bluegray', 'blue gray'),  # ...
+    ('bluegray', 'gray blue'),  # ...
     ('lightblue', 'light blue'),
     ('yellowgreen', 'yellow green'),
     ('yelloworange', 'yellow orange'),
@@ -582,11 +574,9 @@ def _load_colors(path, warn_on_failure=True):
     loaded = {}
     with open(path, 'r') as fh:
         for count, line in enumerate(fh):
-            # Ignore comments
             stripped = line.strip()
             if not stripped or stripped[0] == '#':
                 continue
-            # Ensure line contains color
             pair = tuple(item.strip().lower() for item in line.split(':'))
             if len(pair) != 2 or not REGEX_HEX.match(pair[1]):
                 warnings._warn_proplot(
@@ -595,9 +585,7 @@ def _load_colors(path, warn_on_failure=True):
                     f'Lines must be formatted as "name: hexcolor".'
                 )
                 continue
-            # Add color
-            name, color = pair
-            loaded[name] = color
+            loaded[pair[0]] = pair[1]
 
     return loaded
 
@@ -641,7 +629,7 @@ def _standardize_colors(input, space, margin):
         if any(string in name for string in COLORS_REMOVE):
             continue  # remove "unpofessional" names
         if name in output:
-            continue  # not necessary to recompute channels
+            continue  # prioritize names that come first
         colors.append((name, color))  # category name pair
         channels.append(to_xyz(color, space=space))
 

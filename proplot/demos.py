@@ -28,10 +28,10 @@ __all__ = [
 COLORS_TABLE = {
     # NOTE: Just want the names but point to the dictionaries because
     # they don't get filled until after __init__ imports this module.
-    'base': pcolors.COLORS_BASE,
+    'base': mcolors.BASE_COLORS,
+    'css4': mcolors.CSS4_COLORS,
     'opencolor': pcolors.COLORS_OPEN,
     'xkcd': pcolors.COLORS_XKCD,
-    'css4': mcolors.CSS4_COLORS,
 }
 
 CMAPS_TABLE = {
@@ -168,6 +168,8 @@ CYCLES_TABLE = {
     ),
 }
 
+
+# Docstring snippets
 _colorbar_docstring = """
 length : unit-spec, optional
     The length of the colorbars.
@@ -176,9 +178,15 @@ width : float or str, optional
     The width of the colorbars.
     %(units.in)s
 """
-docstring._snippet_manager['demos.colors'] = ', '.join(f'``{cat!r}``' for cat in COLORS_TABLE)  # noqa: E501
-docstring._snippet_manager['demos.cmaps'] = ', '.join(f'``{cat!r}``' for cat in CMAPS_TABLE)  # noqa: E501
-docstring._snippet_manager['demos.cycles'] = ', '.join(f'``{cat!r}``' for cat in CYCLES_TABLE)  # noqa: E501
+docstring._snippet_manager['demos.colors'] = ', '.join(
+    f'``{cat!r}``' for cat in COLORS_TABLE
+)
+docstring._snippet_manager['demos.cmaps'] = ', '.join(
+    f'``{cat!r}``' for cat in CMAPS_TABLE
+)
+docstring._snippet_manager['demos.cycles'] = ', '.join(
+    f'``{cat!r}``' for cat in CYCLES_TABLE
+)
 docstring._snippet_manager['demos.colorbar'] = _colorbar_docstring
 
 
@@ -653,9 +661,7 @@ def _filter_colors(hcl, ihue, nhues, minsat):
 
 
 @docstring._snippet_manager
-def show_colors(
-    *, nhues=17, minsat=10, unknown='User', include=None, ignore=None
-):
+def show_colors(*, nhues=17, minsat=10, unknown='User', include=None, ignore=None):
     """
     Generate tables of the registered color names. Adapted from
     `this example <https://matplotlib.org/examples/color/named_colors.html>`__.
@@ -722,10 +728,11 @@ def show_colors(
     namess = {}
     for cat in sorted(include):
         if cat == 'base':
-            names = np.asarray(colordict[cat]).reshape((2, 8)).T
+            names = np.asarray(colordict[cat])
+            ncols, nrows = len(names), 1
         elif cat == 'opencolor':
             names = np.asarray(colordict[cat])
-            names.resize((7, 20))
+            ncols, nrows = 7, 20
         else:
             hclpairs = [(name, to_xyz(name, 'hcl')) for name in colordict[cat]]
             hclpairs = [
@@ -738,13 +745,10 @@ def show_colors(
                 )
                 for ihue in range(nhues)
             ]
-            names = np.array([
-                name for ipairs in hclpairs for name, _ in ipairs
-            ])
-            ncols = 4
-            nrows = len(names) // ncols + 1
-            names.resize((ncols, nrows))  # fill empty slots with empty string
+            names = np.array([name for ipairs in hclpairs for name, _ in ipairs])
+            ncols, nrows = 4, len(names) // 4 + 1
 
+        names.resize((ncols, nrows))  # fill empty slots with empty string
         namess[cat] = names
 
     # Draw figures for different groups of colors
@@ -766,7 +770,7 @@ def show_colors(
         'css4': 'CSS4 colors',
         'base': 'Base colors',
         'opencolor': 'Open color',
-        'xkcd': 'XKCD color survey',
+        'xkcd': 'XKCD colors',
     }
     for ax, (cat, names) in zip(axs, namess.items()):
         # Format axes
