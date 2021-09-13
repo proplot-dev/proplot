@@ -376,18 +376,15 @@ def _parse_format(rc_kw=None, rc_mode=None, **kwargs):
     """
     # NOTE: rc_mode == 2 applies only the updated params. A power user
     # could use ax.format(rc_mode=0) to re-apply all the current settings
-    kw = {}
-    rc_kw = rc_kw or {}
-    rc_mode = _not_none(rc_mode, 2)  # 2 applies only the updated params
-    for key, value in kwargs.items():
-        rc_key = rcsetup._rc_nodots.get(key, None)
-        if rc_key in ('alpha', 'facecolor', 'edgecolor', 'linewidth'):
-            rc_key = None  # former renamed settings
-        if rc_key is None:
-            kw[key] = value
-        else:
-            rc_kw[rc_key] = value
-    return rc_mode, rc_kw, kw
+    kw = rc_kw or {}
+    mode = _not_none(rc_mode, 2)  # only apply updated params by default
+    for key, value in tuple(kwargs.items()):
+        name = rcsetup._rc_nodots.get(key, None)
+        if name in ('alpha', 'facecolor', 'edgecolor', 'linewidth'):
+            name = None  # former renamed settings
+        if name is not None:
+            kw[name] = kwargs.pop(key)
+    return kw, mode, kwargs
 
 
 def _translate_loc(loc, mode, *, default=None, **kwargs):

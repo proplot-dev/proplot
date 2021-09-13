@@ -1414,10 +1414,10 @@ class Axes(maxes.Axes):
         proplot.config.Configurator.context
         """
         skip_figure = kwargs.pop('skip_figure', False)  # internal keyword arg
-        rc_mode, rc_kw, kwargs = _parse_format(**kwargs)
         params = _pop_params(kwargs, self.figure._format_signature)
 
         # Initiate context block
+        rc_kw, rc_mode, kwargs = _parse_format(**kwargs)
         with rc.context(rc_kw, mode=rc_mode):
             # Behavior of titles in presence of panels
             above = rc.find('title.above', context=True)
