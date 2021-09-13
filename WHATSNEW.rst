@@ -49,12 +49,12 @@ Features
 Bug fixes
 ---------
 
-* Fix "unexpected version" warning issues when cartopy
-  is not installed (:commit:`6dbab1bc`).
 * Fix issue with dictionaries passed to `proj` when calling
   `~proplot.figure.Figure.add_subplots` (:commit:`21b165df`).
-* Fix issue with `includepanels` disabling spanning
-  axis labels (:commit:`332ba702`).
+* Fix issue with `includepanels` disabling spanning axis labels
+  in the presence of panels (:commit:`332ba702`).
+* Remove useless "unexpected version" warning when cartopy
+  is not installed (:commit:`6dbab1bc`).
 
 Documentation
 -------------
