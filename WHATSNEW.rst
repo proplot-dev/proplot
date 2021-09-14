@@ -28,7 +28,7 @@ ProPlot v1.0.0 (2022-##-##)
 This will be published when more comprehensive testing is completed
 and stability is improved.
 
-ProPlot v0.9.1 (2021-##-##)
+ProPlot v0.9.1 (2021-09-14)
 ===========================
 
 Style changes
@@ -36,8 +36,8 @@ Style changes
 
 * Revert back to original color names for ``'cyan'``, ``'magenta'``, and ``'yellow'``
   rather than overwriting with ``'c'``, ``'m'``, and ``'y'`` (:issue:`280`).
-* Treat ``'ochre'`` and ``'ocher'`` as synonyms (similar to ``'grey'`` and ``'gray'``)
-  (:commit:`c949e505`). Also remove the color survey misspelling ``'ocre'``.
+* Treat ``'ochre'`` and ``'ocher'`` as synonyms (similar to ``'grey'``
+  and ``'gray'``) (:commit:`c949e505`).
 
 Features
 --------
