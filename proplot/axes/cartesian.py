@@ -775,7 +775,7 @@ class CartesianAxes(shared._SharedAxes, plot.PlotAxes):
         xmargin=None, ymargin=None,
         xticklen=None, yticklen=None,
         xlinewidth=None, ylinewidth=None,
-        xcolor=None, ycolor=None,
+        xcolor=None, ycolor=None, color=None,  # special case (see below)
         xgridcolor=None, ygridcolor=None,
         xlabel_kw=None, ylabel_kw=None,
         xscale_kw=None, yscale_kw=None,
@@ -825,6 +825,12 @@ class CartesianAxes(shared._SharedAxes, plot.PlotAxes):
             yformatter_kw = yformatter_kw or {}
             xminorlocator_kw = xminorlocator_kw or {}
             yminorlocator_kw = yminorlocator_kw or {}
+
+            # Special case: normally we rely on rc settings like 'grid', 'labelpad',
+            # etc. when x or y is not specified but bald 'color' is too vague. So
+            # we apply 'color' right here.
+            xcolor = _not_none(xcolor, color)
+            ycolor = _not_none(ycolor, color)
 
             # Flexible keyword args, declare defaults
             xtickdir = _not_none(xtickdir, rc.find('xtick.direction', context=True))
