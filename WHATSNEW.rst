@@ -59,6 +59,10 @@ Bug fixes
   in the presence of panels (:commit:`332ba702`).
 * Remove useless "unexpected version" warning when cartopy
   is not installed (:commit:`6dbab1bc`).
+* Improve backwards compatibility with `matplotlib.figure.Figure.colorbar`
+  by permitting positional `cax` and `ax` args (:commit:`5003f9a8`).
+* Try to auto-disable relative bar widths for seaborn plots that use
+  the `bar` and `barh` commands (:commit:`b79b9c60`).
 
 Documentation
 -------------
