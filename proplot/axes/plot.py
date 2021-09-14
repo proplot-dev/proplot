@@ -2094,7 +2094,7 @@ class PlotAxes(base.Axes):
 
     def _parse_autolev(
         self, *args, levels=None,
-        extend='neither', norm=None, norm_kw=None, vmin=None, vmax=None,
+        extend=None, norm=None, norm_kw=None, vmin=None, vmax=None,
         locator=None, locator_kw=None, symmetric=None, **kwargs
     ):
         """
@@ -2131,6 +2131,7 @@ class PlotAxes(base.Axes):
         # zero level but may trim many of these below.
         norm_kw = norm_kw or {}
         locator_kw = locator_kw or {}
+        extend = _not_none(extend, 'neither')
         levels = _not_none(levels, rc['cmap.levels'])
         vmin = _not_none(vmin=vmin, norm_kw_vmin=norm_kw.pop('vmin', None))
         vmax = _not_none(vmax=vmax, norm_kw_vmax=norm_kw.pop('vmax', None))
@@ -2201,9 +2202,9 @@ class PlotAxes(base.Axes):
         return levels, kwargs
 
     def _parse_levels(
-        self, *args, N=None, levels=None, values=None, minlength=2,
+        self, *args, N=None, levels=None, values=None, extend=None,
         positive=False, negative=False, nozero=False, norm=None, norm_kw=None,
-        vmin=None, vmax=None, skip_autolev=False, **kwargs,
+        vmin=None, vmax=None, skip_autolev=False, min_levels=None, **kwargs,
     ):
         """
         Return levels resulting from a wide variety of keyword options.
@@ -2218,16 +2219,17 @@ class PlotAxes(base.Axes):
             The levels list or (approximate) number of levels to create.
         values : int or sequence of float, optional
             The level center list or (approximate) number of level centers to create.
-        minlength : int, optional
-            The minimum number of levels allowed.
         positive, negative, nozero : bool, optional
             Whether to remove out non-positive, non-negative, and zero-valued
             levels. The latter is useful for single-color contour plots.
         norm, norm_kw : optional
-            Passed to `~proplot.constructor.Norm`. Used to possbily infer levels
-            or to convert values to levels.
+            Passed to `Norm`. Used to possbily infer levels or to convert values.
         vmin, vmax
             Passed to ``_parse_autolev``.
+        skip_autolev : bool, optional
+            Whether to skip autolev parsing.
+        min_levels : int, optional
+            The minimum number of levels allowed.
 
         Returns
         -------
@@ -2237,11 +2239,9 @@ class PlotAxes(base.Axes):
             Unused arguments.
         """
         # Rigorously check user input levels and values
-        # NOTE: Include special case where color levels are referenced
-        # by string label values.
-        levels = _not_none(
-            N=N, levels=levels, norm_kw_levels=norm_kw.pop('levels', None),
-        )
+        # NOTE: Include special case where color levels are referenced by string labels
+        levels = _not_none(N=N, levels=levels, norm_kw_levs=norm_kw.pop('levels', None))
+        min_levels = _not_none(min_levels, 2)  # q for contour plots
         if positive and negative:
             negative = False
             warnings._warn_proplot(
@@ -2260,9 +2260,9 @@ class PlotAxes(base.Axes):
                 )
             if not np.iterable(val):
                 continue
-            if len(val) < minlength:
+            if len(val) < min_levels:
                 raise ValueError(
-                    f'Invalid {key}={val}. Must be at least length {minlength}.'
+                    f'Invalid {key}={val}. Must be at least length {min_levels}.'
                 )
             if len(val) >= 2 and np.any(np.sign(np.diff(val)) != np.sign(val[1] - val[0])):  # noqa: E501
                 raise ValueError(
@@ -2310,7 +2310,8 @@ class PlotAxes(base.Axes):
             levels, descending = pcolors._sanitize_levels(levels)
         if not np.iterable(levels) and not skip_autolev:
             levels, kwargs = self._parse_autolev(
-                *args, levels=levels, vmin=vmin, vmax=vmax, norm=norm, norm_kw=norm_kw, **kwargs  # noqa: E501
+                *args, levels=levels, vmin=vmin, vmax=vmax,
+                norm=norm, norm_kw=norm_kw, extend=extend, **kwargs
             )
         ticks = values if np.iterable(values) else levels
         if descending is not None:
@@ -2329,7 +2330,8 @@ class PlotAxes(base.Axes):
         return levels, kwargs
 
     def _parse_discrete(
-        self, levels, norm, cmap, extend='neither', descending=False, **kwargs,
+        self, levels, norm, cmap, *,
+        extend=None, descending=False, min_levels=None, **kwargs,
     ):
         """
         Create a `~proplot.colors.DiscreteNorm` or `~proplot.colors.BoundaryNorm`
@@ -2347,6 +2349,8 @@ class PlotAxes(base.Axes):
             The extend setting.
         descending : bool, optional
             Whether levels are descending.
+        min_levels : int, optional
+            The minimum number of levels.
 
         Returns
         -------
@@ -2359,13 +2363,18 @@ class PlotAxes(base.Axes):
         """
         # Reverse the colormap if input levels or values were descending
         # See _parse_levels for details
+        min_levels = _not_none(min_levels, 2)  # 1 for contour plots
+        unique = extend = _not_none(extend, 'neither')
         under = cmap._rgba_under
         over = cmap._rgba_over
-        unique = extend  # default behavior
         cyclic = getattr(cmap, '_cyclic', None)
         qualitative = isinstance(cmap, pcolors.DiscreteColormap)  # see _parse_cmap
         if descending:
             cmap = cmap.reversed()
+        if len(levels) < min_levels:
+            raise ValueError(
+                f'Invalid levels={levels!r}. Must be at least length {min_levels}.'
+            )
 
         # Ensure end colors are unique by scaling colors as if extend='both'
         # NOTE: Inside _parse_cmap should have enforced extend='neither'
@@ -2373,20 +2382,19 @@ class PlotAxes(base.Axes):
             step = 0.5
             unique = 'both'
 
-        # Ensure color list matches level list
-        # NOTE: If user-input levels were integer or omitted then integer levels
-        # passed to level will have matched
+        # Ensure color list length matches level list length using rotation
+        # NOTE: No harm if not enough colors, we just end up with the same
+        # color for out-of-bounds extensions. This is a gentle failure
         elif qualitative:
-            # Truncate or wrap color list (see matplotlib.ListedColormap)
-            step = 0.5  # try to sample the central color index
+            step = 0.5  # try to sample the central index for safety, but not important
+            unique = 'neither'
             auto_under = under is None and extend in ('min', 'both')
             auto_over = over is None and extend in ('max', 'both')
-            ncolors = len(levels) - 1 + auto_under + auto_over
+            ncolors = len(levels) - min_levels + 1 + auto_under + auto_over
             colors = list(itertools.islice(itertools.cycle(cmap.colors), ncolors))
-            # Create new colormap and optionally apply colors to extremes
-            if auto_under:
+            if auto_under and len(colors) > 1:
                 under, *colors = colors
-            if auto_over:
+            if auto_over and len(colors) > 1:
                 *colors, over = colors
             cmap = cmap.copy(colors, N=len(colors))
             if under is not None:
@@ -2397,18 +2405,15 @@ class PlotAxes(base.Axes):
         # Ensure middle colors sample full range when extreme colors are present
         # by scaling colors as if extend='neither'
         else:
-            # Keep unique bins
             step = 1.0
             if over is not None and under is not None:
                 unique = 'neither'
-            # Turn off unique bin for over-bounds colors
-            elif over is not None:
+            elif over is not None:  # turn off over-bounds unique bin
                 if extend == 'both':
                     unique = 'min'
                 elif extend == 'max':
                     unique = 'neither'
-            # Turn off unique bin for under-bounds colors
-            elif under is not None:
+            elif under is not None:  # turn off under-bounds unique bin
                 if extend == 'both':
                     unique = 'min'
                 elif extend == 'max':
@@ -2427,13 +2432,28 @@ class PlotAxes(base.Axes):
     def _parse_cmap(
         self, *args,
         cmap=None, cmap_kw=None, c=None, color=None, colors=None, default_cmap=None,
-        norm=None, norm_kw=None, extend='neither', vmin=None, vmax=None,
+        norm=None, norm_kw=None, extend=None, vmin=None, vmax=None,
         sequential=None, diverging=None, qualitative=None, cyclic=None,
         discrete=None, default_discrete=True, skip_autolev=False,
-        plot_lines=False, plot_contours=False, **kwargs
+        plot_lines=False, plot_contours=False, min_levels=None, **kwargs
     ):
         """
         Parse colormap and normalizer arguments.
+
+        Parameters
+        ----------
+        c, color, colors : sequence of color-spec, optional
+            Build a `DiscreteColormap` from the input color(s).
+        sequential, diverging, qualitative, cyclic : bool, optional
+            Toggle various colormap types.
+        plot_lines : bool, optional
+            Whether these are lines. In that case the default maximum
+            luminance for monochromatic colormaps will be 90 instead of 100.
+        plot_contours : bool, optional
+            Whether these are contours. Determines whether 'discrete'
+            is requied and return keyword args.
+        min_levels : int, optional
+            The minimum number of valid levels. This is 1 for line contour plots.
         """
         # Parse keyword args
         # NOTE: Always disable 'autodiverging' when an unknown colormap is passed to
@@ -2444,6 +2464,7 @@ class PlotAxes(base.Axes):
         norm_kw = norm_kw or {}
         vmin = _not_none(vmin=vmin, norm_kw_vmin=norm_kw.pop('vmin', None))
         vmax = _not_none(vmax=vmax, norm_kw_vmax=norm_kw.pop('vmax', None))
+        extend = _not_none(extend, 'neither')
         colors = _not_none(c=c, color=color, colors=colors)  # in case untranslated
         autodiverging = rc['cmap.autodiverging']
         name = getattr(cmap, 'name', cmap)
@@ -2504,13 +2525,15 @@ class PlotAxes(base.Axes):
         # NOTE: Unlike xarray, but like matplotlib, vmin and vmax only approximately
         # determine level range. Levels are selected with Locator.tick_values().
         levels = None  # unused
-        if discrete:
-            levels, kwargs = self._parse_levels(
-                *args, vmin=vmin, vmax=vmax, norm=norm, norm_kw=norm_kw, extend=extend, skip_autolev=skip_autolev, **kwargs  # noqa: E501
-            )
         if not discrete and not skip_autolev:
             vmin, vmax, kwargs = self._parse_vlim(
                 *args, vmin=vmin, vmax=vmax, **kwargs
+            )
+        if discrete:
+            levels, kwargs = self._parse_levels(
+                *args,
+                vmin=vmin, vmax=vmax, norm=norm, norm_kw=norm_kw, extend=extend,
+                min_levels=min_levels, skip_autolev=skip_autolev, **kwargs
             )
         if autodiverging:
             default_diverging = None
@@ -2568,8 +2591,9 @@ class PlotAxes(base.Axes):
         # Create the discrete normalizer
         # Then finally warn and remove unused args
         if levels is not None:
-            kwargs['extend'] = extend
-            norm, cmap, kwargs = self._parse_discrete(levels, norm, cmap, **kwargs)
+            norm, cmap, kwargs = self._parse_discrete(
+                levels, norm, cmap, extend=extend, min_levels=min_levels, **kwargs
+            )
         methods = (self._parse_levels, self._parse_autolev, self._parse_vlim)
         params = _pop_params(kwargs, *methods, ignore_internal=True)
         if 'N' in params:  # use this for lookup table N instead of levels N
@@ -3678,7 +3702,9 @@ class PlotAxes(base.Axes):
         """
         x, y, z, kw = self._parse_plot2d(x, y, z, **kwargs)
         _process_props(kw, 'collection')
-        kw = self._parse_cmap(x, y, z, minlength=1, plot_contours=True, **kw)
+        kw = self._parse_cmap(
+            x, y, z, min_levels=1, plot_lines=True, plot_contours=True, **kw
+        )
         labels_kw = _pop_params(kw, self._add_auto_labels)
         guide_kw = _pop_params(kw, self._update_guide)
         label = kw.pop('label', None)
@@ -3882,7 +3908,9 @@ class PlotAxes(base.Axes):
         if x is None or y is None or z is None:
             raise ValueError('Three input arguments are required.')
         _process_props(kw, 'collection')
-        kw = self._parse_cmap(x, y, z, minlength=1, plot_contours=True, **kw)
+        kw = self._parse_cmap(
+            x, y, z, min_levels=1, plot_lines=True, plot_contours=True, **kw
+        )
         labels_kw = _pop_params(kw, self._add_auto_labels)
         guide_kw = _pop_params(kw, self._update_guide)
         label = kw.pop('label', None)

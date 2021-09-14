@@ -51,6 +51,8 @@ Features
 Bug fixes
 ---------
 
+* Fix issue where single-level single-color contour plots
+  do not draw the contour (:issue:`281`).
 * Fix issue with dictionaries passed to `proj` when calling
   `~proplot.figure.Figure.add_subplots` (:commit:`21b165df`).
 * Fix issue with `includepanels` disabling spanning axis labels
