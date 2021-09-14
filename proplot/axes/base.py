@@ -1938,6 +1938,7 @@ class Axes(maxes.Axes):
         zorder = 5  # NOTE: this is identical to legend zorder
         bbox = locator(None, None)
         ax = CartesianAxes(self.figure, bbox.bounds, zorder=zorder)
+        ax.patch.set_visible(False)
         ax.set_axes_locator(locator)
         self.add_child_axes(ax)
         kw_frame, kwargs = self._parse_frame('colorbar', **kwargs)
