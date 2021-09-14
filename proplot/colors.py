@@ -51,15 +51,13 @@ __all__ = [
 # Default colormap properties
 DEFAULT_NAME = '_no_name'
 DEFAULT_SPACE = 'hsl'
-DEFAULT_SAMPLES = 10  # used in Colormap() and relied upon in Cycle()
-CYCLE_LUMINANCE = 90  # used in Cycle()
 
 # Color regexes
 # NOTE: We do not compile hex regex because config.py needs this surrounded by \A\Z
 _regex_hex = r'#(?:[0-9a-fA-F]{3,4}){2}'  # 6-8 digit hex
-REGEX_HEX = re.compile(rf'\A{_regex_hex}\Z')
 REGEX_HEX_MULTI = re.compile(_regex_hex)
-REGEX_GRAY = re.compile(r'\A(light|dark|medium|pale|charcoal)?\s*(gr[ea]y[0-9]?)?\Z')
+REGEX_HEX_SINGLE = re.compile(rf'\A{_regex_hex}\Z')
+REGEX_ADJUST = re.compile(r'\A(light|dark|medium|pale|charcoal)?\s*(gr[ea]y[0-9]?)?\Z')
 
 # Colormap constants
 CMAPS_CYCLIC = tuple(  # cyclic colormaps loaded from rgb files
@@ -160,9 +158,6 @@ CMAPS_RENAMED = {
 # Color constants
 COLORS_OPEN = {}  # populated during register_colors
 COLORS_XKCD = {}  # populated during register_colors
-COLORS_ORIG = (  # always use these colors as XKCD colors
-    'red', 'green', 'blue', 'cyan', 'yellow', 'magenta', 'white', 'black'
-)
 COLORS_KEEP = (
     *(  # always load these XKCD colors regardless of settings
         'charcoal', 'tomato', 'burgundy', 'maroon', 'burgundy', 'lavendar',
@@ -207,7 +202,7 @@ COLORS_REMOVE = (
     'icky',
     'sickly',
 )
-COLORS_SUBS = (
+COLORS_REPLACE = (
     # prevent registering similar-sounding names
     # these can all be combined
     ('/', ' '),  # convert [color1]/[color2] to compound (e.g. grey/blue to grey blue)
@@ -580,7 +575,7 @@ def _load_colors(path, warn_on_failure=True):
             if not stripped or stripped[0] == '#':
                 continue
             pair = tuple(item.strip().lower() for item in line.split(':'))
-            if len(pair) != 2 or not REGEX_HEX.match(pair[1]):
+            if len(pair) != 2 or not REGEX_HEX_SINGLE.match(pair[1]):
                 warnings._warn_proplot(
                     f'Illegal line #{count + 1} in color file {path!r}:\n'
                     f'{line!r}\n'
@@ -625,7 +620,7 @@ def _standardize_colors(input, space, margin):
     # Translate remaining colors and remove bad names
     # WARNING: Unique axis argument requires numpy version >=1.13
     for name, color in input.items():
-        for sub, rep in COLORS_SUBS:
+        for sub, rep in COLORS_REPLACE:
             if sub in name:
                 name = name.replace(sub, rep)
         if any(sub in name for sub in COLORS_REMOVE):
@@ -2225,7 +2220,7 @@ class PerceptualColormap(ContinuousColormap, _Colormap):
             hues = cdict['hue']  # segment data
             for i, color in enumerate(colors):
                 rgb = to_rgb(color)
-                if isinstance(color, str) and REGEX_GRAY.match(color):
+                if isinstance(color, str) and REGEX_ADJUST.match(color):
                     pass
                 elif not np.allclose(np.array(rgb), rgb[0]):
                     continue

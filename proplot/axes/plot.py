@@ -2474,7 +2474,7 @@ class PlotAxes(base.Axes):
         # Create the user-input colormap
         # Also force options in special cases
         if plot_lines:
-            cmap_kw['default_luminance'] = pcolors.CYCLE_LUMINANCE
+            cmap_kw['default_luminance'] = constructor.DEFAULT_CYCLE_LUMINANCE
         if cmap is not None:
             cmap = constructor.Colormap(cmap, **cmap_kw)  # for testing only
         cyclic = _not_none(cyclic, getattr(cmap, '_cyclic', None))

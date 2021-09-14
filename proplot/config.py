@@ -56,7 +56,16 @@ __all__ = [
 ]
 
 # Constants
-REGEX_STRING = re.compile('\\A(\'.*\'|".*")\\Z')
+COLORS_KEEP = (
+    'red',
+    'green',
+    'blue',
+    'cyan',
+    'yellow',
+    'magenta',
+    'white',
+    'black'
+)
 FONT_KEYS = (  # re-apply these whenever 'font.size' is changed
     'abc.size',
     'axes.labelsize',
@@ -655,8 +664,8 @@ def register_colors(*args, user=None, default=False, space=None, margin=None, **
         The margin by which the normalized hue, saturation, and luminance of each
         XKCD color must differ from the channel values of the other XKCD colors to
         be deemed "perceptually distinct" and registered. Must fall between ``0``
-        and ``1`` (``0`` will register all colors). Default is ``0.1``. If
-        passed then `default` is set to ``True``.
+        and ``1`` (``0`` will register all colors). Default is ``0.1``. If passed
+        then `default` is set to ``True``.
     **kwargs
         Additional color name specifications passed as keyword arguments rather
         than positional dictionaries.
@@ -674,12 +683,13 @@ def register_colors(*args, user=None, default=False, space=None, margin=None, **
     space = _not_none(space, 'hcl')
 
     # Remove previously registered colors
-    # NOTE: Add
+    # NOTE: Try not to touch matplotlib colors for compatibility
     srcs = {'xkcd': pcolors.COLORS_XKCD, 'opencolor': pcolors.COLORS_OPEN}
     if default:  # possibly slow but not these dicts are empty on startup
         for src in srcs.values():
             for key in src:
-                pcolors._color_database.pop(key, None)  # MutableMapping clears cache
+                if key not in COLORS_KEEP:
+                    pcolors._color_database.pop(key, None)  # this also clears cache
             src.clear()
 
     # Register input colors
@@ -706,7 +716,7 @@ def register_colors(*args, user=None, default=False, space=None, margin=None, **
                 raise RuntimeError(f'Unknown proplot color database {path!r}.')
             src = srcs[cat]
             if cat == 'xkcd':
-                for key in pcolors.COLORS_ORIG:  # noqa: E501
+                for key in COLORS_KEEP:
                     loaded[key] = pcolors._color_database[key]  # keep the same
                 loaded = pcolors._standardize_colors(loaded, space, margin)
             src.clear()

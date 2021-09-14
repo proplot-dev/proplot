@@ -54,7 +54,13 @@ __all__ = [
     'Colors',  # deprecated
 ]
 
-# Dictionary of possible normalizers. See `Norm` for a table.
+# Color cycle constants
+# TODO: Also automatically truncate the 'bright' end of colormaps
+# when building color cycles from colormaps? Or add simple option.
+DEFAULT_CYCLE_SAMPLES = 10
+DEFAULT_CYCLE_LUMINANCE = 90
+
+# Normalizer registry
 NORMS = {
     'none': mcolors.NoNorm,
     'null': mcolors.NoNorm,
@@ -70,8 +76,7 @@ NORMS = {
 if hasattr(mcolors, 'TwoSlopeNorm'):
     NORMS['twoslope'] = mcolors.TwoSlopeNorm
 
-# Mapping of strings to `~matplotlib.ticker.Locator` classes. See
-# `Locator` for a table."""
+# Locator registry
 LOCATORS = {
     'none': mticker.NullLocator,
     'null': mticker.NullLocator,
@@ -101,18 +106,13 @@ LOCATORS = {
 }
 if dependencies._version_cartopy >= 0.18:
     # NOTE: This only makes sense when paired with degree-minute-second formatter
-    # NOTE: We copied cartopy locators because they are short and necessary
-    # for determining both cartopy and basemap tick locations. We did *not* copy
-    # formatter because they are long and we have nice, simpler alternatives of
-    # deglon and deglat.
     LOCATORS['dms'] = partial(pticker.DegreeLocator, dms=True)
     LOCATORS['dmslon'] = partial(pticker.LongitudeLocator, dms=True)
     LOCATORS['dmslat'] = partial(pticker.LatitudeLocator, dms=True)
 if hasattr(mproj.polar, 'ThetaLocator'):
     LOCATORS['theta'] = mproj.polar.ThetaLocator
 
-# Mapping of strings to `~matplotlib.ticker.Formatter` classes. See
-# `Formatter` for a table.
+# Formatter registry
 # NOTE: Critical to use SimpleFormatter for cardinal formatters rather than
 # AutoFormatter because latter fails with Basemap formatting.
 # NOTE: Define cartopy longitude/latitude formatters with dms=True because that
@@ -156,8 +156,7 @@ if hasattr(mproj.polar, 'ThetaFormatter'):
 if hasattr(mdates, 'ConciseDateFormatter'):
     FORMATTERS['concise'] = mdates.ConciseDateFormatter
 
-# The registered scale names and their associated
-# `~matplotlib.scale.ScaleBase` classes. See `Scale` for a table.
+# Scale registry and presets
 SCALES = mscale._scale_mapping
 SCALE_PRESETS = {
     'quadratic': ('power', 2,),
@@ -182,8 +181,7 @@ mscale.register_scale(pscale.PowerScale)
 mscale.register_scale(pscale.SineLatitudeScale)
 mscale.register_scale(pscale.SymmetricalLogScale)
 
-# Mapping of "projection names" to cartopy `~cartopy.crs.Projection` classes
-# and default keyword args for `~mpl_toolkits.basemap.Basemap` projections.
+# Cartopy projection registry and default basemap keyword args
 # NOTE: Normally basemap raises error if you omit keyword args
 PROJ_ALIASES = {  # aliases to basemap naming conventions
     'eqc': 'cyl',
@@ -296,23 +294,6 @@ else:
             + ' . Please consider updating cartopy.'
         )
 
-# Resolution aliases
-# NOTE: Maximum basemap resolutions are much finer than cartopy
-RESOS_CARTOPY = {
-    'lo': '110m',
-    'med': '50m',
-    'hi': '10m',
-    'x-hi': '10m',  # extra high
-    'xx-hi': '10m',  # extra extra high
-}
-RESOS_BASEMAP = {
-    'lo': 'c',  # coarse
-    'med': 'l',
-    'hi': 'i',  # intermediate
-    'x-hi': 'h',
-    'xx-hi': 'f',  # fine
-}
-
 # Geographic feature properties
 FEATURES_CARTOPY = {  # positional arguments passed to NaturalEarthFeature
     'land': ('physical', 'land'),
@@ -329,6 +310,23 @@ FEATURES_BASEMAP = {  # names of relevant basemap methods
     'rivers': 'drawrivers',
     'borders': 'drawcountries',
     'innerborders': 'drawstates',
+}
+
+# Resolution names
+# NOTE: Maximum basemap resolutions are much finer than cartopy
+RESOS_CARTOPY = {
+    'lo': '110m',
+    'med': '50m',
+    'hi': '10m',
+    'x-hi': '10m',  # extra high
+    'xx-hi': '10m',  # extra extra high
+}
+RESOS_BASEMAP = {
+    'lo': 'c',  # coarse
+    'med': 'l',
+    'hi': 'i',  # intermediate
+    'x-hi': 'h',
+    'xx-hi': 'f',  # fine
 }
 
 
@@ -675,7 +673,7 @@ def Colormap(
 
     # Modify the colormap
     if discrete and isinstance(cmap, pcolors.ContinuousColormap):  # noqa: E501
-        samples = _not_none(samples, pcolors.DEFAULT_SAMPLES)
+        samples = _not_none(samples, DEFAULT_CYCLE_SAMPLES)
     cmap = _modify_colormap(
         cmap, cut=cut, left=left, right=right,
         reverse=reverse, shift=shift, alpha=alpha, samples=samples
@@ -818,7 +816,7 @@ markeredgecolors, markerfacecolors
         kwargs.setdefault('listmode', 'discrete')
         kwargs.setdefault('filemode', 'discrete')
         kwargs['discrete'] = True  # triggers application of default 'samples'
-        kwargs['default_luminance'] = pcolors.CYCLE_LUMINANCE
+        kwargs['default_luminance'] = DEFAULT_CYCLE_LUMINANCE
         cmap = Colormap(*args, name=name, samples=samples, **kwargs)
         name = _not_none(name, cmap.name)
         dict_ = {'color': [c if isinstance(c, str) else to_hex(c) for c in cmap.colors]}
