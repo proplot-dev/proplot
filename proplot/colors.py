@@ -176,6 +176,7 @@ COLORS_KEEP = (
     *(  # common combinations
         'red orange', 'yellow orange', 'yellow green',
         'blue green', 'blue violet', 'red violet',
+        'bright red',  # backwards compatibility
     ),
     *(  # common names
         prefix + color
@@ -211,7 +212,8 @@ COLORS_REPLACE = (
     ('grey', 'gray'),  # 'Murica
     ('ochre', 'ocher'),  # ...
     ('forrest', 'forest'),  # ...
-    ('ocre', 'ocher'),  # typo
+    ('ocre', 'ocher'),  # correct spelling
+    ('kelley', 'kelly'),  # ...
     ('reddish', 'red'),  # remove [color]ish where it modifies the spelling of color
     ('purplish', 'purple'),  # ...
     ('pinkish', 'pink'),
@@ -2853,9 +2855,10 @@ class ColorDatabase(MutableMapping, dict):
     Dictionary subclass used to replace the builtin matplotlib color database.
     See `~ColorDatabase.__getitem__` for details.
     """
-    _colors_subs = (  # British --> American synonyms
-        ('grey', 'gray'),
-        ('ochre', 'ocher'),
+    _colors_replace = (
+        ('grey', 'gray'),  # British --> American synonyms
+        ('ochre', 'ocher'),  # ...
+        ('kelley', 'kelly'),  # backwards compatibility to correct spelling
     )
 
     def __iter__(self):
@@ -2916,7 +2919,7 @@ class ColorDatabase(MutableMapping, dict):
             raise ValueError(f'Invalid color name {key!r}. Must be string.')
         if isinstance(key, str) and len(key) > 1:  # ignore base colors
             key = key.lower()
-            for sub, rep in self._colors_subs:
+            for sub, rep in self._colors_replace:
                 key = key.replace(sub, rep)
         return key
 
