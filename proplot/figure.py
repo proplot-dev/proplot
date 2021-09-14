@@ -1509,7 +1509,7 @@ class Figure(mfigure.Figure):
     @docstring._concatenate_inherited
     @docstring._snippet_manager
     def colorbar(
-        self, mappable, values=None, *, loc=None, location=None,
+        self, mappable, values=None, loc=None, location=None,
         row=None, col=None, rows=None, cols=None, span=None,
         space=None, pad=None, width=None, **kwargs
     ):
@@ -1540,8 +1540,22 @@ class Figure(mfigure.Figure):
         proplot.axes.Axes.colorbar
         matplotlib.figure.Figure.colorbar
         """
+        # Backwards compatibility
         ax = kwargs.pop('ax', None)
         cax = kwargs.pop('cax', None)
+        if isinstance(values, maxes.Axes):
+            cax = _not_none(cax_positional=values, cax=cax)
+            values = None
+        if isinstance(loc, maxes.Axes):
+            ax = _not_none(ax_positional=loc, ax=ax)
+            loc = None
+        # Helpful warning
+        if kwargs.pop('use_gridspec', None) is not None:
+            warnings._warn_proplot(
+                "Ignoring the 'use_gridspec' keyword. ProPlot always allocates "
+                'additional space for colorbars using the figure gridspec '
+                "rather than 'stealing space' from the parent subplot."
+            )
         # Fill this axes
         if cax is not None:
             with context._state_context(cax, _internal_call=True):  # do not wrap pcolor
@@ -1563,7 +1577,7 @@ class Figure(mfigure.Figure):
     @docstring._concatenate_inherited
     @docstring._snippet_manager
     def legend(
-        self, handles=None, labels=None, *, loc=None, location=None,
+        self, handles=None, labels=None, loc=None, location=None,
         row=None, col=None, rows=None, cols=None, span=None,
         space=None, pad=None, width=None, **kwargs
     ):

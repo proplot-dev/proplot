@@ -2309,8 +2309,7 @@ class Axes(maxes.Axes):
     @docstring._obfuscate_params
     @docstring._snippet_manager
     def colorbar(
-        self, mappable, values=None, *,
-        loc=None, location=None, queue=False, **kwargs
+        self, mappable, values=None, loc=None, location=None, queue=False, **kwargs
     ):
         """
         Add an inset colorbar or an outer colorbar along the edge of the axes.
@@ -2786,8 +2785,7 @@ class Axes(maxes.Axes):
     @docstring._concatenate_inherited  # also obfuscates params
     @docstring._snippet_manager
     def legend(
-        self, handles=None, labels=None, *,
-        loc=None, location=None, queue=False, **kwargs
+        self, handles=None, labels=None, loc=None, location=None, queue=False, **kwargs
     ):
         """
         Add an *inset* legend or *outer* legend along the edge of the axes.
