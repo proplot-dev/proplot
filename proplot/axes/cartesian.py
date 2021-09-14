@@ -1126,6 +1126,6 @@ class CartesianAxes(shared._SharedAxes, plot.PlotAxes):
         return super().get_tightbbox(renderer, *args, **kwargs)
 
     # Apply signature obfuscation after getting keys
-    # NOTE: This is needed for altx/alty keyword parsing
+    # NOTE: This is needed for __init__, altx, and alty
     _format_signature = inspect.signature(format)
-    format = docstring._obfuscate_signature(format)
+    format = docstring._obfuscate_kwargs(format)

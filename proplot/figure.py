@@ -1126,7 +1126,7 @@ class Figure(mfigure.Figure):
         if title is not None:
             self._suptitle.set_text(title)
 
-    @docstring._concatenate_original
+    @docstring._concatenate_inherited
     @docstring._snippet_manager
     def add_axes(self, rect, **kwargs):
         """
@@ -1135,7 +1135,7 @@ class Figure(mfigure.Figure):
         kwargs = self._parse_proj(**kwargs)
         return super().add_axes(rect, **kwargs)
 
-    @docstring._concatenate_original
+    @docstring._concatenate_inherited
     @docstring._snippet_manager
     def add_subplot(self, *args, number=None, **kwargs):
         """
@@ -1506,7 +1506,7 @@ class Figure(mfigure.Figure):
         for ax in axs:
             ax.format(rc_kw=rc_kw, rc_mode=rc_mode, skip_figure=True, **kwargs)
 
-    @docstring._concatenate_original
+    @docstring._concatenate_inherited
     @docstring._snippet_manager
     def colorbar(
         self, mappable, values=None, *, loc=None, location=None,
@@ -1560,7 +1560,7 @@ class Figure(mfigure.Figure):
             )
             return ax.colorbar(mappable, values, loc='fill', **kwargs)
 
-    @docstring._concatenate_original
+    @docstring._concatenate_inherited
     @docstring._snippet_manager
     def legend(
         self, handles=None, labels=None, *, loc=None, location=None,
@@ -1610,7 +1610,7 @@ class Figure(mfigure.Figure):
         """
         return self.savefig(filename, **kwargs)
 
-    @docstring._concatenate_original
+    @docstring._concatenate_inherited
     @docstring._snippet_manager
     def savefig(self, filename, **kwargs):
         """
@@ -1622,7 +1622,7 @@ class Figure(mfigure.Figure):
             filename = os.path.expanduser(filename)
         super().savefig(filename, **kwargs)
 
-    @docstring._concatenate_original
+    @docstring._concatenate_inherited
     def set_canvas(self, canvas):
         """
         Set the figure canvas. Add monkey patches for the instance-level
@@ -1659,7 +1659,7 @@ class Figure(mfigure.Figure):
         else:
             return np.all(np.isclose(figsize, figsize_active, rtol=0, atol=eps))
 
-    @docstring._concatenate_original
+    @docstring._concatenate_inherited
     def set_size_inches(self, w, h=None, *, forward=True, internal=False, eps=None):
         """
         Set the figure size. If this is being called manually or from an interactive
@@ -1774,7 +1774,7 @@ class Figure(mfigure.Figure):
     # Apply signature obfuscation after getting keys
     # NOTE: This is needed for axes and figure instantiation.
     _format_signature = inspect.signature(format)
-    format = docstring._obfuscate_signature(format)
+    format = docstring._obfuscate_kwargs(format)
 
 
 # Add deprecated properties. There are *lots* of properties we pass to Figure

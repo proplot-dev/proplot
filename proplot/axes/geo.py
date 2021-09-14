@@ -3,6 +3,7 @@
 Axes filled with cartographic projections.
 """
 import copy
+import inspect
 
 import matplotlib.axis as maxis
 import matplotlib.path as mpath
@@ -493,7 +494,6 @@ class GeoAxes(plot.PlotAxes):
 
         return array
 
-    @docstring._obfuscate_signature
     @docstring._snippet_manager
     def format(
         self, *,
@@ -653,6 +653,11 @@ class GeoAxes(plot.PlotAxes):
         if not isinstance(map_projection, cls):
             raise ValueError(f'Projection must be a {cls} instance.')
         self._map_projection = map_projection
+
+    # Apply signature obfuscation after getting keys
+    # NOTE: This is needed for __init__
+    _format_signature = inspect.signature(format)
+    format = docstring._obfuscate_kwargs(format)
 
 
 class _CartopyAxes(GeoAxes, _GeoAxes):

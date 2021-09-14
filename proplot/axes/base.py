@@ -4,6 +4,7 @@ The first-level axes subclass used for all ProPlot figures.
 Implements basic shared functionality.
 """
 import copy
+import inspect
 import re
 from numbers import Integral
 
@@ -52,7 +53,6 @@ __all__ = ['Axes']
 
 # A-b-c label string
 ABC_STRING = 'abcdefghijklmnopqrstuvwxyz'
-
 # Legned align options
 ALIGN_OPTS = {
     None: {
@@ -83,18 +83,6 @@ ALIGN_OPTS = {
         'right': 'upper right'
     },
 }
-
-# Axes init keys. All others are passed to format()
-AXES_KEYS = (
-    'fig',
-    'rect',
-    'sharex',
-    'sharey',
-    'frameon',
-    'box_aspect',
-    'label',
-    'map_projection',
-)
 
 
 # Projection docstring
@@ -669,8 +657,12 @@ class Axes(maxes.Axes):
         number = kwargs.pop('number', None)
         autoshare = kwargs.pop('autoshare', None)
         autoshare = _not_none(autoshare, True)
-        kw_init = {key: kwargs.pop(key) for key in tuple(kwargs) if key in AXES_KEYS}
-        super().__init__(*args, **kw_init)
+        rc_kw, rc_mode, kwargs = _parse_format(**kwargs)
+        kw_format = {}
+        for sig in (self._format_signature, self._format_signature_base):
+            if sig is not None:
+                kw_format.update(_pop_params(kwargs, sig))
+        super().__init__(*args, **kwargs)
 
         # Varous scalar properties
         self._active_cycle = rc['axes.prop_cycle']
@@ -737,9 +729,11 @@ class Axes(maxes.Axes):
             self._auto_share()
 
         # Default formatting
-        # NOTE: rc_mode == 1 applies the proplot settings. This is necessary
-        # just on the first run. Default calls to format() use rc_mode == 2
-        self.format(rc_mode=1, skip_figure=True, **kwargs)
+        # NOTE: This ignores user-input rc_mode. Mode '1' applies proplot
+        # features which is necessary on first run. Default otherwise is mode '2'
+        if 'color' in rc_kw:
+            kw_format['color'] = rc_kw.pop('color')  # special case (argument clash)
+        self.format(rc_kw=rc_kw, rc_mode=1, skip_figure=True, **kw_format)
 
     @staticmethod
     def _axisbelow_to_zorder(axisbelow):
@@ -1368,7 +1362,6 @@ class Axes(maxes.Axes):
         if labels or kw:
             fig._update_super_labels(side, labels, **kw)
 
-    @docstring._obfuscate_signature
     @docstring._snippet_manager
     def format(
         self, *, title=None, title_kw=None, abc_kw=None,
@@ -1636,7 +1629,7 @@ class Axes(maxes.Axes):
         patch = mpatches.FancyBboxPatch(
             (xmin, ymin), width, height,
             snap=True,
-            zorder=3.5,
+            zorder=4.5,
             mutation_scale=fontsize,
             transform=self.transAxes
         )
@@ -1942,8 +1935,9 @@ class Axes(maxes.Axes):
         # Make axes and frame
         from .cartesian import CartesianAxes
         locator = self._make_inset_locator(ibounds, self.transAxes)
+        zorder = 5  # NOTE: this is identical to legend zorder
         bbox = locator(None, None)
-        ax = CartesianAxes(self.figure, bbox.bounds, zorder=5)
+        ax = CartesianAxes(self.figure, bbox.bounds, zorder=zorder)
         ax.set_axes_locator(locator)
         self.add_child_axes(ax)
         kw_frame, kwargs = self._parse_frame('colorbar', **kwargs)
@@ -2311,11 +2305,11 @@ class Axes(maxes.Axes):
         self._register_guide('colorbar', obj, loc)  # possibly replace another
         return obj
 
-    @docstring._obfuscate_signature
+    @docstring._obfuscate_params
     @docstring._snippet_manager
     def colorbar(
-        self, mappable, values=None, *, loc=None, location=None, queue=False,
-        **kwargs
+        self, mappable, values=None, *,
+        loc=None, location=None, queue=False, **kwargs
     ):
         """
         Add an inset colorbar or an outer colorbar along the edge of the axes.
@@ -2788,11 +2782,11 @@ class Axes(maxes.Axes):
         self._register_guide('legend', obj, loc)  # possibly replace another
         return obj
 
-    @docstring._concatenate_original
+    @docstring._concatenate_inherited  # also obfuscates params
     @docstring._snippet_manager
     def legend(
-        self, handles=None, labels=None, *, loc=None, location=None, queue=False,
-        **kwargs
+        self, handles=None, labels=None, *,
+        loc=None, location=None, queue=False, **kwargs
     ):
         """
         Add an *inset* legend or *outer* legend along the edge of the axes.
@@ -2853,7 +2847,7 @@ class Axes(maxes.Axes):
             leg = self._draw_legend(handles, labels, loc=loc, **kwargs)
             return leg
 
-    @docstring._concatenate_original
+    @docstring._concatenate_inherited
     @docstring._snippet_manager
     def text(
         self, *args,
@@ -3029,3 +3023,9 @@ class Axes(maxes.Axes):
             self._number = num
         else:
             raise ValueError(f'Invalid number {num!r}. Must be integer >=1.')
+
+    # Apply signature obfuscation after getting keys
+    # NOTE: This is needed for __init__
+    _format_signature = None
+    _format_signature_base = inspect.signature(format)
+    format = docstring._obfuscate_kwargs(format)

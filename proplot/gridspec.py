@@ -53,8 +53,8 @@ wspace, hspace, space : unit-spec or sequence, optional
     a sequence, its length must match these lengths. Default is ``None``.
     %(units.em)s
 
-    For sequence elements equal to ``None``, the space is determined automatically based
-    on the font size and axis settings. If :rcraw:`subplots.tight` is ``True``, the
+    For elements equal to ``None``, the space is determined automatically based
+    on the font and tick settings. If :rcraw:`subplots.tight` is ``True``, the
     space is determined by the tight layout algorithm. Otherwise, a sensible default
     value is chosen. For example, ``subplots(ncols=3, tight=True, wspace=(2, None))``
     fixes the space between columns 1 and 2 but lets the tight layout algorithm

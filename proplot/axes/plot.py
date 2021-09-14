@@ -2749,7 +2749,7 @@ class PlotAxes(base.Axes):
         return self.plotx(*args, **kwargs)
 
     @data._preprocess_args('x', 'y', allow_extra=True)
-    @docstring._concatenate_original
+    @docstring._concatenate_inherited
     @docstring._snippet_manager
     def plot(self, *args, **kwargs):
         """
@@ -2800,7 +2800,7 @@ class PlotAxes(base.Axes):
         return cbook.silent_list('Line2D', objs)  # always return list
 
     @data._preprocess_args('x', 'y', allow_extra=True)
-    @docstring._concatenate_original
+    @docstring._concatenate_inherited
     @docstring._snippet_manager
     def step(self, *args, **kwargs):
         """
@@ -2865,7 +2865,7 @@ class PlotAxes(base.Axes):
         return obj
 
     @data._preprocess_args('x', 'y')
-    @docstring._concatenate_original
+    @docstring._concatenate_inherited
     @docstring._snippet_manager
     def stem(self, *args, **kwargs):
         """
@@ -3099,7 +3099,7 @@ class PlotAxes(base.Axes):
         _get_aliases('collection', 'colors', 'facecolors'),
         keywords=_get_aliases('collection', 'linewidths', 'edgecolors')
     )
-    @docstring._concatenate_original
+    @docstring._concatenate_inherited
     @docstring._snippet_manager
     def scatter(self, *args, **kwargs):
         """
@@ -3185,7 +3185,7 @@ class PlotAxes(base.Axes):
         return self.fill_betweenx(*args, **kwargs)
 
     @data._preprocess_args('x', 'y1', 'y2', 'where')
-    @docstring._concatenate_original
+    @docstring._concatenate_inherited
     @docstring._snippet_manager
     def fill_between(self, *args, **kwargs):
         """
@@ -3195,7 +3195,7 @@ class PlotAxes(base.Axes):
         return self._apply_fill(*args, **kwargs)
 
     @data._preprocess_args('y', 'x1', 'x2', 'where')
-    @docstring._concatenate_original
+    @docstring._concatenate_inherited
     @docstring._snippet_manager
     def fill_betweenx(self, *args, **kwargs):
         """
@@ -3280,7 +3280,7 @@ class PlotAxes(base.Axes):
         )
 
     @data._preprocess_args('x', 'height', 'width', 'bottom')
-    @docstring._concatenate_original
+    @docstring._concatenate_inherited
     @docstring._snippet_manager
     def bar(self, *args, **kwargs):
         """
@@ -3292,7 +3292,7 @@ class PlotAxes(base.Axes):
     # WARNING: Swap 'height' and 'width' here so that they are always relative
     # to the 'tall' axis. This lets people always pass 'width' as keyword
     @data._preprocess_args('y', 'height', 'width', 'left')
-    @docstring._concatenate_original
+    @docstring._concatenate_inherited
     @docstring._snippet_manager
     def barh(self, *args, **kwargs):
         """
@@ -3304,7 +3304,7 @@ class PlotAxes(base.Axes):
     # WARNING: 'labels' and 'colors' no longer passed through `data` (seems like
     # extremely niche usage... `data` variables should be data-like)
     @data._preprocess_args('x', 'explode')
-    @docstring._concatenate_original
+    @docstring._concatenate_inherited
     @docstring._snippet_manager
     def pie(self, x, explode, *, labelpad=None, labeldistance=None, **kwargs):
         """
@@ -3455,7 +3455,7 @@ class PlotAxes(base.Axes):
         return self.boxploth(*args, **kwargs)
 
     @data._preprocess_args('positions', 'y')
-    @docstring._concatenate_original
+    @docstring._concatenate_inherited
     @docstring._snippet_manager
     def boxplot(self, *args, **kwargs):
         """
@@ -3552,7 +3552,7 @@ class PlotAxes(base.Axes):
         return self.violinploth(*args, **kwargs)
 
     @data._preprocess_args('positions', 'y')
-    @docstring._concatenate_original
+    @docstring._concatenate_inherited
     @docstring._snippet_manager
     def violinplot(self, *args, **kwargs):
         """
@@ -3615,7 +3615,7 @@ class PlotAxes(base.Axes):
         return obj
 
     @data._preprocess_args('x', 'bins', keywords='weights')
-    @docstring._concatenate_original
+    @docstring._concatenate_inherited
     @docstring._snippet_manager
     def hist(self, *args, **kwargs):
         """
@@ -3634,7 +3634,7 @@ class PlotAxes(base.Axes):
         return self._apply_hist(*args, **kwargs)
 
     @data._preprocess_args('x', 'y', 'bins', keywords='weights')
-    @docstring._concatenate_original
+    @docstring._concatenate_inherited
     @docstring._snippet_manager
     def hist2d(self, x, y, bins, **kwargs):
         """
@@ -3647,7 +3647,7 @@ class PlotAxes(base.Axes):
 
     # WARNING: breaking change from native 'C'
     @data._preprocess_args('x', 'y', 'weights')
-    @docstring._concatenate_original
+    @docstring._concatenate_inherited
     @docstring._snippet_manager
     def hexbin(self, x, y, weights, **kwargs):
         """
@@ -3670,7 +3670,7 @@ class PlotAxes(base.Axes):
         return m
 
     @data._preprocess_args('x', 'y', 'z')
-    @docstring._concatenate_original
+    @docstring._concatenate_inherited
     @docstring._snippet_manager
     def contour(self, x, y, z, **kwargs):
         """
@@ -3689,7 +3689,7 @@ class PlotAxes(base.Axes):
         return m
 
     @data._preprocess_args('x', 'y', 'z')
-    @docstring._concatenate_original
+    @docstring._concatenate_inherited
     @docstring._snippet_manager
     def contourf(self, x, y, z, **kwargs):
         """
@@ -3713,7 +3713,7 @@ class PlotAxes(base.Axes):
         return m
 
     @data._preprocess_args('x', 'y', 'z')
-    @docstring._concatenate_original
+    @docstring._concatenate_inherited
     @docstring._snippet_manager
     def pcolor(self, x, y, z, **kwargs):
         """
@@ -3732,7 +3732,7 @@ class PlotAxes(base.Axes):
         return m
 
     @data._preprocess_args('x', 'y', 'z')
-    @docstring._concatenate_original
+    @docstring._concatenate_inherited
     @docstring._snippet_manager
     def pcolormesh(self, x, y, z, **kwargs):
         """
@@ -3751,7 +3751,7 @@ class PlotAxes(base.Axes):
         return m
 
     @data._preprocess_args('x', 'y', 'z')
-    @docstring._concatenate_original
+    @docstring._concatenate_inherited
     @docstring._snippet_manager
     def pcolorfast(self, x, y, z, **kwargs):
         """
@@ -3801,7 +3801,7 @@ class PlotAxes(base.Axes):
         return obj
 
     @data._preprocess_args('x', 'y', 'u', 'v', ('c', 'color', 'colors'))
-    @docstring._concatenate_original
+    @docstring._concatenate_inherited
     @docstring._snippet_manager
     def barbs(self, x, y, u, v, c, **kwargs):
         """
@@ -3820,7 +3820,7 @@ class PlotAxes(base.Axes):
         return m
 
     @data._preprocess_args('x', 'y', 'u', 'v', ('c', 'color', 'colors'))
-    @docstring._concatenate_original
+    @docstring._concatenate_inherited
     @docstring._snippet_manager
     def quiver(self, x, y, u, v, c, **kwargs):
         """
@@ -3852,7 +3852,7 @@ class PlotAxes(base.Axes):
     @data._preprocess_args(
         'x', 'y', 'u', 'v', ('c', 'color', 'colors'), keywords='start_points'
     )
-    @docstring._concatenate_original
+    @docstring._concatenate_inherited
     @docstring._snippet_manager
     def streamplot(self, x, y, u, v, c, **kwargs):
         """
@@ -3872,7 +3872,7 @@ class PlotAxes(base.Axes):
         return m
 
     @data._preprocess_args('x', 'y', 'z')
-    @docstring._concatenate_original
+    @docstring._concatenate_inherited
     @docstring._snippet_manager
     def tricontour(self, x, y, z, **kwargs):
         """
@@ -3893,7 +3893,7 @@ class PlotAxes(base.Axes):
         return m
 
     @data._preprocess_args('x', 'y', 'z')
-    @docstring._concatenate_original
+    @docstring._concatenate_inherited
     @docstring._snippet_manager
     def tricontourf(self, x, y, z, **kwargs):
         """
@@ -3919,7 +3919,7 @@ class PlotAxes(base.Axes):
         return m
 
     @data._preprocess_args('x', 'y', 'z')
-    @docstring._concatenate_original
+    @docstring._concatenate_inherited
     @docstring._snippet_manager
     def tripcolor(self, x, y, z, **kwargs):
         """
@@ -3941,7 +3941,7 @@ class PlotAxes(base.Axes):
 
     # WARNING: breaking change from native 'X'
     @data._preprocess_args('z')
-    @docstring._concatenate_original
+    @docstring._concatenate_inherited
     @docstring._snippet_manager
     def imshow(self, z, **kwargs):
         """
@@ -3956,7 +3956,7 @@ class PlotAxes(base.Axes):
 
     # WARNING: breaking change from native 'Z'
     @data._preprocess_args('z')
-    @docstring._concatenate_original
+    @docstring._concatenate_inherited
     @docstring._snippet_manager
     def matshow(self, z, **kwargs):
         """
@@ -3967,7 +3967,7 @@ class PlotAxes(base.Axes):
 
     # WARNING: breaking change from native 'Z'
     @data._preprocess_args('z')
-    @docstring._concatenate_original
+    @docstring._concatenate_inherited
     @docstring._snippet_manager
     def spy(self, z, **kwargs):
         """

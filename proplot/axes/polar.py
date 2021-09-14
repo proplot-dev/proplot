@@ -2,6 +2,8 @@
 """
 Polar axes using azimuth and radius instead of *x* and *y*.
 """
+import inspect
+
 import matplotlib.projections as mproj
 import numpy as np
 
@@ -183,7 +185,6 @@ class PolarAxes(shared._SharedAxes, plot.PlotAxes, mproj.PolarAxes):
             else:
                 axis.set_minor_locator(loc)
 
-    @docstring._obfuscate_signature
     @docstring._snippet_manager
     def format(
         self, *, r0=None, theta0=None, thetadir=None,
@@ -301,3 +302,8 @@ class PolarAxes(shared._SharedAxes, plot.PlotAxes, mproj.PolarAxes):
 
         # Parent format method
         super().format(rc_kw=rc_kw, rc_mode=rc_mode, **kwargs)
+
+    # Apply signature obfuscation after getting keys
+    # NOTE: This is needed for __init__
+    _format_signature = inspect.signature(format)
+    format = docstring._obfuscate_kwargs(format)

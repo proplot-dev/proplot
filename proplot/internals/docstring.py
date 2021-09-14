@@ -10,24 +10,36 @@ import matplotlib.figure as mfigure
 from matplotlib import rcParams as rc_matplotlib
 
 
-def _obfuscate_signature(func):
+def _obfuscate_signature(func, dummy):
     """
-    Obfuscate a misleading or confusing call signature. Instead users
-    should inspect the parameter table.
+    Obfuscate a misleading or incomplete call signature.
+    Instead users should inspect the parameter table.
     """
     # Obfuscate signature by converting to *args **kwargs. Note this does
     # not change behavior of function! Copy parameters from a dummy function
     # because I'm too lazy to figure out inspect.Parameters API
     # See: https://stackoverflow.com/a/33112180/4970632
     sig = inspect.signature(func)
-    sig_obfuscated = inspect.signature(lambda *args, **kwargs: None)
-    func.__signature__ = sig.replace(
-        parameters=tuple(sig_obfuscated.parameters.values())
-    )
+    sig_repl = inspect.signature(dummy)
+    func.__signature__ = sig.replace(parameters=tuple(sig_repl.parameters.values()))
     return func
 
 
-def _concatenate_original(func, prepend_summary=False):
+def _obfuscate_kwargs(func):
+    """
+    Obfuscate keyword args.
+    """
+    return _obfuscate_signature(func, lambda **kwargs: None)
+
+
+def _obfuscate_params(func):
+    """
+    Obfuscate all parameters.
+    """
+    return _obfuscate_signature(func, lambda *args, **kwargs: None)
+
+
+def _concatenate_inherited(func, prepend_summary=False):
     """
     Concatenate docstrings from a matplotlib axes method with a ProPlot axes
     method and obfuscate the call signature.
@@ -75,7 +87,7 @@ Matplotlib documentation
 {doc_orig}
 """
     func.__doc__ = inspect.cleandoc(doc)  # dedents and trims whitespace
-    func = _obfuscate_signature(func)
+    func = _obfuscate_params(func)
 
     # Return
     return func
