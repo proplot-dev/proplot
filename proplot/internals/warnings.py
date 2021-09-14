@@ -25,9 +25,7 @@ def _warn_proplot(message, action=None):
     """
     frame = sys._getframe()
     stacklevel = 1
-    while True:
-        if frame is None:
-            break  # when called in embedded context this may happen
+    while frame is not None:
         if not REGEX_INTERNAL.match(frame.f_globals.get('__name__', '')):
             break  # this is the first external frame
         frame = frame.f_back

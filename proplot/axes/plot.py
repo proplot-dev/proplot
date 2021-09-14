@@ -6,6 +6,7 @@ Implements plotting method overrides.
 import inspect
 import itertools
 import re
+import sys
 from numbers import Integral
 
 import matplotlib.axes as maxes
@@ -3252,7 +3253,7 @@ class PlotAxes(base.Axes):
         return width * x_step
 
     def _apply_bar(
-        self, xs, hs, ws, bs, *, absolute_width=False,
+        self, xs, hs, ws, bs, *, absolute_width=None,
         stack=None, stacked=None, negpos=False, orientation='vertical', **kwargs
     ):
         """
@@ -3265,6 +3266,18 @@ class PlotAxes(base.Axes):
         stack = _not_none(stack=stack, stacked=stacked)
         xs, hs, kw = self._parse_plot1d(xs, hs, orientation=orientation, **kw)
         edgefix_kw = _pop_params(kw, self._apply_edgefix)
+
+        # Default absolute width with horrible kludge
+        # (the faint of heart should look away now).
+        if absolute_width is None:
+            frame = sys._getframe()
+            absolute_width = False
+            absolute_names = ('seaborn.distributions', 'seaborn.categorical')
+            while frame is not None:
+                if frame.f_globals.get('__name__', '') in absolute_names:
+                    absolute_width = True
+                    break
+                frame = frame.f_back
 
         # Call func after converting bar width
         b0 = 0

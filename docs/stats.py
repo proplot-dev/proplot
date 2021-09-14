@@ -29,8 +29,7 @@
 # section should be read before this section. Some of these tools will be
 # expanded in the future, but for a more comprehensive suite of statistical
 # plotting utilities, you may be interested in `seaborn`_ (we try to ensure
-# that seaborn plotting commands are compatible with ProPlot axes
-# and figures but this is a work in progress).
+# that seaborn plotting commands are compatible with ProPlot figures and axes).
 
 # %% [raw] raw_mimetype="text/restructuredtext"
 # .. _ug_errorbars:
