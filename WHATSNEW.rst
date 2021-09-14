@@ -36,15 +36,17 @@ Style changes
 
 * Revert back to original color names for ``'cyan'``, ``'magenta'``, and ``'yellow'``
   rather than overwriting with ``'c'``, ``'m'``, and ``'y'`` (:issue:`280`).
-* Treat ``'ochre'`` and ``'ocher'`` as synonyms (similar to ``'grey'``
-  and ``'gray'``) (:commit:`c949e505`).
+* Treat ``'ochre'`` and ``'ocher'`` as synonyms (consistent with existing
+  ``'grey'`` and ``'gray'`` synonyms) (:commit:`c949e505`).
 
 Features
 --------
 
-* Permit passing ``format`` keywords when instantiating figures
-  and axes, for example ``pplt.figure(suptitle='Super title')`` or
-  ``fig.add_subplot(111, xcolor='gray', xticks=10)`` (:commit:`ae98378d`).
+* Permit passing ``format`` keywords when instantiating figures and axes
+  (:commit:`ae98378d`). For example: ``pplt.figure(suptitle='Super title')``
+  or ``fig.add_subplot(111, xcolor='gray', xticks=10)`` .
+* Add back `color` as a valid `proplot.CartesianAxes.format` keyword
+  arg for consistency with `xcolor` and `ycolor` (:commit:`ecb6fa3f`).
 
 Bug fixes
 ---------
