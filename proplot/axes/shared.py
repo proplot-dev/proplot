@@ -63,12 +63,17 @@ class _SharedAxes(object):
         kwtext = {'label' + key: value for key, value in kwtext.items()}
         for b, which in zip((grid, gridminor), ('major', 'minor')):
             # Tick properties
+            # NOTE: Must make 'tickcolor' overwrite 'labelcolor' or else 'color'
+            # passed to __init__ will not apply correctly. Annoying but unavoidable
             kwticks = self._get_tick_props(x, which=which)
             if labelpad is not None:
                 kwticks['pad'] = labelpad
             if tickcolor is not None:
                 kwticks['color'] = tickcolor
-                kwtext.setdefault('labelcolor', tickcolor)
+                if rc._context_mode == 2:
+                    kwtext.setdefault('labelcolor', tickcolor)
+                else:
+                    kwtext['labelcolor'] = tickcolor
             if ticklen is not None:
                 kwticks['size'] = units(ticklen, 'pt')
                 if which == 'minor':
