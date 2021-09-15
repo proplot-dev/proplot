@@ -91,6 +91,7 @@ class PolarAxes(shared._SharedAxes, plot.PlotAxes, mproj.PolarAxes):
     """
     _name = 'polar'
 
+    @docstring._snippet_manager
     def __init__(self, *args, **kwargs):
         """
         Parameters

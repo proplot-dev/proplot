@@ -241,6 +241,7 @@ class CartesianAxes(shared._SharedAxes, plot.PlotAxes):
     _name = 'cartesian'
     _name_aliases = ('cart', 'rect', 'rectilinar')  # include matplotlib name
 
+    @docstring._snippet_manager
     def __init__(self, *args, **kwargs):
         """
         Parameters

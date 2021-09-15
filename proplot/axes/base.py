@@ -383,9 +383,9 @@ rc_mode : int, optional
 rc_kw : dict-like, optional
     An alternative to passing extra keyword arguments. See below.
 **kwargs
-    Passed to `proplot.config.Configurator.context` and used to update the
-    axes-relevant `~proplot.config.rc` settings. For example, ``abcstyle='A.'``
-    modifies the :rcraw:`abc.style` setting, ``titleloc='left'`` modifies the
+    Passed to `proplot.config.Configurator.context` and used to update
+    the axes-relevant `~proplot.config.rc` settings. For example, ``abc='A.'``
+    modifies the :rcraw:`abc` setting, ``titleloc='left'`` modifies the
     :rcraw:`title.loc` setting, ``gridminor=True`` modifies the :rcraw:`gridminor`
     setting, and ``gridbelow=True`` modifies the :rcraw:`grid.below` setting.
     Many of the keyword arguments documented above are actually applied by updating
@@ -1391,7 +1391,7 @@ class Axes(maxes.Axes):
 
         Important
         ---------
-        `abc`, `abcstyle`, `abcloc`, `titleloc`, `titleabove`, `titlepad`, and
+        `abc`, `abcloc`, `titleloc`, `titleabove`, `titlepad`, and
         `abctitlepad` are actually :ref:`configuration settings <ug_config>`.
         We explicitly document these arguments here because it is common to
         change them for specific axes. But many :ref:`other configuration
