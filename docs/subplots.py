@@ -128,13 +128,13 @@ axs.format(
 #      `nrows` arguments), the arguments `refaspect`, `refwidth`, and `refheight`
 #      effectively apply to every subplot in the figure -- not just the
 #      reference subplot.
-#    * When the reference subplot `aspect ratio
+#    * When the `data aspect ratio
 #      <https://matplotlib.org/stable/examples/pylab_examples/equal_aspect_ratio.html>`__
-#      has been fixed (e.g., using ``ax.set_aspect(1)``) or is set to ``'equal'`` (as
-#      with :ref:`geographic projections <ug_geo>` and `~proplot.axes.PlotAxes.imshow`
-#      images), the fixed aspect ratio is used and the `~proplot.ui.subplots`
-#      `refaspect` parameter is ignored. This is critical for getting the figure
-#      size right when working with grids of images and geographic projections.
+#      of the reference subplot is fixed (as with :ref:`geographic projections <ug_geo>`
+#      and `~proplot.axes.PlotAxes.imshow` images), it is used for the physical
+#      aspect ratio instead of `refaspect` (i.e., `refaspect` is ignored). This is
+#      critical for getting the figure size right when working with grids of
+#      images and geographic projections.
 #    * The physical widths of `~proplot.axes.Axes.colorbar`\ s and
 #      `~proplot.axes.Axes.panel`\ s are always preserved during figure resizing.
 #      ProPlot specifies their widths in physical units to help avoid colorbars
