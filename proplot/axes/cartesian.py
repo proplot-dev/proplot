@@ -988,7 +988,6 @@ class CartesianAxes(shared._SharedAxes, plot.PlotAxes):
         kw = {
             (x + key if key in keys else key): val for key, val in kwargs.items()
         }
-        ic(kw)
         return kw
 
     @docstring._snippet_manager
