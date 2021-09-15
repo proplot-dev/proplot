@@ -2695,7 +2695,7 @@ class Axes(maxes.Axes):
             kwargs.setdefault('borderaxespad', 0)
             if not frameon:
                 kwargs.setdefault('borderpad', 0)
-            opts = ALIGN_OPTS[self._panel_side]
+            opts = ALIGN_OPTS[lax._panel_side]
             if align not in opts:
                 raise ValueError(f'Invalid align={align!r} for legend loc={loc!r}.')
             loc_legend = opts[align]
