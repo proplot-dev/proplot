@@ -4,28 +4,38 @@
 External links
 ==============
 
-This page contain links to related projects and projects that inspired ProPlot
-or are directly used by ProPlot.
+This page contains links to related external projects.
 
 Python packages
 ===============
 
-* `matplotlib <https://matplotlib.org>`__ - The venerable plotting workhorse we all know
-  and love.
-* `xarray <http://xarray.pydata.org/en/stable/api.html>`__ - Package for working with
+The following packages are required or optional dependencies of ProPlot,
+inspired
+
+or ported directly into the source code:
+
+* `matplotlib <https://matplotlib.org>`__ - The data visualization workhorse
+  we all know and love.
+* `xarray <http://xarray.pydata.org/en/stable/api.html>`__ - A package for working with
   annotated ND numpy arrays. If you haven't heard of it and you work with NetCDF files,
   it will change your life.
-* `pandas <https://pandas.pydata.org>`__ - Package that turns spreadsheets and tables
-  into annotated 2D numpy arrays. Invaluable for certain types of data.
-* `seaborn <https://seaborn.pydata.org>`__ - A statistical data visualization package.
-  Seaborn is based on matplotlib, but its interface is mostly separate from matplotlib.
-  It is not generally suitable for geophysical data.
+* `pandas <https://pandas.pydata.org>`__ - A package that turns spreadsheets and
+  tables into annotated 2D numpy arrays. Invaluable for many types of datasets.
+* `pint <https://github.com/hgrecco/pint>`__ - A package for tracking and
+  converting between physical units during mathematical operations and when
+  plotting in matplotlib axes.
 * `cartopy <https://scitools.org.uk/cartopy/docs/latest/>`__ - A package for
   plotting geographic and geophysical data in matplotlib. Includes a suite of
   different map projections.
 * `basemap <https://github.com/matplotlib/basemap>`__ - The original cartographic
   plotting package. Basemap is less closely integrated with matplotlib than
   cartopy but still quite popular. As of 2020 it is no longer actively maintained.
+* `seaborn <https://seaborn.pydata.org>`__ - A statistical data visualization package.
+  Seaborn is based on matplotlib, but its interface is mostly separate from matplotlib.
+  It is not generally suitable for geophysical data.
+* `hsluv-python <https://github.com/hsluv/hsluv-python/blob/master/hsluv.py>`__ -
+  A python implementation of `HSLuv <https://www.hsluv.org>`__ used for
+  the hue, chroma, luminance math required by `~proplot.colors.PerceptualColormap`.
 
 Downloadable colormaps
 ======================
@@ -41,9 +51,9 @@ imported and registered by ProPlot.
 * `SciVisColor <https://sciviscolor.org/>`__ - Science-focused colormaps created by the
   viz team at UT Austin. Provides tools for *concatenating* colormaps, suitable for
   complex datasets with funky distributions.
-* `Fabio Crameri <http://www.fabiocrameri.ch/colourmaps.php>`__ - Perceptually uniform
-  colormaps for geoscientists. These maps have unusual and interesting color
-  transitions.
+* `Fabio Crameri <http://www.fabiocrameri.ch/colourmaps.php>`__ - Perceptually
+  uniform colormaps for geoscientists. These maps have unusual and interesting
+  color transitions.
 
 ..
   * `Cube Helix <https://ui.adsabs.harvard.edu/abs/2011BASI...39..289G/abstract>`__ - A
@@ -56,11 +66,21 @@ Tools for making new colormaps
 Use these resources to make colormaps from scratch. Then import them into
 ProPlot by :ref:`adding files to the .proplot/cmaps folder <ug_cmaps_dl>`.
 
-* `ProPlot colormap API <https://proplot.readthedocs.io/en/latest/colormaps.html#Making-new-colormaps>`__
-* `HCL Picker <http://tristen.ca/hcl-picker/#/hlc/6/1/15534C/E2E062>`__
-* `Chroma.js <https://gka.github.io/palettes/>`__
-* `HCL Wizard <http://hclwizard.org:64230/hclwizard/>`__
-* `SciVisColor <https://sciviscolor.org/home/colormoves/>`__
+* `ProPlot API <https://proplot.readthedocs.io/en/latest/colormaps.html#Making-new-colormaps>`__ -
+  Namely, the `~proplot.colors.ContinuousColormap` class and
+  `~proplot.constructor.Colormap` constructor function.
+* `HCL Picker <http://tristen.ca/hcl-picker/#/hlc/6/1/15534C/E2E062>`__ -
+  A simple interface for taking cross-sections of the HCL colorspace.
+  Resembles the examples :ref:`shown here <ug_perceptual>`.
+* `Chroma.js <https://gka.github.io/palettes/>`__ -
+  A simple interface for Bezier interpolating between lists of colors,
+  with adjustable hue, chroma, and luminance channels.
+* `HCL Wizard <http://hclwizard.org:64230/hclwizard/>`__ -
+  An advanced interface for designing perceptually uniform colormaps,
+  with example plots, channel plots, and lots of sliders.
+* `SciVisColor <https://sciviscolor.org/home/colormoves/>`__ -
+  An advanced interface for concatenating segments from a suite of colormap
+  presets. Useful for datasets with complex statistical distributions.
 
 Tools for making new color cycles
 =================================
@@ -68,10 +88,23 @@ Tools for making new color cycles
 Use these resources to make color cycles from scratch. Then import them into
 ProPlot by :ref:`adding files to the .proplot/cycles folder <ug_cycles_dl>`.
 
-* `ProPlot color cycle API <https://proplot.readthedocs.io/en/latest/cycles.html#Making-new-color-cycles>`__
-* `Color Cycle Picker <https://colorcyclepicker.mpetroff.net/>`__
-* `i want hue <http://medialab.github.io/iwanthue/>`__
-* `Coolors <https://coolors.co/>`__
-* `Color Hunt <https://colorhunt.co/>`__
-* `Color Drop <https://colordrop.io/>`__
-* `Adobe Color <https://color.adobe.com/explore>`__
+* `ProPlot API <https://proplot.readthedocs.io/en/latest/cycles.html#Making-new-color-cycles>`__ -
+  Namely, the `~proplot.colors.DiscreteColormap` class and
+  `~proplot.constructor.Cycle` constructor function.
+* `i want hue <http://medialab.github.io/iwanthue/>`__ -
+  An advanced interface for automatically generating perceptually distinct
+  color sets within restricted hue, chroma, and luminance ranges.
+* `Color Cycle Picker <https://colorcyclepicker.mpetroff.net/>`__ -
+  An advanced interface for manually and successively selecting perceptually distinct
+  colors based on seed colors, with colorblind-friendliness measures included.
+* `Adobe Color <https://color.adobe.com/explore>`__ - A simple interface
+  for selecting color sets derived from sample images, including an option
+  to upload images and a searchable image database.
+* `Color Hunt <https://colorhunt.co/>`__ - A simple interface for selecting
+  preset color sets voted on by users and grouped into stylistic categories
+  like "summer" and "winter".
+* `Coolors <https://coolors.co/>`__ - A simple interface for building
+  randomly-generated aesthetically-pleasing color sets that are not
+  necessarily uniformly perceptually distinct.
+* `Color Drop <https://colordrop.io/>`__ - A simple interface
+  for selecting preset color sets voted on by users.
