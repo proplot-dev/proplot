@@ -2,6 +2,24 @@
 """
 Utilities for modifying proplot docstrings.
 """
+# WARNING: To check every docstring in the package for
+# unfilled snippets simply use the following code:
+# import proplot as pplt
+# seen = set()
+# def _iter_doc(objs):
+#     if objs in seen:
+#         return
+#     seen.add(objs)
+#     for attr in dir(objs):
+#         obj = getattr(objs, attr, None)
+#         if callable(obj) and hasattr(obj, '__doc__'):
+#             if obj in seen:
+#                 continue
+#             seen.add(obj)
+#             if obj.__doc__ and '%(' in obj.__doc__:
+#                 yield obj.__name__
+#             yield from _iter_doc(obj)
+# print(*_iter_doc(pplt))
 import inspect
 import re
 
