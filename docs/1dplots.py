@@ -289,9 +289,8 @@ with pplt.rc.context({'lines.linewidth': 3}):
 # `~proplot.axes.PlotAxes.stepx`, `~proplot.axes.PlotAxes.stem`, and
 # `~proplot.axes.PlotAxes.stemx`. Plots of parallel vertical and horizontal
 # lines can be drawn with `~proplot.axes.PlotAxes.vlines` and
-# `~proplot.axes.PlotAxes.hlines`. You can have different colors for
-# "negative" and "positive" lines using ``negpos=True``, ``negcolor=color``, and
-# ``poscolor=color`` (the default colors are :rc:`negcolor` and :rc:`poscolor`).
+# `~proplot.axes.PlotAxes.hlines`. You can have different colors for "negative" and
+# "positive" lines using ``negpos=True`` (see :ref:`below <ug_negpos>` for details).
 
 # %%
 import proplot as pplt

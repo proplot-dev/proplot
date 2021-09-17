@@ -861,7 +861,7 @@ class Configurator(MutableMapping, dict):
 
     def __getitem__(self, key):
         """
-        Return a setting from `rc_matplotlib` or `rc_proplot`.
+        Return an `rc_matplotlib` or `rc_proplot` setting.
         """
         key = self._validate_key(key)  # might issue proplot removed/renamed error
         try:
@@ -872,7 +872,7 @@ class Configurator(MutableMapping, dict):
 
     def __setitem__(self, key, value):
         """
-        Modify an `rc_matplotlib` setting or an `rc_proplot` setting.
+        Modify an `rc_matplotlib` or `rc_proplot` setting.
         """
         kw_proplot, kw_matplotlib = self._get_params(key, value)
         rc_proplot.update(kw_proplot)
@@ -880,7 +880,7 @@ class Configurator(MutableMapping, dict):
 
     def __getattr__(self, attr):
         """
-        Return a setting from `rc_matplotlib` or `rc_proplot`.
+        Return an `rc_matplotlib` or `rc_proplot` setting.
         """
         if attr[:1] == '_':
             return super().__getattribute__(attr)  # raise built-in error
@@ -889,7 +889,7 @@ class Configurator(MutableMapping, dict):
 
     def __setattr__(self, attr, value):
         """
-        Modify an `rc_matplotlib` setting or an `rc_proplot` setting.
+        Modify an `rc_matplotlib` or `rc_proplot` setting.
         """
         if attr[:1] == '_':
             super().__setattr__(attr, value)
@@ -1197,15 +1197,14 @@ class Configurator(MutableMapping, dict):
         # Support both loose files and files inside .proplot
         file = os.path.join(Configurator.user_folder(), 'proplotrc')
         universal = os.path.join(os.path.expanduser('~'), '.proplotrc')
-        if os.path.isfile(universal) and os.path.isfile(file):
-            warnings._warn_proplot(
-                'Found conflicting default user proplotrc files at '
-                f'{universal!r} and {file!r}. Ignoring the second one.'
-            )
         if os.path.isfile(universal):
-            return universal
-        else:
-            return file
+            if file != universal and os.path.isfile(file):
+                warnings._warn_proplot(
+                    'Found conflicting default user proplotrc files at '
+                    f'{universal!r} and {file!r}. Ignoring the second one.'
+                )
+            file = universal
+        return file
 
     @staticmethod
     def user_folder(subfolder=None):
@@ -1228,7 +1227,7 @@ class Configurator(MutableMapping, dict):
         # Fallback to the loose ~/.proplot if it is present
         # NOTE: This is critical or we might ignore previously stored settings!
         if os.path.isdir(universal):
-            if universal != folder and os.path.isdir(folder):
+            if folder != universal and os.path.isdir(folder):
                 warnings._warn_proplot(
                     'Found conflicting default user proplot folders at '
                     f'{universal!r} and {folder!r}. Ignoring the second one.'
@@ -1246,7 +1245,7 @@ class Configurator(MutableMapping, dict):
         Parameters
         ----------
         *args
-            Dictionaries of `rc` names and values.
+            Dictionaries of `rc` keys and values.
         file : path-like, optional
             Filename from which settings should be loaded.
         **kwargs

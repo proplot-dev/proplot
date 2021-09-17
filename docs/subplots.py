@@ -29,14 +29,14 @@
 # A-b-c labels
 # ------------
 #
-# ProPlot can quickly add "a-b-c" labels to subplots. This is possible because
-# ProPlot assigns a unique `~proplot.axes.Axes.number` to each subplot. The
-# subplot number can be manually controlled by passing a `number` keyword to
-# `~proplot.figure.Figure.add_subplot`. Otherwise, the subplot number is
-# incremented by ``1`` each time you call `~proplot.figure.Figure.add_subplot`.
+# ProPlot can quickly add "a-b-c" labels to subplots. This is possible because we
+# assign a `~proplot.axes.Axes.number` to each subplot. The number can be specified
+# manually by passing a `number` keyword to `~proplot.figure.Figure.add_subplot`.
+# Otherwise the subplot number is incremented by ``1`` each time you call
+# `~proplot.figure.Figure.add_subplot`.
 #
 # If you draw all of your subplots at once with `~proplot.figure.Figure.add_subplots`,
-# the subplot numbers depend on the input arguments. If you
+# the numbers depend on the input arguments. If you
 # :ref:`passed an array <ug_intro>`, the subplot numbers correspond to the numbers
 # in the array. But if you used the `ncols` and `nrows` keyword arguments, the
 # number order is row-major by default and can be switched to column-major by
@@ -295,13 +295,14 @@ axs[:, 0].format(ylabel='ylabel')
 #    works for :ref:`aribtrarily complex subplot grids <ug_layout>`. It also works
 #    if subplots were generated one-by-one with `~proplot.figure.Figure.add_subplot`
 #    rather than `~proplot.figure.Figure.subplots`. It is controlled by the `sharex`
-#    and `sharey` keywords (default is :rc:`subplots.share`). You can use the
-#    `share` keyword as a shorthand to set both `sharex` and `sharey`.
+#    and `sharey` `~proplot.figure.Figure` keywords (default is :rc:`subplots.share`).
+#    You can use the `share` keyword as a shorthand to set both `sharex` and `sharey`.
 # #. Automatically sharing labels across subplots and :ref:`panels <ug_panels>`
 #    with edges against the same row or column of the `~proplot.gridspec.GridSpec`.
-#    This also works for complex grids and subplots generated one-by-one. It is
-#    controlled by the `spanx` and `spany` keywords (default is :rc:`subplots.span`).
-#    Use the `span` keyword as a shorthand to set both `spanx` and `spany`.
+#    This also works for complex grids and subplots generated one-by-one.
+#    It is controlled by the `spanx` and `spany` `~proplot.figure.Figure`
+#    keywords (default is :rc:`subplots.span`). Use the `span` keyword
+#    as a shorthand to set both `spanx` and `spany`.
 # #. Supporting five sharing "levels". These values can be passed to `sharex`,
 #    `sharey`, or `share`, or assigned to :rcraw:`subplots.share`. The levels
 #    are defined as follows:

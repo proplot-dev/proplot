@@ -44,8 +44,9 @@
 # range of symbols, especially mathematical symbols. However in our opinion,
 # DejaVu Sans is not very aesthetically pleasing. To improve the font selection while
 # keeping things consistent across different workstations, ProPlot comes packaged
-# with the open-source `TeX Gyre font series <https://ctan.org/pkg/tex-gyre?lang=en>`__
-# and adds them as the default entries for all of matplotlib's font famlies:
+# with several open source sans-serif fonts. It also includes the `TeX Gyre font
+# series <https://ctan.org/pkg/tex-gyre?lang=en>`__ and adds them as the default
+# entries for all of matplotlib's font famlies:
 #
 # * The `Century <https://en.wikipedia.org/wiki/Century_type_family>`__ lookalike
 #   :rcraw:`font.serif` = ``'TeX Gyre Schola'``.
@@ -66,15 +67,15 @@
 # :ref:`default proplotrc file <ug_proplotrc>`.
 #
 # To compare different fonts, use the `~proplot.demos.show_fonts` command. By
-# default, this displays the *sans serif* fonts available on your system and
-# packaged with ProPlot. The sans serif table on the RTD server is shown
+# default, this displays the sans-serif fonts available on your system and
+# packaged with ProPlot. The default table on the RTD server is shown
 # below. The "¤" symbol appears where characters for a particular font are
 # unavailable (when making plots, "¤" is replaced with the character from
 # a fallback font). Since most TeX Gyre fonts have limited
 # character sets, if your plots contain lots of mathematical symbols,
-# you may want to set :rcraw:`font.family` to DejaVu Sans or
-# `Fira Math <https://github.com/firamath/firamath>`__, which is packaged
-# with ProPlot.
+# you may want to set :rcraw:`font.family` to the matplotlib-supplied
+# font ``'DejaVu Sans'`` or the ProPlot-supplied font ``'Fira Math'``
+# (see `this page <https://github.com/firamath/firamath>`__ for more on Fira Math).
 #
 # .. note::
 #

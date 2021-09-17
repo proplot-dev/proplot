@@ -433,11 +433,11 @@ The following features are relevant for the 2D plotting commands like
   according to the luminance of the underlying grid box or filled contour.
 * The default `vmin` and `vmax` used to normalize colormaps now excludes data
   outside the *x* and *y* axis bounds `xlim` and `ylim` if they were explicitly
-  fixed. This can be disabled by setting :rcraw:`image.inbounds` to ``False``
+  fixed. This can be disabled by setting :rcraw:`cmap.inbounds` to ``False``
   or by passing ``inbounds=False`` to plot commands.
 * The `~proplot.colors.DiscreteNorm` normalizer is paired with most colormaps by
   default. It can easily divide colormaps into distinct levels, similar to contour
-  plots. This can be disabled by setting :rcraw:`image.discrete` to ``False`` or
+  plots. This can be disabled by setting :rcraw:`cmap.discrete` to ``False`` or
   by passing ``discrete=False`` to plot commands.
 * The `~proplot.colors.DivergingNorm` normalizer is perfect for data with a
   :ref:`natural midpoint <ug_norm>` and offers both "fair" and "unfair" scaling.
@@ -449,9 +449,9 @@ The following features are relevant for the 2D plotting commands like
   adds ticks to the center of each gridbox, and disables minor ticks and gridlines.
   This can be convenient for things like covariance matrices.
 * Coordinate centers passed to commands like `~proplot.axes.PlotAxes.pcolor` are
-  automatically translated to "edges", and coordinate edges passed to commands
-  like `~proplot.axes.PlotAxes.contour` are automatically translated to "centers".
-  In matplotlib, ``pcolor`` simply truncates the data when it receives centers.
+  automatically translated to "edges", and coordinate edges passed to commands like
+  `~proplot.axes.PlotAxes.contour` are automatically translated to "centers". In
+  matplotlib, ``pcolor`` simply truncates and offsets the data when it receives centers.
 * Commands like `~proplot.axes.PlotAxes.pcolor`, `~proplot.axes.PlotAxes.contourf`
   and `~proplot.axes.Axes.colorbar` automatically fix an irritating issue where
   saved vector graphics appear to have thin white lines between `filled contours
@@ -569,9 +569,9 @@ the `ColorBrewer <brewer_>`_ colormap series, but external projects
 offer a larger variety of aesthetically pleasing "perceptually uniform" colormaps.
 
 Matplotlib also "registers" the X11/CSS4 color names, but these are relatively
-limited. The more intuitive and more numerous `XKCD color survey <xkcd_>`_ names
-can be accessed with the ``'xkcd:'`` prefix, but this is cumbersome, and external
-projects like `open color <opencolor_>`_ offer even more useful names.
+limited. The more numerous and arguably more intuitive `XKCD color survey <xkcd_>`_
+names can only be accessed with the ``'xkcd:'`` prefix. As with colormaps, there
+are also external projects with useful color names like `open color <opencolor_>`_.
 
 Finally, matplotlib comes packaged with ``DejaVu Sans`` as the default font.
 This font is open source and include glyphs for a huge variety of characters,

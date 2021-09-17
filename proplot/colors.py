@@ -3,18 +3,18 @@
 Various colormap classes and colormap normalization classes.
 """
 # NOTE: To avoid name conflicts between registered colormaps and colors, print
-# set(pplt.colors._cmap_database) & set(pplt.colors._color_database) whenever you
-# add new colormaps. v0.8 result is {'gray', 'marine', 'ocean', 'pink'} due to the
-# MATLAB and GNUPlot colormaps. Want to minimize conflicts.
-# NOTE: We decided LinearSegmentedColormap should always and only be used for smooth
-# color transitions while ListedColormap should always and only be used for qualitative
-# color sets. Many others use ListedColormap for dense "perceptually uniform" colormaps
-# possibly seeking optimization. However testing reveals that initialization of even
-# extremely dense 256-level colormaps is only 1.25ms vs. 0.25ms for a ListedColormap
-# with the same data (+1ms). Also ListedColormap was clearly designed for qualitative
-# transitions because specifying N greater than len(colors) will cyclically loop around
-# the colors or truncate colors. Therefore we always encode smooth color transitions
-# with LinearSegmentedColormap and translate cmaps accordingly (rc['cmap.listedthesh'])
+# set(pplt.colors._cmap_database) & set(pplt.colors._color_database) whenever
+# you add new colormaps. v0.8 result is {'gray', 'marine', 'ocean', 'pink'} due
+# to the MATLAB and GNUPlot colormaps. Want to minimize conflicts.
+# NOTE: We feel that LinearSegmentedColormap should always be used for smooth color
+# transitions while ListedColormap should always be used for qualitative color sets.
+# Other sources use ListedColormap for dense "perceptually uniform" colormaps possibly
+# seeking optimization. However testing reveals that initialization of even very
+# dense 256-level colormaps is only 1.25ms vs. 0.25ms for a ListedColormap with the
+# same data (+1ms). Also ListedColormap was designed for qualitative transitions
+# because specifying N different from len(colors) will cyclically loop around the
+# colors or truncate colors. So we translate the relevant ListedColormaps to
+# LinearSegmentedColormaps for consistency. See :rc:`cmap.listedthresh`
 import functools
 import json
 import os

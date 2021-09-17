@@ -315,7 +315,7 @@ pplt.rc.reset()
 # color levels. Distinct levels can help readers discern exact numeric values and tend
 # to reveal qualitative structure in the data. To explicitly toggle distinct levels
 # on or off, pass ``discrete=False`` or ``discrete=True`` to any plotting command that
-# accepts a `cmap` argument, or change :rcraw:`image.discrete`.
+# accepts a `cmap` argument, or change :rcraw:`cmap.discrete`.
 #
 # `~proplot.colors.DiscreteNorm` also repairs the colormap end-colors by
 # ensuring the following conditions are met (this may seem excessive, but

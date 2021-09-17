@@ -445,7 +445,7 @@ for proj, ax in zip(projs, axs):
 # configuring the "major" and "minor" gridline locations with `grid`, `rlocator`,
 # `thetalocator`, `gridminor`, `rminorlocator`, and `thetaminorlocator` and formatting
 # the gridline labels with `rformatter` and `thetaformatter` (analogous to `xlocator`,
-# `xformatter`, and` `xminorlocator` used by `proplot.axes.CartesianAxes.format`),
+# `xformatter`, and `xminorlocator` used by `proplot.axes.CartesianAxes.format`),
 # and creating "annular" or "sector" plots by changing the radial or azimuthal
 # bounds `rlim` and `thetalim`. Finally, since `proplot.axes.PolarAxes.format`
 # calls `proplot.axes.Axes.format`, it can be used to add axes titles, a-b-c

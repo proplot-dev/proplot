@@ -37,11 +37,11 @@
 # <https://matplotlib.org/examples/color/named_colors.html>`__ are still
 # registered, but some of these color names may be overwritten by the XKCD names,
 # and we encourage choosing colors from the below tables instead. XKCD colors
-# are normally `available in matplotlib
+# are `available in matplotlib
 # <https://matplotlib.org/stable/tutorials/colors/colors.html>`__ under the
 # ``xkcd:`` prefix, but ProPlot doesn't require this prefix because the XKCD
-# selection is larger and the names are more likely to match your intuition
-# for what a color "should" look like.
+# selection is larger and the names are generally more likely to match your
+# intuition for what a color "should" look like.
 #
 # For all colors, ProPlot ensures that ``'grey'`` is a synonym of ``'gray'``
 # (for example, ``'grey5'`` and ``'gray5'`` are both valid). ProPlot also

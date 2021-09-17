@@ -69,7 +69,7 @@ you can simply omit the dots. For example, to change the
 Matplotlib settings
 -------------------
 
-Matplotlib settings are natively controlled with the `~matplotlib.rcParams`
+Matplotlib settings are natively stored in the `~matplotlib.rcParams`
 dictionary. ProPlot makes this dictionary available in the top-level namespace as
 `~proplot.config.rc_matplotlib`. All matplotlib settings can also be changed with
 `~proplot.config.rc`. Details on the matplotlib settings can be found on
@@ -80,10 +80,11 @@ dictionary. ProPlot makes this dictionary available in the top-level namespace a
 ProPlot settings
 ----------------
 
-ProPlot-specific settings are contained in the `~proplot.config.rc_proplot`
-dictionary. They can also be changed with `~proplot.config.rc`. These settings
-are not found in `~matplotlib.rcParams` -- they either control features
-introduced by ProPlot (e.g., a-b-c labels and geographic gridlines)
+ProPlot settings are natively stored in the `~proplot.config.rc_proplot` dictionary.
+In general they should be changed with `~proplot.config.rc` rather than
+`~proplot.config.rc_proplot` to ensure that :ref:`meta-settings <ug_meta>` are
+synced. These settings are not found in `~matplotlib.rcParams` -- they either
+control ProPlot-managed features (e.g., a-b-c labels and geographic gridlines)
 or they represent existing matplotlib settings rearranged to be
 more clearly ordered. Here's a broad overview of the new settings:
 
@@ -107,6 +108,8 @@ more clearly ordered. Here's a broad overview of the new settings:
   from major gridlines.
 * The ``land``, ``ocean``, ``rivers``, ``lakes``, ``borders``, and ``innerborders``
   categories control geographic content managed by `~proplot.axes.GeoAxes`.
+
+.. _ug_meta:
 
 Meta-settings
 -------------

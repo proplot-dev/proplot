@@ -16,7 +16,7 @@ def get_nodes(rawtext, text, inliner):
         refuri = f'{refuri}?highlight={text}#the-matplotlibrc-file'
     else:
         levels = relsource[1].count('/')  # distance to base URL
-        refuri = '../' * levels + 'stable/configuration.html'
+        refuri = '../' * levels + 'en/stable/configuration.html'
         refuri += f'?highlight={text}#rc-proplot'
     ref = nodes.reference(rawtext, rendered, refuri=refuri)
     return [nodes.literal('', '', ref)]
