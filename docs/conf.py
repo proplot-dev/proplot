@@ -196,7 +196,6 @@ napoleon_type_aliases = {
     'cycle-spec': ':py:func:`cycle-spec <proplot.constructor.Cycle>`',
     'norm-spec': ':py:func:`norm-spec <proplot.constructor.Norm>`',
     'color-spec': ':py:func:`color-spec <matplotlib.colors.is_color_like>`',
-    'channel-spec': ':py:func:`color-spec <matplotlib.colors.is_color_like>`',
     'artist': ':py:func:`artist <matplotlib.artist.Artist>`',
 }
 
