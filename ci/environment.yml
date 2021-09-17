@@ -27,6 +27,7 @@ dependencies:
     - pytest
     - pytest-sugar
     - pyqt5
+    - docutils==0.16
     - sphinx>=3.0
     - sphinx-copybutton
     - sphinx_rtd_theme==0.4.3
