@@ -250,11 +250,17 @@ COLORS_REPLACE = (
     ('yelloworange', 'yellow orange'),
 )
 
-# Docstrings
-_init_docstring = """
+# Simple snippets
+_N_docstring = """
+N : int, optional
+    Number of points in the colormap lookup table. Default is :rc:`image.lut`.
+"""
+_alpha_docstring = """
 alpha : float, optional
-    The opacity for the entire colormap. This overrides the input
-    segment data.
+    The opacity for the entire colormap. This overrides
+    the input opacities.
+"""
+_cyclic_docstring = """
 cyclic : bool, optional
     Whether the colormap is cyclic. If ``True``, this changes how the leftmost
     and rightmost color levels are selected, and `extend` can only be
@@ -262,15 +268,15 @@ cyclic : bool, optional
 """
 _gamma_docstring = """
 gamma : float, optional
-    Sets `gamma1` and `gamma2` to this identical value.
+    Set `gamma1` and `gamma2` to this identical value.
 gamma1 : float, optional
-    If >1, makes low saturation colors more prominent. If <1,
-    makes high saturation colors more prominent. Similar to the
-    `HCLWizard <http://hclwizard.org:64230/hclwizard/>`_ option.
+    If greater than 1, make low saturation colors more prominent. If
+    less than 1, make high saturation colors more prominent. Similar to
+    the `HCLWizard <http://hclwizard.org:64230/hclwizard/>`_ option.
 gamma2 : float, optional
-    If >1, makes high luminance colors more prominent. If <1,
-    makes low luminance colors more prominent. Similar to the
-    `HCLWizard <http://hclwizard.org:64230/hclwizard/>`_ option.
+    If greater than 1, make high luminance colors more prominent. If
+    less than 1, make low luminance colors more prominent. Similar to
+    the `HCLWizard <http://hclwizard.org:64230/hclwizard/>`_ option.
 """
 _space_docstring = """
 space : {'hsl', 'hpl', 'hcl', 'hsv'}, optional
@@ -289,6 +295,15 @@ ratios : sequence of float, optional
     ``len(colors) - 1``. Larger numbers indicate a slower
     transition, smaller numbers indicate a faster transition.
 """
+docstring._snippet_manager['colors.N'] = _N_docstring
+docstring._snippet_manager['colors.alpha'] = _alpha_docstring
+docstring._snippet_manager['colors.cyclic'] = _cyclic_docstring
+docstring._snippet_manager['colors.gamma'] = _gamma_docstring
+docstring._snippet_manager['colors.space'] = _space_docstring
+docstring._snippet_manager['colors.ratios'] = _ratios_docstring
+docstring._snippet_manager['colors.name'] = _name_docstring
+
+# List classmethod snippets
 _from_list_docstring = """
 colors : sequence of color-spec or tuple
     If a sequence of RGB[A] tuples or color strings, the colormap
@@ -304,11 +319,6 @@ colors : sequence of color-spec or tuple
     creates a colormap with the transition from red to blue taking
     *twice as long* as the transition from blue to green.
 """
-docstring._snippet_manager['colors.init'] = _init_docstring
-docstring._snippet_manager['colors.gamma'] = _gamma_docstring
-docstring._snippet_manager['colors.space'] = _space_docstring
-docstring._snippet_manager['colors.ratios'] = _ratios_docstring
-docstring._snippet_manager['colors.name'] = _name_docstring
 docstring._snippet_manager['colors.from_list'] = _from_list_docstring
 
 
@@ -330,21 +340,18 @@ def _clip_colors(colors, clip=True, gray=0.2, warn=False):
     warn : bool, optional
         Whether to issue warning when colors are clipped.
     """
-    colors = np.array(colors)
-    over = colors > 1
+    colors = np.asarray(colors)
     under = colors < 0
+    over = colors > 1
     if clip:
-        colors[under] = 0
-        colors[over] = 1
+        colors[under], colors[over] = 0, 1
     else:
         colors[under | over] = gray
     if warn:
         msg = 'Clipped' if clip else 'Invalid'
         for i, name in enumerate('rgb'):
-            if under[:, i].any():
-                warnings._warn_proplot(f'{msg} {name!r} channel ( < 0).')
-            if over[:, i].any():
-                warnings._warn_proplot(f'{msg} {name!r} channel ( > 1).')
+            if np.any(under[:, i]) or np.any(over[:, i]):
+                warnings._warn_proplot(f'{msg} {name!r} channel.')
     return colors
 
 
@@ -429,8 +436,8 @@ def _make_segment_data(values, coords=None, ratios=None):
         coords = np.atleast_1d(ratios)
         if len(coords) != len(values) - 1:
             raise ValueError(
-                f'Need {len(values)-1} ratios for {len(values)} colors, '
-                f'but got {len(ratios)} ratios.'
+                f'Need {len(values) - 1} ratios for {len(values)} colors, '
+                f'but got {len(coords)} ratios.'
             )
         coords = np.concatenate(([0], np.cumsum(coords)))
         coords = coords / np.max(coords)  # normalize to 0-1
@@ -711,8 +718,8 @@ class _Colormap(object):
     def _pop_args(*args, names=None, **kwargs):
         """
         Pop the name as a first positional argument or keyword argument.
-        Supports matplotlib-style ``Colormap(name, data)`` input
-        algongside more intuitive ``Colormap(data, name='name')`` input.
+        Supports matplotlib-style ``Colormap(name, data, N)`` input
+        algongside more intuitive ``Colormap(data, name, N)`` input.
         """
         names = names or ()
         if isinstance(names, str):
@@ -720,7 +727,7 @@ class _Colormap(object):
         names = ('name', *names)
         args, kwargs = _kwargs_to_args(names, *args, **kwargs)
         if args[0] is not None and args[1] is None:
-            args[:2] = (DEFAULT_NAME, args[0])
+            args[:2] = (None, args[0])
         if args[0] is None:
             args[0] = DEFAULT_NAME
         return (*args, kwargs)
@@ -899,12 +906,10 @@ class ContinuousColormap(mcolors.LinearSegmentedColormap, _Colormap):
         return type(self).__name__ + '({\n' + string + '})'
 
     @docstring._snippet_manager
-    def __init__(self, *args, gamma=1, cyclic=False, alpha=None, **kwargs):
+    def __init__(self, *args, gamma=1, alpha=None, cyclic=False, **kwargs):
         """
         Parameters
         ----------
-        name : str
-            The colormap name.
         segmentdata : dict-like
             Dictionary containing the keys ``'red'``, ``'green'``, ``'blue'``, and
             (optionally) ``'alpha'``. The shorthands ``'r'``, ``'g'``, ``'b'``,
@@ -912,11 +917,17 @@ class ContinuousColormap(mcolors.LinearSegmentedColormap, _Colormap):
             functions that return channel values given a colormap index, or
             3-column arrays indicating the coordinates and channel transitions. See
             `matplotlib.colors.LinearSegmentedColormap` for a detailed explanation.
-        N : int, optional
-            Number of points in the colormap lookup table. Default is :rc:`image.lut`.
+        %(colors.name)s
+        %(colors.N)s
         gamma : float, optional
             Gamma scaling used for the *x* coordinates.
-        %(colors.init)s
+        %(colors.alpha)s
+        %(colors.cyclic)s
+
+        Other parameters
+        ----------------
+        **kwargs
+            Passed to `matplotlib.colors.LinearSegmentedColormap`.
 
         See also
         --------
@@ -956,11 +967,10 @@ class ContinuousColormap(mcolors.LinearSegmentedColormap, _Colormap):
             a colormap with the left two-thrids containing colors from
             ``cmap1`` and the right one-third containing colors from ``cmap2``.
         name : str, optional
-            The name of the new colormap. Default is
-            ``'_'.join(cmap.name for cmap in args)``.
+            The new colormap name. Default is ``'_name1_name2_[...]'``.
         N : int, optional
-            The number of points in the colormap lookup table.
-            Default is :rc:`image.lut` times ``len(args)``.
+            The number of points in the colormap lookup table. Default
+            is :rc:`image.lut` times the number of colormaps.
 
         Other parameters
         ----------------
@@ -1085,7 +1095,7 @@ class ContinuousColormap(mcolors.LinearSegmentedColormap, _Colormap):
             ``cut=0.1`` cuts the central 10%, or ``cut=-0.1`` fills the ctranl 10%
             of the colormap with the current central color (usually white).
         name : str, optional
-            The name of the new colormap. Default is ``'_name_copy'``.
+            The new colormap name. Default is ``'_name_copy'``.
         left, right : float, optional
             The colormap indices for the "leftmost" and "rightmost" colors.
             Defaults are ``0`` and ``1``. See
@@ -1151,7 +1161,7 @@ class ContinuousColormap(mcolors.LinearSegmentedColormap, _Colormap):
         Parameters
         ----------
         name : str, optional
-            The name of the new colormap. Default is ``'_name_r'``.
+            The new colormap name. Default is ``'_name_r'``.
 
         Other parameters
         ----------------
@@ -1287,7 +1297,7 @@ class ContinuousColormap(mcolors.LinearSegmentedColormap, _Colormap):
             The number of degrees to shift, out of 360 degrees.
             The default is ``180``.
         name : str, optional
-            The name of the new colormap. Default is ``'_name_s'``.
+            The new colormap name. Default is ``'_name_s'``.
 
         Other parameters
         ----------------
@@ -1330,7 +1340,7 @@ class ContinuousColormap(mcolors.LinearSegmentedColormap, _Colormap):
             The colormap index for the new "rightmost" color. Must fall between ``0``
             and ``1``. For example, ``right=0.9`` cuts the leftmost 10%% of the colors.
         name : str, optional
-            The name of the new colormap. Default is ``'_name_copy'``.
+            The new colormap name. Default is ``'_name_copy'``.
 
         Other parameters
         ----------------
@@ -1420,7 +1430,7 @@ class ContinuousColormap(mcolors.LinearSegmentedColormap, _Colormap):
         Parameters
         ----------
         name : str
-            The name of the new colormap. Default is ``'_name_copy'``.
+            The new colormap name. Default is ``'_name_copy'``.
         segmentdata, N, alpha, gamma, cyclic : optional
             See `ContinuousColormap`. If not provided, these are copied from
             the current colormap.
@@ -1461,7 +1471,7 @@ class ContinuousColormap(mcolors.LinearSegmentedColormap, _Colormap):
             ``np.linspace(0, 1, samples)``. If sequence of float,
             draw samples at the specified points.
         name : str, optional
-            The name of the new colormap. Default is ``'_name_copy'``.
+            The new colormap name. Default is ``'_name_copy'``.
 
         Other parameters
         ----------------
@@ -1585,12 +1595,20 @@ class DiscreteColormap(mcolors.ListedColormap, _Colormap):
         """
         Parameters
         ----------
+        colors : sequence of color-spec, optional
+            The colormap colors.
+        name : str, optional
+            The colormap name. Default is ``'_no_name'``.
+        N : int, optional
+            The number of levels. Default is the length of `colors`. The
+            color list is truncated or wrapped to match this length.
         alpha : float, optional
-            The opacity for the entire colormap. Overrides the input colors.
+            The opacity for the colormap colors. This overrides the
+            input color opacities.
 
         Other parameters
         ----------------
-        *args, **kwargs
+        **kwargs
             Passed to `~matplotlib.colors.ListedColormap`.
 
         See also
@@ -1624,10 +1642,9 @@ class DiscreteColormap(mcolors.ListedColormap, _Colormap):
         *args
             Instances of `DiscreteColormap`.
         name : str, optional
-            The name of the new colormap. Default is
-            ``'_'.join(cmap.name for cmap in args)``.
+            The new colormap name. Default is ``'_name1_name2_[...]'``.
         N : int, optional
-            The number of colors in the colormap lookup table. Default is
+            The number of points in the colormap lookup table. Default is
             the number of colors in the concatenated lists.
 
         Other parameters
@@ -1703,7 +1720,7 @@ class DiscreteColormap(mcolors.ListedColormap, _Colormap):
         Parameters
         ----------
         name : str, optional
-            The name of the new colormap. Default is ``'_name_r'``.
+            The new colormap name. Default is ``'_name_r'``.
 
         Other parameters
         ----------------
@@ -1731,7 +1748,7 @@ class DiscreteColormap(mcolors.ListedColormap, _Colormap):
             The number of places to shift, between ``-self.N`` and ``self.N``.
             The default is ``1``.
         name : str, optional
-            The name of the new colormap. Default is ``'_name_s'``.
+            The new colormap name. Default is ``'_name_s'``.
 
         See also
         --------
@@ -1761,7 +1778,7 @@ class DiscreteColormap(mcolors.ListedColormap, _Colormap):
             ``0`` and ``self.N``. For example,
             ``right=4`` deletes colors after the fourth color.
         name : str, optional
-            The name of the new colormap. Default is ``'_name_copy'``.
+            The new colormap name. Default is ``'_name_copy'``.
 
         See also
         --------
@@ -1782,7 +1799,7 @@ class DiscreteColormap(mcolors.ListedColormap, _Colormap):
         Parameters
         ----------
         name : str
-            The name of the new colormap. Default is ``'_name_copy'``.
+            The new colormap name. Default is ``'_name_copy'``.
         colors, N, alpha : optional
             See `DiscreteColormap`. If not provided,
             these are copied from the current colormap.
@@ -1859,17 +1876,19 @@ class PerceptualColormap(ContinuousColormap, _Colormap):
             channel transitions. See `~matplotlib.colors.LinearSegmentedColormap`
             for a more detailed explanation.
         %(colors.name)s
+        %(colors.N)s
         %(colors.space)s
         clip : bool, optional
-            Whether to "clip" impossible colors, i.e. truncate HCL colors
-            with RGB channels with values >1, or mask them out as gray.
-        %(colors.init)s
+            Whether to "clip" impossible colors (i.e. truncate HCL colors with
+            RGB channels with values greater than 1) or mask them out as gray.
         %(colors.gamma)s
+        %(colors.alpha)s
+        %(colors.cyclic)s
 
         Other parameters
         ----------------
         **kwargs
-            Passed to `ContinuousColormap`.
+            Passed to `matploitlib.colors.LinearSegmentedColormap`.
 
         Example
         -------
@@ -1949,7 +1968,7 @@ class PerceptualColormap(ContinuousColormap, _Colormap):
     @docstring._snippet_manager
     def set_gamma(self, gamma=None, gamma1=None, gamma2=None):
         """
-        Modify the gamma value(s) and refresh the lookup table.
+        Set the gamma value(s) for the luminance and saturation transitions.
 
         Parameters
         ----------
@@ -1975,7 +1994,7 @@ class PerceptualColormap(ContinuousColormap, _Colormap):
         Parameters
         ----------
         name : str
-            The name of the new colormap. Default is ``'_name_copy'``.
+            The new colormap name. Default is ``'_name_copy'``.
         segmentdata, N, alpha, clip, cyclic, gamma, gamma1, gamma2, space : optional
             See `PerceptualColormap`. If not provided,
             these are copied from the current colormap.
@@ -2021,7 +2040,7 @@ class PerceptualColormap(ContinuousColormap, _Colormap):
         Parameters
         ----------
         name : str, optional
-            The name of the new colormap. Default is ``'_name_copy'``.
+            The new colormap name. Default is ``'_name_copy'``.
 
         Other parameters
         ----------------
