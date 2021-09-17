@@ -2791,20 +2791,24 @@ def _translate_cmap(cmap, lut=None, cyclic=None, listedthresh=None):
     cyclic = _not_none(cyclic, cmap.name and cmap.name.lower() in CMAPS_CYCLIC)
     listedthresh = _not_none(listedthresh, rc['cmap.listedthresh'])
 
-    # Translate the colormap. Convert ListedColormap to ContinuousColormap when there
-    # are so many levels it is clear this is as a "smooth" colormap (see notes at top)
+    # Translate the colormap
+    # WARNING: Here we ignore 'N' in order to respect proplotrc lut sizes
+    # when initializing proplot.
     bad = cmap._rgba_bad
     under = cmap._rgba_under
     over = cmap._rgba_over
+    name = cmap.name
     if isinstance(cmap, (DiscreteColormap, ContinuousColormap)):
         pass
     elif isinstance(cmap, mcolors.LinearSegmentedColormap):
-        cmap = ContinuousColormap(cmap.name, cmap._segmentdata, N=lut, gamma=cmap._gamma, cyclic=cyclic)  # noqa: E501
+        data = dict(cmap._segmentdata)
+        cmap = ContinuousColormap(name, data, N=lut, gamma=cmap._gamma, cyclic=cyclic)
     elif isinstance(cmap, mcolors.ListedColormap):
-        if cmap.N > listedthresh:
-            cmap = ContinuousColormap.from_list(cmap.name, cmap.colors, N=lut, cyclic=cyclic)  # noqa: E501
+        colors = list(cmap.colors)
+        if len(colors) > listedthresh:  # see notes at top of file
+            cmap = ContinuousColormap.from_list(name, colors, N=lut, cyclic=cyclic)
         else:
-            cmap = DiscreteColormap(cmap.colors, cmap.name)
+            cmap = DiscreteColormap(colors, name)
     elif isinstance(cmap, mcolors.Colormap):  # base class
         pass
     else:

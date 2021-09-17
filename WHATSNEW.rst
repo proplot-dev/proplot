@@ -34,11 +34,14 @@ ProPlot v0.9.2 (2021-###-##)
 Bug fixes
 ---------
 
-* Fix accidental commit of print statement (:commit:`259a263b`).
+* Fix accidental commit of debugging print statement
+  (:commit:`259a263b`).
 * Fix issue where axis label color is overwritten during ``__init__``
   call to `proplot.axes.CartesianAxes.format` (:commit:`b454a513`).
 * Fix issue where default outer legend `loc` does not take into
-  account underlying "panel" location (:commit:`2446acc1`).
+  account the underlying "panel" location (:commit:`2446acc1`).
+* Fix issue where segment data of ``matplotlib.cm`` colormap instances
+  is overwritten during conversion to proplot subclasses (:issue:`283`).
 
 ProPlot v0.9.1 (2021-09-14)
 ===========================
