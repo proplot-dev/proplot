@@ -9,10 +9,8 @@ This page contains links to related external projects.
 Python packages
 ===============
 
-The following packages are required or optional dependencies of ProPlot,
-inspired
-
-or ported directly into the source code:
+The following packages inspired ProPlot, are required or optional dependencies
+of ProPlot, or are ported directly into the ProPlot source code:
 
 * `matplotlib <https://matplotlib.org>`__ - The data visualization workhorse
   we all know and love.
@@ -69,18 +67,18 @@ ProPlot by :ref:`adding files to the .proplot/cmaps folder <ug_cmaps_dl>`.
 * `ProPlot API <https://proplot.readthedocs.io/en/latest/colormaps.html#Making-new-colormaps>`__ -
   Namely, the `~proplot.colors.ContinuousColormap` class and
   `~proplot.constructor.Colormap` constructor function.
-* `HCL Picker <http://tristen.ca/hcl-picker/#/hlc/6/1/15534C/E2E062>`__ -
-  A simple interface for taking cross-sections of the HCL colorspace.
-  Resembles the examples :ref:`shown here <ug_perceptual>`.
-* `Chroma.js <https://gka.github.io/palettes/>`__ -
-  A simple interface for Bezier interpolating between lists of colors,
-  with adjustable hue, chroma, and luminance channels.
 * `HCL Wizard <http://hclwizard.org:64230/hclwizard/>`__ -
   An advanced interface for designing perceptually uniform colormaps,
   with example plots, channel plots, and lots of sliders.
 * `SciVisColor <https://sciviscolor.org/home/colormoves/>`__ -
   An advanced interface for concatenating segments from a suite of colormap
   presets. Useful for datasets with complex statistical distributions.
+* `HCL Picker <http://tristen.ca/hcl-picker/#/hlc/6/1/15534C/E2E062>`__ -
+  A simple interface for taking cross-sections of the HCL colorspace.
+  Resembles the examples :ref:`shown here <ug_perceptual>`.
+* `Chroma.js <https://gka.github.io/palettes/>`__ -
+  A simple interface for Bezier interpolating between lists of colors,
+  with adjustable hue, chroma, and luminance channels.
 
 Tools for making new color cycles
 =================================
