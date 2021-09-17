@@ -17,6 +17,8 @@
 #
 # .. _xarray: http://xarray.pydata.org/en/stable/
 #
+# .. _seaborn: https://seaborn.pydata.org
+#
 # .. _ug_1dplots:
 #
 # 1D plotting
@@ -132,25 +134,31 @@ fig.format(
 # Pandas and xarray integration
 # -----------------------------
 #
-# The `~proplot.axes.PlotAxes` plotting commands are seamlessly integrated
-# with `pandas`_ and `xarray`_. If you omit dependent variable coordinates,
-# the plotting command tries to infer them from the `pandas.DataFrame`
-# or `xarray.DataArray`. If you did not explicitly set the *x* or *y* axis label
-# or :ref:`legend or colorbar <ug_cbars_axes>` title, the plotting command tries to
-# retrieve them from the `pandas.DataFrame` or `xarray.DataArray`. You can also pass
-# a `~xarray.Dataset`, `~pandas.DataFrame`, or `dict` to any plotting command using the
-# `data` keyword, then pass string keys as the data arguments rather than arrays (for
-# example, ``ax.plot('y', data=dataset)`` is translated to ``ax.plot(dataset['y'])``).
-# Finally, if you pass `pint.Quantity`\ s or `xarray.DataArray`\ s containing
-# `pint.Quantity`\ s to a plotting command, ProPlot will automatically call
-# `~pint.UnitRegistry.setup_matplotlib` and apply the unit string formatted as
-# :rcraw:`unitformat` for the default content labels.
+# The `~proplot.axes.PlotAxes` plotting commands recognize `pandas`_ and
+# `xarray`_ data structures. If you omit dependent variable coordinates,
+# the plotting commands try to infer them from the `pandas.DataFrame` or
+# `xarray.DataArray`. If you did not explicitly set the *x* or *y* axis label
+# or :ref:`legend or colorbar <ug_cbars_axes>` label(s), the plotting commands
+# try to retrieve them from the `pandas.DataFrame` or `xarray.DataArray`.
+# The plotting commands also recognize `pint.Quantity` structures and apply
+# unit string labels with formatting specified by :rc:`unitformat`.
 #
 # These features restore some of the convenience you get with the builtin
 # `pandas`_ and `xarray`_ plotting functions. They are also *optional* --
 # installation of pandas and xarray are not required to use ProPlot. All of these
 # features can be disabled by setting :rcraw:`autoformat` to ``False`` or by
 # passing ``autoformat=False`` to any plotting command.
+#
+# .. note::
+#
+#    For every plotting command, you can pass a `~xarray.Dataset`, `~pandas.DataFrame`,
+#    or `dict` to the `data` keyword with strings as data arguments instead of arrays
+#    -- just like matplotlib. For example, ``ax.plot('y', data=dataset)`` and
+#    ``ax.plot(y='y', data=dataset)`` are translated to ``ax.plot(dataset['y'])``.
+#    This is the preferred input style for most `seaborn`_ plotting commands.
+#    Also, if you pass a `pint.Quantity` or `~xarray.DataArray`
+#    containing a `pint.Quantity`, ProPlot will automatically call
+#    `~pint.UnitRegistry.setup_matplotlib` so that the axes become unit-aware.
 
 # %%
 import xarray as xr

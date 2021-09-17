@@ -120,7 +120,8 @@ autoformat : bool, optional
     Whether the `x` axis labels, `y` axis labels, axis formatters, axes titles,
     legend titles, and colorbar labels are automatically configured when a
     `~pandas.Series`, `~pandas.DataFrame`, `~xarray.DataArray`, or `~pint.Quantity`
-    is passed to the plotting command. Default is :rc:`autoformat`.
+    is passed to the plotting command. Default is :rc:`autoformat`. Formatting
+    of `pint.Quantity` unit strings is controlled by :rc:`unitformat`.
 """
 _args_2d_shared_docstring = """
 %(plot.args_1d_shared)s
