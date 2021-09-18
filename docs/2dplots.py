@@ -311,34 +311,32 @@ pplt.rc.reset()
 # `~proplot.colors.DiscreteNorm` can be paired with arbitrary
 # continuous normalizers like `~matplotlib.colors.LogNorm`,
 # `~proplot.colors.DivergingNorm`, or `~proplot.colors.SegmentedNorm`.
-# Distinct color levels can help readers discern exact numeric values
-# and tend to reveal qualitative structure in the data. To explicitly toggle
-# distinct levels on or off, pass ``discrete=False`` or ``discrete=True`` to any
-# plotting command that accepts a `cmap` argument, or change :rcraw:`cmap.discrete`.
-#
-# `~proplot.colors.DiscreteNorm` also repairs the colormap end-colors by
-# ensuring the following conditions are met:
+# Distinct color levels can help readers discern exact numeric values and
+# tend to reveal qualitative structure in the data. `~proplot.colors.DiscreteNorm`
+# also repairs the colormap end-colors by ensuring the following conditions are met:
 #
 # #. All colormaps always span the *entire color range*,
 #    independent of the `extend` setting.
 # #. Cyclic colormaps always have *distinct color levels*
 #    on either end of the colorbar.
 #
-# The level edges or centers used with `~proplot.colors.DiscreteNorm` can be explicitly
-# specified using the `levels` and `values` keywords (the `~proplot.utils.arange` and
-# `~proplot.utils.edges` commands are useful for generating level lists). You can
-# also pass an integer to these keywords (or to the `N` keyword) to automatically
-# generate approximately that many level edges or centers at "nice" intervals. The
-# algorithm used to generate levels is similar to matplotlib's algorithm for selecting
-# contour levels. The default number of levels is controlled by :rcraw:`cmap.levels`,
-# and the algorithm is constrained by the keywords `vmin`, `vmax`, `locator`, and
-# `locator_kw` -- for example, ``vmin=100`` ensures the minimum level is
-# greater than or equal to ``100``, and ``locator=5`` ensures a level step size of 5
-# (see the :ref:`axis locators <ug_locators>` section for details). You can also use
-# the keywords `positive`, `negative`, and `symmetric` to ensure that your levels are
-# strictly positive, strictly negative, or symmetric about zero, or use the `nozero`
-# keyword to remove the zero level
-# (useful for single-color `~proplot.axes.PlotAxes.contour` plots).
+# To explicitly toggle distinct levels on or off, change :rcraw:`cmap.discrete`
+# or pass ``discrete=False`` or ``discrete=True`` to any plotting command
+# that accepts a `cmap` argument. The level edges or centers used with
+# `~proplot.colors.DiscreteNorm` can be explicitly specified using the `levels` and
+# `values` keywords (the `~proplot.utils.arange` and `~proplot.utils.edges` commands
+# are useful for generating level lists). You can also pass an integer to these
+# keywords (or to the `N` keyword) to automatically generate approximately that many
+# level edges or centers at "nice" intervals. The algorithm used to generate levels
+# is similar to matplotlib's algorithm for selecting contour levels. The default
+# number of levels is controlled by :rcraw:`cmap.levels`, and the algorithm is
+# constrained by the keywords `vmin`, `vmax`, `locator`, and `locator_kw` -- for
+# example, ``vmin=100`` ensures the minimum level is greater than or equal to ``100``,
+# and ``locator=5`` ensures a level step size of 5 (see the :ref:`axis locators
+# <ug_locators>` section for details). You can also use the keywords `positive`,
+# `negative`, and `symmetric` to ensure that your levels are strictly positive,
+# strictly negative, or symmetric about zero, or use the `nozero` keyword to remove
+# the zero level (useful for single-color `~proplot.axes.PlotAxes.contour` plots).
 
 # %%
 import proplot as pplt
