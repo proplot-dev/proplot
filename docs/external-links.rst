@@ -44,10 +44,10 @@ imported and registered by ProPlot.
 * `Color Brewer <http://colorbrewer2.org/#type=sequential&scheme=BuGn&n=3>`__ - The
   O.G. perceptually uniform colormap distribution. These are included with
   matplotlib by default.
-* `cmocean <https://matplotlib.org/cmocean/>`__ - Perceptually uniform colormaps
+* `cmOcean <https://matplotlib.org/cmocean/>`__ - Perceptually uniform colormaps
   designed for oceanography, but suitable for plenty of other applications.
 * `SciVisColor <https://sciviscolor.org/>`__ - Science-focused colormaps created by the
-  viz team at UT Austin. Provides tools for *concatenating* colormaps, suitable for
+  viz team at UT Austin. Provides tools for concatenating colormaps, suitable for
   complex datasets with funky distributions.
 * `Fabio Crameri <http://www.fabiocrameri.ch/colourmaps.php>`__ - Perceptually
   uniform colormaps for geoscientists. These maps have unusual and interesting
@@ -61,8 +61,9 @@ imported and registered by ProPlot.
 Tools for making new colormaps
 ==============================
 
-Use these resources to make colormaps from scratch. Then import them into
-ProPlot by :ref:`adding files to the .proplot/cmaps folder <ug_cmaps_dl>`.
+Use these resources to make colormaps from scratch. Then import
+them into ProPlot by adding files to the ``.proplot/cmaps`` folder
+(see :ref:`this section <ug_cmaps_dl>` for details).
 
 * `ProPlot API <https://proplot.readthedocs.io/en/latest/colormaps.html#Making-new-colormaps>`__ -
   Namely, the `~proplot.colors.ContinuousColormap` class and
@@ -83,8 +84,9 @@ ProPlot by :ref:`adding files to the .proplot/cmaps folder <ug_cmaps_dl>`.
 Tools for making new color cycles
 =================================
 
-Use these resources to make color cycles from scratch. Then import them into
-ProPlot by :ref:`adding files to the .proplot/cycles folder <ug_cycles_dl>`.
+Use these resources to make color cycles from scratch. Then import
+them into ProPlot by adding files to the ``.proplot/cycles`` folder
+(see :ref:`this section <ug_cycles_dl>` for details).
 
 * `ProPlot API <https://proplot.readthedocs.io/en/latest/cycles.html#Making-new-color-cycles>`__ -
   Namely, the `~proplot.colors.DiscreteColormap` class and

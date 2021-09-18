@@ -303,23 +303,21 @@ pplt.rc.reset()
 # Distinct levels
 # ---------------
 #
-# By default, ProPlot "discretizes" the possible colormap colors for contour plotting
-# commands like `~proplot.axes.PlotAxes.contour` and `~proplot.axes.PlotAxes.contourf`
-# and pseudocolor plotting commands like `~proplot.axes.PlotAxes.pcolor` and
-# `~proplot.axes.PlotAxes.pcolormesh` using `~proplot.colors.DiscreteNorm`, analogous
-# to matplotlib's `~matplotlib.colors.BoundaryNorm`. `~proplot.colors.DiscreteNorm`
-# converts data values into colors by (1) transforming the data using an
-# arbitrary continuous normalizer (e.g., `~matplotlib.colors.Normalize`,
-# `~matplotlib.colors.LogNorm`, `~proplot.colors.SegmentedNorm`, or
-# `~proplot.colors.DivergingNorm`), then (2) mapping the normalized data to distinct
-# color levels. Distinct levels can help readers discern exact numeric values and tend
-# to reveal qualitative structure in the data. To explicitly toggle distinct levels
-# on or off, pass ``discrete=False`` or ``discrete=True`` to any plotting command that
-# accepts a `cmap` argument, or change :rcraw:`cmap.discrete`.
+# By default, ProPlot uses `~proplot.colors.DiscreteNorm` to "discretize"
+# the possible colormap colors for contour and pseudocolor plotting commands,
+# including `~proplot.axes.PlotAxes.contour`, `~proplot.axes.PlotAxes.contourf`,
+# `~proplot.axes.PlotAxes.pcolor`, and `~proplot.axes.PlotAxes.pcolormesh`.
+# This is analogous to `~matplotlib.colors.BoundaryNorm`, except
+# `~proplot.colors.DiscreteNorm` can be paired with arbitrary
+# continuous normalizers like `~matplotlib.colors.LogNorm`,
+# `~proplot.colors.DivergingNorm`, or `~proplot.colors.SegmentedNorm`.
+# Distinct color levels can help readers discern exact numeric values
+# and tend to reveal qualitative structure in the data. To explicitly toggle
+# distinct levels on or off, pass ``discrete=False`` or ``discrete=True`` to any
+# plotting command that accepts a `cmap` argument, or change :rcraw:`cmap.discrete`.
 #
 # `~proplot.colors.DiscreteNorm` also repairs the colormap end-colors by
-# ensuring the following conditions are met (this may seem excessive, but
-# it is crucial for plots with very few levels):
+# ensuring the following conditions are met:
 #
 # #. All colormaps always span the *entire color range*,
 #    independent of the `extend` setting.
