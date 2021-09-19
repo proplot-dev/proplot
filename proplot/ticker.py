@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 """
-Various `~matplotlib.ticker.Locator` and `~matplotlib.ticker.Formatter`
-classes.
+Various `~matplotlib.ticker.Locator` and `~matplotlib.ticker.Formatter` classes.
 """
 import locale
 import re
@@ -371,7 +370,7 @@ class AutoFormatter(mticker.ScalarFormatter):
             sign, string = string[0], string[1:]
         return sign + prefix + string + suffix
 
-    def _fix_small_number(self, x, string, offset=2):
+    def _fix_small_number(self, x, string, precision_offset=2):
         """
         Fix formatting for non-zero number that gets formatted as zero. The `offset`
         controls the offset from the true floating point precision at which we want
@@ -395,8 +394,10 @@ class AutoFormatter(mticker.ScalarFormatter):
                 precision_init = 0
 
             # Format with precision below floating point error
+            x -= getattr(self, 'offset', 0)  # guard against API change
+            x /= 10 ** getattr(self, 'orderOfMagnitude', 0)  # guard against API change
             precision_true = int(abs(np.log10(abs(x)) // 1))
-            precision_max = np.finfo(type(x)).precision - offset
+            precision_max = np.finfo(type(x)).precision - precision_offset
             precision = min(precision_true, precision_max)
             string = ('{:.%df}' % precision).format(x)
 
