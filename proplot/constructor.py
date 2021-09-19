@@ -886,16 +886,12 @@ def Norm(norm, *args, **kwargs):
     proplot.colors.DiscreteNorm
     Colormap
     """
-    if isinstance(norm, mcolors.Normalize):
-        return norm
-
-    # Pull out extra args
     if np.iterable(norm) and not isinstance(norm, str):
         norm, args = norm[0], (*norm[1:], *args)
+    if isinstance(norm, mcolors.Normalize):
+        return norm
     if not isinstance(norm, str):
         raise ValueError(f'Invalid norm name {norm!r}. Must be string.')
-
-    # Get class
     if norm not in NORMS:
         raise ValueError(
             f'Unknown normalizer {norm!r}. Options are: '
@@ -985,36 +981,31 @@ def Locator(locator, *args, **kwargs):
     proplot.axes.Axes.colorbar
     Formatter
     """  # noqa: E501
-    if isinstance(locator, mticker.Locator):
-        return locator
-
-    # Pull out extra args
     if np.iterable(locator) and not isinstance(locator, str) and not all(
         isinstance(num, Number) for num in locator
     ):
         locator, args = locator[0], (*locator[1:], *args)
-
-    # Get the locator
-    if isinstance(locator, str):  # dictionary lookup
-        # Shorthands and defaults
-        if locator in ('logminor', 'logitminor', 'symlogminor'):
+    if isinstance(locator, mticker.Locator):
+        return locator
+    if isinstance(locator, str):
+        if locator == 'index':  # defaults
+            args = args or (1,)
+            if len(args) == 1:
+                args = (*args, 0)
+        elif locator in ('logminor', 'logitminor', 'symlogminor'):  # presets
             locator, _ = locator.split('minor')
             if locator == 'logit':
                 kwargs.setdefault('minor', True)
             else:
                 kwargs.setdefault('subs', np.arange(1, 10))
-        elif locator == 'index':
-            args = args or (1,)
-            if len(args) == 1:
-                args = (*args, 0)
-        # Lookup
-        if locator not in LOCATORS:
+        if locator in LOCATORS:
+            locator = LOCATORS[locator](*args, **kwargs)
+        else:
             raise ValueError(
                 f'Unknown locator {locator!r}. Options are: '
                 + ', '.join(map(repr, LOCATORS))
                 + '.'
             )
-        locator = LOCATORS[locator](*args, **kwargs)
     elif isinstance(locator, Number):  # scalar variable
         locator = mticker.MultipleLocator(locator, *args, **kwargs)
     elif np.iterable(locator):
@@ -1126,35 +1117,19 @@ def Formatter(formatter, *args, date=False, index=False, **kwargs):
     proplot.axes.Axes.colorbar
     Locator
     """  # noqa: E501
-    if isinstance(formatter, mticker.Formatter):  # formatter object
-        return formatter
-
-    # Pull out extra args
     if np.iterable(formatter) and not isinstance(formatter, str) and not all(
         isinstance(item, str) for item in formatter
     ):
         formatter, args = formatter[0], (*formatter[1:], *args)
-
-    # Get the formatter
-    if isinstance(formatter, str):  # assumption is list of strings
-        # Format strings
-        if re.search(r'{x(:.+)?}', formatter):
-            # string.format() formatting
-            formatter = mticker.StrMethodFormatter(
-                formatter, *args, **kwargs
-            )
-        elif '%' in formatter:
-            # %-style formatting
-            if date:
-                formatter = mdates.DateFormatter(
-                    formatter, *args, **kwargs
-                )
-            else:
-                formatter = mticker.FormatStrFormatter(
-                    formatter, *args, **kwargs
-                )
+    if isinstance(formatter, mticker.Formatter):
+        return formatter
+    if isinstance(formatter, str):
+        if re.search(r'{x(:.+)?}', formatter):  # str.format
+            formatter = mticker.StrMethodFormatter(formatter, *args, **kwargs)
+        elif '%' in formatter:  # str % format
+            cls = mdates.DateFormatter if date else mticker.FormatStrFormatter
+            formatter = cls(formatter, *args, **kwargs)
         elif formatter in FORMATTERS:
-            # Lookup
             formatter = FORMATTERS[formatter](*args, **kwargs)
         else:
             raise ValueError(
@@ -1162,15 +1137,11 @@ def Formatter(formatter, *args, date=False, index=False, **kwargs):
                 + ', '.join(map(repr, FORMATTERS))
                 + '.'
             )
-    elif callable(formatter):
-        # Function
-        formatter = mticker.FuncFormatter(formatter, *args, **kwargs)
     elif np.iterable(formatter):
-        # List of strings
-        if index:
-            formatter = pticker.IndexFormatter(formatter)
-        else:
-            formatter = mticker.FixedFormatter(formatter)
+        cls = pticker.IndexFormatter if index else mticker.FixedFormatter
+        formatter = cls(formatter)
+    elif callable(formatter):
+        formatter = mticker.FuncFormatter(formatter, *args, **kwargs)
     else:
         raise ValueError(f'Invalid formatter {formatter!r}.')
     return formatter
@@ -1243,16 +1214,13 @@ def Scale(scale, *args, **kwargs):
     # of numbers are passed to Locator? Because FuncScale *itself* accepts
     # ScaleBase classes as arguments... but constructor functions cannot
     # do anything but return the class instance upon receiving one.
-    if isinstance(scale, mscale.ScaleBase):
-        return scale
-
-    # Pull out extra args
     if np.iterable(scale) and not isinstance(scale, str):
         scale, args = scale[0], (*scale[1:], *args)
+    if isinstance(scale, mscale.ScaleBase):
+        return scale
     if not isinstance(scale, str):
         raise ValueError(f'Invalid scale name {scale!r}. Must be string.')
-
-    # Get scale preset
+    scale = scale.lower()
     if scale in SCALE_PRESETS:
         if args or kwargs:
             warnings._warn_proplot(
@@ -1260,9 +1228,6 @@ def Scale(scale, *args, **kwargs):
                 'argument(s): {args} and keyword argument(s): {kwargs}. '
             )
         scale, *args = SCALE_PRESETS[scale]
-
-    # Get scale
-    scale = scale.lower()
     if scale in SCALES:
         scale = SCALES[scale]
     else:

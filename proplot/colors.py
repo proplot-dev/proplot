@@ -2306,13 +2306,14 @@ def _sanitize_levels(levels, allow_descending=True):
     diffs = np.sign(np.diff(levels))
     if all(diffs == 1):
         descending = False
-    elif all(diffs == -1) and allow_descending:
-        levels = levels[::-1]
+    elif all(diffs == -1):
         descending = True
-    elif allow_descending:
-        raise ValueError(f'Levels {levels} must be monotonic.')
+        if allow_descending:
+            levels = levels[::-1]
+        else:
+            raise ValueError(f'Levels {levels} must be monotonically increasing.')
     else:
-        raise ValueError(f'Levels {levels} must be monotonically increasing.')
+        raise ValueError(f'Levels {levels} must be monotonic.')
     return levels, descending
 
 
@@ -2514,10 +2515,9 @@ class SegmentedNorm(mcolors.Normalize):
         Parameters
         ----------
         levels : sequence of float
-            The level boundaries.
+            The level boundaries. Must be monotonically increasing.
         vmin, vmax : None
-            Ignored. `vmin` and `vmax` are set to the minimum and
-            maximum of `levels`.
+            Ignored. These are set to the minimum and maximum of `levels`.
         clip : bool, optional
             Whether to clip values falling outside of the minimum and
             maximum levels.
