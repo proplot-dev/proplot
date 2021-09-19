@@ -42,6 +42,9 @@ Bug fixes
   account the underlying "panel" location (:commit:`2446acc1`).
 * Fix issue where segment data of ``matplotlib.cm`` colormap instances
   is overwritten during conversion to proplot subclasses (:issue:`283`).
+* Fix `~proplot.ticker.AutoFormatter` issue where `orderOfMagnitude` is
+  not taken into account when correcting small tick values truncated to
+  zero on (usually logarithmic) axis scales (:commit:`54fbef0b`).
 
 ProPlot v0.9.1 (2021-09-14)
 ===========================
