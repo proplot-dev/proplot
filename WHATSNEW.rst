@@ -1,6 +1,6 @@
 ..
   Valid rubrics:
-  - Deprecations
+  - Deprecated
   - Style changes
   - Features
   - Bug fixes
@@ -42,9 +42,23 @@ Bug fixes
   account the underlying "panel" location (:commit:`2446acc1`).
 * Fix issue where segment data of ``matplotlib.cm`` colormap instances
   is overwritten during conversion to proplot subclasses (:issue:`283`).
+* Fix confusing behavior where explicitly passed `vmin` and `vmax` are ignored
+  if `norm` was passed as an already-instantiated class (:commit:`1ee79d36`).
+* Fix issue where `proplot.utils.arange` is not endpoint-inclusive
+  for negative (descending) step size (:commit:`ec1f8410`).
 * Fix `~proplot.ticker.AutoFormatter` issue where `orderOfMagnitude` is
   not taken into account when correcting small tick values truncated to
   zero on (usually logarithmic) axis scales (:commit:`54fbef0b`).
+
+Internals
+---------
+
+* Implement "descending level" support directly inside
+  `~proplot.colors.DiscreteNorm` and `~proplot.colors.SegmentedNorm`
+  rather than cmap parser in plotting commands (:commit:`46d8bedc`).
+* Improve ``show_cmaps`` and ``show_cycles``, stop passing arguments
+  through constructor functions and avoid showing leading ``_`` and
+  trailing ``_copy`` in table labels (:commit:`c41db8d8`).
 
 ProPlot v0.9.1 (2021-09-14)
 ===========================
@@ -91,8 +105,8 @@ Documentation
 ProPlot v0.9.0 (2021-09-08)
 ===========================
 
-Deprecations
-------------
+Deprecated
+----------
 
 * Rename :rcraw:`cmap.edgefix` to :rcraw:`edgefix` (:commit:`515f5132`). It now
   applies to bar and area plot elements, not just scalar mappables (see below).
