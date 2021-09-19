@@ -168,13 +168,13 @@ def arange(min_, *args):
     # All input is integer
     if all(isinstance(val, Integral) for val in (min_, max_, step)):
         min_, max_, step = np.int64(min_), np.int64(max_), np.int64(step)
-        max_ += np.sign(step) * 1
+        max_ += np.sign(step)
     # Input is float or mixed, cast to float64
     # Don't use np.nextafter with np.finfo(np.dtype(np.float64)).max, because
     # round-off errors from continually adding step to min mess this up
     else:
         min_, max_, step = np.float64(min_), np.float64(max_), np.float64(step)
-        max_ += np.sign(step) * (step / 2)
+        max_ += 0.5 * step
     return np.arange(min_, max_, step)
 
 
