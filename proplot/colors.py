@@ -2291,10 +2291,9 @@ def _interpolate_extrapolate(xq, x, y):
     return yq
 
 
-def _sanitize_levels(levels, allow_descending=True):
+def _sanitize_levels(levels):
     """
-    Ensure the levels are monotonic. If they are descending, either
-    reverse them or raise an error.
+    Ensure the levels are monotonic. If they are descending, reverse them.
     """
     levels = np.atleast_1d(levels)
     if levels.ndim != 1 or levels.size < 2:
@@ -2304,14 +2303,11 @@ def _sanitize_levels(levels, allow_descending=True):
     if not np.all(np.isfinite(levels)):
         raise ValueError(f'Levels {levels} contain invalid values.')
     diffs = np.sign(np.diff(levels))
-    if all(diffs == 1):
+    if np.all(diffs == 1):
         descending = False
-    elif all(diffs == -1):
+    elif np.all(diffs == -1):
         descending = True
-        if allow_descending:
-            levels = levels[::-1]
-        else:
-            raise ValueError(f'Levels {levels} must be monotonically increasing.')
+        levels = levels[::-1]
     else:
         raise ValueError(f'Levels {levels} must be monotonic.')
     return levels, descending
@@ -2326,15 +2322,15 @@ class DiscreteNorm(mcolors.BoundaryNorm):
     # WARNING: Must be child of BoundaryNorm. Many methods in ColorBarBase
     # test for class membership, crucially including _process_values(), which
     # if it doesn't detect BoundaryNorm will try to use DiscreteNorm.inverse().
-    @warnings._rename_kwargs('0.7', extend='unique')
-    def __init__(
-        self, levels, norm=None, unique=None, step=None, clip=False, descending=False,
-    ):
+    @warnings._rename_kwargs(
+        '0.7', extend='unique', descending='DiscreteNorm(descending_levels)'
+    )
+    def __init__(self, levels, norm=None, unique=None, step=None, clip=False):
         """
         Parameters
         ----------
         levels : sequence of float
-            The level boundaries.
+            The level boundaries. Must be monotonically increasing or decreasing.
         norm : `~matplotlib.colors.Normalize`, optional
             The normalizer used to transform `levels` and data values passed to
             `~DiscreteNorm.__call__` before discretization. The ``vmin`` and ``vmax``
@@ -2355,10 +2351,6 @@ class DiscreteNorm(mcolors.BoundaryNorm):
             Whether to clip values falling outside of the level bins. This only
             has an effect on lower colors when unique is ``'min'`` or ``'both'``,
             and on upper colors when unique is ``'max'`` or ``'both'``.
-        descending : bool, optional
-            Whether the levels are meant to be descending. This will cause
-            the colorbar axis to be reversed when it is drawn with a
-            `~matplotlib.cm.ScalarMappable` that uses this normalizer.
 
         Note
         ----
@@ -2395,11 +2387,11 @@ class DiscreteNorm(mcolors.BoundaryNorm):
             )
 
         # Ensure monotonicaly increasing levels and add built-in attributes
-        levels, _ = _sanitize_levels(levels, allow_descending=False)
-        norm.vmin = vmin = np.min(levels)
-        norm.vmax = vmax = np.max(levels)
+        levels, descending_levels = _sanitize_levels(levels)
+        bins, descending_bins = _sanitize_levels(norm(levels))  # e.g. SegmentedNorm
         vcenter = getattr(norm, 'vcenter', None)
-        bins, _ = _sanitize_levels(norm(levels), allow_descending=False)
+        vmin = norm.vmin = np.min(levels)
+        vmax = norm.vmax = np.max(levels)
 
         # Get color coordinates for each bin, plus two extra for out-of-bounds
         # For same out-of-bounds colors, looks like [0 - eps, 0, ..., 1, 1 + eps]
@@ -2420,21 +2412,16 @@ class DiscreteNorm(mcolors.BoundaryNorm):
         if unique in ('max', 'both'):
             mids[-1] += step * (mids[-2] - mids[-3])
         if vcenter is None:
-            mids = _interpolate_basic(
-                mids, np.min(mids), np.max(mids), vmin, vmax
-            )
+            mids = _interpolate_basic(mids, np.min(mids), np.max(mids), vmin, vmax)
         else:
             mids = mids.copy()
-            mids[mids < vcenter] = _interpolate_basic(
-                mids[mids < vcenter], np.min(mids), vcenter, vmin, vcenter,
-            )
-            mids[mids >= vcenter] = _interpolate_basic(
-                mids[mids >= vcenter], vcenter, np.max(mids), vcenter, vmax,
-            )
-        eps = 1e-10  # mids and dest are numpy.float64
+            ipts = (np.min(mids), vcenter, vmin, vcenter)
+            mids[mids < vcenter] = _interpolate_basic(mids[mids < vcenter], *ipts)
+            ipts = (vcenter, np.max(mids), vcenter, vmax)
+            mids[mids >= vcenter] = _interpolate_basic(mids[mids >= vcenter], *ipts)
         dest = norm(mids)
-        dest[0] -= eps
-        dest[-1] += eps
+        dest[0] -= 1e-10  # dest guaranteed to be numpy.float64
+        dest[-1] += 1e-10
 
         # Attributes
         # NOTE: If clip is True, we clip values to the centers of the end bins
@@ -2443,12 +2430,12 @@ class DiscreteNorm(mcolors.BoundaryNorm):
         # NOTE: With unique='min' the minimimum in-bounds and out-of-bounds
         # colors are the same so clip=True will have no effect. Same goes
         # for unique='max' with maximum colors.
+        self._descending = descending_levels or descending_bins
         self._bmin = np.min(mids)
         self._bmax = np.max(mids)
         self._bins = bins
         self._dest = dest
         self._norm = norm
-        self._descending = descending
         self.vmin = vmin
         self.vmax = vmax
         self.boundaries = levels
@@ -2489,6 +2476,8 @@ class DiscreteNorm(mcolors.BoundaryNorm):
         yq = ma.array(yq, mask=ma.getmask(xq))
         if is_scalar:
             yq = np.atleast_1d(yq)[0]
+        if self.descending:
+            yq = 1 - yq
         return yq
 
     def inverse(self, value):  # noqa: U100
@@ -2500,7 +2489,7 @@ class DiscreteNorm(mcolors.BoundaryNorm):
     @property
     def descending(self):
         """
-        Whether the colormap levels are descending.
+        Whether the normalizer levels are descending.
         """
         return self._descending
 
@@ -2515,7 +2504,7 @@ class SegmentedNorm(mcolors.Normalize):
         Parameters
         ----------
         levels : sequence of float
-            The level boundaries. Must be monotonically increasing.
+            The level boundaries. Must be monotonically increasing or decreasing.
         vmin, vmax : None
             Ignored. These are set to the minimum and maximum of `levels`.
         clip : bool, optional
@@ -2541,11 +2530,11 @@ class SegmentedNorm(mcolors.Normalize):
         >>> fig, ax = pplt.subplots()
         >>> ax.contourf(data, levels=levels)
         """
-        levels = np.asarray(levels)
-        levels, _ = _sanitize_levels(levels, allow_descending=False)
+        levels, descending = _sanitize_levels(levels)
         dest = np.linspace(0, 1, len(levels))
         vmin, vmax = np.min(levels), np.max(levels)
         super().__init__(vmin=vmin, vmax=vmax, clip=clip)
+        self._descending = descending
         self._x = self.boundaries = levels  # we use 'boundaries' in plot wrapper
         self._y = dest
 
@@ -2570,6 +2559,8 @@ class SegmentedNorm(mcolors.Normalize):
         yq = _interpolate_extrapolate(xq, self._x, self._y)
         if is_scalar:
             yq = np.atleast_1d(yq)[0]
+        if self.descending:
+            yq = 1 - yq
         return yq
 
     def inverse(self, value):
@@ -2586,6 +2577,13 @@ class SegmentedNorm(mcolors.Normalize):
         if is_scalar:
             xq = np.atleast_1d(xq)[0]
         return xq
+
+    @property
+    def descending(self):
+        """
+        Whether the normalizer levels are descending.
+        """
+        return self._descending
 
 
 class DivergingNorm(mcolors.Normalize):

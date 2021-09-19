@@ -2253,22 +2253,18 @@ class PlotAxes(base.Axes):
             warnings._warn_proplot(
                 f'Incompatible args levels={levels!r} and values={values!r}. Using former.'  # noqa: E501
             )
-        for key, val in (('levels', levels), ('values', values)):
-            if val is None:
+        for key, points in (('levels', levels), ('values', values)):
+            if points is None:
                 continue
             if isinstance(norm, (mcolors.BoundaryNorm, pcolors.SegmentedNorm)):
                 warnings._warn_proplot(
-                    f'Ignoring {key}={val}. Instead using norm={norm!r} boundaries.'
+                    f'Ignoring {key}={points}. Instead using norm={norm!r} boundaries.'
                 )
-            if not np.iterable(val):
+            if not np.iterable(points):
                 continue
-            if len(val) < min_levels:
+            if len(points) < min_levels:
                 raise ValueError(
-                    f'Invalid {key}={val}. Must be at least length {min_levels}.'
-                )
-            if len(val) >= 2 and np.any(np.sign(np.diff(val)) != np.sign(val[1] - val[0])):  # noqa: E501
-                raise ValueError(
-                    f'Invalid {key}={val}. Must be monotonically increasing or decreasing.'  # noqa: E501
+                    f'Invalid {key}={points}. Must be at least length {min_levels}.'
                 )
         if isinstance(norm, (mcolors.BoundaryNorm, pcolors.SegmentedNorm)):
             levels, values = norm.boundaries, None
@@ -2278,46 +2274,47 @@ class PlotAxes(base.Axes):
         # Infer level edges from level centers if possible
         # NOTE: The only way for user to manually impose BoundaryNorm is by
         # passing one -- users cannot create one using Norm constructor key.
-        descending = None
-        if values is None:
-            pass
-        elif isinstance(values, Integral):
+        if isinstance(values, Integral):
             levels = values + 1
-        elif np.iterable(values) and len(values) == 1:
+        elif values is None:
+            pass
+        elif not np.iterable(values):
+            raise ValueError(f'Invalid values={values!r}.')
+        elif len(values) == 0:
+            levels = []  # weird but why not
+        elif len(values) == 1:
             levels = [values[0] - 1, values[0] + 1]  # weird but why not
-        elif norm is None or norm in ('segments', 'segmented'):
-            # Try to generate levels so SegmentedNorm will place 'values' ticks at the
-            # center of each segment. edges() gives wrong result unless spacing is even.
-            # Solve: (x1 + x2) / 2 = y --> x2 = 2 * y - x1 with arbitrary starting x1.
-            values, descending = pcolors._sanitize_levels(values)
-            levels = [values[0] - (values[1] - values[0]) / 2]  # arbitrary x1
-            for val in values:
-                levels.append(2 * val - levels[-1])
-            if any(np.diff(levels) < 0):  # backup plan in event of weird ticks
-                levels = utils.edges(values)
-            if descending:  # then revert back below
-                levels = levels[::-1]
-        else:
+        elif norm is not None and norm not in ('segments', 'segmented'):
             # Generate levels by finding in-between points in the
             # normalized numeric space, e.g. LogNorm space.
             norm_kw = norm_kw or {}
             convert = constructor.Norm(norm, **norm_kw)
             levels = convert.inverse(utils.edges(convert(values)))
+        else:
+            # Try to generate levels so SegmentedNorm will place 'values' ticks at the
+            # center of each segment. edges() gives wrong result unless spacing is even.
+            # Solve: (x1 + x2) / 2 = y --> x2 = 2 * y - x1 with arbitrary starting x1.
+            descending = values[1] < values[0]
+            if descending:  # e.g. [100, 50, 20, 10, 5, 2, 1] successful if reversed
+                values = values[::-1]
+            levels = [1.5 * values[0] - 0.5 * values[1]]  # arbitrary starting point
+            for value in values:
+                levels.append(2 * value - levels[-1])
+            if np.any(np.diff(levels) < 0):
+                levels = utils.edges(values)
+            if descending:  # then revert back below
+                levels = levels[::-1]
 
         # Process level edges and infer defaults
         # NOTE: Matplotlib colorbar algorithm *cannot* handle descending levels so
         # this function reverses them and adds special attribute to the normalizer.
         # Then colorbar() reads this attr and flips the axis and the colormap direction
-        if np.iterable(levels) and len(levels) > 2:
-            levels, descending = pcolors._sanitize_levels(levels)
         if not np.iterable(levels) and not skip_autolev:
             levels, kwargs = self._parse_autolev(
                 *args, levels=levels, vmin=vmin, vmax=vmax,
                 norm=norm, norm_kw=norm_kw, extend=extend, **kwargs
             )
         ticks = values if np.iterable(values) else levels
-        if descending is not None:
-            kwargs.setdefault('descending', descending)  # for _parse_discrete
         if ticks is not None and np.iterable(ticks):
             guides._guide_kw_to_arg('colorbar', kwargs, locator=ticks)
 
@@ -2332,8 +2329,7 @@ class PlotAxes(base.Axes):
         return levels, kwargs
 
     def _parse_discrete(
-        self, levels, norm, cmap, *,
-        extend=None, descending=False, min_levels=None, **kwargs,
+        self, levels, norm, cmap, *, extend=None, min_levels=None, **kwargs,
     ):
         """
         Create a `~proplot.colors.DiscreteNorm` or `~proplot.colors.BoundaryNorm`
@@ -2349,8 +2345,6 @@ class PlotAxes(base.Axes):
             The colormap.
         extend : str, optional
             The extend setting.
-        descending : bool, optional
-            Whether levels are descending.
         min_levels : int, optional
             The minimum number of levels.
 
@@ -2371,8 +2365,6 @@ class PlotAxes(base.Axes):
         over = cmap._rgba_over
         cyclic = getattr(cmap, '_cyclic', None)
         qualitative = isinstance(cmap, pcolors.DiscreteColormap)  # see _parse_cmap
-        if descending:
-            cmap = cmap.reversed()
         if len(levels) < min_levels:
             raise ValueError(
                 f'Invalid levels={levels!r}. Must be at least length {min_levels}.'
@@ -2424,9 +2416,7 @@ class PlotAxes(base.Axes):
         # Generate DiscreteNorm and update "child" norm with vmin and vmax from
         # levels. This lets the colorbar set tick locations properly!
         if not isinstance(norm, mcolors.BoundaryNorm) and len(levels) > 1:
-            norm = pcolors.DiscreteNorm(
-                levels, norm=norm, descending=descending, unique=unique, step=step,
-            )
+            norm = pcolors.DiscreteNorm(levels, norm=norm, unique=unique, step=step)
 
         return norm, cmap, kwargs
 
@@ -2552,7 +2542,7 @@ class PlotAxes(base.Axes):
         # NOTE: We create normalizer here only because auto level generation depends
         # on the normalizer class (e.g. LogNorm). We don't have to worry about vmin
         # and vmax because they get applied to normalizer inside DiscreteNorm.
-        if norm is None and levels is not None and len(levels) > 0:
+        if levels is not None and len(levels) > 0:
             if len(levels) == 1:  # edge case, use central colormap color
                 vmin = _not_none(vmin, levels[0] - 1)
                 vmax = _not_none(vmax, levels[0] + 1)
@@ -2560,7 +2550,7 @@ class PlotAxes(base.Axes):
                 vmin, vmax = np.min(levels), np.max(levels)
                 diffs = np.diff(levels)
                 if not np.allclose(diffs[0], diffs):
-                    norm = 'segmented'
+                    norm = _not_none(norm, 'segmented')
         if norm in ('segments', 'segmented'):
             if np.iterable(levels):
                 norm_kw['levels'] = levels  # apply levels
