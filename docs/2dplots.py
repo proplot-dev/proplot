@@ -305,9 +305,8 @@ pplt.rc.reset()
 #
 # By default, ProPlot uses `~proplot.colors.DiscreteNorm` to "discretize"
 # the possible colormap colors for contour and pseudocolor plotting commands,
-# including `~proplot.axes.PlotAxes.contour`, `~proplot.axes.PlotAxes.contourf`,
-# `~proplot.axes.PlotAxes.pcolor`, and `~proplot.axes.PlotAxes.pcolormesh`.
-# This is analogous to `~matplotlib.colors.BoundaryNorm`, except
+# including `~proplot.axes.PlotAxes.contourf` and `~proplot.axes.PlotAxes.pcolor`.
+# This is analogous to `matplotlib.colors.BoundaryNorm`, except
 # `~proplot.colors.DiscreteNorm` can be paired with arbitrary
 # continuous normalizers like `~matplotlib.colors.LogNorm`,
 # `~proplot.colors.DivergingNorm`, or `~proplot.colors.SegmentedNorm`.

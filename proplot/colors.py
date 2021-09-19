@@ -2663,16 +2663,13 @@ class DivergingNorm(mcolors.Normalize):
         elif self.vcenter <= self.vmin:
             x = [self.vcenter, self.vmax]
             y = [0.5, 1.0]
-        elif not self.fair:
-            x = [self.vmin, self.vcenter, self.vmax]
-            y = [0, 0.5, 1.0]
-        else:
-            offset = max(
-                np.abs(self.vcenter - self.vmin),
-                np.abs(self.vmax - self.vcenter),
-            )
+        elif self.fair:
+            offset = max(abs(self.vcenter - self.vmin), abs(self.vmax - self.vcenter))
             x = [self.vcenter - offset, self.vcenter + offset]
-            y = [0, 1.0]
+            y = [0.0, 1.0]
+        else:
+            x = [self.vmin, self.vcenter, self.vmax]
+            y = [0.0, 0.5, 1.0]
         yq = _interpolate_extrapolate(xq, x, y)
         if is_scalar:
             yq = np.atleast_1d(yq)[0]
@@ -2737,7 +2734,7 @@ def _register_cmap(*args, **kwargs):
         return _mpl_register_cmap(*args, **kwargs)
 
 
-@functools.wraps(mcm.get_cmap)  # noqa: E302
+@functools.wraps(mcm.get_cmap)
 def _get_cmap(name=None, lut=None):
     """
     Monkey patch for `~matplotlib.cm.get_cmap`. Permits case-insensitive
@@ -2770,7 +2767,7 @@ def _get_cmap_subtype(name, subtype):
         raise RuntimeError(f'Invalid subtype {subtype!r}.')
     cmap = _cmap_database.get(name, None)
     if not isinstance(cmap, cls):
-        names = sorted(k for k, v in _cmap_database.items() if isinstance(v, cls))  # noqa: E501
+        names = sorted(k for k, v in _cmap_database.items() if isinstance(v, cls))
         raise ValueError(
             f'Invalid {subtype} colormap name {name!r}. Options are: '
             + ', '.join(map(repr, names))

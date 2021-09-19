@@ -3,7 +3,7 @@
 
 |build-status| |docs| |pypi| |code-style| |pr-welcome| |license| |gitter| |doi|
 
-An efficient `matplotlib <https://matplotlib.org/>`__ wrapper for making beautiful,
+An economic `matplotlib <https://matplotlib.org/>`__ wrapper for making beautiful,
 publication-quality graphics.
 
 Documentation

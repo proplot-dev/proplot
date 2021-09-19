@@ -2,9 +2,9 @@
 """
 Utilities for global configuration.
 """
+import functools
 import re
 from collections.abc import MutableMapping
-from functools import partial
 from numbers import Integral, Real
 
 import matplotlib.rcsetup as msetup
@@ -276,6 +276,7 @@ def _validate_or_none(validator):
     """
     Allow none otherwise pass to the input validator.
     """
+    @functools.wraps(validator)
     def _validate_or_none(value):
         if value is None:
             return
@@ -492,9 +493,9 @@ else:
         if _validator is msetup.validate_color:
             _validate[_key] = _validate_color
         if _validator is getattr(msetup, 'validate_color_or_auto', None):
-            _validate[_key] = partial(_validate_color, alternative='auto')
+            _validate[_key] = functools.partial(_validate_color, alternative='auto')
         if _validator is getattr(msetup, 'validate_color_or_inherit', None):
-            _validate[_key] = partial(_validate_color, alternative='inherit')
+            _validate[_key] = functools.partial(_validate_color, alternative='inherit')
     for _keys, _validator_replace in ((EM_KEYS, _validate_em), (PT_KEYS, _validate_pt)):
         for _key in _keys:
             _validator = _validate.get(_key, None)
