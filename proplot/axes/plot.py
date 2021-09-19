@@ -2557,10 +2557,9 @@ class PlotAxes(base.Axes):
                 vmin = _not_none(vmin, levels[0] - 1)
                 vmax = _not_none(vmax, levels[0] + 1)
             else:
-                vmin, vmax = min(levels), max(levels)
-                steps = np.abs(np.diff(levels))
-                eps = np.mean(steps) / 1e3
-                if np.any(np.abs(np.diff(steps)) >= eps):
+                vmin, vmax = np.min(levels), np.max(levels)
+                diffs = np.diff(levels)
+                if not np.allclose(diffs[0], diffs):
                     norm = 'segmented'
         if norm in ('segments', 'segmented'):
             if np.iterable(levels):
