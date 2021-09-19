@@ -1853,7 +1853,7 @@ class DiscreteColormap(mcolors.ListedColormap, _Colormap):
     )
 
 
-class PerceptualColormap(ContinuousColormap, _Colormap):
+class PerceptualColormap(ContinuousColormap):
     """
     A `ContinuousColormap` with linear transitions across hue, saturation,
     and luminance rather than red, blue, and green.
@@ -2956,8 +2956,8 @@ class ColormapDatabase(MutableMapping, dict):
     colormap registry. See `~ColormapDatabase.__getitem__` and
     `~ColormapDatabase.__setitem__` for details.
     """
-    _regex_grays = re.compile(r'\A(grays)(_r(_s)?|_s)?\Z')
-    _regex_suffix = re.compile(r'(_r(_s)?|_s)?\Z', flags=re.IGNORECASE)
+    _regex_grays = re.compile(r'\A(grays)(_r|_s)*\Z', flags=re.IGNORECASE)
+    _regex_suffix = re.compile(r'(_r|_s)*\Z', flags=re.IGNORECASE)
 
     def __iter__(self):
         yield from dict.__iter__(self)
@@ -3034,7 +3034,8 @@ class ColormapDatabase(MutableMapping, dict):
         """
         if not isinstance(key, str):
             raise KeyError(f'Invalid key {key!r}. Key must be a string.')
-        key = self._regex_grays.sub(r'greys\2', key.lower())
+        key = key.lower()
+        key = self._regex_grays.sub(r'greys\2', key)
         reverse = key[-2:] == '_r'
         if reverse:
             key = key[:-2]

@@ -3,6 +3,7 @@
 Functions for displaying colors and fonts.
 """
 import os
+import re
 
 import cycler
 import matplotlib.colors as mcolors
@@ -421,45 +422,21 @@ def _draw_bars(
     Draw colorbars for "colormaps" and "color cycles". This is called by
     `show_cycles` and `show_cmaps`.
     """
-    # Translate local names into database of colormaps
-    # NOTE: Custom cmap database raises nice error if colormap name is unknown
-    i = 1
-    database = pcolors.ColormapDatabase({})  # subset to be drawn
-    for cmap in cmaps:
-        if isinstance(cmap, cycler.Cycler):
-            name = getattr(cmap, 'name', '_no_name')
-            cmap = pcolors.DiscreteColormap(cmap.by_key()['color'], name)
-        elif isinstance(cmap, (list, tuple)):
-            name = '_no_name'
-            cmap = pcolors.DiscreteColormap(cmap, name)
-        elif isinstance(cmap, mcolors.Colormap):
-            name = cmap.name
-        elif isinstance(cmap, str):
-            name = cmap
-            cmap = pcolors._cmap_database[cmap]
-        else:
-            raise ValueError(f'Invalid colormap or cycle type {cmap!r}.')
-        name = _not_none(name, '_no_name')
-        if name in database:
-            name = f'{name}_{i}'  # e.g. _no_name_2
-            i += 1
-        if name.lower()[-2:] == '_r':
-            name = name[:-2]
-        if name.lower()[-2:] == '_s':
-            name = name[:-2]
-        database[name] = cmap
-
     # Categorize the input names
-    cmapdict = {}
-    names_all = list(map(str.lower, database.keys()))
-    names_known = list(map(str.lower, sum(map(list, source.values()), [])))
-    names_unknown = tuple(name for name in names_all if name not in names_known)
-    if unknown and names_unknown:
-        cmapdict[unknown] = names_unknown
-    for cat, names in source.items():
-        names_cat = [name for name in names if name.lower() in names_all]
-        if names_cat:
-            cmapdict[cat] = names_cat
+    table = {unknown: []} if unknown else {}
+    table.update({cat: [None] * len(names) for cat, names in source.items()})
+    for cmap in cmaps:
+        cat = None
+        name = cmap.name or '_no_name'
+        name = name.lower()
+        for opt, names in source.items():
+            names = list(map(str.lower, names))
+            if name in names:
+                i, cat = names.index(name), opt
+        if cat:
+            table[cat][i] = cmap
+        elif unknown:
+            table[unknown].append(cmap)
 
     # Filter out certain categories
     options = set(map(str.lower, source))
@@ -478,44 +455,47 @@ def _draw_bars(
             f'Invalid categories {include!r}. Options are: '
             + ', '.join(map(repr, source)) + '.'
         )
-    for cat in tuple(cmapdict):
-        if cat.lower() not in include and cat != unknown:
-            cmapdict.pop(cat)
+    for cat in tuple(table):
+        table[cat][:] = [cmap for cmap in table[cat] if cmap is not None]
+        if not table[cat] or cat.lower() not in include and cat != unknown:
+            del table[cat]
 
     # Draw figure
     # Allocate two colorbar widths for each title of sections
-    naxs = 2 * len(cmapdict) + sum(map(len, cmapdict.values()))
+    naxs = 2 * len(table) + sum(map(len, table.values()))
     fig, axs = ui.subplots(
         refwidth=length, refheight=width,
         nrows=naxs, share=False, hspace='2pt', top='-1em',
     )
-    iax = -1
+    i = -1
     nheads = nbars = 0  # for deciding which axes to plot in
-    for cat, names in cmapdict.items():
+    for cat, cmaps in table.items():
         nheads += 1
-        for imap, name in enumerate(names):
-            iax += 1
-            if imap + nheads + nbars > naxs:
+        for j, cmap in enumerate(cmaps):
+            i += 1
+            if j + nheads + nbars > naxs:
                 break
-            if imap == 0:  # allocate this axes for title
-                iax += 2
-                for ax in axs[iax - 2:iax]:
+            if j == 0:  # allocate this axes for title
+                i += 2
+                for ax in axs[i - 2:i]:
                     ax.set_visible(False)
-            ax = axs[iax]
-            cmap = database[name]
+            ax = axs[i]
             if N is not None:
                 cmap = cmap.copy(N=N)
+            label = cmap.name
+            label = re.sub(r'\A_*', '', label)
+            label = re.sub(r'(_copy)*\Z', '', label)
             ax.colorbar(
                 cmap, loc='fill',
                 orientation='horizontal', locator='null', linewidth=0
             )
             ax.text(
-                0 - (rc['axes.labelpad'] / 72) / length, 0.45, name,
+                0 - (rc['axes.labelpad'] / 72) / length, 0.45, label,
                 ha='right', va='center', transform='axes',
             )
-            if imap == 0:
+            if j == 0:
                 ax.set_title(cat, weight='bold')
-        nbars += len(names)
+        nbars += len(cmaps)
 
     return fig, axs
 
@@ -565,13 +545,16 @@ def show_cmaps(*args, **kwargs):
     show_fonts
     """
     # Get the list of colormaps
-    # TODO: Filter out colormaps ending with '_copy' and '_r'?
     if args:
-        cmaps = [constructor.Colormap(cmap) for cmap in args]
+        cmaps = list(map(constructor.Colormap, args))
+        cmaps = [
+            cmap if isinstance(cmap, mcolors.LinearSegmentedColormap)
+            else pcolors._get_cmap_subtype(cmap, 'continuous') for cmap in args
+        ]
         ignore = ()
     else:
         cmaps = [
-            name for name, cmap in pcolors._cmap_database.items()
+            cmap for cmap in pcolors._cmap_database.values()
             if isinstance(cmap, pcolors.ContinuousColormap)
         ]
         ignore = None
@@ -620,11 +603,18 @@ def show_cycles(*args, **kwargs):
     """
     # Get the list of cycles
     if args:
-        cycles = [constructor.Cycle(cmap, to_listed=True) for cmap in args]
+        cycles = [
+            pcolors.DiscreteColormap(
+                cmap.by_key().get('color', ['k']), name=getattr(cmap, 'name', None)
+            )
+            if isinstance(cmap, cycler.Cycler)
+            else cmap if isinstance(cmap, mcolors.ListedColormap)
+            else pcolors._get_cmap_subtype(cmap, 'discrete') for cmap in args
+        ]
         ignore = ()
     else:
         cycles = [
-            name for name, cmap in pcolors._cmap_database.items()
+            cmap for cmap in pcolors._cmap_database.values()
             if isinstance(cmap, pcolors.DiscreteColormap)
         ]
         ignore = None
