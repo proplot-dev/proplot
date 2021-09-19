@@ -166,17 +166,17 @@ lists the constructor functions and the keyword arguments that use them. Note th
 `~matplotlib.axes.Axes.set_xscale` and `~matplotlib.axes.Axes.set_yscale` accept
 instances of `~matplotlib.scale.ScaleBase` thanks to a patch applied by ProPlot.
 
-================================  ============================================================  =============================================================  =================================================================================================================================================================================================
-Function                          Return type                                                   Used by                                                        Keyword argument(s)
-================================  ============================================================  =============================================================  =================================================================================================================================================================================================
-`~proplot.constructor.Proj`       `~cartopy.crs.Projection` or `~mpl_toolkits.basemap.Basemap`  `~proplot.ui.subplots`                                         ``proj=``
-`~proplot.constructor.Locator`    `~matplotlib.ticker.Locator`                                  `~proplot.axes.Axes.format` and `~proplot.axes.Axes.colorbar`  ``locator=``, ``xlocator=``, ``ylocator=``, ``minorlocator=``, ``xminorlocator=``, ``yminorlocator=``, ``ticks=``, ``xticks=``, ``yticks=``, ``minorticks=``, ``xminorticks=``, ``yminorticks=``
-`~proplot.constructor.Formatter`  `~matplotlib.ticker.Formatter`                                `~proplot.axes.Axes.format` and `~proplot.axes.Axes.colorbar`  ``formatter=``, ``xformatter=``, ``yformatter=``, ``ticklabels=``, ``xticklabels=``, ``yticklabels=``
-`~proplot.constructor.Scale`      `~matplotlib.scale.ScaleBase`                                 `~proplot.axes.Axes.format`                                    ``xscale=``, ``yscale=``
-`~proplot.constructor.Colormap`   `~matplotlib.colors.Colormap`                                 :ref:`2D plotting commands <ug_2dplots>`                        ``cmap=``
-`~proplot.constructor.Norm`       `~matplotlib.colors.Normalize`                                :ref:`2D plotting commands <ug_2dplots>`                        ``norm=``
-`~proplot.constructor.Cycle`      `~cycler.Cycler`                                              :ref:`1D plotting commands <ug_1dplots>`                        ``cycle=``
-================================  ============================================================  =============================================================  =================================================================================================================================================================================================
+================================  ============================================================  ==============================================================================  ================================================================================================================================================================================================
+Function                          Return type                                                   Used by                                                                         Keyword argument(s)
+================================  ============================================================  ==============================================================================  ================================================================================================================================================================================================
+`~proplot.constructor.Proj`       `~cartopy.crs.Projection` or `~mpl_toolkits.basemap.Basemap`  `~proplot.figure.Figure.add_subplot` and `~proplot.figure.Figure.add_subplots`  ``proj=``
+`~proplot.constructor.Locator`    `~matplotlib.ticker.Locator`                                  `~proplot.axes.Axes.format` and `~proplot.axes.Axes.colorbar`                   ``locator=``, ``xlocator=``, ``ylocator=``, ``minorlocator=``, ``xminorlocator=``, ``yminorlocator=``, ``ticks=``, ``xticks=``, ``yticks=``, ``minorticks=``, ``xminorticks=``, ``yminorticks=``
+`~proplot.constructor.Formatter`  `~matplotlib.ticker.Formatter`                                `~proplot.axes.Axes.format` and `~proplot.axes.Axes.colorbar`                   ``formatter=``, ``xformatter=``, ``yformatter=``, ``ticklabels=``, ``xticklabels=``, ``yticklabels=``
+`~proplot.constructor.Scale`      `~matplotlib.scale.ScaleBase`                                 `~proplot.axes.Axes.format`                                                     ``xscale=``, ``yscale=``
+`~proplot.constructor.Colormap`   `~matplotlib.colors.Colormap`                                 :ref:`2D plotting commands <ug_2dplots>`                                        ``cmap=``
+`~proplot.constructor.Norm`       `~matplotlib.colors.Normalize`                                :ref:`2D plotting commands <ug_2dplots>`                                        ``norm=``
+`~proplot.constructor.Cycle`      `~cycler.Cycler`                                              :ref:`1D plotting commands <ug_1dplots>`                                        ``cycle=``
+================================  ============================================================  ==============================================================================  ================================================================================================================================================================================================
 
 .. _why_spacing:
 
@@ -186,80 +186,72 @@ Automatic dimensions and spacing
 .. rubric:: Limitation
 
 Matplotlib plots tend to require lots of "tweaking" when you have more than one
-subplot in the figure. This is partly because you must specify the physical dimensions
-of the figure, despite the fact that...
+subplot in the figure. This is partly because you must specify the physical
+dimensions of the figure, despite the fact that...
 
-#. The *subplot* aspect ratio is generally more relevant than the figure
+#. The subplot aspect ratio is generally more relevant than the figure
    aspect ratio. An aspect ratio of ``1`` is desirable for most plots, and
-   the aspect ratio must be held fixed for
-   :ref:`geographic and polar <ug_proj>` projections and most
-   `~matplotlib.axes.Axes.imshow` plots.
-#. The physical width and height of the *subplot* controls the "evident"
-   thickness of text, lines, and other content plotted inside the subplot.
-   The effect of the figure size on this "evident" thickness depends on the
-   number of subplot tiles in the figure.
+   the aspect ratio must be held fixed for :ref:`geographic and polar <ug_proj>`
+   projections and most `~matplotlib.axes.Axes.imshow` plots.
+#. The subplot width and height control the "apparent" size of lines, markers,
+   text, and other plotted content. If the figure size is fixed, adding more
+   subplots will decrease the average subplot size and increase the "apparent"
+   sizes. If the subplot size is fixed instead, this can be avoided.
 
-Also, while matplotlib's `tight layout algorithm
+Matplotlib includes a `tight layout algorithm
 <https://matplotlib.org/stable/tutorials/intermediate/tight_layout_guide.html>`__
-can help you avoid tweaking the *spacing*, the algorithm cannot apply different
-amounts of spacing between different subplot row and column boundaries.
+that generally obviates the need to tweak `~matplotlib.gridspec.GridSpec` spacing
+parameters like `left`, `bottom`, and `wspace`. However, this algorithm is disabled
+by default, and it cannot apply different amounts of spacing between different
+subplot row and column boundaries.
 
 .. rubric:: Solution
 
-In ProPlot, you can specify the physical dimensions of a *reference subplot* by
-passing `refwidth`, `refheight`, and/or `refaspect` to `~proplot.ui.figure` or
-`~proplot.ui.subplots`. The dimensions of the figure are calculated automatically.
-The default behavior is ``refaspect=1`` and ``refwidth=2.5`` (inches). If the
-`aspect ratio mode
+By default, ProPlot fixes the physical dimensions of a *reference subplot* rather
+than the figure. The reference subplot dimensions are controlled with the `refwidth`,
+`refheight`, and `refaspect` `~proplot.figure.Figure` keywords, with a default
+behavior of ``refaspect=1`` and ``refwidth=2.5`` (inches). If the `data aspect ratio
 <https://matplotlib.org/stable/gallery/subplots_axes_and_figures/axis_equal_demo.html>`__
-for the reference subplot is set to ``'equal'``, as with :ref:`geographic <ug_geo>`,
-:ref:`polar <ug_polar>`, `~matplotlib.axes.Axes.imshow`, and `~proplot.axes.Axes.heatmap`
-plots, the :ref:`or data aspect ratio is used instead <ug_autosize>`.
+of the reference subplot is fixed (as with :ref:`geographic <ug_geo>`,
+:ref:`polar <ug_polar>`, `~matplotlib.axes.Axes.imshow`, and
+`~proplot.axes.Axes.heatmap` plots) then this is used instead of `refaspect`.
 
-You can also independently specify the width or height of the *figure* with the
-`figwidth` and `figheight` parameters. If only one is specified, the other will be
-calculated to preserve subplot aspect ratios. You can also select a `figwidth` and/or
-`figheight` suitable for submission to :ref:`various publications <journal_table>`
-using the `journal` parameter.
+Alternatively, you can independently specify the width or height of the *figure*
+with the `figwidth` and `figheight` parameters. If only one is specified, the
+other is adjusted to preserve subplot aspect ratios. This is very often useful
+when preparing figures for submission to a publication. To request figure
+dimensions suitable for submission to a :ref:`specific publication <journal_table>`,
+use the `journal` keyword.
 
-ProPlot also uses :ref:`its own tight layout algorithm <ug_tight>` to
-automatically determine the `left`, `right`, `bottom`, `top`, `wspace`, and
-`hspace` spacing parameters. This algorithm has the following advantages:
+By default, ProPlot also uses :ref:`its own tight layout algorithm <ug_tight>` --
+preventing text labels from overlapping with subplots. This algorithm works with the
+`proplot.gridspec.GridSpec` subclass rather than `matplotlib.gridspec.GridSpec`, which
+provides the following advantages:
 
-* The tight layout algorithm can produce variable spacing between
-  rows and columns using the `proplot.gridspec.GridSpec` subclass of
-  `matplotlib.gridspec.GridSpec`. This is critical for making
+* The `proplot.gridspec.GridSpec` subclass interprets spacing parameters
+  with font size-relative units rather than figure size-relative units.
+  This is more consistent with the tight layout `pad` arguments
+  (which, like matplotlib, are specified in font size-relative units)
+  and obviates the need to adjust spaces when the figure size or font size changes.
+* The `proplot.gridspec.GridSpec` subclass permits variable spacing
+  between rows and columns, and the tight layout algorithm takes
+  this into account. Variable spacing is critical for making
   outer :ref:`colorbars and legends <ug_cbars_legends>` and
   :ref:`axes panels <ug_insets_panels>` without "stealing space"
   from the parent subplot -- these objects usually need to be
   spaced closer to their parents than other subplots.
-* The tight layout calculations are simplified by permitting only one
-  `~proplot.gridspec.GridSpec` per figure. This restriction is
-  possible by requiring successive `~proplot.figure.Figure.add_subplot`
-  calls to imply the same geometry and include only subplot specs
-  generated from the same `~proplot.gridspec.GridSpec`.
+* You can :ref:`override particular spacing parameters <ug_tight>`
+  and leave the tight layout algorithm to adjust the
+  unspecified spacing parameters. For example, passing ``right=1`` to
+  `~proplot.figure.Figure.add_subplots` fixes the right margin
+  at 1 font size-width while the others are adjusted automatically.
+* Only one `proplot.gridspec.GridSpec` is permitted per figure,
+  considerably simplifying the tight layout algorithm calculations.
+  This restriction is enforced by requiring successive
+  `~proplot.figure.Figure.add_subplot` calls to imply the same geometry and
+  include only subplot specs generated from the same `~proplot.gridspec.GridSpec`.
 
 See the :ref:`user guide <ug_layout>` for details.
-
-..
-   #. The `~proplot.gridspec.GridSpec` spacing parameters are specified in
-   physical units instead of figure-relative units.
-
-..
-   The `~matplotlib.gridspec.GridSpec` class is useful for creating figures
-   with complex subplot geometry.
-
-..
-   Users want to control axes positions with gridspecs.
-
-..
-   * Matplotlib permits arbitrarily many `~matplotlib.gridspec.GridSpec`\ s
-   per figure. This greatly complicates the tight layout algorithm for
-   little evident gain.
-
-..
-   ProPlot introduces a marginal limitation (see discussion in :pr:`50`) but
-   *considerably* simplifies the tight layout algorithm.
 
 
 .. _why_redundant:
@@ -341,9 +333,9 @@ that reference :ref:`individual subplots <ug_cbars_axes>` and
   to `proplot.axes.Axes.colorbar` or `proplot.axes.Axes.legend`.
 * To draw a colorbar or legend along the edge of the figure, use
   `proplot.figure.Figure.colorbar` and `proplot.figure.Figure.legend`.
-  The `col`, `row`, and `span` keyword args control which
-  `~matplotlib.gridspec.GridSpec` rows and columns are spanned by the
-  colorbar or legend.
+  The `col`, `row`, and `span` keywords control which
+  `~proplot.gridspec.GridSpec` rows and columns are spanned
+  by the colorbar or legend.
 
 Since `~proplot.gridspec.GridSpec` permits variable spacing between subplot
 rows and columns, "outer" colorbars and legends do not alter subplot
