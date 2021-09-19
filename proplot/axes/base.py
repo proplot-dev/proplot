@@ -1976,7 +1976,9 @@ class Axes(maxes.Axes):
         formatter_kw = formatter_kw or {}
         minorlocator_kw = minorlocator_kw or {}
 
-        # Get ticks at level locations
+        # Subsample level locations
+        # NOTE: This is improvement on matplotlib which always ticks every level
+        # boundary when BoundaryNorm or subclass (i.e. DiscreteNorm) is passed.
         # NOTE: We virtually always want to subsample the level list. For example
         # for LogNorm _parse_autolev will interpolate to even points in log-space
         # between powers of 10 if the powers don't give us enough levels. Therefore
@@ -1992,21 +1994,11 @@ class Axes(maxes.Axes):
                 locs = ticks[::step]  # unknown offset
             return locs
 
-        # Get colorbar locator
+        # Determine colorbar ticks
         # NOTE: Do not necessarily want minor tick locations at logminor for LogNorm!
         # In _auto_discrete_norm we sometimes select evenly spaced levels in log-space
         # *between* powers of 10, so logminor ticks would be misaligned with levels.
-        if locator is None:
-            # This should only happen if discrete=False since _parse_levels supplies
-            # default ticks to the colorbar. Treat this as smooth gradations.
-            if isinstance(mappable.norm, mcolors.LogNorm):
-                locator = 'log'
-            elif isinstance(mappable.norm, mcolors.SymLogNorm):
-                locator = 'symlog'
-                locator_kw.setdefault('linthresh', mappable.norm.linthresh)
-            else:
-                locator = 'auto'
-        elif np.iterable(locator) and not isinstance(locator, str) and len(locator) > 1:
+        if np.iterable(locator) and not isinstance(locator, str) and len(locator) > 1:
             # These are usually ticks passed by _parse_levels but may also be user
             # input lists. Users can use pplt.Locator(ticks) to avoid subsampling.
             width, height = self._get_size_inches()
@@ -2021,9 +2013,8 @@ class Axes(maxes.Axes):
                 minorlocator = _subsample_levels(maxn_minor, 0.5, fontsize)
 
         # Return tickers
-        locator = constructor.Locator(locator, **locator_kw)
-        if tickminor and minorlocator is None:
-            minorlocator = 'minor'
+        if locator is not None:
+            locator = constructor.Locator(locator, **locator_kw)
         if minorlocator is not None:
             minorlocator = constructor.Locator(minorlocator, **minorlocator_kw)
         formatter = _not_none(formatter, 'auto')
@@ -2046,6 +2037,8 @@ class Axes(maxes.Axes):
             and isinstance(mappable[0], mcm.ScalarMappable)
         ):
             mappable = mappable[0]
+
+        # Return the scalar mappable
         if isinstance(mappable, mcm.ScalarMappable):
             return mappable, kwargs
 
