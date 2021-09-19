@@ -2571,7 +2571,10 @@ class PlotAxes(base.Axes):
             norm = _not_none(norm, 'div')
         else:
             norm = _not_none(norm, 'linear')
-        norm = constructor.Norm(norm, vmin=vmin, vmax=vmax, **norm_kw)
+        if isinstance(norm, mcolors.Normalize):
+            norm.vmin, norm.vmax = vmin, vmax
+        else:
+            norm = constructor.Norm(norm, vmin=vmin, vmax=vmax, **norm_kw)
         if autodiverging and isinstance(norm, pcolors.DivergingNorm):
             diverging = _not_none(diverging, True)
 
