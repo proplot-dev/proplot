@@ -2360,8 +2360,8 @@ class DiscreteNorm(mcolors.BoundaryNorm):
         matplotlib cuts off the most intense colors (reserved for "out of bounds"
         data), even though they are not being used. Note that this means
         using a diverging colormap with ``extend='max'`` or ``extend='min'``
-        will shift the central color. But that is very strange usage anyway...
-        so please just don't do that :)
+        will shift the central color by default. But that is very strange
+        usage anyway... so please just don't do that :)
 
         See also
         --------
@@ -2387,11 +2387,16 @@ class DiscreteNorm(mcolors.BoundaryNorm):
             )
 
         # Ensure monotonicaly increasing levels and add built-in attributes
-        levels, descending_levels = _sanitize_levels(levels)
-        bins, descending_bins = _sanitize_levels(norm(levels))  # e.g. SegmentedNorm
-        vcenter = getattr(norm, 'vcenter', None)
+        # NOTE: Currently there are no normalizers that reverse direction
+        # of levels. Tried that with SegmentedNorm but colorbar ticks fail.
+        # Instead user-reversed levels will always get passed here just as
+        # they are passed to SegmentedNorm inside plot.py
+        levels, descending = _sanitize_levels(levels)
+        bins, _ = _sanitize_levels(norm(levels))
+        bins = norm(levels)
         vmin = norm.vmin = np.min(levels)
         vmax = norm.vmax = np.max(levels)
+        vcenter = getattr(norm, 'vcenter', None)
 
         # Get color coordinates for each bin, plus two extra for out-of-bounds
         # For same out-of-bounds colors, looks like [0 - eps, 0, ..., 1, 1 + eps]
@@ -2430,7 +2435,7 @@ class DiscreteNorm(mcolors.BoundaryNorm):
         # NOTE: With unique='min' the minimimum in-bounds and out-of-bounds
         # colors are the same so clip=True will have no effect. Same goes
         # for unique='max' with maximum colors.
-        self._descending = descending_levels or descending_bins
+        self._descending = descending
         self._bmin = np.min(mids)
         self._bmax = np.max(mids)
         self._bins = bins
@@ -2530,11 +2535,10 @@ class SegmentedNorm(mcolors.Normalize):
         >>> fig, ax = pplt.subplots()
         >>> ax.contourf(data, levels=levels)
         """
-        levels, descending = _sanitize_levels(levels)
+        levels, _ = _sanitize_levels(levels)
         dest = np.linspace(0, 1, len(levels))
         vmin, vmax = np.min(levels), np.max(levels)
         super().__init__(vmin=vmin, vmax=vmax, clip=clip)
-        self._descending = descending
         self._x = self.boundaries = levels  # we use 'boundaries' in plot wrapper
         self._y = dest
 
@@ -2559,8 +2563,6 @@ class SegmentedNorm(mcolors.Normalize):
         yq = _interpolate_extrapolate(xq, self._x, self._y)
         if is_scalar:
             yq = np.atleast_1d(yq)[0]
-        if self.descending:
-            yq = 1 - yq
         return yq
 
     def inverse(self, value):
@@ -2577,13 +2579,6 @@ class SegmentedNorm(mcolors.Normalize):
         if is_scalar:
             xq = np.atleast_1d(xq)[0]
         return xq
-
-    @property
-    def descending(self):
-        """
-        Whether the normalizer levels are descending.
-        """
-        return self._descending
 
 
 class DivergingNorm(mcolors.Normalize):
