@@ -125,16 +125,6 @@ tight : bool, optional
     layout spacing. For example, with ``left=1``, the left margin is set to
     1 em-width, while the remaining margin widths are calculated automatically.
 %(gridspec.tight)s
-includepanels : bool, optional
-    Whether to include panels when aligning figure "super titles" along the top
-    of the subplot grid and when aligning the `spanx` *x* axis labels and `spany`
-    *y* axis labels along the sides of the subplot grid. Default is ``False``.
-mathtext_fallback : bool or str, optional
-    Apply this :rc:`mathtext.fallback` value when drawing the figure. If
-    ``True`` or string, unavailable glyphs are replaced with a glyph from a
-    fallback font (Computer Modern by default). Otherwise, they are replaced
-    with the "¤" dummy character. For details see this `mathtext tutorial \
-<https://matplotlib.org/stable/tutorials/text/mathtext.html#custom-fonts>`__.
 journal : str, optional
     String corresponding to an academic journal standard used to control the figure
     width `figwidth` and, if specified, the figure height `figheight`. See the below
@@ -650,7 +640,6 @@ class Figure(mfigure.Figure):
         except KeyError:
             pass
         self._autospace = _not_none(tight, rc['subplots.tight'])
-        self._includepanels = _not_none(includepanels, False)
 
         # Translate share settings
         translate = {'labels': 1, 'labs': 1, 'limits': 2, 'lims': 2, 'all': 4}
@@ -687,6 +676,8 @@ class Figure(mfigure.Figure):
         self._subplot_counter = 0  # avoid add_subplot() returning an existing subplot
         self._is_adjusting = False
         self._is_authorized = False
+        self._includepanels = None
+        self._mathtext_context = {}
         rc_kw, rc_mode, kwargs = _parse_format(**kwargs)
         kw_format = _pop_params(kwargs, self._format_signature)
         with self._context_authorized():
@@ -711,15 +702,6 @@ class Figure(mfigure.Figure):
         d['right'] = rc['rightlabel.pad']
         d['bottom'] = rc['bottomlabel.pad']
         d['top'] = rc['toplabel.pad']
-
-        # Text drawing behavior
-        if mathtext_fallback is None:
-            context = {}
-        elif dependencies._version_mpl >= 3.4:
-            context = {'mathtext.fallback': mathtext_fallback if isinstance(mathtext_fallback, str) else 'cm' if mathtext_fallback else None}  # noqa: E501
-        else:
-            context = {'mathtext.fallback_to_cm': bool(mathtext_fallback)}
-        self._mathtext_context = context
 
         # Format figure
         # NOTE: This ignores user-input rc_mode.
@@ -1415,7 +1397,8 @@ class Figure(mfigure.Figure):
         rlabels=None, rightlabels=None, rightlabels_kw=None,
         blabels=None, bottomlabels=None, bottomlabels_kw=None,
         tlabels=None, toplabels=None, toplabels_kw=None,
-        rowlabels=None, collabels=None, **kwargs,  # aliases
+        rowlabels=None, collabels=None,  # aliases
+        includepanels=None, mathtext_fallback=None, **kwargs,
     ):
         """
         Modify figure-wide labels and call ``format`` for the
@@ -1458,6 +1441,16 @@ class Figure(mfigure.Figure):
             # Update background patch
             kw = rc.fill({'facecolor': 'figure.facecolor'}, context=True)
             self.patch.update(kw)
+
+            # Update text drawing behavior
+            if includepanels is not None:
+                self._includepanels = includepanels
+            if mathtext_fallback is not None:
+                if dependencies._version_mpl >= 3.4:
+                    context = {'mathtext.fallback': mathtext_fallback if isinstance(mathtext_fallback, str) else 'cm' if mathtext_fallback else None}  # noqa: E501
+                else:
+                    context = {'mathtext.fallback_to_cm': bool(mathtext_fallback)}
+                self._mathtext_context = context
 
             # Update super title and label padding
             pad = rc.find('suptitle.pad', context=True)  # super title
