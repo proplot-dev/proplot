@@ -96,7 +96,7 @@ highly customized figures. As an example, it is trivial to see that...
 
    import proplot as pplt
    fig, axs = pplt.subplots(ncols=2)
-   axs.format(linewidth=1, edgecolor='gray')
+   axs.format(color='gray', linewidth=1)
    axs.format(xlim=(0, 100), xticks=10, xtickminor=True, xlabel='foo', ylabel='bar')
 
 is much more succinct than...

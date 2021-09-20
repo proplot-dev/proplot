@@ -376,6 +376,16 @@ suptitlepad : float, optional
     units (default is points). Default is :rcraw:`suptitle.pad`.
 suptitle_kw : optional
     Additional settings used to update the super title with ``text.update()``.
+includepanels : bool, optional
+    Whether to include panels when aligning figure "super titles" along the top
+    of the subplot grid and when aligning the `spanx` *x* axis labels and `spany`
+    *y* axis labels along the sides of the subplot grid. Default is ``False``.
+mathtext_fallback : bool or str, optional
+    Apply this :rc:`mathtext.fallback` value when drawing the figure. If
+    ``True`` or string, unavailable glyphs are replaced with a glyph from a
+    fallback font (Computer Modern by default). Otherwise, they are replaced
+    with the "¤" dummy character. For details see this `mathtext tutorial \
+<https://matplotlib.org/stable/tutorials/text/mathtext.html#custom-fonts>`__.
 """
 _rc_format_docstring = """
 rc_mode : int, optional
@@ -633,7 +643,7 @@ class Axes(maxes.Axes):
         ----------
         %(axes.format)s
         *args, **kwargs
-            Passed to `~matplotlib.axes.Axes` or the
+            Passed to `matplotlib.axes.Axes` or the
             projection-specific ``format`` command.
 
         Other parameters

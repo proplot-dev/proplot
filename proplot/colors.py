@@ -2535,6 +2535,8 @@ class SegmentedNorm(mcolors.Normalize):
         >>> fig, ax = pplt.subplots()
         >>> ax.contourf(data, levels=levels)
         """
+        # WARNING: Tried using descending levels by adding 1 - yq to __call__() and
+        # inverse() but then tick labels fail. Instead just silently reverse here.
         levels, _ = _sanitize_levels(levels)
         dest = np.linspace(0, 1, len(levels))
         vmin, vmax = np.min(levels), np.max(levels)

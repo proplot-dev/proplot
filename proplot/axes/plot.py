@@ -1201,7 +1201,7 @@ class PlotAxes(base.Axes):
         Parameters
         ----------
         *args, **kwargs
-            Passed to `~proplot.axes.Axes`.
+            Passed to `proplot.axes.Axes`.
 
         See also
         --------

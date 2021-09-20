@@ -31,15 +31,30 @@ and stability is improved.
 ProPlot v0.9.2 (2021-##-##)
 ===========================
 
+Features
+--------
+
+* Permit passing `includepanels` and `mathtext_fallback` as
+  `proplot.figure.Figure.format` keywords instead of just
+  ``__init__`` keywords (:commit:`33bff576`).
+* Implement "descending level" support directly inside `~proplot.colors.DiscreteNorm`
+  rather than cmap parser in plotting commands, and auto-reverse descending
+  levels passed to `~proplot.colors.SegmentedNorm` (:commit:`46d8bedc`).
+* Improve ``show_cmaps`` and ``show_cycles``: Stop passing arguments
+  through constructor functions, preserve case for user colormap labels, and avoid
+  showing leading ``_`` and trailing ``_copy`` in colormap labels (:commit:`c41db8d8`).
+
 Bug fixes
 ---------
 
 * Fix accidental commit of debugging print statement
   (:commit:`259a263b`).
+* Fix issue where `includepanels` is not applied for spanning axis
+  labels in presence of panels but only one main subplot (:commit:`b8bc55ec`).
 * Fix issue where axis label color is overwritten during ``__init__``
   call to `proplot.axes.CartesianAxes.format` (:commit:`b454a513`).
-* Fix issue where default outer legend `loc` does not take into
-  account the underlying "panel" location (:commit:`2446acc1`).
+* Fix issue where default outer legend axes-relative `loc` does not take into
+  account the underlying "panel" side (:commit:`2446acc1`).
 * Fix issue where segment data of ``matplotlib.cm`` colormap instances
   is overwritten during conversion to proplot subclasses (:issue:`283`).
 * Fix confusing behavior where explicitly passed `vmin` and `vmax` are ignored
@@ -50,15 +65,6 @@ Bug fixes
   not taken into account when correcting small tick values truncated to
   zero on (usually logarithmic) axis scales (:commit:`54fbef0b`).
 
-Internals
----------
-
-* Implement "descending level" support directly inside
-  `~proplot.colors.DiscreteNorm` and `~proplot.colors.SegmentedNorm`
-  rather than cmap parser in plotting commands (:commit:`46d8bedc`).
-* Improve ``show_cmaps`` and ``show_cycles``, stop passing arguments
-  through constructor functions and avoid showing leading ``_`` and
-  trailing ``_copy`` in table labels (:commit:`c41db8d8`).
 
 ProPlot v0.9.1 (2021-09-14)
 ===========================
