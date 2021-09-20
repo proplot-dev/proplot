@@ -778,7 +778,7 @@ class Figure(mfigure.Figure):
         axs = [ax for ax in axs if ax.get_visible()]
         return axs
 
-    def _get_align_coord(self, side, axs):
+    def _get_align_coord(self, side, axs, includepanels=False):
         """
         Return the figure coordinate for centering spanning axis labels or super titles.
         """
@@ -789,7 +789,7 @@ class Figure(mfigure.Figure):
             raise RuntimeError('Axes must be subplots.')
         s = 'y' if side in ('left', 'right') else 'x'
         axs = [ax._panel_parent or ax for ax in axs]  # deflect to main axes
-        if self._includepanels:  # include panel short axes
+        if includepanels:  # include panel short axes?
             axs = [_ for ax in axs for _ in ax._iter_axes(panels=True, children=False)]
         ranges = np.array([ax._range_subplotspec(s) for ax in axs])
         min_, max_ = ranges[:, 0].min(), ranges[:, 1].max()
@@ -925,7 +925,7 @@ class Figure(mfigure.Figure):
             if ax in seen or pos not in ('bottom', 'left'):
                 continue  # already aligned or cannot align
             axs = ax._get_span_axes(pos, panels=False)  # returns panel or main axes
-            if len(axs) == 1 or any(getattr(ax, '_share' + x) for ax in axs):
+            if any(getattr(ax, '_share' + x) for ax in axs):
                 continue  # nothing to align or axes have parents
             seen.update(axs)
             if span or align:
@@ -968,7 +968,7 @@ class Figure(mfigure.Figure):
             return
         labs = tuple(t for t in self._suplabel_dict['top'].values() if t.get_text())
         pad = (self._suptitle_pad / 72) / self.get_size_inches()[1]
-        x = self._get_align_coord('top', axs)[0]
+        x, _ = self._get_align_coord('top', axs, includepanels=self._includepanels)
         y = self._get_offset_coord('top', axs, renderer, pad=pad, extra=labs)
         self._suptitle.set_ha('center')
         self._suptitle.set_va('bottom')
@@ -989,7 +989,7 @@ class Figure(mfigure.Figure):
 
         # Get the central label and "super" label for parallel alignment.
         # Initialize the super label if one does not already exist.
-        c, ax = self._get_align_coord(side, axs)  # returns panel axes
+        c, ax = self._get_align_coord(side, axs, includepanels=self._includepanels)
         axis = getattr(ax, x + 'axis')  # use the central axis
         label = labs.get(ax, None)
         if label is None and not axis.label.get_text().strip():
