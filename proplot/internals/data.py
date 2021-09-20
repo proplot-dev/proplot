@@ -121,6 +121,23 @@ def _to_numpy_array(data, strip_units=False):
         return np.atleast_1d(data)  # natively preserves masked arrays
 
 
+def _to_masked_array(data):
+    """
+    Convert numpy array to masked array with consideration for datetimes and quantities.
+    """
+    units = None
+    if ndarray is not Quantity and isinstance(data, Quantity):
+        data, units = data.magnitude, data.units
+    data = ma.masked_invalid(data, copy=False)
+    if np.issubdtype(data.dtype, np.integer):
+        data = data.astype(np.float)
+    if np.issubdtype(data.dtype, np.number):
+        data.fill_value *= np.nan  # default float fill_value is 1e+20 or 1e+20 + 0j
+    else:
+        pass  # leave with default fill_value (e.g. NaT for datetime data)
+    return data, units
+
+
 # Processing utilities
 def _to_centers(x, y, z):
     """
@@ -274,15 +291,16 @@ def _dist_reduce(y, *, mean=None, means=None, median=None, medians=None, **kwarg
         medians = None
     if means or medians:
         dist = y
+        dist, units = _to_masked_array(dist)
         if dist.ndim != 2:
             raise ValueError(f'Expected 2D array for means=True. Got {dist.ndim}D.')
-        dist = ma.masked_invalid(dist, copy=False)
-        dist = dist.astype(np.float).filled(np.nan)
         if not dist.size:
             raise ValueError('The input dist contains all masked or NaN values.')
-        elif means:
+        if units is not None:
+            dist = dist * units
+        if means:
             y = np.nanmean(dist, axis=0)
-        elif medians:
+        else:
             y = np.nanmedian(dist, axis=0)
         kwargs['distribution'] = dist
 
@@ -397,26 +415,28 @@ def _safe_mask(mask, *args):
     Safely apply the mask to the input arrays, accounting for existing masked
     or invalid values. Values matching ``False`` are set to `np.nan`.
     """
+    # NOTE: Could also convert unmasked data to masked. But other way around is
+    # easier becase np.ma gives us correct fill values for data subtypes.
     _load_objects()
     invalid = ~mask  # True if invalid
     args_masked = []
-    for arg in args:
-        units = 1
-        if ndarray is not Quantity and isinstance(arg, Quantity):
-            arg, units = arg.magnitude, arg.units
-        arg = ma.masked_invalid(arg, copy=False)
-        arg = arg.astype(np.float).filled(np.nan)
-        if arg.size > 1 and arg.shape != invalid.shape:
+    for data in args:
+        data, units = _to_masked_array(data)
+        nan = data.fill_value
+        data = data.filled()
+        if data.size > 1 and data.shape != invalid.shape:
             raise ValueError(
-                f'Mask shape {mask.shape} incompatible with array shape {arg.shape}.'
+                f'Mask shape {mask.shape} incompatible with array shape {data.shape}.'
             )
-        if arg.size == 1 or invalid.size == 1:  # NOTE: happens with _restrict_inbounds
+        if data.size == 1 or invalid.size == 1:  # NOTE: happens with _restrict_inbounds
             pass
         elif invalid.size == 1:
-            arg = np.nan if invalid.item() else arg
-        elif arg.size > 1:
-            arg[invalid] = np.nan
-        args_masked.append(arg * units)
+            data = nan if invalid.item() else data
+        elif data.size > 1:
+            data[invalid] = nan
+        if units is not None:
+            data = data * units
+        args_masked.append(data)
     return args_masked[0] if len(args_masked) == 1 else args_masked
 
 
@@ -427,24 +447,25 @@ def _safe_range(data, lo=0, hi=100):
     ``None`` if we fail to get a valid range.
     """
     _load_objects()
-    units = 1
-    if ndarray is not Quantity and isinstance(data, Quantity):
-        data, units = data.magnitude, data.units
-    data = ma.masked_invalid(data, copy=False)
+    data, units = _to_masked_array(data)
     data = data.compressed()  # remove all invalid values
     min_ = max_ = None
     if data.size:
-        min_ = float(np.min(data) if lo <= 0 else np.percentile(data, lo))
-        if np.isfinite(min_):
-            min_ *= units
-        else:
+        min_ = np.min(data) if lo <= 0 else np.percentile(data, lo)
+        if np.issubdtype(min_.dtype, np.integer):
+            min_ = np.float(min_)
+        if not np.isfinite(min_):
             min_ = None
+        elif units is not None:
+            min_ *= units
     if data.size:
-        max_ = float(np.max(data) if hi >= 100 else np.percentile(data, hi))
-        if np.isfinite(max_):
-            max_ *= units
-        else:
+        max_ = np.max(data) if hi >= 100 else np.percentile(data, hi)
+        if np.issubdtype(max_.dtype, np.integer):
+            max_ = np.float(max_)
+        if not np.isfinite(max_):
             max_ = None
+        elif units is not None:
+            max_ *= units
     return min_, max_
 
 
@@ -461,16 +482,16 @@ def _meta_coords(*args, which='x', **kwargs):
     from matplotlib.ticker import FixedLocator, NullLocator
     from ..ticker import IndexFormatter
     res = []
-    for arg in args:
-        arg = _to_duck_array(arg)
-        if not _is_categorical(arg):
-            res.append(arg)
+    for data in args:
+        data = _to_duck_array(data)
+        if not _is_categorical(data):
+            res.append(data)
             continue
-        if arg.ndim > 1:
+        if data.ndim > 1:
             raise ValueError('Non-1D string coordinate input is unsupported.')
-        idx = np.arange(len(arg))
+        idx = np.arange(len(data))
         kwargs.setdefault(which + 'locator', FixedLocator(idx))
-        kwargs.setdefault(which + 'formatter', IndexFormatter(_to_numpy_array(arg)))
+        kwargs.setdefault(which + 'formatter', IndexFormatter(_to_numpy_array(data)))
         kwargs.setdefault(which + 'minorlocator', NullLocator())
         res.append(idx)
     return (*res, kwargs)
@@ -664,14 +685,15 @@ def _geo_inbounds(x, y, xmin=-180, xmax=180):
 
     # Set NaN where data not in range xmin, xmax. Must be done for regional smaller
     # projections or get weird side-effects from valid data outside boundaries
-    y = ma.masked_invalid(y, copy=False)
-    y = y.astype(np.float).filled(np.nan)
+    y, units = _to_masked_array(y)
+    nan = y.fill_value
+    y = y.filled()
     if x.size - 1 == y.shape[-1]:  # test western/eastern grid cell edges
         mask = (x[1:] < xmin) | (x[:-1] > xmax)
-        y[..., mask] = np.nan
+        y[..., mask] = nan
     elif x.size == y.shape[-1]:  # test the centers and pad by one for safety
         where, = np.where((x < xmin) | (x > xmax))
-        y[..., where[1:-1]] = np.nan
+        y[..., where[1:-1]] = nan
 
     return x, y
 

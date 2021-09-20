@@ -1435,7 +1435,7 @@ class PlotAxes(base.Axes):
         kwargs['distribution'] = distribution
         return (*eobjs, kwargs)
 
-    def _add_sticky_edges(self, objs, axis, *args):
+    def _add_sticky_edges(self, objs, axis, *args, only=None):
         """
         Add sticky edges to the input artists using the minimum and maximum of the
         input coordinates. This is used to copy `bar` behavior to `area` and `lines`.
@@ -1448,6 +1448,8 @@ class PlotAxes(base.Axes):
             if min_ is None or max_ is None:
                 continue
             for obj in guides._iter_iterables(objs):
+                if only and not isinstance(obj, only):
+                    continue  # e.g. ignore error bars
                 convert = getattr(self, 'convert_' + axis + 'units')
                 edges = getattr(obj.sticky_edges, axis)
                 edges.extend(convert((min_, max_)))
@@ -2712,7 +2714,7 @@ class PlotAxes(base.Axes):
         Plot standard lines.
         """
         # Plot the lines
-        objs = []
+        objs, xsides = [], []
         kws = kwargs.copy()
         _process_props(kws, 'line')
         kws, extents = self._parse_inbounds(**kws)
@@ -2730,25 +2732,12 @@ class PlotAxes(base.Axes):
                 if fmt is not None:  # x1, y1, fmt1, x2, y2, fm2... style input
                     a.append(fmt)
                 obj, = self._plot_native('plot', *a, **kw)
+                xsides.append(x)
                 self._inbounds_xylim(extents, x, y)
                 objs.append((*eb, *es, obj) if eb or es else obj)
 
         # Add sticky edges
-        axis = 'x' if vert else 'y'
-        for obj in objs:
-            if not isinstance(obj, mlines.Line2D):
-                continue  # TODO: still looks good with error caps???
-            coords = getattr(obj, 'get_' + axis + 'data')()
-            if not coords.size:
-                continue
-            convert = getattr(self, 'convert_' + axis + 'units')
-            edges = getattr(obj.sticky_edges, axis)
-            min_, max_ = data._safe_range(coords)
-            if min_ is not None:
-                edges.append(convert(min_))
-            if max_ is not None:
-                edges.append(convert(max_))
-
+        self._add_sticky_edges(objs, 'x' if vert else 'y', xsides, only=mlines.Line2D)
         self._update_guide(objs, **guide_kw)
         return cbook.silent_list('Line2D', objs)  # always return list
 
