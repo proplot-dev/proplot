@@ -487,6 +487,7 @@ class Figure(mfigure.Figure):
 
     # NOTE: If _rename_kwargs argument is an invalid identifier, it is
     # simply used in the warning message.
+    @docstring._obfuscate_kwargs
     @docstring._snippet_manager
     @warnings._rename_kwargs('0.7', axpad='innerpad', autoformat='pplt.rc.autoformat = {}')  # noqa: E501
     def __init__(
@@ -497,9 +498,9 @@ class Figure(mfigure.Figure):
         spanx=None, spany=None, span=None,
         alignx=None, aligny=None, align=None,
         left=None, right=None, top=None, bottom=None,
-        wspace=None, hspace=None, space=None, wpad=None, hpad=None, pad=None,
-        outerpad=None, innerpad=None, panelpad=None, includepanels=None,
-        tight=None, mathtext_fallback=None,
+        wspace=None, hspace=None, space=None,
+        tight=None, outerpad=None, innerpad=None, panelpad=None,
+        wpad=None, hpad=None, pad=None,
         **kwargs
     ):
         """
