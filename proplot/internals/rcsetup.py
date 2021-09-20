@@ -1544,6 +1544,11 @@ _rc_proplot_table = {
         _validate_color,
         'Figure title color.'
     ),
+    'suptitle.pad': (
+        TITLEPAD,
+        _validate_pt,
+        'Padding between axes content and the figure super title.' + _addendum_pt
+    ),
     'suptitle.size': (
         LARGESIZE,
         _validate_fontsize,
@@ -1553,11 +1558,6 @@ _rc_proplot_table = {
         'bold',
         _validate_fontweight,
         'Figure title font weight.'
-    ),
-    'suptitle.pad': (
-        TITLEPAD,
-        _validate_pt,
-        'Padding between axes content and the figure super title.' + _addendum_pt
     ),
 
     # Tick settings
