@@ -342,9 +342,12 @@ abctitlepad : float, optional
     in the same location. Default is :rc:`abc.titlepad`.
 ltitle, ctitle, rtitle, ultitle, uctitle, urtitle, lltitle, lctitle, lrtitle \
 : str, optional
+    Shorthands for the below keywords.
+lefttitle, centertitle, righttitle, upperlefttitle, uppercentertitle, upperrighttitle, \
+lowerlefttitle, lowercentertitle, lowerrighttitle : str, optoinal
     Additional titles in specific positions. This works as an alternative
     to the ``ax.format(title='Title', titleloc=loc)`` workflow and permits
-    adding more than one title-like label to a single axes.
+    adding more than one title-like label for a single axes.
 a, alpha, fc, facecolor, ec, edgecolor, lw, linewidth, ls, linestyle : optional
     Additional settings applied to the background patch, and their shorthands.
     Defaults are :rcraw:`axes.alpha`, :rcraw:`axes.facecolor`,
