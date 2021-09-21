@@ -8,7 +8,7 @@
 ProPlot
 =======
 
-An economic `matplotlib <https://matplotlib.org/>`__ wrapper
+A succinct `matplotlib <https://matplotlib.org/>`__ wrapper
 for making beautiful, publication-quality graphics. This project
 is `published on GitHub <https://github.com/lukelbd/proplot>`__ and can
 be cited using its `Zenodo DOI <https://zenodo.org/record/5234192>`__.

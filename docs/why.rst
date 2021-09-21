@@ -34,7 +34,7 @@
 Why ProPlot?
 ============
 
-Matplotlib is an extremely powerful plotting package used by
+Matplotlib is an extremely versatile plotting package used by
 scientists and engineers far and wide. However,
 matplotlib can be cumbersome or repetitive for users who...
 

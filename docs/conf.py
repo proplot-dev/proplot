@@ -354,7 +354,7 @@ texinfo_documents = [
         'ProPlot Documentation',
         author,
         'proplot',
-        'An economic matplotlib wrapper for making beautiful, '
+        'A succinct matplotlib wrapper for making beautiful, '
         'publication-quality graphics.',
         'Miscellaneous'
     )
