@@ -1475,7 +1475,6 @@ class PlotAxes(base.Axes):
 
         # Draw hidden additional contour for filled contour labels
         cobj = _not_none(cobj, obj)
-        colors = kwargs.pop('colors', None)
         if obj.filled and colors is None:
             colors = []
             for level in obj.levels:
