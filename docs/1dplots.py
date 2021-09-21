@@ -229,9 +229,10 @@ ax.plot(df, cycle=cycle, lw=3, legend='t', legend_kw={'frame': False})
 # can specify `cycle` once with 2D input data (in which case each column is
 # plotted in succession according to the property cycle) or call a plotting
 # command multiple times with the same `cycle` argument (the property
-# cycle is not reset). You can also disable property cycling with
-# ``cycle=False``, ``cycle='none'``, or ``cycle=()`` and re-enable the default
-# property cycle with ``cycle=True``. For more information on property cycling,
+# cycle is not reset). You can also disable property cycling with ``cycle=False``,
+# ``cycle='none'``, or ``cycle=()`` and re-enable the default property cycle with
+# ``cycle=True`` (note that as usual, you can also simply override the property cycle
+# with relevant artist keywords like `color`). For more information on property cycles,
 # see the :ref:`color cycles section <ug_cycles>` and `this matplotlib tutorial
 # <https://matplotlib.org/stable/tutorials/intermediate/color_cycle.html#sphx-glr-tutorials-intermediate-color-cycle-py>`__.
 

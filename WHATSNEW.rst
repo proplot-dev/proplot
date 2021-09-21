@@ -40,17 +40,19 @@ Features
 * Implement "descending level" support directly inside `~proplot.colors.DiscreteNorm`
   rather than cmap parser in plotting commands, and auto-reverse descending
   levels passed to `~proplot.colors.SegmentedNorm` (:commit:`46d8bedc`).
-* Improve ``show_cmaps`` and ``show_cycles``: Stop passing arguments
-  through constructor functions, preserve case for user colormap labels, and avoid
-  showing leading ``_`` and trailing ``_copy`` in colormap labels (:commit:`c41db8d8`).
+* Improve ``show_cmaps`` and ``show_cycles``: Stop passing arguments through
+  constructor functions, preserve case for user colormap labels, and avoid
+  showing leading ``_`` and trailing ``_copy`` in labels (:commit:`c41db8d8`).
 
 Bug fixes
 ---------
 
 * Fix accidental commit of debugging print statement
   (:commit:`259a263b`).
-* Fix issue where `includepanels` is not applied for spanning axis
-  labels in presence of panels but only one main subplot (:commit:`b8bc55ec`).
+* Fix issue where "sticky edges" fail for datetime data
+  (:commit:`33fa9654`).
+* Fix issue where `includepanels` is not applied for spanning axis labels
+  in presence of panels but only one spanning subplot (:commit:`b8bc55ec`).
 * Fix issue where axis label color is overwritten during ``__init__``
   call to `proplot.axes.CartesianAxes.format` (:commit:`b454a513`).
 * Fix issue where default outer legend axes-relative `loc` does not take into
