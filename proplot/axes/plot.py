@@ -1464,9 +1464,14 @@ class PlotAxes(base.Axes):
         on unfilled contour object (otherwise errors crop up).
         """
         # Parse input args
+        zorder = max((h.get_zorder() for h in obj.collections), default=3)
+        zorder = max(3, zorder + 1)
+        kwargs.setdefault('zorder', zorder)
         colors = _not_none(c=c, color=color, colors=colors)
         fontsize = _not_none(size=size, fontsize=fontsize, default=rc['font.smallsize'])
         inline_spacing = _not_none(inline_spacing, 2.5)
+
+        # Separate clabel args from text Artist args
         text_kw = {}
         clabel_keys = ('levels', 'inline', 'manual', 'rightside_up', 'use_clabeltext')
         for key in tuple(kwargs):  # allow dict to change size
@@ -1481,11 +1486,7 @@ class PlotAxes(base.Axes):
                 _, _, lum = utils.to_xyz(obj.cmap(obj.norm(level)))
                 colors.append('w' if lum < 50 else 'k')
 
-        # Draw labels with careful zorder
-        # Want to at least match text zorder but respect contour zorder
-        zorder = max(h.get_zorder() for h in obj.collections)
-        zorder = max(3, zorder + 1)
-        kwargs.setdefault('zorder', zorder)
+        # Draw the labels
         labs = cobj.clabel(
             fmt=fmt, colors=colors, fontsize=fontsize,
             inline_spacing=inline_spacing, **kwargs
