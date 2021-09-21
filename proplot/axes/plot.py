@@ -1481,9 +1481,14 @@ class PlotAxes(base.Axes):
                 _, _, lum = utils.to_xyz(obj.cmap(obj.norm(level)))
                 colors.append('w' if lum < 50 else 'k')
 
-        # Draw labels
+        # Draw labels with careful zorder
+        # Want to at least match text zorder but respect contour zorder
+        zorder = max(h.get_zorder() for h in obj.collections)
+        zorder = max(3, zorder + 1)
+        kwargs.setdefault('zorder', zorder)
         labs = cobj.clabel(
-            fmt=fmt, colors=colors, fontsize=fontsize, inline_spacing=inline_spacing, **kwargs  # noqa: E501
+            fmt=fmt, colors=colors, fontsize=fontsize,
+            inline_spacing=inline_spacing, **kwargs
         )
         if labs is not None:  # returns None if no contours
             for lab in labs:
@@ -1492,7 +1497,8 @@ class PlotAxes(base.Axes):
         return labs
 
     def _add_gridbox_labels(
-        self, obj, fmt, *, c=None, color=None, colors=None, size=None, fontsize=None, **kwargs  # noqa: E501
+        self, obj, fmt, *, c=None, color=None, colors=None,
+        size=None, fontsize=None, **kwargs
     ):
         """
         Add labels to pcolor boxes with support for shade-dependent text colors.
