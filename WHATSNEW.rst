@@ -43,6 +43,8 @@ Features
 * Improve ``show_cmaps`` and ``show_cycles``: Stop passing arguments through
   constructor functions, preserve case for user colormap labels, and avoid
   showing leading ``_`` and trailing ``_copy`` in labels (:commit:`c41db8d8`).
+* Increase `zorder` of title/a-b-c text so it overlies e.g. text
+  contour labels (:commit:`77fa01da`).
 
 Bug fixes
 ---------
