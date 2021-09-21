@@ -713,17 +713,17 @@ class Axes(maxes.Axes):
         d['bottom'] = []
         d['top'] = []
         d = self._title_dict = {}
-        ta = self.transAxes
-        d['abc'] = self.text(0, 0, '', transform=ta)
+        kw = {'zorder': 3.5, 'transform': self.transAxes}
+        d['abc'] = self.text(0, 0, '', **kw)
         d['left'] = self._left_title  # WARNING: track in case mpl changes this
         d['center'] = self.title
         d['right'] = self._right_title
-        d['upper left'] = self.text(0, 0, '', va='top', ha='left', transform=ta)
-        d['upper center'] = self.text(0, 0, '', va='top', ha='center', transform=ta)
-        d['upper right'] = self.text(0, 0, '', va='top', ha='right', transform=ta)
-        d['lower left'] = self.text(0, 0, '', va='bottom', ha='left', transform=ta)
-        d['lower center'] = self.text(0, 0, '', va='bottom', ha='center', transform=ta)
-        d['lower right'] = self.text(0, 0, '', va='bottom', ha='right', transform=ta)
+        d['upper left'] = self.text(0, 0, '', va='top', ha='left', **kw)
+        d['upper center'] = self.text(0, 0, '', va='top', ha='center', **kw)
+        d['upper right'] = self.text(0, 0, '', va='top', ha='right', **kw)
+        d['lower left'] = self.text(0, 0, '', va='bottom', ha='left', **kw)
+        d['lower center'] = self.text(0, 0, '', va='bottom', ha='center', **kw)
+        d['lower right'] = self.text(0, 0, '', va='bottom', ha='right', **kw)
 
         # Subplot-specific settings
         # NOTE: Default number for any axes is None (i.e., no a-b-c labels allowed)
