@@ -65,6 +65,10 @@ Bug fixes
   if `norm` was passed as an already-instantiated class (:commit:`1ee79d36`).
 * Fix issue where `proplot.utils.arange` is not endpoint-inclusive
   for negative (descending) step size (:commit:`ec1f8410`).
+* Fix issue where color of contour `labels` cannot be changed
+  with `labels_kw` (:commit:`d101575d`).
+* Fix issue where contour `labels` appear on top of inner titles/a-b-c labels
+  by reducing default `zorder` (:commit:`59222164`).
 * Fix `~proplot.ticker.AutoFormatter` issue where `orderOfMagnitude` is
   not taken into account when correcting small tick values truncated to
   zero on (usually logarithmic) axis scales (:commit:`54fbef0b`).
