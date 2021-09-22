@@ -559,10 +559,12 @@ Plot a parametric line.
 Parameters
 ----------
 %(plot.args_1d_y)s
-c, color, colors, values : array-like, optional
-    The parametric coordinate. These can be passed as a third positional
-    argument or as a keyword argument. They can also be string labels instead
-    of numbers and the resulting colorbar ticks will be labeled accordingly.
+c, color, colors, values : sequence of float or color-spec, optional
+    The parametric coordinate(s). These can be passed as a third positional
+    argument or as a keyword argument. If they are string labels, the
+    resulting colorbar ticks will be labeled accordingly. If they are
+    colors, the corresponding colors will be used for the line segments.
+    To make a monochromatic parametric line, use e.g. ``color='blue'``.
 interp : int, optional
     Interpolate to this many additional points between the parametric
     coordinates. Default is ``0``. This can be increased to make the color
@@ -2905,13 +2907,27 @@ class PlotAxes(base.Axes):
         # Standardize arguments
         # NOTE: Values are inferred in _auto_format() the same way legend labels are
         # inferred. Will not always return an array like inferred coordinates do.
+        # NOTE: We want to be able to think of 'c' as a scatter color array and
+        # as a colormap color list. Try to support that here.
         kw = kwargs.copy()
         _process_props(kw, 'collection')
         kw, extents = self._parse_inbounds(**kw)
         x, y, kw = self._parse_plot1d(x, y, values=c, autovalues=True, autoreverse=False, **kw)  # noqa: E501
-        c = kw.pop('values', None)  # permits inferring values e.g. a simple ordinate
+        c = kw.pop('values', None)  # permits auto-inferring values
         c = np.arange(y.size) if c is None else data._to_numpy_array(c)
-        c, colorbar_kw = data._meta_coords(c, which='')
+        if (
+            c.size in (3, 4)
+            and y.size not in (3, 4)
+            and mcolors.is_color_like(tuple(c.flat))
+            or all(map(mcolors.is_color_like, c))
+        ):
+            c, kw['colors'] = np.arange(c.shape[0]), c  # convert color specs
+
+        # Interpret color values
+        # NOTE: This permits string label input for 'values'
+        c, colorbar_kw = data._meta_coords(c, which='')  # convert string labels
+        if c.size == 1 and y.size != 1:
+            c = np.arange(y.size)  # convert dummy label for single color
         guides._guide_kw_to_arg('colorbar', kw, **colorbar_kw)
         guides._guide_kw_to_arg('colorbar', kw, locator=c)
 
