@@ -34,17 +34,21 @@ ProPlot v0.9.2 (2021-##-##)
 Features
 --------
 
-* Permit passing `includepanels` and `mathtext_fallback` as
-  `proplot.figure.Figure.format` keywords instead of just
-  ``__init__`` keywords (:commit:`33bff576`).
+* Support single-color parametric plots with e.g. ``ax.parametric(x, y, color='red')``
+  as quick alternative to `plot` without "sticky edges" (:commit:`98504b86`).
+* Increase `zorder` of title/a-b-c text from ``3`` to ``3.5`` so it overlies
+  e.g. text contour labels (:commit:`77fa01da`).
+* Ensure contour `labels` appear on top of inner titles/a-b-c labels by changing
+  default `zorder` to maximum of ``3`` or ``cntr_zorder + 1`` (:commit:`59222164`).
 * Implement "descending level" support directly inside `~proplot.colors.DiscreteNorm`
   rather than cmap parser in plotting commands, and auto-reverse descending
   levels passed to `~proplot.colors.SegmentedNorm` (:commit:`46d8bedc`).
 * Improve ``show_cmaps`` and ``show_cycles``: Stop passing arguments through
   constructor functions, preserve case for user colormap labels, and avoid
   showing leading ``_`` and trailing ``_copy`` in labels (:commit:`c41db8d8`).
-* Increase `zorder` of title/a-b-c text so it overlies e.g. text
-  contour labels (:commit:`77fa01da`).
+* Permit passing `includepanels` and `mathtext_fallback` as
+  `proplot.figure.Figure.format` keywords instead of just
+  ``__init__`` keywords (:commit:`33bff576`).
 
 Bug fixes
 ---------
@@ -67,8 +71,6 @@ Bug fixes
   for negative (descending) step size (:commit:`ec1f8410`).
 * Fix issue where color of contour `labels` cannot be changed
   with `labels_kw` (:commit:`d101575d`).
-* Fix issue where contour `labels` appear on top of inner titles/a-b-c labels
-  by reducing default `zorder` (:commit:`59222164`).
 * Fix `~proplot.ticker.AutoFormatter` issue where `orderOfMagnitude` is
   not taken into account when correcting small tick values truncated to
   zero on (usually logarithmic) axis scales (:commit:`54fbef0b`).
