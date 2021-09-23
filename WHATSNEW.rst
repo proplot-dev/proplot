@@ -71,6 +71,8 @@ Bug fixes
   for negative (descending) step size (:commit:`ec1f8410`).
 * Fix issue where color of contour `labels` cannot be changed
   with `labels_kw` (:commit:`d101575d`).
+* Fix keyword conflict where `sizes` are interpreted as ``Collection``
+  marker sizes when passed to `~proplot.axes.PlotAxes.barb` (:issue:`287`).
 * Fix `~proplot.ticker.AutoFormatter` issue where `orderOfMagnitude` is
   not taken into account when correcting small tick values truncated to
   zero on (usually logarithmic) axis scales (:commit:`54fbef0b`).

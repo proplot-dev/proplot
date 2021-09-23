@@ -62,7 +62,7 @@ ALIAS_MAPS = {
         'linestyle': ('ls', 'linestyles'),
         'linewidth': ('lw', 'linewidths'),
         'marker': ('m', 'markers'),
-        'markersize': ('s', 'ms', 'markersizes', 'sizes'),
+        'markersize': ('s', 'ms', 'markersizes'),  # WARNING: no 'sizes' here for barb
         'markeredgewidth': ('ew', 'edgewidth', 'edgewidths', 'mew', 'markeredgewidths'),
         'markeredgecolor': ('ec', 'edgecolor', 'edgecolors', 'mec', 'markeredgecolors'),
         'markerfacecolor': (
