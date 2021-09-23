@@ -38,7 +38,7 @@
 # ---------------
 #
 # To create geographic axes, pass ``proj='name'`` to an axes-creation command like
-# `~proplot.figure.Figure.subplot` where ``name`` is any valid :ref:`PROJ projection
+# `proplot.figure.Figure.add_subplot`, where ``name`` is any valid :ref:`PROJ projection
 # name <proj_table>`. Alternatively, you can pass a `cartopy.crs.Projection` or
 # `~mpl_toolkits.basemap.Basemap` instance returned by the `~proplot.constructor.Proj`
 # :ref:`constructor function <why_constructor>` to `proj` (see below for details). If
@@ -437,7 +437,7 @@ for proj, ax in zip(projs, axs):
 # ----------
 #
 # To create `polar axes <polar_>`_, pass ``proj='polar'`` to an axes-creation
-# command like `~proplot.axes.PlotAxes.subplot`. Polar axes are represented with the
+# command like `proplot.figure.Figure.add_subplot`. Polar axes are represented with the
 # `~proplot.axes.PolarAxes` subclass, which has its own `~proplot.axes.PolarAxes.format`
 # command. `proplot.axes.PolarAxes.format` facilitates polar-specific modifications
 # like changing the central radius `r0`, the zero azimuth location `theta0`,

@@ -559,12 +559,14 @@ Plot a parametric line.
 Parameters
 ----------
 %(plot.args_1d_y)s
-c, color, colors, values : sequence of float or color-spec, optional
+c, color, colors, values : sequence of float, str, or color-spec, optional
     The parametric coordinate(s). These can be passed as a third positional
-    argument or as a keyword argument. If they are string labels, the
-    resulting colorbar ticks will be labeled accordingly. If they are
-    colors, the corresponding colors will be used for the line segments.
-    To make a monochromatic parametric line, use e.g. ``color='blue'``.
+    argument or as a keyword argument. If they are float, the colors will be
+    determined from `norm` and `cmap`. If they are strings, the color values
+    will be ``np.arange(len(colors))`` and eventual colorbar ticks will
+    be labeled with the strings. If they are colors, they are used for the
+    line segments and `cmap` is ignored -- for example, ``colors='blue'``
+    makes a monochromatic "parametric" line.
 interp : int, optional
     Interpolate to this many additional points between the parametric
     coordinates. Default is ``0``. This can be increased to make the color
