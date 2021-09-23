@@ -40,7 +40,7 @@ ALIAS_MAPS = {
         'linewidth': ('lw', 'linewidths', 'ew', 'edgewidth', 'edgewidths'),
         'zorder': ('z', 'zorders'),
     },
-    'collection': {  # NOTE: face color is ignored for line collections
+    'collection': {  # WARNING: face color ignored for line collections
         'alpha': ('a', 'alphas'),  # WARNING: collections and contours use singular!
         'colors': ('c', 'color'),
         'edgecolors': ('ec', 'edgecolor', 'mec', 'markeredgecolor', 'markeredgecolors'),
@@ -245,29 +245,33 @@ def _translate_kwargs(input, output, *keys, **aliases):
     return output
 
 
-def _translate_props(input, output, *categories, prefix=None, ignore=None):  # noqa: E501
+def _translate_props(input, output, *categories, prefix=None, ignore=None, skip=None):
     """
     The driver function.
     """
-    # Get properties
+    skip = skip or ()
+    ignore = ignore or ()
+    if isinstance(skip, str):  # e.g. 'sizes' for barbs() input
+        skip = (skip,)
+    if isinstance(ignore, str):  # e.g. 'marker' to ignore marker properties
+        ignore = (ignore,)
     prefix = prefix or ''  # e.g. 'box' for boxlw, boxlinewidth, etc.
     for category in categories:
         for key, aliases in ALIAS_MAPS[category].items():
             if isinstance(aliases, str):
                 aliases = (aliases,)
-            opts = {prefix + alias: input.pop(prefix + alias, None) for alias in (key, *aliases)}  # noqa: E501
+            opts = {
+                prefix + alias: input.pop(prefix + alias, None)
+                for alias in (key, *aliases)
+                if alias not in skip
+            }
             prop = _not_none(**opts)
-            if prop is not None:
-                output[key] = prop
-    # Ignore properties (e.g., ignore 'marker' properties)
-    ignore = ignore or ()
-    if isinstance(ignore, str):
-        ignore = (ignore,)
-    for string in ignore:
-        for key in tuple(output):
-            if string in key:
-                value = output.pop(key)
-                warnings._warn_proplot(f'Ignoring property {key}={value!r}.')
+            if prop is None:
+                continue
+            if any(string in key for string in ignore):
+                warnings._warn_proplot(f'Ignoring property {key}={prop!r}.')
+                continue
+            output[key] = prop
     return output
 
 
