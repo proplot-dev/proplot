@@ -2735,13 +2735,13 @@ class PlotAxes(base.Axes):
                 kw = self._parse_cycle(n, **kw)
                 *eb, kw = self._plot_errorbars(x, y, vert=vert, **kw)
                 *es, kw = self._plot_errorshading(x, y, vert=vert, **kw)
+                xsides.append(x)
                 if not vert:
                     x, y = y, x
                 a = [x, y]
                 if fmt is not None:  # x1, y1, fmt1, x2, y2, fm2... style input
                     a.append(fmt)
                 obj, = self._plot_native('plot', *a, **kw)
-                xsides.append(x)
                 self._inbounds_xylim(extents, x, y)
                 objs.append((*eb, *es, obj) if eb or es else obj)
 
