@@ -16,7 +16,7 @@ import re
 import sys
 from collections import namedtuple
 from collections.abc import MutableMapping
-from numbers import Integral, Real
+from numbers import Real
 
 import cycler
 import matplotlib as mpl
@@ -28,7 +28,7 @@ import numpy as np
 from matplotlib import RcParams
 
 from .internals import ic  # noqa: F401
-from .internals import _not_none, docstring, rcsetup, warnings
+from .internals import _not_none, _translate_grid, docstring, rcsetup, warnings
 
 try:
     from IPython import get_ipython
@@ -375,107 +375,6 @@ def _iter_data_objects(folder, *args, **kwargs):
             yield i, path
         else:
             raise FileNotFoundError(f'Invalid file path {path!r}.')
-
-
-def _translate_loc(loc, mode, *, default=None, **kwargs):
-    """
-    Translate the location string `loc` into a standardized form. The `mode`
-    must be a string for which there is a :rcraw:`mode.loc` setting. Additional
-    options can be added with keyword arguments.
-    """
-    # Create specific options dictionary
-    # NOTE: This is not inside validators.py because it is also used to
-    # validate various user-input locations.
-    if mode == 'panel':
-        loc_dict = rcsetup.PANEL_LOCS
-    elif mode == 'legend':
-        loc_dict = rcsetup.LEGEND_LOCS
-    elif mode == 'colorbar':
-        loc_dict = rcsetup.COLORBAR_LOCS
-    elif mode == 'text':
-        loc_dict = rcsetup.TEXT_LOCS
-    else:
-        raise ValueError(f'Invalid mode {mode!r}.')
-    loc_dict = loc_dict.copy()
-    loc_dict.update(kwargs)
-
-    # Translate location
-    if loc in (None, True):
-        loc = default
-    elif isinstance(loc, (str, Integral)):
-        try:
-            loc = loc_dict[loc]
-        except KeyError:
-            raise KeyError(
-                f'Invalid {mode} location {loc!r}. Options are: '
-                + ', '.join(map(repr, loc_dict))
-                + '.'
-            )
-    elif (
-        mode == 'legend'
-        and np.iterable(loc)
-        and len(loc) == 2
-        and all(isinstance(l, Real) for l in loc)
-    ):
-        loc = tuple(loc)
-    else:
-        raise KeyError(f'Invalid {mode} location {loc!r}.')
-
-    # Kludge / white lie
-    # TODO: Implement 'best' colorbar location
-    if mode == 'colorbar' and loc == 'best':
-        loc = 'lower right'
-
-    return loc
-
-
-def _translate_gridline_toggle(b, key):
-    """
-    Translate an instruction to turn either major or minor gridlines on or off into a
-    boolean and string applied to :rcraw:`axes.grid` and :rcraw:`axes.grid.which`.
-    """
-    ob = rc_matplotlib['axes.grid']
-    owhich = rc_matplotlib['axes.grid.which']
-
-    # Instruction is to turn off gridlines
-    if not b:
-        # Gridlines are already off, or they are on for the particular
-        # ones that we want to turn off. Instruct to turn both off.
-        if (
-            not ob
-            or key == 'grid' and owhich == 'major'
-            or key == 'gridminor' and owhich == 'minor'
-        ):
-            which = 'both'  # disable both sides
-        # Gridlines are currently on for major and minor ticks, so we
-        # instruct to turn on gridlines for the one we *don't* want off
-        elif owhich == 'both':  # and ob is True, as already tested
-            # if gridminor=False, enable major, and vice versa
-            b = True
-            which = 'major' if key == 'gridminor' else 'minor'
-        # Gridlines are on for the ones that we *didn't* instruct to
-        # turn off, and off for the ones we do want to turn off. This
-        # just re-asserts the ones that are already on.
-        else:
-            b = True
-            which = owhich
-
-    # Instruction is to turn on gridlines
-    else:
-        # Gridlines are already both on, or they are off only for the
-        # ones that we want to turn on. Turn on gridlines for both.
-        if (
-            owhich == 'both'
-            or key == 'grid' and owhich == 'minor'
-            or key == 'gridminor' and owhich == 'major'
-        ):
-            which = 'both'
-        # Gridlines are off for both, or off for the ones that we
-        # don't want to turn on. We can just turn on these ones.
-        else:
-            which = owhich
-
-    return b, which
 
 
 def config_inline_backend(fmt=None):
@@ -1092,7 +991,7 @@ class Configurator(MutableMapping, dict):
 
         # Gridline toggling
         elif contains('grid', 'gridminor'):
-            b, which = _translate_gridline_toggle(
+            b, which = _translate_grid(
                 value, 'gridminor' if contains('gridminor') else 'grid'
             )
             kw_matplotlib['axes.grid'] = b

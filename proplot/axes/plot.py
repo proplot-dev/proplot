@@ -31,7 +31,6 @@ from ..internals import (
     _pop_kwargs,
     _pop_params,
     _pop_props,
-    _process_props,
     context,
     data,
     docstring,
@@ -2726,7 +2725,7 @@ class PlotAxes(base.Axes):
         # Plot the lines
         objs, xsides = [], []
         kws = kwargs.copy()
-        _process_props(kws, 'line')
+        kws.update(_pop_props(kws, 'line'))
         kws, extents = self._parse_inbounds(**kws)
         for xs, ys, fmt in self._iter_arg_pairs(*pairs):
             xs, ys, kw = self._parse_plot1d(xs, ys, vert=vert, **kws)
@@ -2796,7 +2795,7 @@ class PlotAxes(base.Axes):
         opts = ('pre', 'post', 'mid')
         if where not in opts:
             raise ValueError(f'Invalid where={where!r}. Options are {opts!r}.')
-        _process_props(kws, 'line')
+        kws.update(_pop_props(kws, 'line'))
         kws.setdefault('drawstyle', 'steps-' + where)
         kws, extents = self._parse_inbounds(**kws)
         objs = []
@@ -2912,7 +2911,7 @@ class PlotAxes(base.Axes):
         # NOTE: We want to be able to think of 'c' as a scatter color array and
         # as a colormap color list. Try to support that here.
         kw = kwargs.copy()
-        _process_props(kw, 'collection')
+        kw.update(_pop_props(kw, 'collection'))
         kw, extents = self._parse_inbounds(**kw)
         x, y, kw = self._parse_plot1d(x, y, values=c, autovalues=True, autoreverse=False, **kw)  # noqa: E501
         c = kw.pop('values', None)  # permits auto-inferring values
@@ -2996,7 +2995,7 @@ class PlotAxes(base.Axes):
         name = 'vlines' if vert else 'hlines'
         if colors is not None:
             kw['colors'] = colors
-        _process_props(kw, 'collection')
+        kw.update(_pop_props(kw, 'collection'))
         kw, extents = self._parse_inbounds(**kw)
         stack = _not_none(stack=stack, stacked=stacked)
         xs, ys1, ys2, kw = self._parse_plot1d(xs, ys1, ys2, vert=vert, **kw)
@@ -3085,7 +3084,7 @@ class PlotAxes(base.Axes):
         # NOTE: Use 'inbounds' for both cmap and axes 'inbounds' restriction
         kw = kwargs.copy()
         inbounds = kw.pop('inbounds', None)
-        _process_props(kw, 'collection')
+        kw.update(_pop_props(kw, 'collection'))
         kw, extents = self._parse_inbounds(inbounds=inbounds, **kw)
         xs, ys, kw = self._parse_plot1d(xs, ys, vert=vert, autoreverse=False, **kw)
         ys, kw = data._dist_reduce(ys, **kw)
@@ -3163,7 +3162,7 @@ class PlotAxes(base.Axes):
         """
         # Parse input arguments
         kw = kwargs.copy()
-        _process_props(kw, 'patch')
+        kw.update(_pop_props(kw, 'patch'))
         kw, extents = self._parse_inbounds(**kw)
         name = 'fill_between' if vert else 'fill_betweenx'
         stack = _not_none(stack=stack, stacked=stacked)
@@ -3288,7 +3287,7 @@ class PlotAxes(base.Axes):
         # Call func after converting bar width
         b0 = 0
         objs = []
-        _process_props(kw, 'patch')
+        kw.update(_pop_props(kw, 'patch'))
         hs, kw = data._dist_reduce(hs, **kw)
         guide_kw = _pop_params(kw, self._update_guide)
         for i, n, x, h, w, b, kw in self._iter_arg_cols(xs, hs, ws, bs, **kw):
@@ -3400,7 +3399,7 @@ class PlotAxes(base.Axes):
         """
         # Global and fill properties
         kw = kwargs.copy()
-        _process_props(kw, 'patch')
+        kw.update(_pop_props(kw, 'patch'))
         fill = _not_none(fill=fill, filled=filled)
         means = _not_none(mean=mean, means=means, showmeans=kw.get('showmeans'))
         linewidth = kw.pop('linewidth', rc['patch.linewidth'])
@@ -3522,7 +3521,7 @@ class PlotAxes(base.Axes):
         """
         # Parse keyword args
         kw = kwargs.copy()
-        _process_props(kw, 'patch')
+        kw.update(_pop_props(kw, 'patch'))
         kw.setdefault('capsize', 0)  # caps are redundant for violin plots
         kw.setdefault('means', kw.pop('showmeans', None))  # for _indicate_error
         kw.setdefault('medians', kw.pop('showmedians', None))
@@ -3636,7 +3635,7 @@ class PlotAxes(base.Axes):
         kw['label'] = kw.pop('labels', None)  # multiple labels are natively supported
         kw['rwidth'] = _not_none(width=width, rwidth=rwidth)  # latter is native
         kw['histtype'] = histtype = _not_none(histtype, 'bar')
-        _process_props(kw, 'patch')
+        kw.update(_pop_props(kw, 'patch'))
         edgefix_kw = _pop_params(kw, self._apply_edgefix)
         guide_kw = _pop_params(kw, self._update_guide)
         n = xs.shape[1] if xs.ndim > 1 else 1
@@ -3700,7 +3699,7 @@ class PlotAxes(base.Axes):
         # estimated. Inside _parse_levels if no manual levels were provided then
         # _parse_autolev is skipped and args like levels=10 or locator=5 are ignored
         x, y, kw = self._parse_plot1d(x, y, autovalues=True, **kwargs)
-        _process_props(kw, 'collection')  # takes LineCollection props
+        kw.update(_pop_props(kw, 'collection'))  # takes LineCollection props
         kw = self._parse_cmap(x, y, y, skip_autolev=True, default_discrete=False, **kw)
         norm = kw.get('norm', None)
         if norm is not None and not isinstance(norm, pcolors.DiscreteNorm):
@@ -3720,7 +3719,7 @@ class PlotAxes(base.Axes):
         %(plot.contour)s
         """
         x, y, z, kw = self._parse_plot2d(x, y, z, **kwargs)
-        _process_props(kw, 'collection')
+        kw.update(_pop_props(kw, 'collection'))
         kw = self._parse_cmap(
             x, y, z, min_levels=1, plot_lines=True, plot_contours=True, **kw
         )
@@ -3741,7 +3740,7 @@ class PlotAxes(base.Axes):
         %(plot.contourf)s
         """
         x, y, z, kw = self._parse_plot2d(x, y, z, **kwargs)
-        _process_props(kw, 'collection')
+        kw.update(_pop_props(kw, 'collection'))
         kw = self._parse_cmap(x, y, z, plot_contours=True, **kw)
         contour_kw = _pop_kwargs(kw, 'edgecolors', 'linewidths', 'linestyles')
         edgefix_kw = _pop_params(kw, self._apply_edgefix)
@@ -3765,7 +3764,7 @@ class PlotAxes(base.Axes):
         %(plot.pcolor)s
         """
         x, y, z, kw = self._parse_plot2d(x, y, z, edges=True, **kwargs)
-        _process_props(kw, 'collection')
+        kw.update(_pop_props(kw, 'collection'))
         kw = self._parse_cmap(x, y, z, to_centers=True, **kw)
         edgefix_kw = _pop_params(kw, self._apply_edgefix)
         labels_kw = _pop_params(kw, self._add_auto_labels)
@@ -3784,7 +3783,7 @@ class PlotAxes(base.Axes):
         %(plot.pcolormesh)s
         """
         x, y, z, kw = self._parse_plot2d(x, y, z, edges=True, **kwargs)
-        _process_props(kw, 'collection')
+        kw.update(_pop_props(kw, 'collection'))
         kw = self._parse_cmap(x, y, z, to_centers=True, **kw)
         edgefix_kw = _pop_params(kw, self._apply_edgefix)
         labels_kw = _pop_params(kw, self._add_auto_labels)
@@ -3803,7 +3802,7 @@ class PlotAxes(base.Axes):
         %(plot.pcolorfast)s
         """
         x, y, z, kw = self._parse_plot2d(x, y, z, edges=True, **kwargs)
-        _process_props(kw, 'collection')
+        kw.update(_pop_props(kw, 'collection'))
         kw = self._parse_cmap(x, y, z, to_centers=True, **kw)
         edgefix_kw = _pop_params(kw, self._apply_edgefix)
         labels_kw = _pop_params(kw, self._add_auto_labels)
@@ -3853,7 +3852,7 @@ class PlotAxes(base.Axes):
         %(plot.barbs)s
         """
         x, y, u, v, kw = self._parse_plot2d(x, y, u, v, allow1d=True, autoguide=False, **kwargs)  # noqa: E501
-        _process_props(kw, 'line')  # applied to barbs
+        kw.update(_pop_props(kw, 'line'))  # applied to barbs
         c, kw = self._parse_color(x, y, c, **kw)
         if mcolors.is_color_like(c):
             kw['barbcolor'], c = c, None
@@ -3872,7 +3871,7 @@ class PlotAxes(base.Axes):
         %(plot.quiver)s
         """
         x, y, u, v, kw = self._parse_plot2d(x, y, u, v, allow1d=True, autoguide=False, **kwargs)  # noqa: E501
-        _process_props(kw, 'line')  # applied to arrow outline
+        kw.update(_pop_props(kw, 'line'))  # applied to arrow outline
         c, kw = self._parse_color(x, y, c, **kw)
         color = None
         if mcolors.is_color_like(c):
@@ -3904,7 +3903,7 @@ class PlotAxes(base.Axes):
         %(plot.stream)s
         """
         x, y, u, v, kw = self._parse_plot2d(x, y, u, v, **kwargs)
-        _process_props(kw, 'line')  # applied to lines
+        kw.update(_pop_props(kw, 'line'))  # applied to lines
         c, kw = self._parse_color(x, y, c, **kw)
         if c is None:  # throws an error if color not provided
             c = pcolors.to_hex(self._get_lines.get_next_color())
@@ -3926,7 +3925,7 @@ class PlotAxes(base.Axes):
         kw = kwargs.copy()
         if x is None or y is None or z is None:
             raise ValueError('Three input arguments are required.')
-        _process_props(kw, 'collection')
+        kw.update(_pop_props(kw, 'collection'))
         kw = self._parse_cmap(
             x, y, z, min_levels=1, plot_lines=True, plot_contours=True, **kw
         )
@@ -3949,7 +3948,7 @@ class PlotAxes(base.Axes):
         kw = kwargs.copy()
         if x is None or y is None or z is None:
             raise ValueError('Three input arguments are required.')
-        _process_props(kw, 'collection')
+        kw.update(_pop_props(kw, 'collection'))
         contour_kw = _pop_kwargs(kw, 'edgecolors', 'linewidths', 'linestyles')
         kw = self._parse_cmap(x, y, z, plot_contours=True, **kw)
         edgefix_kw = _pop_params(kw, self._apply_edgefix)
@@ -3975,7 +3974,7 @@ class PlotAxes(base.Axes):
         kw = kwargs.copy()
         if x is None or y is None or z is None:
             raise ValueError('Three input arguments are required.')
-        _process_props(kw, 'collection')
+        kw.update(_pop_props(kw, 'collection'))
         kw = self._parse_cmap(x, y, z, **kw)
         edgefix_kw = _pop_params(kw, self._apply_edgefix)
         labels_kw = _pop_params(kw, self._add_auto_labels)
@@ -4021,7 +4020,7 @@ class PlotAxes(base.Axes):
         %(plot.spy)s
         """
         kw = kwargs.copy()
-        _process_props(kw, 'line')  # takes valid Line2D properties
+        kw.update(_pop_props(kw, 'line'))  # takes valid Line2D properties
         default_cmap = pcolors.DiscreteColormap(['w', 'k'], '_no_name')
         kw = self._parse_cmap(z, default_cmap=default_cmap, **kw)
         guide_kw = _pop_params(kw, self._update_guide)

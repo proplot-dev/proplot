@@ -18,12 +18,13 @@ import numpy as np
 from . import axes as paxes
 from . import constructor
 from . import gridspec as pgridspec
-from .config import _translate_loc, rc, rc_matplotlib
+from .config import rc, rc_matplotlib
 from .internals import ic  # noqa: F401
 from .internals import (
     _not_none,
     _pop_params,
     _pop_rc,
+    _translate_loc,
     context,
     dependencies,
     docstring,

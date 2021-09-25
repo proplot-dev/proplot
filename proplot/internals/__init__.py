@@ -3,6 +3,10 @@
 Internal utilities.
 """
 import inspect
+from numbers import Integral, Real
+
+import numpy as np
+from matplotlib import rcParams as rc_matplotlib
 
 from . import (  # noqa: F401
     benchmarks, context, data, dependencies, docstring, rcsetup, text, warnings
@@ -201,6 +205,21 @@ def _not_none(*args, default=None, **kwargs):
     return first
 
 
+def _pop_kwargs(kwargs, *keys, **aliases):
+    """
+    Pop the input properties and return them in a new dictionary.
+    """
+    output = {}
+    aliases.update({key: () for key in keys})
+    for key, aliases in aliases.items():
+        aliases = (aliases,) if isinstance(aliases, str) else aliases
+        opts = {key: kwargs.pop(key, None) for key in (key, *aliases)}
+        value = _not_none(**opts)
+        if value is not None:
+            output[key] = value
+    return output
+
+
 def _pop_params(kwargs, *funcs, ignore_internal=False):
     """
     Pop parameters of the input functions or methods.
@@ -231,62 +250,11 @@ def _pop_params(kwargs, *funcs, ignore_internal=False):
     return output
 
 
-def _pop_rc(src):
+def _pop_props(input, *categories, prefix=None, ignore=None, skip=None):
     """
-    Separate `rc` setting names from the keyword arguments for use in
-    a `~Config.context` block. Used by the various ``format`` functions.
+    Pop the registered properties and return them in a new dictionary.
     """
-    # NOTE: rc_mode == 2 applies only the updated params. A power user
-    # could use ax.format(rc_mode=0) to re-apply all the current settings
-    kw = src.pop('rc_kw', None) or {}
-    if 'mode' in src:
-        src['rc_mode'] = src.pop('mode')
-        warnings._warn_proplot(
-            "Keyword 'mode' was deprecated in v0.6. Please use 'rc_mode' instead."
-        )
-    mode = src.pop('rc_mode', None)
-    mode = _not_none(mode, 2)  # only apply updated params by default
-    for key, value in tuple(src.items()):
-        name = rcsetup._rc_nodots.get(key, None)
-        if name in ('alpha', 'facecolor', 'edgecolor', 'linewidth'):
-            name = None  # former renamed settings
-        if name is not None:
-            kw[name] = src.pop(key)
-    return kw, mode
-
-
-def _translate_kwargs(input, output, *keys, **aliases):
-    """
-    The driver function.
-    """
-    aliases.update({key: () for key in keys})
-    for key, aliases in aliases.items():
-        aliases = (aliases,) if isinstance(aliases, str) else aliases
-        opts = {key: input.pop(key, None) for key in (key, *aliases)}
-        value = _not_none(**opts)
-        if value is not None:
-            output[key] = value
-    return output
-
-
-def _pop_kwargs(src, *keys, **aliases):
-    """
-    Pop out input properties and return them in a new dictionary.
-    """
-    return _translate_kwargs(src, {}, *keys, **aliases)
-
-
-def _process_kwargs(src, *keys, **aliases):
-    """
-    Translate input properties and add translated names to the original dictionary.
-    """
-    return _translate_kwargs(src, src, *keys, **aliases)
-
-
-def _translate_props(input, output, *categories, prefix=None, ignore=None, skip=None):
-    """
-    The driver function.
-    """
+    output = {}
     skip = skip or ()
     ignore = ignore or ()
     if isinstance(skip, str):  # e.g. 'sizes' for barbs() input
@@ -313,15 +281,125 @@ def _translate_props(input, output, *categories, prefix=None, ignore=None, skip=
     return output
 
 
-def _pop_props(src, *categories, **kwargs):
+def _pop_rc(src):
     """
-    Pop out registered properties and return them in a new dictionary.
+    Pop the rc setting names and mode for a `~Configurator.context` block.
     """
-    return _translate_props(src, {}, *categories, **kwargs)
+    # NOTE: rc_mode == 2 applies only the updated params. A power user
+    # could use ax.format(rc_mode=0) to re-apply all the current settings
+    kw = src.pop('rc_kw', None) or {}
+    if 'mode' in src:
+        src['rc_mode'] = src.pop('mode')
+        warnings._warn_proplot(
+            "Keyword 'mode' was deprecated in v0.6. Please use 'rc_mode' instead."
+        )
+    mode = src.pop('rc_mode', None)
+    mode = _not_none(mode, 2)  # only apply updated params by default
+    for key, value in tuple(src.items()):
+        name = rcsetup._rc_nodots.get(key, None)
+        if name in ('alpha', 'facecolor', 'edgecolor', 'linewidth'):
+            name = None  # former renamed settings
+        if name is not None:
+            kw[name] = src.pop(key)
+    return kw, mode
 
 
-def _process_props(src, *categories, **kwargs):
+def _translate_loc(loc, mode, *, default=None, **kwargs):
     """
-    Translate registered properties and add translated names to the original dictionary.
+    Translate the location string `loc` into a standardized form. The `mode`
+    must be a string for which there is a :rcraw:`mode.loc` setting. Additional
+    options can be added with keyword arguments.
     """
-    return _translate_props(src, src, *categories, **kwargs)
+    # Create specific options dictionary
+    # NOTE: This is not inside validators.py because it is also used to
+    # validate various user-input locations.
+    if mode == 'panel':
+        loc_dict = rcsetup.PANEL_LOCS
+    elif mode == 'legend':
+        loc_dict = rcsetup.LEGEND_LOCS
+    elif mode == 'colorbar':
+        loc_dict = rcsetup.COLORBAR_LOCS
+    elif mode == 'text':
+        loc_dict = rcsetup.TEXT_LOCS
+    else:
+        raise ValueError(f'Invalid mode {mode!r}.')
+    loc_dict = loc_dict.copy()
+    loc_dict.update(kwargs)
+
+    # Translate location
+    if loc in (None, True):
+        loc = default
+    elif isinstance(loc, (str, Integral)):
+        try:
+            loc = loc_dict[loc]
+        except KeyError:
+            raise KeyError(
+                f'Invalid {mode} location {loc!r}. Options are: '
+                + ', '.join(map(repr, loc_dict))
+                + '.'
+            )
+    elif (
+        mode == 'legend'
+        and np.iterable(loc)
+        and len(loc) == 2
+        and all(isinstance(l, Real) for l in loc)
+    ):
+        loc = tuple(loc)
+    else:
+        raise KeyError(f'Invalid {mode} location {loc!r}.')
+
+    # Kludge / white lie
+    # TODO: Implement 'best' colorbar location
+    if mode == 'colorbar' and loc == 'best':
+        loc = 'lower right'
+
+    return loc
+
+
+def _translate_grid(b, key):
+    """
+    Translate an instruction to turn either major or minor gridlines on or off into a
+    boolean and string applied to :rcraw:`axes.grid` and :rcraw:`axes.grid.which`.
+    """
+    ob = rc_matplotlib['axes.grid']
+    owhich = rc_matplotlib['axes.grid.which']
+
+    # Instruction is to turn off gridlines
+    if not b:
+        # Gridlines are already off, or they are on for the particular
+        # ones that we want to turn off. Instruct to turn both off.
+        if (
+            not ob
+            or key == 'grid' and owhich == 'major'
+            or key == 'gridminor' and owhich == 'minor'
+        ):
+            which = 'both'  # disable both sides
+        # Gridlines are currently on for major and minor ticks, so we
+        # instruct to turn on gridlines for the one we *don't* want off
+        elif owhich == 'both':  # and ob is True, as already tested
+            # if gridminor=False, enable major, and vice versa
+            b = True
+            which = 'major' if key == 'gridminor' else 'minor'
+        # Gridlines are on for the ones that we *didn't* instruct to
+        # turn off, and off for the ones we do want to turn off. This
+        # just re-asserts the ones that are already on.
+        else:
+            b = True
+            which = owhich
+
+    # Instruction is to turn on gridlines
+    else:
+        # Gridlines are already both on, or they are off only for the
+        # ones that we want to turn on. Turn on gridlines for both.
+        if (
+            owhich == 'both'
+            or key == 'grid' and owhich == 'minor'
+            or key == 'gridminor' and owhich == 'major'
+        ):
+            which = 'both'
+        # Gridlines are off for both, or off for the ones that we
+        # don't want to turn on. We can just turn on these ones.
+        else:
+            which = owhich
+
+    return b, which

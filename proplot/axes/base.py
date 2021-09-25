@@ -25,7 +25,7 @@ from matplotlib import cbook
 
 from .. import colors as pcolors
 from .. import constructor
-from ..config import _translate_loc, rc
+from ..config import rc
 from ..internals import ic  # noqa: F401
 from ..internals import (
     _kwargs_to_args,
@@ -34,7 +34,7 @@ from ..internals import (
     _pop_params,
     _pop_props,
     _pop_rc,
-    _process_props,
+    _translate_loc,
     dependencies,
     docstring,
     guides,
@@ -1580,7 +1580,7 @@ class Axes(maxes.Axes):
         parent = self._inset_parent
         if not parent:
             raise ValueError('This command can only be called from an inset axes.')
-        _process_props(kwargs, 'patch')  # impose alternative defaults after norm
+        kwargs.update(_pop_props(kwargs, 'patch'))  # impose alternative defaults
         if not self._inset_zoom_artists:
             kwargs.setdefault('zorder', 3.5)
             kwargs.setdefault('linewidth', rc['axes.linewidth'])
