@@ -121,14 +121,14 @@ def _to_numpy_array(data, strip_units=False):
         return np.atleast_1d(data)  # natively preserves masked arrays
 
 
-def _to_masked_array(data):
+def _to_masked_array(data, *, copy=False):
     """
     Convert numpy array to masked array with consideration for datetimes and quantities.
     """
     units = None
     if ndarray is not Quantity and isinstance(data, Quantity):
         data, units = data.magnitude, data.units
-    data = ma.masked_invalid(data, copy=False)
+    data = ma.masked_invalid(data, copy=copy)
     if np.issubdtype(data.dtype, np.integer):
         data = data.astype(np.float)
     if np.issubdtype(data.dtype, np.number):
@@ -421,7 +421,7 @@ def _safe_mask(mask, *args):
     invalid = ~mask  # True if invalid
     args_masked = []
     for data in args:
-        data, units = _to_masked_array(data)
+        data, units = _to_masked_array(data, copy=True)
         nan = data.fill_value
         data = data.filled()
         if data.size > 1 and data.shape != invalid.shape:

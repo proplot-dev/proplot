@@ -1232,7 +1232,7 @@ class PlotAxes(base.Axes):
                 obj = getattr(super(), name)(*args, **kwargs)
         return obj
 
-    def _plot_filledge(self, method, *args, **kwargs):
+    def _plot_contour_edge(self, method, *args, **kwargs):
         """
         Call the contour method to add "edges" to filled contours.
         """
@@ -1247,7 +1247,7 @@ class PlotAxes(base.Axes):
         kwargs['colors'] = kwargs.pop('edgecolors', 'k')
         return self._plot_native(method, *args, **kwargs)
 
-    def _plot_multicolor(
+    def _plot_negpos_objs(
         self, name, x, *ys, negcolor=None, poscolor=None, colorkey='facecolor',
         use_where=False, use_zero=False, **kwargs
     ):
@@ -3013,7 +3013,7 @@ class PlotAxes(base.Axes):
                 y2 = y2 + y0
                 y0 = y0 + y2 - y1  # irrelevant that we added y0 to both
             if negpos:
-                obj = self._plot_multicolor(name, x, y1, y2, colorkey='colors', **kw)
+                obj = self._plot_negpos_objs(name, x, y1, y2, colorkey='colors', **kw)
             else:
                 obj = self._plot_native(name, x, y1, y2, **kw)
             for y in (y1, y2):
@@ -3180,7 +3180,7 @@ class PlotAxes(base.Axes):
                 y2 = y2 + y0
                 y0 = y0 + y2 - y1  # irrelevant that we added y0 to both
             if negpos:  # NOTE: if user passes 'where' will issue a warning
-                obj = self._plot_multicolor(name, x, y1, y2, where=w, use_where=True, **kw)  # noqa: E501
+                obj = self._plot_negpos_objs(name, x, y1, y2, where=w, use_where=True, **kw)  # noqa: E501
             else:
                 obj = self._plot_native(name, x, y1, y2, where=w, **kw)
             self._apply_edgefix(obj, **edgefix_kw, **kw)
@@ -3307,7 +3307,7 @@ class PlotAxes(base.Axes):
             # Draw simple bars
             *eb, kw = self._plot_errorbars(x, b + h, orientation=orientation, **kw)
             if negpos:
-                obj = self._plot_multicolor(name, x, h, w, b, use_zero=True, **kw)
+                obj = self._plot_negpos_objs(name, x, h, w, b, use_zero=True, **kw)
             else:
                 obj = self._plot_native(name, x, h, w, b, **kw)
             self._apply_edgefix(obj, **edgefix_kw, **kw)
@@ -3751,7 +3751,7 @@ class PlotAxes(base.Axes):
         m._legend_label = label
         self._apply_edgefix(m, **edgefix_kw, **contour_kw)  # skipped if not contour_kw
         if contour_kw or labels_kw:
-            cm = self._plot_filledge('contour', x, y, z, **kw, **contour_kw)
+            cm = self._plot_contour_edge('contour', x, y, z, **kw, **contour_kw)
         self._add_auto_labels(m, cm, **labels_kw)
         self._update_guide(m, queue_colorbar=False, **guide_kw)
         return m
@@ -3959,7 +3959,7 @@ class PlotAxes(base.Axes):
         m._legend_label = label
         self._apply_edgefix(m, **edgefix_kw, **contour_kw)  # skipped if not contour_kw
         if contour_kw or labels_kw:
-            cm = self._plot_filledge('tricontour', x, y, z, **kw, **contour_kw)
+            cm = self._plot_contour_edge('tricontour', x, y, z, **kw, **contour_kw)
         self._add_auto_labels(m, cm, **labels_kw)
         self._update_guide(m, queue_colorbar=False, **guide_kw)
         return m
