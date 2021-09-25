@@ -377,25 +377,6 @@ def _iter_data_objects(folder, *args, **kwargs):
             raise FileNotFoundError(f'Invalid file path {path!r}.')
 
 
-@warnings._rename_kwargs('0.6', mode='rc_mode')
-def _parse_format(rc_kw=None, rc_mode=None, **kwargs):
-    """
-    Separate `rc` setting names from the keyword arguments for use in
-    a `~Config.context` block. Used by the various ``format`` functions.
-    """
-    # NOTE: rc_mode == 2 applies only the updated params. A power user
-    # could use ax.format(rc_mode=0) to re-apply all the current settings
-    kw = rc_kw or {}
-    mode = _not_none(rc_mode, 2)  # only apply updated params by default
-    for key, value in tuple(kwargs.items()):
-        name = rcsetup._rc_nodots.get(key, None)
-        if name in ('alpha', 'facecolor', 'edgecolor', 'linewidth'):
-            name = None  # former renamed settings
-        if name is not None:
-            kw[name] = kwargs.pop(key)
-    return kw, mode, kwargs
-
-
 def _translate_loc(loc, mode, *, default=None, **kwargs):
     """
     Translate the location string `loc` into a standardized form. The `mode`

@@ -231,6 +231,30 @@ def _pop_params(kwargs, *funcs, ignore_internal=False):
     return output
 
 
+def _pop_rc(src):
+    """
+    Separate `rc` setting names from the keyword arguments for use in
+    a `~Config.context` block. Used by the various ``format`` functions.
+    """
+    # NOTE: rc_mode == 2 applies only the updated params. A power user
+    # could use ax.format(rc_mode=0) to re-apply all the current settings
+    kw = src.pop('rc_kw', None) or {}
+    if 'mode' in src:
+        src['rc_mode'] = src.pop('mode')
+        warnings._warn_proplot(
+            "Keyword 'mode' was deprecated in v0.6. Please use 'rc_mode' instead."
+        )
+    mode = src.pop('rc_mode', None)
+    mode = _not_none(mode, 2)  # only apply updated params by default
+    for key, value in tuple(src.items()):
+        name = rcsetup._rc_nodots.get(key, None)
+        if name in ('alpha', 'facecolor', 'edgecolor', 'linewidth'):
+            name = None  # former renamed settings
+        if name is not None:
+            kw[name] = src.pop(key)
+    return kw, mode
+
+
 def _translate_kwargs(input, output, *keys, **aliases):
     """
     The driver function.
@@ -243,6 +267,20 @@ def _translate_kwargs(input, output, *keys, **aliases):
         if value is not None:
             output[key] = value
     return output
+
+
+def _pop_kwargs(src, *keys, **aliases):
+    """
+    Pop out input properties and return them in a new dictionary.
+    """
+    return _translate_kwargs(src, {}, *keys, **aliases)
+
+
+def _process_kwargs(src, *keys, **aliases):
+    """
+    Translate input properties and add translated names to the original dictionary.
+    """
+    return _translate_kwargs(src, src, *keys, **aliases)
 
 
 def _translate_props(input, output, *categories, prefix=None, ignore=None, skip=None):
@@ -273,20 +311,6 @@ def _translate_props(input, output, *categories, prefix=None, ignore=None, skip=
                 continue
             output[key] = prop
     return output
-
-
-def _pop_kwargs(src, *keys, **aliases):
-    """
-    Pop out input properties and return them in a new dictionary.
-    """
-    return _translate_kwargs(src, {}, *keys, **aliases)
-
-
-def _process_kwargs(src, *keys, **aliases):
-    """
-    Translate input properties and add translated names to the original dictionary.
-    """
-    return _translate_kwargs(src, src, *keys, **aliases)
 
 
 def _pop_props(src, *categories, **kwargs):

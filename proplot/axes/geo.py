@@ -13,9 +13,9 @@ import numpy as np
 
 from .. import constructor
 from .. import crs as pcrs
-from ..config import _parse_format, rc
+from ..config import rc
 from ..internals import ic  # noqa: F401
-from ..internals import _not_none, dependencies, docstring, warnings
+from ..internals import _not_none, _pop_rc, dependencies, docstring, warnings
 from . import plot
 
 try:
@@ -548,7 +548,7 @@ class GeoAxes(plot.PlotAxes):
                 self._map_boundary = object()  # sentinel
 
         # Initiate context block
-        rc_kw, rc_mode, kwargs = _parse_format(**kwargs)
+        rc_kw, rc_mode = _pop_rc(kwargs)
         with rc.context(rc_kw, mode=rc_mode):
             # Label toggles
             labels = _not_none(labels, rc.find('grid.labels', context=True))
@@ -719,8 +719,11 @@ class _CartopyAxes(GeoAxes, _GeoAxes):
         # global extent for other projections.
         # NOTE: This has to come after initialization so set_extent and set_global
         # can do their things. This also updates _LatAxis and _LonAxis.
-        # NOTE: Use set_global rather than _update_extent() manually in case projection
-        # extent cannot be global.
+        # NOTE: Use set_global rather than _update_extent() manually in case
+        # the projection extent cannot be global.
+        # NOTE: For some reason the initial call to _set_view_intervals may change
+        # the default boundary with autoextent=True. Try in a robinson projection:
+        # ax.contour(np.linspace(-90, 180, N), np.linspace(0, 90, N),  state.rand(N, N))
         auto = _not_none(autoextent, rc['cartopy.autoextent'])
         circular = _not_none(circular, rc['cartopy.circular'])
         if polar and circular and hasattr(self, 'set_boundary'):

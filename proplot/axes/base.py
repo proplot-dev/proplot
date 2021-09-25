@@ -25,7 +25,7 @@ from matplotlib import cbook
 
 from .. import colors as pcolors
 from .. import constructor
-from ..config import _parse_format, _translate_loc, rc
+from ..config import _translate_loc, rc
 from ..internals import ic  # noqa: F401
 from ..internals import (
     _kwargs_to_args,
@@ -33,6 +33,7 @@ from ..internals import (
     _pop_kwargs,
     _pop_params,
     _pop_props,
+    _pop_rc,
     _process_props,
     dependencies,
     docstring,
@@ -670,7 +671,7 @@ class Axes(maxes.Axes):
         number = kwargs.pop('number', None)
         autoshare = kwargs.pop('autoshare', None)
         autoshare = _not_none(autoshare, True)
-        rc_kw, rc_mode, kwargs = _parse_format(**kwargs)
+        rc_kw, rc_mode = _pop_rc(kwargs)
         kw_format = {}
         for sig in (self._format_signature, self._format_signature_base):
             if sig is not None:
@@ -1423,7 +1424,7 @@ class Axes(maxes.Axes):
         params = _pop_params(kwargs, self.figure._format_signature)
 
         # Initiate context block
-        rc_kw, rc_mode, kwargs = _parse_format(**kwargs)
+        rc_kw, rc_mode = _pop_rc(kwargs)
         with rc.context(rc_kw, mode=rc_mode):
             # Behavior of titles in presence of panels
             above = rc.find('title.above', context=True)

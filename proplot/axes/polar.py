@@ -9,9 +9,9 @@ import numpy as np
 
 from .. import constructor
 from .. import ticker as pticker
-from ..config import _parse_format, rc
+from ..config import rc
 from ..internals import ic  # noqa: F401
-from ..internals import _not_none, docstring, warnings
+from ..internals import _not_none, _pop_rc, docstring, warnings
 from . import plot, shared
 
 __all__ = ['PolarAxes']
@@ -224,7 +224,7 @@ class PolarAxes(shared._SharedAxes, plot.PlotAxes, mproj.PolarAxes):
         """
         # NOTE: Here we capture 'label.pad' rc argument normally used for
         # x and y axis labels as shorthand for 'tick.labelpad'.
-        rc_kw, rc_mode, kwargs = _parse_format(**kwargs)
+        rc_kw, rc_mode = _pop_rc(kwargs)
         with rc.context(rc_kw, mode=rc_mode):
             # Not mutable default args
             thetalocator_kw = thetalocator_kw or {}

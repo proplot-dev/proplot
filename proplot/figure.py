@@ -18,11 +18,12 @@ import numpy as np
 from . import axes as paxes
 from . import constructor
 from . import gridspec as pgridspec
-from .config import _parse_format, _translate_loc, rc, rc_matplotlib
+from .config import _translate_loc, rc, rc_matplotlib
 from .internals import ic  # noqa: F401
 from .internals import (
     _not_none,
     _pop_params,
+    _pop_rc,
     context,
     dependencies,
     docstring,
@@ -679,7 +680,7 @@ class Figure(mfigure.Figure):
         self._is_authorized = False
         self._includepanels = None
         self._mathtext_context = {}
-        rc_kw, rc_mode, kwargs = _parse_format(**kwargs)
+        rc_kw, rc_mode = _pop_rc(kwargs)
         kw_format = _pop_params(kwargs, self._format_signature)
         with self._context_authorized():
             super().__init__(**kwargs)
@@ -1437,7 +1438,7 @@ class Figure(mfigure.Figure):
         """
         # Initiate context block
         skip_axes = kwargs.pop('skip_axes', False)  # internal keyword arg
-        rc_kw, rc_mode, kwargs = _parse_format(**kwargs)
+        rc_kw, rc_mode = _pop_rc(kwargs)
         with rc.context(rc_kw, mode=rc_mode):
             # Update background patch
             kw = rc.fill({'facecolor': 'figure.facecolor'}, context=True)

@@ -11,9 +11,9 @@ import numpy as np
 from .. import constructor
 from .. import scale as pscale
 from .. import ticker as pticker
-from ..config import _parse_format, rc
+from ..config import rc
 from ..internals import ic  # noqa: F401
-from ..internals import _not_none, docstring, text, warnings
+from ..internals import _not_none, _pop_rc, docstring, text, warnings
 from . import plot, shared
 
 __all__ = ['CartesianAxes']
@@ -813,7 +813,7 @@ class CartesianAxes(shared._SharedAxes, plot.PlotAxes):
         or `datetime.datetime` array as the x or y axis coordinate, the axis ticks
         and tick labels will be automatically formatted as dates.
         """
-        rc_kw, rc_mode, kwargs = _parse_format(**kwargs)
+        rc_kw, rc_mode = _pop_rc(kwargs)
         with rc.context(rc_kw, mode=rc_mode):
             # No mutable default args
             xlabel_kw = xlabel_kw or {}
