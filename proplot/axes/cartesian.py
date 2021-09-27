@@ -576,9 +576,15 @@ class CartesianAxes(shared._SharedAxes, plot.PlotAxes):
         # later so that labels set with set_xlabel() and set_ylabel() are shared too.
         # See notes in _align_axis_labels() and _apply_axis_sharing().
         kwargs = self._get_label_props(**kwargs)
-        if all(a is None for a in args) and all(v is None for v in kwargs.values()):
+        no_args = all(a is None for a in args)
+        no_kwargs = all(v is None for v in kwargs.values())
+        if no_args and no_kwargs:
             return  # also returns if args and kwargs are empty
-        getattr(self, 'set_' + x + 'label')(*args, **kwargs)
+        setter = getattr(self, 'set_' + x + 'label')
+        getter = getattr(self, 'get_' + x + 'label')
+        if no_args:  # otherwise label text is reset!
+            args = (getter(),)
+        setter(*args, **kwargs)
 
     def _update_locators(
         self, x, locator=None, minorlocator=None, *,
