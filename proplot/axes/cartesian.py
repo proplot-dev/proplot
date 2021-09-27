@@ -318,7 +318,7 @@ class CartesianAxes(shared._SharedAxes, plot.PlotAxes):
         # bottommost or to the *right* of the leftmost panel. But the sharing level
         # used for the leftmost and bottommost is the *figure* sharing level.
         axis = self.xaxis
-        if self._sharex is not None:
+        if self._sharex is not None and axis.get_visible():
             level = 3 if self._panel_sharex_group else self.figure._sharex
             if level > 0:
                 text._transfer_text(axis.label, self._sharex.xaxis.label)
@@ -329,7 +329,7 @@ class CartesianAxes(shared._SharedAxes, plot.PlotAxes):
                 axis.set_tick_params(which='both', labelbottom=False, labeltop=False)
         # Y axis
         axis = self.yaxis
-        if self._sharey is not None:
+        if self._sharey is not None and axis.get_visible():
             level = 3 if self._panel_sharey_group else self.figure._sharey
             if level > 0:
                 text._transfer_text(axis.label, self._sharey.yaxis.label)
