@@ -916,6 +916,10 @@ class CartesianAxes(shared._SharedAxes, plot.PlotAxes):
                 if yticklabelloc in ('left', 'right'):
                     ylabelloc = _not_none(ylabelloc, yticklabelloc)
                     yoffsetloc = _not_none(yoffsetloc, yticklabelloc)
+            xtickloc = _not_none(xtickloc, self._get_loc('x', 'xtick'))  # rc
+            ytickloc = _not_none(ytickloc, self._get_loc('y', 'ytick'))  # rc
+            xspineloc = _not_none(xspineloc, self._get_loc('x', 'axes.spines'))  # rc
+            yspineloc = _not_none(yspineloc, self._get_loc('y', 'axes.spines'))  # rc
 
             # Loop over axes
             for (
