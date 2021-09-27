@@ -34,23 +34,35 @@ ProPlot v0.9.2 (2021-##-##)
 Features
 --------
 
+* Permit passing `includepanels` and `mathtext_fallback` as
+  `proplot.figure.Figure.format` keywords instead of just
+  ``__init__`` keywords (:commit:`33bff576`).
+* Permit passing ``loc`` `proplot.axes.CartesianAxes.format` keyword argument(s) to
+  ``alt[xy]`` (:commit:`eaab8658`). For example ``ax.alty(loc='left')`` changes the
+  spine, tick mark, tick label, axis label, and offset label sides to the opposite of
+  the default: *left* for the new alternate axes, *right* for the original axes.
+* Add documentation explaining default inheritance of the ``loc``
+  `proplot.axes.CartesianAxes.format` keywords (:commit:`1fa90f87`). The order is
+  ``spineloc`` --> ``tickloc`` --> ``ticklabelloc`` --> ``labelloc`` and ``offsetloc``,
+  e.g. ``xspineloc='bottom'`` implies ``xtickloc='bottom'`` unless specified otherwise.
+* Add documentation for previously-hidden `xticklabelloc`, `yticklabelloc`, `xlabelloc`,
+  and `ylabelloc` `proplot.axes.CartesianAxes.format` keywords (:commit:`1fa90f87`).
+* Add `xoffsetloc` and `yoffsetloc` keywords to control position of offset
+  axis label location (used with large numbers) (:commit:`96a37e53`).
+* Add `base` keyword to `~proplot.ticker.SigFigFormatter` to optionally round to
+  multiples other than factors of 10 (:commit:`3b00e8a0`).
 * Support single-color parametric plots with e.g. ``ax.parametric(x, y, color='red')``
   as quick alternative to `plot` without "sticky edges" (:commit:`98504b86`).
 * Increase `zorder` of title/a-b-c text from ``3`` to ``3.5`` so it overlies
   e.g. text contour labels (:commit:`77fa01da`).
-* Ensure contour `labels` appear on top of inner titles/a-b-c labels by changing
-  default `zorder` to maximum of ``3`` or ``cntr_zorder + 1`` (:commit:`59222164`).
+* Ensure contour `labels` appear on top of inner titles/a-b-c labels by decreasing
+  default `zorder` from ``cntr_zorder + 2`` to ``cntr_zorder + 1`` (:commit:`59222164`).
 * Implement "descending level" support directly inside `~proplot.colors.DiscreteNorm`
   rather than cmap parser in plotting commands, and auto-reverse descending
   levels passed to `~proplot.colors.SegmentedNorm` (:commit:`46d8bedc`).
 * Improve ``show_cmaps`` and ``show_cycles``: Stop passing arguments through
   constructor functions, preserve case for user colormap labels, and avoid
   showing leading ``_`` and trailing ``_copy`` in labels (:commit:`c41db8d8`).
-* Permit passing `includepanels` and `mathtext_fallback` as
-  `proplot.figure.Figure.format` keywords instead of just
-  ``__init__`` keywords (:commit:`33bff576`).
-* Add `base` keyword to `~proplot.ticker.SigFigFormatter` to optionally round to
-  multiples other than factors of 10 (:commit:`3b00e8a0`).
 
 Bug fixes
 ---------
