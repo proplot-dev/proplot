@@ -61,22 +61,26 @@ xscale, yscale : scale-spec, optional
     ``xscale=('cutoff', 100, 2)`` applies a `~proplot.scale.CutoffScale`.
 xscale_kw, yscale_kw : dict-like, optional
     The x and y axis scale settings. Passed to `~proplot.scale.Scale`.
+xloc, yloc : optional
+    Shorthands for `xspineloc`, `yspineloc`.
 xspineloc, yspineloc : {'bottom', 'top', 'left', 'right', \
 'both', 'neither', 'none', 'center', 'zero'}, optional
-    The x and y axis spine locations.
+    The x and y axis spine locations. Propagates to `tickloc` unless specified
+    otherwise (if not ``'center'`` or ``'zero'``).
 xtickloc, ytickloc \
 : {'bottom', 'top', 'left', 'right', 'both', 'neither', 'none'}, optional
-    Which x and y axis spines should have major and minor tick marks.
+    Which x and y axis spines should have major and minor tick marks. Inherits from
+    `spineloc` by default and propagates to `ticklabelloc` unless specified otherwise.
 xticklabelloc, yticklabelloc \
 : {'bottom', 'top', 'left', 'right', 'both', 'neither', 'none'}, optional
-    Which x and y axis spines should have major tick labels. Default
-    behavior is to inherit this from `xtickloc` and `ytickloc`.
+    Which x and y axis spines should have major tick labels. Inherits from `tickloc`
+    by default and propagates to `labelloc` and `offsetloc` unless specified otherwise.
 xlabelloc, ylabelloc : {'bottom', 'top', 'left', 'right'}, optional
-    Which x and y axis spines should have axis labels. Default
-    behavior is to inherit this from `xticklabelloc` and `yticklabelloc`.
+    Which x and y axis spines should have axis labels. Inherits from
+    `ticklabelloc` by default (if `ticklabelloc` is a single side).
 xoffsetloc, yoffsetloc : {'left', 'right'}, optional
-    Which x and y axis spines should have the axis offset indicator. Default
-    behavior is to inherit this from `xticklabelloc` and `yticklabelloc`.
+    Which x and y axis spines should have the axis offset indicator. Inherits from
+    `ticklabelloc` by default (if `ticklabelloc` is a single side).
 xtickdir, ytickdir, tickdir : {'out', 'in', 'inout'}
     Direction that major and minor tick marks point for the x and y axis.
     Use `tickdir` to control both.
