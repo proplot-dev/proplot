@@ -13,10 +13,19 @@ from .. import scale as pscale
 from .. import ticker as pticker
 from ..config import rc
 from ..internals import ic  # noqa: F401
-from ..internals import _not_none, _pop_rc, docstring, text, warnings
+from ..internals import _not_none, _pop_rc, dependencies, docstring, text, warnings
 from . import plot, shared
 
 __all__ = ['CartesianAxes']
+
+
+# Dictionary to reverse side keywords
+REVERSE_SIDE = {
+    'left': 'right',
+    'right': 'left',
+    'bottom': 'top',
+    'top': 'bottom',
+}
 
 
 # Format docstring
@@ -65,9 +74,9 @@ xticklabelloc, yticklabelloc \
 xlabelloc, ylabelloc : {'bottom', 'top', 'left', 'right'}, optional
     Which x and y axis spines should have axis labels. Default
     behavior is to inherit this from `xticklabelloc` and `yticklabelloc`.
-offsetloc : {'left', 'right'}, optional
-    Which y axis spines should have the axis offset indicator. Default
-    behavior is to inherit this from `yticklabelloc`.
+xoffsetloc, yoffsetloc : {'left', 'right'}, optional
+    Which x and y axis spines should have the axis offset indicator. Default
+    behavior is to inherit this from `xticklabelloc` and `yticklabelloc`.
 xtickdir, ytickdir, tickdir : {'out', 'in', 'inout'}
     Direction that major and minor tick marks point for the x and y axis.
     Use `tickdir` to control both.
@@ -757,13 +766,19 @@ class CartesianAxes(shared._SharedAxes, plot.PlotAxes):
             )
 
         # Apply the tick, tick label, and label locations
-        # NOTE: Silently ignore offsetloc if this is x axis
+        # Uses ugly mpl 3.3+ tick_top() tick_bottom() kludge for offset location
+        # See: https://matplotlib.org/3.3.1/users/whats_new.html
         axis = getattr(self, x + 'axis')
         self.tick_params(axis=x, which='both', **kw)
         if labelloc is not None:
             axis.set_label_position(labelloc)
-        if x == 'y' and offsetloc is not None:
-            axis.set_offset_position(offsetloc)
+        if offsetloc is not None:
+            ic(axis, offsetloc, hasattr(axis, '_tick_position'))
+            if x == 'y':
+                axis.set_offset_position(offsetloc)
+            elif dependencies._version_mpl >= 3.3:  # NOTE: uses ugly mpl 3.3+ kludge
+                axis._tick_position = offsetloc
+                axis.offsetText.set_verticalalignment(REVERSE_SIDE[offsetloc])
 
     @docstring._snippet_manager
     def format(
@@ -772,7 +787,8 @@ class CartesianAxes(shared._SharedAxes, plot.PlotAxes):
         xloc=None, yloc=None,
         xspineloc=None, yspineloc=None,
         xtickloc=None, ytickloc=None, fixticks=False,
-        xlabelloc=None, ylabelloc=None, offsetloc=None,
+        xlabelloc=None, ylabelloc=None,
+        xoffsetloc=None, yoffsetloc=None,
         xticklabelloc=None, yticklabelloc=None,
         xtickdir=None, ytickdir=None,
         xgrid=None, ygrid=None,
@@ -885,11 +901,12 @@ class CartesianAxes(shared._SharedAxes, plot.PlotAxes):
                 xticklabelloc = _not_none(xticklabelloc, xtickloc)
                 if xticklabelloc in ('bottom', 'top'):
                     xlabelloc = _not_none(xlabelloc, xticklabelloc)
+                    xoffsetloc = _not_none(xoffsetloc, yticklabelloc)
             if ytickloc != 'both':  # then infer others
                 yticklabelloc = _not_none(yticklabelloc, ytickloc)
                 if yticklabelloc in ('left', 'right'):
                     ylabelloc = _not_none(ylabelloc, yticklabelloc)
-                    offsetloc = _not_none(offsetloc, yticklabelloc)
+                    yoffsetloc = _not_none(yoffsetloc, yticklabelloc)
 
             # Loop over axes
             for (
@@ -900,6 +917,7 @@ class CartesianAxes(shared._SharedAxes, plot.PlotAxes):
                 margin, bounds,
                 tickloc, spineloc,
                 ticklabelloc, labelloc,
+                offsetloc,
                 grid, gridminor,
                 tickminor, minorlocator,
                 min_, max_, lim,
@@ -919,6 +937,7 @@ class CartesianAxes(shared._SharedAxes, plot.PlotAxes):
                 (xmargin, ymargin), (xbounds, ybounds),
                 (xtickloc, ytickloc), (xspineloc, yspineloc),
                 (xticklabelloc, yticklabelloc), (xlabelloc, ylabelloc),
+                (xoffsetloc, yoffsetloc),
                 (xgrid, ygrid), (xgridminor, ygridminor),
                 (xtickminor, ytickminor), (xminorlocator, yminorlocator),
                 (xmin, ymin), (xmax, ymax), (xlim, ylim),
@@ -1030,7 +1049,7 @@ class CartesianAxes(shared._SharedAxes, plot.PlotAxes):
         # because the axes was created after the "parent" one, use the inset_axes
         # zorder of 4 and make the background transparent.
         kwargs = self._parse_alt('x', **kwargs)
-        kwargs.setdefault('xloc', 'right')  # other locations follow by default
+        kwargs.setdefault('xloc', 'top')  # other locations follow by default
         kwargs.setdefault('grid', False)  # note xgrid=True would override this
         kwargs.setdefault('zorder', 4)
         kwargs.setdefault('autoscaley_on', self.get_autoscaley_on())
@@ -1044,8 +1063,7 @@ class CartesianAxes(shared._SharedAxes, plot.PlotAxes):
         ax.yaxis.set_visible(False)
 
         # Parent defaults
-        reverse = {'bottom': 'top', 'top': 'bottom'}
-        kwformat = {'xloc': reverse.get(kwargs['xloc'], None)}
+        kwformat = {'xloc': REVERSE_SIDE.get(kwargs['xloc'], None)}
         self.format(**kwformat)
         self.add_child_axes(ax)  # to facilitate tight layout
         self.figure._axstack.remove(ax)  # or gets drawn twice!
@@ -1073,8 +1091,7 @@ class CartesianAxes(shared._SharedAxes, plot.PlotAxes):
         ax.xaxis.set_visible(False)
 
         # Update parent axes
-        reverse = {'left': 'right', 'right': 'left'}
-        kwformat = {'yloc': reverse.get(kwargs['yloc'], None)}
+        kwformat = {'yloc': REVERSE_SIDE.get(kwargs['yloc'], None)}
         self.format(**kwformat)
         self.add_child_axes(ax)  # to facilitate tight layout
         self.figure._axstack.remove(ax)  # or gets drawn twice!
