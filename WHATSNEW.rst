@@ -71,27 +71,31 @@ Bug fixes
 
 * Fix accidental commit of debugging print statement
   (:commit:`259a263b`).
-* Fix issue where "sticky edges" fail for datetime data
-  (:commit:`33fa9654`).
 * Fix issue where `includepanels` is not applied for spanning axis labels
   in presence of panels but only one spanning subplot (:commit:`b8bc55ec`).
-* Fix issue where axis label color is overwritten during ``__init__``
-  call to `proplot.axes.CartesianAxes.format` (:commit:`b454a513`).
 * Fix issue where default outer legend axes-relative `loc` does not take into
   account the underlying "panel" side (:commit:`2446acc1`).
-* Fix issue where segment data of ``matplotlib.cm`` colormap instances
-  is overwritten during conversion to proplot subclasses (:issue:`283`).
-* Fix confusing behavior where explicitly passed `vmin` and `vmax` are ignored
-  if `norm` was passed as an already-instantiated class (:commit:`1ee79d36`).
+* Fix issue where axis label color is overwritten during ``__init__``
+  call to `proplot.axes.CartesianAxes.format` (:commit:`b454a513`).
+* Fix issue where setting axis label color without specifying label
+  text erases the old label text (:commit:`7a7852f9`).
+* Fix issue where axis label settings are overridden by settings from
+  invisible x/y axis on alternate axes (:commit:`c6db292b`).
+* Fix `~proplot.ticker.AutoFormatter` issue where `orderOfMagnitude` is
+  not taken into account when correcting small tick values truncated to
+  zero on (usually logarithmic) axis scales (:commit:`54fbef0b`).
 * Fix issue where `proplot.utils.arange` is not endpoint-inclusive
   for negative (descending) step size (:commit:`ec1f8410`).
+* Fix confusing behavior where explicitly passed `vmin` and `vmax` are ignored
+  if `norm` was passed as an already-instantiated class (:commit:`1ee79d36`).
+* Fix issue where segment data of ``matplotlib.cm`` colormap instances
+  is overwritten during conversion to proplot subclasses (:issue:`283`).
 * Fix issue where color of contour `labels` cannot be changed
   with `labels_kw` (:commit:`d101575d`).
 * Fix keyword conflict where `sizes` are interpreted as ``Collection``
   marker sizes when passed to `~proplot.axes.PlotAxes.barb` (:issue:`287`).
-* Fix `~proplot.ticker.AutoFormatter` issue where `orderOfMagnitude` is
-  not taken into account when correcting small tick values truncated to
-  zero on (usually logarithmic) axis scales (:commit:`54fbef0b`).
+* Fix issue where "sticky edges" fail for datetime data
+  (:commit:`33fa9654`).
 
 
 ProPlot v0.9.1 (2021-09-14)
