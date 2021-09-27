@@ -52,18 +52,21 @@ xscale, yscale : scale-spec, optional
     ``xscale=('cutoff', 100, 2)`` applies a `~proplot.scale.CutoffScale`.
 xscale_kw, yscale_kw : dict-like, optional
     The x and y axis scale settings. Passed to `~proplot.scale.Scale`.
-xspineloc, yspineloc \
-: {'bottom', 'top', 'left', 'right', 'both', 'neither', 'center', 'zero'}, optional
+xspineloc, yspineloc : {'bottom', 'top', 'left', 'right', \
+'both', 'neither', 'none', 'center', 'zero'}, optional
     The x and y axis spine locations.
 xtickloc, ytickloc \
-: {'bottom', 'top', 'left', 'right', 'both', 'neither'}, optional
+: {'bottom', 'top', 'left', 'right', 'both', 'neither', 'none'}, optional
     Which x and y axis spines should have major and minor tick marks.
 xticklabelloc, yticklabelloc \
-: {'bottom', 'top', 'left', 'right', 'both', 'neither'}, optional
+: {'bottom', 'top', 'left', 'right', 'both', 'neither', 'none'}, optional
     Which x and y axis spines should have major tick labels. Default
     behavior is to inherit this from `xtickloc` and `ytickloc`.
 xlabelloc, ylabelloc : {'bottom', 'top', 'left', 'right'}, optional
     Which x and y axis spines should have axis labels. Default
+    behavior is to inherit this from `xticklabelloc` and `yticklabelloc`.
+xoffsetloc, yoffsetloc : {'bottom', 'top', 'left', 'right'}, optional
+    Which x and y axis spines should have the axis offset indicator. Default
     behavior is to inherit this from `xticklabelloc` and `yticklabelloc`.
 xtickdir, ytickdir, tickdir : {'out', 'in', 'inout'}
     Direction that major and minor tick marks point for the x and y axis.
@@ -702,7 +705,9 @@ class CartesianAxes(shared._SharedAxes, plot.PlotAxes):
             if bounds is not None:
                 spine.set_bounds(*bounds)
 
-    def _update_locs(self, x, *, tickloc=None, ticklabelloc=None, labelloc=None):
+    def _update_locs(
+        self, x, *, tickloc=None, ticklabelloc=None, labelloc=None, offsetloc=None
+    ):
         """
         Update the tick, tick label, and axis label locations.
         """
@@ -713,12 +718,18 @@ class CartesianAxes(shared._SharedAxes, plot.PlotAxes):
         sides_dict = {None: None, 'both': sides, 'none': (), 'neither': ()}
 
         # The tick side(s)
+        # NOTE: Silently forbids adding ticks to sides with invisible spines
         ticklocs = sides_dict.get(tickloc, (tickloc,))
         if ticklocs is not None:
             kw.update({side: side in ticklocs for side in sides})
-        kw.update({side: False for side in sides if side not in sides_active})
+        kw.update(
+            {
+                side: False for side in sides if side not in sides_active
+            }
+        )
 
         # The tick label side(s). Make sure these only appear where ticks are
+        # NOTE: Silently forbids adding labels to sides with invisible ticks or spines
         ticklabellocs = sides_dict.get(ticklabelloc, (ticklabelloc,))
         if ticklabellocs is not None:
             kw.update({'label' + side: (side in ticklabellocs) for side in sides})
@@ -731,11 +742,12 @@ class CartesianAxes(shared._SharedAxes, plot.PlotAxes):
         )
 
         # The axis label side(s)
-        if labelloc is None:
-            if ticklocs is not None:
-                options = tuple(_ for _ in sides if _ in ticklocs and _ in sides_active)
-                if len(options) == 1:
-                    labelloc = options[0]
+        # NOTE: Silently forbids adding labels and offsets to sides with missing spines
+        if ticklocs is not None:
+            options = tuple(_ for _ in sides if _ in ticklocs and _ in sides_active)
+            if len(options) == 1:
+                labelloc = _not_none(labelloc, options[0])
+                offsetloc = _not_none(offsetloc, options[0])
         if labelloc is not None and labelloc not in sides:
             raise ValueError(
                 f'Invalid label location {labelloc!r}. Options are '
@@ -743,9 +755,12 @@ class CartesianAxes(shared._SharedAxes, plot.PlotAxes):
             )
 
         # Apply the tick, tick label, and label locations
+        axis = getattr(self, x + 'axis')
         self.tick_params(axis=x, which='both', **kw)
         if labelloc is not None:
-            getattr(self, x + 'axis').set_label_position(labelloc)
+            axis.set_label_position(labelloc)
+        if offsetloc is not None:
+            axis.set_offset_position(offsetloc)
 
     @warnings._rename_kwargs('0.9', xloc='xspineloc', yloc='yspineloc')
     @docstring._snippet_manager
@@ -756,6 +771,7 @@ class CartesianAxes(shared._SharedAxes, plot.PlotAxes):
         xspineloc=None, yspineloc=None,
         xtickloc=None, ytickloc=None, fixticks=False,
         xlabelloc=None, ylabelloc=None,
+        xoffsetloc=None, yoffsetloc=None,
         xticklabelloc=None, yticklabelloc=None,
         xtickdir=None, ytickdir=None,
         xgrid=None, ygrid=None,
@@ -863,10 +879,12 @@ class CartesianAxes(shared._SharedAxes, plot.PlotAxes):
                 xticklabelloc = _not_none(xticklabelloc, xtickloc)
                 if xticklabelloc in ('bottom', 'top'):
                     xlabelloc = _not_none(xlabelloc, xticklabelloc)
+                    xoffsetloc = _not_none(xoffsetloc, xticklabelloc)
             if ytickloc != 'both':  # then infer others
                 yticklabelloc = _not_none(yticklabelloc, ytickloc)
                 if yticklabelloc in ('left', 'right'):
                     ylabelloc = _not_none(ylabelloc, yticklabelloc)
+                    ylabelloc = _not_none(yoffsetloc, yticklabelloc)
 
             # Loop over axes
             for (
@@ -877,6 +895,7 @@ class CartesianAxes(shared._SharedAxes, plot.PlotAxes):
                 margin, bounds,
                 tickloc, spineloc,
                 ticklabelloc, labelloc,
+                offsetloc,
                 grid, gridminor,
                 tickminor, minorlocator,
                 min_, max_, lim,
@@ -896,6 +915,7 @@ class CartesianAxes(shared._SharedAxes, plot.PlotAxes):
                 (xmargin, ymargin), (xbounds, ybounds),
                 (xtickloc, ytickloc), (xspineloc, yspineloc),
                 (xticklabelloc, yticklabelloc), (xlabelloc, ylabelloc),
+                (xoffsetloc, yoffsetloc),
                 (xgrid, ygrid), (xgridminor, ygridminor),
                 (xtickminor, ytickminor), (xminorlocator, yminorlocator),
                 (xmin, ymin), (xmax, ymax), (xlim, ylim),
@@ -934,7 +954,8 @@ class CartesianAxes(shared._SharedAxes, plot.PlotAxes):
 
                 # Axis tick settings
                 self._update_locs(
-                    x, tickloc=tickloc, ticklabelloc=ticklabelloc, labelloc=labelloc
+                    x, tickloc=tickloc, ticklabelloc=ticklabelloc,
+                    labelloc=labelloc, offsetloc=offsetloc,
                 )
                 self._update_rotation(
                     x, rotation=rotation
