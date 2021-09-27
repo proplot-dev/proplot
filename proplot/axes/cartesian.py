@@ -171,10 +171,12 @@ _shared_docstring = """
 Parameters
 ----------
 %(extra)s**kwargs
-    Passed to `CartesianAxes`. You can optionally omit the {x}
-    from `CartesianAxes.format` keywords beginning with ``{x}``.
-    For example: ``ax.alt{x}(lim=(0, 10))`` is equivalent
-    to ``ax.alt{x}({x}lim=(0, 10))``.
+    Passed to `CartesianAxes`. Supports all valid  `~CartesianAxes.format` keywords.
+    You can optionally omit the {x} from keywords beginning with ``{x}`` -- for
+    example ``ax.alt{x}(lim=(0, 10))`` is equivalent to ``ax.alt{x}({x}lim=(0, 10))``.
+    You can also change the default side for the axis spine, axis tick marks, axis
+    tick labels, and/or axis labels by passing ``loc`` keywords. For example,
+    ``ax.alt{x}(loc='{x1}')`` changes the default side from {x2} to {x1}.
 
 Returns
 -------
@@ -1003,17 +1005,16 @@ class CartesianAxes(shared._SharedAxes, plot.PlotAxes):
             self.set_aspect(aspect)
         super().format(rc_kw=rc_kw, rc_mode=rc_mode, **kwargs)
 
-    def _parse_alt(self, kwargs, x):
+    def _parse_alt(self, x, **kwargs):
         """
         Optionally omit the leading x or y from "twin axes" methods.
         """
-        keys = tuple(
-            key[1:] for key in self._format_signature.parameters if key[0] == x
-        )
-        kw = {
-            (x + key if key in keys else key): val for key, val in kwargs.items()
-        }
-        return kw
+        keys = tuple(k[1:] for k in self._format_signature.parameters if k[0] == x)
+        kwargs = {(x + k if k in keys else k): v for k, v in kwargs.items()}
+        for axis in 'xy':  # standardize format() location aliases
+            if axis + 'spineloc' in kwargs:
+                kwargs[axis + 'loc'] = kwargs.pop(axis + 'spineloc')
+        return kwargs
 
     @docstring._snippet_manager
     def altx(self, **kwargs):
@@ -1028,32 +1029,24 @@ class CartesianAxes(shared._SharedAxes, plot.PlotAxes):
         # To restore matplotlib behavior, which draws "child" artists on top simply
         # because the axes was created after the "parent" one, use the inset_axes
         # zorder of 4 and make the background transparent.
-        kwargs = self._parse_alt(kwargs, 'x')
+        kwargs = self._parse_alt('x', **kwargs)
+        kwargs.setdefault('xloc', 'right')  # other locations follow by default
+        kwargs.setdefault('grid', False)  # note xgrid=True would override this
+        kwargs.setdefault('zorder', 4)
+        kwargs.setdefault('autoscaley_on', self.get_autoscaley_on())
+
+        # Initialize twin axes
         ax = self._make_twin_axes(
             sharey=self, number=False, autoshare=False, projection='cartesian', **kwargs
         )
-
-        # Child defaults
-        # NOTE: This is not completely ideal since e.g. users passing labelloc
-        # will get overwritten. But mostly not a huge deal.
         ax._altx_parent = self
-        for side, spine in ax.spines.items():
-            spine.set_visible(side == 'top')
-        ax.xaxis.tick_top()
-        ax.xaxis.set_label_position('top')
-        ax.yaxis.set_visible(False)
         ax.patch.set_visible(False)
-        ax.grid(False)
-        ax.set_zorder(4)
-        ax.set_autoscaley_on(self.get_autoscaley_on())
+        ax.yaxis.set_visible(False)
 
         # Parent defaults
-        self.spines['top'].set_visible(False)
-        self.spines['bottom'].set_visible(True)
-        self.xaxis.tick_bottom()
-        self.xaxis.set_label_position('bottom')
-
-        # Add axes
+        reverse = {'bottom': 'top', 'top': 'bottom'}
+        kwformat = {'xloc': reverse.get(kwargs['xloc'], None)}
+        self.format(**kwformat)
         self.add_child_axes(ax)  # to facilitate tight layout
         self.figure._axstack.remove(ax)  # or gets drawn twice!
 
@@ -1064,31 +1057,25 @@ class CartesianAxes(shared._SharedAxes, plot.PlotAxes):
         """
         %(axes.alty)s
         """
-        # Initialize axes
-        kwargs = self._parse_alt(kwargs, 'y')
+        # Parse input args
+        kwargs = self._parse_alt('y', **kwargs)
+        kwargs.setdefault('yloc', 'right')  # other locations follow by default
+        kwargs.setdefault('grid', False)  # note ygrid=True would override this
+        kwargs.setdefault('zorder', 4)
+        kwargs.setdefault('autoscalex_on', self.get_autoscalex_on())
+
+        # Initialize twin axes
         ax = self._make_twin_axes(
             sharex=self, number=False, autoshare=False, projection='cartesian', **kwargs
         )
-
-        # Child defaults
         ax._alty_parent = self
-        for side, spine in ax.spines.items():
-            spine.set_visible(side == 'right')
-        ax.yaxis.tick_right()
-        ax.yaxis.set_label_position('right')
-        ax.xaxis.set_visible(False)
         ax.patch.set_visible(False)
-        ax.grid(False)
-        ax.set_zorder(4)
-        ax.set_autoscalex_on(self.get_autoscalex_on())
+        ax.xaxis.set_visible(False)
 
-        # Parent defaults
-        self.spines['right'].set_visible(False)
-        self.spines['left'].set_visible(True)
-        self.yaxis.tick_left()
-        self.yaxis.set_label_position('left')
-
-        # Add axes
+        # Update parent axes
+        reverse = {'left': 'right', 'right': 'left'}
+        kwformat = {'yloc': reverse.get(kwargs['yloc'], None)}
+        self.format(**kwformat)
         self.add_child_axes(ax)  # to facilitate tight layout
         self.figure._axstack.remove(ax)  # or gets drawn twice!
 
