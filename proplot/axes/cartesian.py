@@ -902,10 +902,10 @@ class CartesianAxes(shared._SharedAxes, plot.PlotAxes):
             # want this sometimes! Same goes for spines!
             xspineloc = _not_none(xloc=xloc, xspineloc=xspineloc)
             yspineloc = _not_none(yloc=yloc, yspineloc=yspineloc)
-            xtickloc = _not_none(xtickloc, xspineloc, self._get_loc('x', 'xtick'))
-            ytickloc = _not_none(ytickloc, yspineloc, self._get_loc('y', 'ytick'))
-            xspineloc = _not_none(xspineloc, self._get_loc('x', 'axes.spines'))
-            yspineloc = _not_none(yspineloc, self._get_loc('y', 'axes.spines'))
+            if isinstance(xspineloc, str) and xspineloc not in ('zero', 'center'):
+                xtickloc = _not_none(xtickloc, xspineloc)
+            if isinstance(yspineloc, str) and yspineloc not in ('zero', 'center'):
+                ytickloc = _not_none(ytickloc, yspineloc)
             if xtickloc != 'both':  # then infer others
                 xticklabelloc = _not_none(xticklabelloc, xtickloc)
                 if xticklabelloc in ('bottom', 'top'):
