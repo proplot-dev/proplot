@@ -65,9 +65,9 @@ xticklabelloc, yticklabelloc \
 xlabelloc, ylabelloc : {'bottom', 'top', 'left', 'right'}, optional
     Which x and y axis spines should have axis labels. Default
     behavior is to inherit this from `xticklabelloc` and `yticklabelloc`.
-xoffsetloc, yoffsetloc : {'bottom', 'top', 'left', 'right'}, optional
-    Which x and y axis spines should have the axis offset indicator. Default
-    behavior is to inherit this from `xticklabelloc` and `yticklabelloc`.
+offsetloc : {'left', 'right'}, optional
+    Which y axis spines should have the axis offset indicator. Default
+    behavior is to inherit this from `yticklabelloc`.
 xtickdir, ytickdir, tickdir : {'out', 'in', 'inout'}
     Direction that major and minor tick marks point for the x and y axis.
     Use `tickdir` to control both.
@@ -757,11 +757,12 @@ class CartesianAxes(shared._SharedAxes, plot.PlotAxes):
             )
 
         # Apply the tick, tick label, and label locations
+        # NOTE: Silently ignore offsetloc if this is x axis
         axis = getattr(self, x + 'axis')
         self.tick_params(axis=x, which='both', **kw)
         if labelloc is not None:
             axis.set_label_position(labelloc)
-        if offsetloc is not None:
+        if x == 'y' and offsetloc is not None:
             axis.set_offset_position(offsetloc)
 
     @docstring._snippet_manager
@@ -771,8 +772,7 @@ class CartesianAxes(shared._SharedAxes, plot.PlotAxes):
         xloc=None, yloc=None,
         xspineloc=None, yspineloc=None,
         xtickloc=None, ytickloc=None, fixticks=False,
-        xlabelloc=None, ylabelloc=None,
-        xoffsetloc=None, yoffsetloc=None,
+        xlabelloc=None, ylabelloc=None, offsetloc=None,
         xticklabelloc=None, yticklabelloc=None,
         xtickdir=None, ytickdir=None,
         xgrid=None, ygrid=None,
@@ -882,12 +882,11 @@ class CartesianAxes(shared._SharedAxes, plot.PlotAxes):
                 xticklabelloc = _not_none(xticklabelloc, xtickloc)
                 if xticklabelloc in ('bottom', 'top'):
                     xlabelloc = _not_none(xlabelloc, xticklabelloc)
-                    xoffsetloc = _not_none(xoffsetloc, xticklabelloc)
             if ytickloc != 'both':  # then infer others
                 yticklabelloc = _not_none(yticklabelloc, ytickloc)
                 if yticklabelloc in ('left', 'right'):
                     ylabelloc = _not_none(ylabelloc, yticklabelloc)
-                    ylabelloc = _not_none(yoffsetloc, yticklabelloc)
+                    offsetloc = _not_none(offsetloc, yticklabelloc)
 
             # Loop over axes
             for (
@@ -898,7 +897,6 @@ class CartesianAxes(shared._SharedAxes, plot.PlotAxes):
                 margin, bounds,
                 tickloc, spineloc,
                 ticklabelloc, labelloc,
-                offsetloc,
                 grid, gridminor,
                 tickminor, minorlocator,
                 min_, max_, lim,
@@ -918,7 +916,6 @@ class CartesianAxes(shared._SharedAxes, plot.PlotAxes):
                 (xmargin, ymargin), (xbounds, ybounds),
                 (xtickloc, ytickloc), (xspineloc, yspineloc),
                 (xticklabelloc, yticklabelloc), (xlabelloc, ylabelloc),
-                (xoffsetloc, yoffsetloc),
                 (xgrid, ygrid), (xgridminor, ygridminor),
                 (xtickminor, ytickminor), (xminorlocator, yminorlocator),
                 (xmin, ymin), (xmax, ymax), (xlim, ylim),
