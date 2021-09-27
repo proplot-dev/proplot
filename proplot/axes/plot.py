@@ -375,16 +375,24 @@ docstring._snippet_manager['plot.levels_auto'] = _auto_levels_docstring
 
 
 # Labels docstrings
-_labels_1d_docstring = """
+_label_docstring = """
 label, value : float or str, optional
-    The single legend label or colorbar coordinate to be used for this plotted
-    element. This is generally used with 1D input coordinates.
+    The single legend label or colorbar coordinate to be used for
+    this plotted element. Can be numeric or string. This is generally
+    used with 1D positional arguments.
+"""
+_labels_1d_docstring = """
+%(plot.label)s
 labels, values : sequence of float or sequence of str, optional
     The legend labels or colorbar coordinates used for each plotted element.
     Can be numeric or string, and must match the number of plotted elements.
-    This is generally used with 2D input coordinates.
+    This is generally used with 2D positional arguments.
 """
 _labels_2d_docstring = """
+label : str, optional
+    The legend label to be used for this object. In the case of
+    contours, this is paired with the the central artist in the artist
+    list returned by `matplotlib.contour.ContourSet.legend_elements`.
 labels : bool, optional
     Whether to apply labels to contours and grid boxes. The text will be
     white when the luminance of the underlying filled contour or grid box
@@ -394,17 +402,13 @@ labels_kw : dict-like, optional
     For contour plots, this is passed to `~matplotlib.axes.Axes.clabel`.
     Otherwise, this is passed to `~matplotlib.axes.Axes.text`.
 fmt : format-spec, optional
-    Passed to the `~proplot.constructor.Norm` constructor, used to format
-    number labels. You can also use the `precision` keyword arg.
+    The `~matplotlib.ticker.Formatter` used to format number labels.
+    Passed to the `~proplot.constructor.Formatter` constructor.
 precision : int, optional
-    Maximum number of decimal places for the number labels. Number labels
-    are generated with the `~proplot.ticker.SimpleFormatter` formatter,
-    which permits limiting the precision.
-label : str, optional
-    The legend label to be used for this object. In the case of
-    contours, this is paired with the the central artist in the artist
-    list returned by `matplotlib.contour.ContourSet.legend_elements`.
+    The maximum number of decimal places for number labels generated
+    with the default formatter `~proplot.ticker.Simpleformatter`.
 """
+docstring._snippet_manager['plot.label'] = _label_docstring
 docstring._snippet_manager['plot.labels_1d'] = _labels_1d_docstring
 docstring._snippet_manager['plot.labels_2d'] = _labels_2d_docstring
 
@@ -558,7 +562,7 @@ Plot a parametric line.
 Parameters
 ----------
 %(plot.args_1d_y)s
-c, color, colors, values : sequence of float, str, or color-spec, optional
+c, color, colors, values, labels : sequence of float, str, or color-spec, optional
     The parametric coordinate(s). These can be passed as a third positional
     argument or as a keyword argument. If they are float, the colors will be
     determined from `norm` and `cmap`. If they are strings, the color values
@@ -580,6 +584,7 @@ Other parameters
 scalex, scaley : bool, optional
     Whether the view limits are adapted to the data limits. The values are
     passed on to `~matplotlib.axes.Axes.autoscale_view`.
+%(plot.label)s
 %(plot.guide)s
 **kwargs
     Valid `~matplotlib.collections.LineCollection` properties.
@@ -2913,6 +2918,7 @@ class PlotAxes(base.Axes):
         kw = kwargs.copy()
         kw.update(_pop_props(kw, 'collection'))
         kw, extents = self._parse_inbounds(**kw)
+        label = _not_none(**{key: kw.pop(key, None) for key in ('label', 'value')})
         x, y, kw = self._parse_plot1d(x, y, values=c, autovalues=True, autoreverse=False, **kw)  # noqa: E501
         c = kw.pop('values', None)  # permits auto-inferring values
         c = np.arange(y.size) if c is None else data._to_numpy_array(c)
@@ -2973,12 +2979,12 @@ class PlotAxes(base.Axes):
         # backwards compatible to earliest matplotlib versions.
         guide_kw = _pop_params(kw, self._update_guide)
         obj = mcollections.LineCollection(
-            coords, cmap=cmap, norm=norm,
+            coords, cmap=cmap, norm=norm, label=label,
             linestyles='-', capstyle='butt', joinstyle='miter',
         )
         obj.set_array(c)  # the ScalarMappable method
         obj.update({key: value for key, value in kw.items() if key not in ('color',)})
-        self.add_collection(obj)
+        self.add_collection(obj)  # also adjusts label
         self.autoscale_view(scalex=scalex, scaley=scaley)
         self._update_guide(obj, **guide_kw)
         return obj
