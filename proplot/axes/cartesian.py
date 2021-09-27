@@ -773,7 +773,6 @@ class CartesianAxes(shared._SharedAxes, plot.PlotAxes):
         if labelloc is not None:
             axis.set_label_position(labelloc)
         if offsetloc is not None:
-            ic(axis, offsetloc, hasattr(axis, '_tick_position'))
             if x == 'y':
                 axis.set_offset_position(offsetloc)
             elif dependencies._version_mpl >= 3.3:  # NOTE: uses ugly mpl 3.3+ kludge
