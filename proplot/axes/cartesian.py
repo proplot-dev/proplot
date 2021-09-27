@@ -1048,6 +1048,7 @@ class CartesianAxes(shared._SharedAxes, plot.PlotAxes):
         # because the axes was created after the "parent" one, use the inset_axes
         # zorder of 4 and make the background transparent.
         kwargs = self._parse_alt('x', **kwargs)
+        kwargs.setdefault('yloc', 'neither')
         kwargs.setdefault('xloc', 'top')  # other locations follow by default
         kwargs.setdefault('grid', False)  # note xgrid=True would override this
         kwargs.setdefault('zorder', 4)
@@ -1076,6 +1077,7 @@ class CartesianAxes(shared._SharedAxes, plot.PlotAxes):
         """
         # Parse input args
         kwargs = self._parse_alt('y', **kwargs)
+        kwargs.setdefault('xloc', 'neither')
         kwargs.setdefault('yloc', 'right')  # other locations follow by default
         kwargs.setdefault('grid', False)  # note ygrid=True would override this
         kwargs.setdefault('zorder', 4)
