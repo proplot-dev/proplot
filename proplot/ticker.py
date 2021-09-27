@@ -396,8 +396,8 @@ class AutoFormatter(mticker.ScalarFormatter):
             # Format with precision below floating point error
             x -= getattr(self, 'offset', 0)  # guard against API change
             x /= 10 ** getattr(self, 'orderOfMagnitude', 0)  # guard against API change
-            precision_true = int(abs(np.log10(abs(x)) // 1))
-            precision_max = np.finfo(type(x)).precision - precision_offset
+            precision_true = max(0, self._decimal_place(x))
+            precision_max = max(0, np.finfo(type(x)).precision - precision_offset)
             precision = min(precision_true, precision_max)
             string = ('{:.%df}' % precision).format(x)
 
@@ -425,6 +425,17 @@ class AutoFormatter(mticker.ScalarFormatter):
         """
         use_locale = _not_none(use_locale, rc['formatter.use_locale'])
         return locale.localeconv()['decimal_point'] if use_locale else '.'
+
+    @staticmethod
+    def _decimal_place(x):
+        """
+        Return the decimal place of the number (e.g., 100 is -2 and 0.01 is 2).
+        """
+        if x == 0:
+            digits = 0
+        else:
+            digits = -int(np.log10(abs(x)) // 1)
+        return digits
 
     @staticmethod
     def _minus_format(string):
@@ -542,31 +553,36 @@ class SigFigFormatter(mticker.Formatter):
     Format numbers by retaining the specified number of significant digits.
     """
     @docstring._snippet_manager
-    def __init__(self, sigfig=3, zerotrim=None):
+    def __init__(self, sigfig=None, zerotrim=None, base=None):
         """
         Parameters
         ----------
         sigfig : float, optional
-            The number of significant digits.
+            The number of significant digits. Default is ``3``.
         %(ticker.zerotrim)s
+        base : float, optional
+            The base unit for rounding. Default is ``1``. For example
+            ``SigFigFormatter(2, base=5)`` rounds to the nearest 5 with
+            up to 2 significant digits (e.g., 87 --> 85, 8.7 --> 8.5).
         """
-        self._sigfig = sigfig
+        self._sigfig = _not_none(sigfig, 3)
         self._zerotrim = _not_none(zerotrim, rc['formatter.zerotrim'])
+        self._base = _not_none(base, 1)
 
     @docstring._snippet_manager
     def __call__(self, x, pos=None):  # noqa: U100
         """
         %(ticker.call)s
         """
-        # Limit digits to significant figures
-        if x == 0:
-            digits = 0
-        else:
-            digits = -int(np.log10(abs(x)) // 1)
+        # Limit to significant figures
+        digits = AutoFormatter._decimal_place(x) + self._sigfig - 1
+        scale = self._base * 10 ** -digits
+        x = scale * round(x / scale)
+
+        # Create the string
         decimal_point = AutoFormatter._get_default_decimal_point()
-        digits += self._sigfig - 1
-        x = np.round(x, digits)
-        string = ('{:.%df}' % max(0, digits)).format(x)
+        precision = max(0, digits) + max(0, AutoFormatter._decimal_place(self._base))
+        string = ('{:.%df}' % precision).format(x)
         string = string.replace('.', decimal_point)
 
         # Custom string formatting
