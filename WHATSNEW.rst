@@ -42,19 +42,21 @@ Features
   spine, tick mark, tick label, axis label, and offset label sides to the opposite of
   the default: *left* for the new alternate axes, *right* for the original axes.
 * Add documentation explaining default inheritance of the ``loc``
-  `proplot.axes.CartesianAxes.format` keywords (:commit:`1fa90f87`). The order is
+  `proplot.axes.CartesianAxes.format` keywords (:commit:`1fa90f87`). Order is ``loc`` or
   ``spineloc`` --> ``tickloc`` --> ``ticklabelloc`` --> ``labelloc`` and ``offsetloc``,
-  e.g. ``xspineloc='bottom'`` implies ``xtickloc='bottom'`` unless specified otherwise.
+  e.g. ``xloc='bottom'`` implies ``xtickloc='bottom'`` unless specified otherwise.
 * Add documentation for previously-hidden `xticklabelloc`, `yticklabelloc`, `xlabelloc`,
   and `ylabelloc` `proplot.axes.CartesianAxes.format` keywords (:commit:`1fa90f87`).
-* Add `offsetloc` keyword to control position of y axis order-of-magnitude offset
-  label location (used with large numbers) (:commit:`96a37e53`).
+* Add `xoffsetloc`, `yoffsetloc` keywords to control position of order-of-magnitude
+  indicator location for x and y axes (with large numbers) (:commit:`96a37e53`).
 * Add `xlabelcolor` and `ylabelcolor` keywords as alternatives to `xcolor` and `ycolor`
   to change just the label color and nothing else (:commit:`d2f20970`).
 * Add `base` keyword to `~proplot.ticker.SigFigFormatter` to optionally round to
   multiples other than factors of 10 (:commit:`3b00e8a0`).
 * Support single-color parametric plots with e.g. ``ax.parametric(x, y, color='red')``
   as quick alternative to `plot` without "sticky edges" (:commit:`98504b86`).
+* Support legend entries for parametric lines by interpreting `label` and `value`
+  separately from `labels` and `values` (:commit:`14a0cfdc`).
 * Increase `zorder` of title/a-b-c text from ``3`` to ``3.5`` so it overlies
   e.g. text contour labels (:commit:`77fa01da`).
 * Ensure contour `labels` appear on top of inner titles/a-b-c labels by decreasing
