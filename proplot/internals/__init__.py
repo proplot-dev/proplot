@@ -54,6 +54,7 @@ ALIAS_MAPS = {
         ),
         'linestyles': ('ls', 'linestyle'),
         'linewidths': ('lw', 'linewidth', 'ew', 'edgewidth', 'edgewidths', 'mew', 'markeredgewidth', 'markeredgewidths'),  # noqa: E501
+        'marker': ('m', 'markers'),
         'sizes': ('s', 'ms', 'markersize', 'markersizes'),
         'zorder': ('z', 'zorders'),
     },
