@@ -47,8 +47,10 @@ Features
   e.g. ``xspineloc='bottom'`` implies ``xtickloc='bottom'`` unless specified otherwise.
 * Add documentation for previously-hidden `xticklabelloc`, `yticklabelloc`, `xlabelloc`,
   and `ylabelloc` `proplot.axes.CartesianAxes.format` keywords (:commit:`1fa90f87`).
-* Add `xoffsetloc` and `yoffsetloc` keywords to control position of offset
-  axis label location (used with large numbers) (:commit:`96a37e53`).
+* Add `offsetloc` keyword to control position of y axis order-of-magnitude offset
+  label location (used with large numbers) (:commit:`96a37e53`).
+* Add `xlabelcolor` and `ylabelcolor` keywords as alternatives to `xcolor` and `ycolor`
+  to change just the label color and nothing else (:commit:`d2f20970`).
 * Add `base` keyword to `~proplot.ticker.SigFigFormatter` to optionally round to
   multiples other than factors of 10 (:commit:`3b00e8a0`).
 * Support single-color parametric plots with e.g. ``ax.parametric(x, y, color='red')``
