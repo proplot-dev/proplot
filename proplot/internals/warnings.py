@@ -88,8 +88,8 @@ def _rename_kwargs(version, **kwargs_rename):
                     # Nice warning message, but user's desired behavior fails
                     key_new = key_new.format(value)
                 _warn_proplot(
-                    f'Keyword {key_old!r} was deprecated in {version} and will be '
-                    f'removed in a future release. Please use {key_new!r} instead'
+                    f'Keyword {key_old!r} was deprecated in version {version} and will '
+                    f'be removed in a future release. Please use {key_new!r} instead.'
                 )
             return func_orig(*args, **kwargs)
         return _deprecate_kwargs

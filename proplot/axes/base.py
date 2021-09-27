@@ -615,9 +615,11 @@ class Axes(maxes.Axes):
     _name = None  # derived must override
     _name_aliases = ()
 
-    def __repr__(self):  # override matplotlib
+    def __repr__(self):
         # Show the position in the geometry excluding panels. Panels are
         # indicated by showing their parent geometry plus a 'side' argument.
+        # WARNING: This will not get used in matplotlib 3.3.0 (and probably next
+        # minor releases) because native __repr__ is defined in SubplotBase.
         ax = self._get_topmost_axes()
         try:
             nrows, ncols, num1, num2 = ax.get_subplotspec()._get_subplot_geometry()
@@ -637,7 +639,7 @@ class Axes(maxes.Axes):
         params = ', '.join(f'{key}={value!r}' for key, value in params.items())
         return f'{name}({params})'
 
-    def __str__(self):  # override matplotlib
+    def __str__(self):
         return self.__repr__()
 
     @docstring._snippet_manager
