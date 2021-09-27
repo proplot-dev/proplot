@@ -801,6 +801,7 @@ class CartesianAxes(shared._SharedAxes, plot.PlotAxes):
         xticklen=None, yticklen=None,
         xlinewidth=None, ylinewidth=None,
         xcolor=None, ycolor=None, color=None,  # special case (see below)
+        xlabelcolor=None, ylabelcolor=None,
         xgridcolor=None, ygridcolor=None,
         xlabel_kw=None, ylabel_kw=None,
         xscale_kw=None, yscale_kw=None,
@@ -856,6 +857,8 @@ class CartesianAxes(shared._SharedAxes, plot.PlotAxes):
             # we apply 'color' right here.
             xcolor = _not_none(xcolor, color)
             ycolor = _not_none(ycolor, color)
+            xlabelcolor = _not_none(xlabelcolor, xcolor)
+            ylabelcolor = _not_none(ylabelcolor, ycolor)
 
             # Flexible keyword args, declare defaults
             xtickdir = _not_none(xtickdir, rc.find('xtick.direction', context=True))
@@ -892,7 +895,7 @@ class CartesianAxes(shared._SharedAxes, plot.PlotAxes):
             for (
                 x, label,
                 labelpad, ticklabelpad,
-                color, gridcolor,
+                color, gridcolor, labelcolor,
                 ticklen, linewidth,
                 margin, bounds,
                 tickloc, spineloc,
@@ -911,7 +914,7 @@ class CartesianAxes(shared._SharedAxes, plot.PlotAxes):
             ) in zip(
                 ('x', 'y'), (xlabel, ylabel),
                 (xlabelpad, ylabelpad), (xticklabelpad, yticklabelpad),
-                (xcolor, ycolor), (xgridcolor, ygridcolor),
+                (xcolor, ycolor), (xgridcolor, ygridcolor), (xlabelcolor, ylabelcolor),
                 (xticklen, yticklen), (xlinewidth, ylinewidth),
                 (xmargin, ymargin), (xbounds, ybounds),
                 (xtickloc, ytickloc), (xspineloc, yspineloc),
@@ -971,7 +974,7 @@ class CartesianAxes(shared._SharedAxes, plot.PlotAxes):
                 # NOTE: This must come after set_label_position, or ha or va overrides
                 # in label_kw are overwritten.
                 self._update_labels(
-                    x, label, color=color, labelpad=labelpad, **label_kw
+                    x, label, color=labelcolor, labelpad=labelpad, **label_kw
                 )
 
                 # Axis locator
