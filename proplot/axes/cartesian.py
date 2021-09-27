@@ -52,16 +52,19 @@ xscale, yscale : scale-spec, optional
     ``xscale=('cutoff', 100, 2)`` applies a `~proplot.scale.CutoffScale`.
 xscale_kw, yscale_kw : dict-like, optional
     The x and y axis scale settings. Passed to `~proplot.scale.Scale`.
-xloc, yloc : optional
-    Aliases for `xspineloc`, `yspineloc`.
 xspineloc, yspineloc \
-: {'both', 'bottom', 'top', 'left', 'right', 'neither', 'center', 'zero'}, optional
+: {'bottom', 'top', 'left', 'right', 'both', 'neither', 'center', 'zero'}, optional
     The x and y axis spine locations.
 xtickloc, ytickloc \
-: {'both', 'bottom', 'top', 'left', 'right', 'neither'}, optional
+: {'bottom', 'top', 'left', 'right', 'both', 'neither'}, optional
     Which x and y axis spines should have major and minor tick marks.
-xtickminor, ytickminor, tickminor : bool, optional
-    Whether to draw minor ticks on the x and y axes.
+xticklabelloc, yticklabelloc \
+: {'bottom', 'top', 'left', 'right', 'both', 'neither'}, optional
+    Which x and y axis spines should have major tick labels. Default
+    behavior is to inherit this from `xtickloc` and `ytickloc`.
+xlabelloc, ylabelloc : {'bottom', 'top', 'left', 'right'}, optional
+    Which x and y axis spines should have axis labels. Default
+    behavior is to inherit this from `xticklabelloc` and `yticklabelloc`.
 xtickdir, ytickdir, tickdir : {'out', 'in', 'inout'}
     Direction that major and minor tick marks point for the x and y axis.
     Use `tickdir` to control both.
@@ -78,6 +81,9 @@ xgrid, ygrid, grid : bool, optional
 xgridminor, ygridminor, gridminor : bool, optional
     Whether to draw minor gridlines for the x and y axis.
     Use `gridminor` to toggle both.
+xtickminor, ytickminor, tickminor : bool, optional
+    Whether to draw minor ticks on the x and y axes.
+    Use `tickminor` to toggle both.
 xticks, yticks : optional
     Aliases for `xlocator`, `ylocator`.
 xlocator, ylocator : locator-spec, optional
@@ -853,16 +859,14 @@ class CartesianAxes(shared._SharedAxes, plot.PlotAxes):
             ytickloc = _not_none(ytickloc, yspineloc, self._get_loc('y', 'ytick'))
             xspineloc = _not_none(xspineloc, self._get_loc('x', 'axes.spines'))
             yspineloc = _not_none(yspineloc, self._get_loc('y', 'axes.spines'))
-            if xtickloc != 'both':
+            if xtickloc != 'both':  # then infer others
                 xticklabelloc = _not_none(xticklabelloc, xtickloc)
-                xlabelloc = _not_none(xlabelloc, xticklabelloc)
-                if xlabelloc not in (None, 'bottom', 'top'):  # e.g. "both"
-                    xlabelloc = 'bottom'
-            if ytickloc != 'both':
+                if xticklabelloc in ('bottom', 'top'):
+                    xlabelloc = _not_none(xlabelloc, xticklabelloc)
+            if ytickloc != 'both':  # then infer others
                 yticklabelloc = _not_none(yticklabelloc, ytickloc)
-                ylabelloc = _not_none(ylabelloc, yticklabelloc)
-                if ylabelloc not in (None, 'left', 'right'):
-                    ylabelloc = 'left'
+                if yticklabelloc in ('left', 'right'):
+                    ylabelloc = _not_none(ylabelloc, yticklabelloc)
 
             # Loop over axes
             for (
