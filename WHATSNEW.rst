@@ -49,6 +49,8 @@ Features
 * Permit passing `includepanels` and `mathtext_fallback` as
   `proplot.figure.Figure.format` keywords instead of just
   ``__init__`` keywords (:commit:`33bff576`).
+* Add `base` keyword to `~proplot.ticker.SigFigFormatter` to optionally round to
+  multiples other than factors of 10 (:commit:`3b00e8a0`).
 
 Bug fixes
 ---------
