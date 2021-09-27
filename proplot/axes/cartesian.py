@@ -64,9 +64,9 @@ xscale_kw, yscale_kw : dict-like, optional
 xloc, yloc : optional
     Shorthands for `xspineloc`, `yspineloc`.
 xspineloc, yspineloc : {'bottom', 'top', 'left', 'right', \
-'both', 'neither', 'none', 'center', 'zero'}, optional
-    The x and y axis spine locations. Propagates to `tickloc` unless specified
-    otherwise (if not ``'center'`` or ``'zero'``).
+'both', 'neither', 'none', 'zero', 'center'} or 2-tuple, optional
+    The x and y spine locations. Applied with `~matplotlib.spines.Spine.set_position`.
+    Propagates to `tickloc` unless specified otherwise.
 xtickloc, ytickloc \
 : {'bottom', 'top', 'left', 'right', 'both', 'neither', 'none'}, optional
     Which x and y axis spines should have major and minor tick marks. Inherits from
@@ -735,12 +735,17 @@ class CartesianAxes(shared._SharedAxes, plot.PlotAxes):
         # The tick and tick label sides for Cartesian axes
         kw = {}
         sides = ('bottom', 'top') if x == 'x' else ('left', 'right')
+        sides_map = {'both': sides, 'neither': (), 'none': (), None: None}
         sides_active = tuple(side for side in sides if self.spines[side].get_visible())
-        sides_dict = {None: None, 'both': sides, 'none': (), 'neither': ()}
 
         # The tick side(s)
         # NOTE: Silently forbids adding ticks to sides with invisible spines
-        ticklocs = sides_dict.get(tickloc, (tickloc,))
+        ticklocs = sides_map.get(tickloc, (tickloc,))
+        if ticklocs and any(loc not in sides for loc in ticklocs):
+            raise ValueError(
+                f'Invalid tick mark location {tickloc!r}. Options are '
+                + ', '.join(map(repr, sides + tuple(sides_map))) + '.'
+            )
         if ticklocs is not None:
             kw.update({side: side in ticklocs for side in sides})
         kw.update(
@@ -751,7 +756,12 @@ class CartesianAxes(shared._SharedAxes, plot.PlotAxes):
 
         # The tick label side(s). Make sure these only appear where ticks are
         # NOTE: Silently forbids adding labels to sides with invisible ticks or spines
-        ticklabellocs = sides_dict.get(ticklabelloc, (ticklabelloc,))
+        ticklabellocs = sides_map.get(ticklabelloc, (ticklabelloc,))
+        if ticklabellocs and any(loc not in sides for loc in ticklabellocs):
+            raise ValueError(
+                f'Invalid tick label location {ticklabelloc!r}. Options are '
+                + ', '.join(map(repr, sides + tuple(sides_map))) + '.'
+            )
         if ticklabellocs is not None:
             kw.update({'label' + side: (side in ticklabellocs) for side in sides})
         kw.update(
