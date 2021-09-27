@@ -741,6 +741,7 @@ class CartesianAxes(shared._SharedAxes, plot.PlotAxes):
         if labelloc is not None:
             getattr(self, x + 'axis').set_label_position(labelloc)
 
+    @warnings._rename_kwargs('0.9', xloc='xspineloc', yloc='yspineloc')
     @docstring._snippet_manager
     def format(
         self, *,
@@ -848,8 +849,6 @@ class CartesianAxes(shared._SharedAxes, plot.PlotAxes):
             # Sensible defaults for spine, tick, tick label, and label locs
             # NOTE: Allow tick labels to be present without ticks! User may
             # want this sometimes! Same goes for spines!
-            xspineloc = _not_none(xloc=xloc, xspineloc=xspineloc)
-            yspineloc = _not_none(yloc=yloc, yspineloc=yspineloc)
             xtickloc = _not_none(xtickloc, xspineloc, self._get_loc('x', 'xtick'))
             ytickloc = _not_none(ytickloc, yspineloc, self._get_loc('y', 'ytick'))
             xspineloc = _not_none(xspineloc, self._get_loc('x', 'axes.spines'))
