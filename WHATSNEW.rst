@@ -41,10 +41,14 @@ Features
   ``alt[xy]`` (:commit:`eaab8658`). For example ``ax.alty(loc='left')`` changes the
   spine, tick mark, tick label, axis label, and offset label sides to the opposite of
   the default: *left* for the new alternate axes, *right* for the original axes.
-* Add documentation explaining default inheritance of the ``loc``
-  `proplot.axes.CartesianAxes.format` keywords (:commit:`1fa90f87`). Order is ``loc`` or
+* Improve documentation for ``loc`` `proplot.axes.CartesianAxes.format` keywords
+  (:commit:`1fa90f87`, :commit:`48dc346d`). Inheritance order is ``loc`` or
   ``spineloc`` --> ``tickloc`` --> ``ticklabelloc`` --> ``labelloc`` and ``offsetloc``,
   e.g. ``xloc='bottom'`` implies ``xtickloc='bottom'`` unless specified otherwise.
+* Do not inherit ``tickloc`` from ``spineloc`` if it is invalid (e.g., ``'zero'``),
+  do not propagate ``spineloc`` and ``tickloc`` to other settings if they are inferred
+  from updated rc settings, and issue error message if ``tickloc`` or ``ticklabelloc``
+  are invalid (:commit:`616d81fa`, :commit:`219e4b21`, :commit:`bc5a692c`).
 * Add documentation for previously-hidden `xticklabelloc`, `yticklabelloc`, `xlabelloc`,
   and `ylabelloc` `proplot.axes.CartesianAxes.format` keywords (:commit:`1fa90f87`).
 * Add `xoffsetloc`, `yoffsetloc` keywords to control position of order-of-magnitude
@@ -79,6 +83,8 @@ Bug fixes
   account the underlying "panel" side (:commit:`2446acc1`).
 * Fix issue where axis label color is overwritten during ``__init__``
   call to `proplot.axes.CartesianAxes.format` (:commit:`b454a513`).
+* Fix issue where setting `xspineloc` or `yspineloc` to invalid `tickloc`
+  (e.g., ``'zero'`` or ``'center'``) also disables the ticks (:commit:`616d81fa`).
 * Fix issue where setting axis label color without specifying label
   text erases the old label text (:commit:`7a7852f9`).
 * Fix issue where axis label settings are overridden by settings from
