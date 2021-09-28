@@ -118,12 +118,12 @@ class _Scale(object):
             axis.isDefault_minloc = True
         if not only_if_default or axis.isDefault_majfmt:
             formatter = self._default_major_formatter
-            formatter = copy.copy(formatter) if formatter else mticker.AutoFormatter()
+            formatter = copy.copy(formatter) if formatter else pticker.AutoFormatter()
             axis.set_major_formatter(formatter)
             axis.isDefault_majfmt = True
         if not only_if_default or axis.isDefault_minfmt:
             formatter = self._default_minor_formatter
-            formatter = copy.copy(formatter) if formatter else mticker.AutoFormatter()
+            formatter = copy.copy(formatter) if formatter else pticker.AutoFormatter()
             axis.set_minor_formatter(formatter)
             axis.isDefault_minfmt = True
 
