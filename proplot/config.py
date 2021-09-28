@@ -1031,6 +1031,11 @@ class Configurator(MutableMapping, dict):
         """
         Return locations of local proplotrc files in this directory
         and in parent directories.
+
+        See also
+        --------
+        Configurator.user_file
+        Configurator.user_folder
         """
         cdir = os.getcwd()
         paths = []
@@ -1073,6 +1078,11 @@ class Configurator(MutableMapping, dict):
         location ``~/.proplotrc`` or ``~/.proplot/proplotrc`` is always returned if the
         file exists, regardless of the operating system. If multiple valid locations
         are found, a warning is raised.
+
+        See also
+        --------
+        Configurator.user_folder
+        Configurator.local_files
         """
         # Support both loose files and files inside .proplot
         file = os.path.join(Configurator.user_folder(), 'proplotrc')
@@ -1095,6 +1105,11 @@ class Configurator(MutableMapping, dict):
         is unset. On other operating systems, this is ``~/.proplot``. The location
         ``~/.proplot`` is always returned if the folder exists, regardless of the
         operating system. If multiple valid locations are found, a warning is raised.
+
+        See also
+        --------
+        Configurator.user_file
+        Configurator.local_files
         """
         # Try the XDG standard location
         # NOTE: This is borrowed from matplotlib.get_configdir
