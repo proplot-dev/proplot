@@ -274,7 +274,7 @@ provides the following advantages:
   :ref:`axes panels <ug_insets_panels>` without "stealing space"
   from the parent subplot -- these objects usually need to be
   spaced closer to their parents than other subplots.
-* You can :ref:`override particular spacing parameters <ug_tight>`
+* You can :ref:`override <ug_tight>` particular spacing parameters
   and leave the tight layout algorithm to adjust the
   unspecified spacing parameters. For example, passing ``right=1`` to
   `~proplot.figure.Figure.add_subplots` fixes the right margin
@@ -329,10 +329,10 @@ concise figures.
 * The `~proplot.axes.Axes.panel_axes` (shorthand `~proplot.axes.Axes.panel`) commands
   can draw :ref:`thin panels <ug_panels>` along the edges of subplots. This
   can be useful for plotting 1D summary statistics alongside 2D plots.
-* :ref:`A-b-c labels <ug_abc>` can be added to subplots simply using the :rcraw:`abc`
+* A-b-c labels can be added to subplots simply using the :rcraw:`abc`
   setting -- for example, ``pplt.rc['abc'] = 'A.'`` or ``axs.format(abc='A.')``.
   This is possible because `~proplot.figure.Figure.add_subplot` assigns a unique
-  `~proplot.axes.Axes.number` to every added subplot.
+  `~proplot.axes.Axes.number` to every new subplot.
 * The `proplot.gridspec.SubplotGrid.format` command can easily format multiple subplots
   at once or add colorbars, legends, panels, twin axes, or inset axes to multiple
   subplots at once. A `~proplot.gridspec.SubplotGrid` is returned by
@@ -392,9 +392,6 @@ colorbar between columns 1 and 2 but nothing between columns 2 and 3.
 Also, `~proplot.figure.Figure` and `~proplot.axes.Axes` colorbar widths are
 now specified in *physical* units rather than relative units, which makes
 colorbar thickness independent of subplot size and easier to get just right.
-
-There are also several useful new :ref:`colorbar <ug_cbars>` and
-:ref:`legend <ug_legends>` features described in the user guide.
 
 Links
 -----
@@ -865,27 +862,28 @@ ProPlot settings can be changed persistently by editing the default ``proplotrc`
 file in the location given by `~proplot.config.Configurator.user_file` (this is
 usually ``$HOME/.proplot/proplotrc``) or by adding ``proplotrc`` files to either
 the current directory or any parent directory. Adding files to parent directories
-can be useful when working in projects with lots of subfolders. See the
-:ref:`user guide <ug_proplotrc>` for details.
+can be useful when working in projects with lots of subfolders.
 
 ProPlot also automatically registers colormaps, color cycles, colors, and font
 files stored in the ``cmaps``,  ``cycles``, ``colors``, and ``fonts`` folders in
 the location given by `~proplot.config.Configurator.user_folder` (this is usually
 ``$HOME/.proplot``). You can save colormaps and color cycles to these
 folders simply by passing ``save=True`` to `~proplot.constructor.Colormap` and
-`~proplot.constructor.Cycle`. To explicitly register objects stored in these folders,
-or to register arbitrary input arguments, you can use `~proplot.config.register_cmaps`,
+`~proplot.constructor.Cycle`. To manually register these files, or to
+register arbitrary input arguments, you can use `~proplot.config.register_cmaps`,
 `~proplot.config.register_cycles`, `~proplot.config.register_colors`, or
 `~proplot.config.register_fonts`.
 
 Links
 -----
 
-* For importing custom colormaps,
+* For the ``proplotrc`` file,
+  see :ref:`this page <ug_proplotrc>`.
+* For registering colormaps,
   see :ref:`this page <ug_cmaps_dl>`.
-* For importing custom color cycles,
+* For registering color cycles,
   see :ref:`this page <ug_cycles_dl>`.
-* For importing custom colors,
+* For registering colors,
   see :ref:`this page <ug_colors_user>`.
-* For importing custom fonts,
+* For registering fonts,
   see :ref:`this page <ug_fonts_user>`.
