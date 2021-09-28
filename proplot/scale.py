@@ -103,27 +103,28 @@ class _Scale(object):
         # minor ticks" on and off, so set as 'default' if AutoMinorLocator.
         from .config import rc
         if not only_if_default or axis.isDefault_majloc:
-            axis.set_major_locator(
-                self._default_major_locator or mticker.AutoLocator()
-            )
+            locator = self._default_major_locator
+            locator = copy.copy(locator) if locator else mticker.AutoLocator()
+            axis.set_major_locator(locator)
             axis.isDefault_majloc = True
-        if not only_if_default or axis.isDefault_majfmt:
-            axis.set_major_formatter(
-                self._default_major_formatter or pticker.AutoFormatter()
-            )
-            axis.isDefault_majfmt = True
         if not only_if_default or axis.isDefault_minloc:
             name = axis.axis_name if axis.axis_name in 'xy' else 'x'
-            axis.set_minor_locator(
-                self._default_minor_locator or mticker.AutoMinorLocator()
-                if rc[name + 'tick.minor.visible']
-                else mticker.NullLocator()
-            )
+            locator = self._default_minor_locator
+            if rc[name + 'tick.minor.visible']:
+                locator = copy.copy(locator) if locator else mticker.AutoMinorLocator()
+            else:
+                locator = mticker.NullLocator()
+            axis.set_minor_locator(locator)
             axis.isDefault_minloc = True
+        if not only_if_default or axis.isDefault_majfmt:
+            formatter = self._default_major_formatter
+            formatter = copy.copy(formatter) if formatter else mticker.AutoFormatter()
+            axis.set_major_formatter(formatter)
+            axis.isDefault_majfmt = True
         if not only_if_default or axis.isDefault_minfmt:
-            axis.set_minor_formatter(
-                self._default_minor_formatter or mticker.NullFormatter()
-            )
+            formatter = self._default_minor_formatter
+            formatter = copy.copy(formatter) if formatter else mticker.AutoFormatter()
+            axis.set_minor_formatter(formatter)
             axis.isDefault_minfmt = True
 
     def get_transform(self):
