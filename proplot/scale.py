@@ -50,15 +50,20 @@ def _parse_logscale_args(*keys, **kwargs):
         }
         value = _not_none(**opts)  # issues warning if multiple values passed
 
-        # Apply defaults
+        # Apply defaults and adjust
         # NOTE: If linthresh is *exactly* on a power of the base, can end
         # up with additional log-locator step inside the threshold, e.g. major
         # ticks on -10, -1, -0.1, 0.1, 1, 10 for linthresh of 1. Adding slight
         # offset to *desired* linthresh prevents this.
-        if key == 'linthresh' and value is None:
-            value = 1 + 1e-10
-        if key == 'subs' and value is None:
-            value = np.arange(1, 10)
+        if key == 'subs':
+            if value is None:
+                value = np.arange(1, 10)
+        if key == 'linthresh':
+            if value is None:
+                value = 1
+            power = np.log10(value)
+            if power % 1 == 0:  # exact power of 10
+                value = value + 10 ** (power - 10)
         if value is not None:  # dummy axis_name is 'x'
             kwargs[key + kwsuffix] = value
 
