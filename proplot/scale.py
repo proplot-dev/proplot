@@ -77,10 +77,10 @@ class _Scale(object):
         # Pass a dummy axis to the superclass
         axis = type('Axis', (object,), {'axis_name': 'x'})()
         super().__init__(axis, *args, **kwargs)
-        self._default_major_locator = None
-        self._default_minor_locator = None
-        self._default_major_formatter = None
-        self._default_minor_formatter = None
+        self._default_major_locator = mticker.AutoLocator()
+        self._default_minor_locator = mticker.AutoMinorLocator()
+        self._default_major_formatter = pticker.AutoFormatter()
+        self._default_minor_formatter = mticker.NullFormatter()
 
     def set_default_locators_and_formatters(self, axis, only_if_default=False):
         """
@@ -96,34 +96,28 @@ class _Scale(object):
             axis is currently using non-default versions. Useful if we want to
             avoid overwriting user customization when the scale is changed.
         """
-        # TODO: Always use only_if_default=True? Currently is only for dual axes.
-        # Apply isDefault because matplotlib does this in axis._set_scale
-        # but sometimes we need to bypass this method! Minor locator can be
-        # "non default" even when user has not changed it, due to "turning
-        # minor ticks" on and off, so set as 'default' if AutoMinorLocator.
+        # TODO: Always use only_if_default=True? Used only for dual axes right now
+        # NOTE: We set isDefault_minloc to True when simply toggling minor ticks
+        # on and off with CartesianAxes format command.
         from .config import rc
         if not only_if_default or axis.isDefault_majloc:
-            locator = self._default_major_locator
-            locator = copy.copy(locator) if locator else mticker.AutoLocator()
+            locator = copy.copy(self._default_major_locator)
             axis.set_major_locator(locator)
             axis.isDefault_majloc = True
         if not only_if_default or axis.isDefault_minloc:
-            name = axis.axis_name if axis.axis_name in 'xy' else 'x'
-            locator = self._default_minor_locator
-            if rc[name + 'tick.minor.visible']:
-                locator = copy.copy(locator) if locator else mticker.AutoMinorLocator()
+            x = axis.axis_name if axis.axis_name in 'xy' else 'x'
+            if rc[x + 'tick.minor.visible']:
+                locator = copy.copy(self._default_minor_locator)
             else:
                 locator = mticker.NullLocator()
             axis.set_minor_locator(locator)
             axis.isDefault_minloc = True
         if not only_if_default or axis.isDefault_majfmt:
-            formatter = self._default_major_formatter
-            formatter = copy.copy(formatter) if formatter else pticker.AutoFormatter()
+            formatter = copy.copy(self._default_major_formatter)
             axis.set_major_formatter(formatter)
             axis.isDefault_majfmt = True
         if not only_if_default or axis.isDefault_minfmt:
-            formatter = self._default_minor_formatter
-            formatter = copy.copy(formatter) if formatter else mticker.NullFormatter()
+            formatter = copy.copy(self._default_minor_formatter)
             axis.set_minor_formatter(formatter)
             axis.isDefault_minfmt = True
 

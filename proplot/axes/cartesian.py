@@ -2,6 +2,7 @@
 """
 The standard Cartesian axes used for most ProPlot figures.
 """
+import copy
 import inspect
 
 import matplotlib.dates as mdates
@@ -617,8 +618,8 @@ class CartesianAxes(shared._SharedAxes, plot.PlotAxes):
             minorlocator = constructor.Locator(minorlocator, **minorlocator_kw)
         elif tickminor:
             minorlocator = getattr(axis._scale, '_default_minor_locator', None)
-            if not minorlocator:
-                minorlocator = constructor.Locator('minor')
+            minorlocator = copy.copy(minorlocator)
+            minorlocator = constructor.Locator(minorlocator or 'minor')
         if minorlocator is not None:
             axis.set_minor_locator(minorlocator)
             axis.isDefault_minloc = isdefault
