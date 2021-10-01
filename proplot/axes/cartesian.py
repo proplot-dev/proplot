@@ -247,10 +247,10 @@ _dual_extra = """
 funcscale : callable, 2-tuple of callables, or scale-spec
     The scale used to transform units from the parent axis to the secondary
     axis. This can be a `~proplot.scale.FuncScale` itself or a function,
-    (function, function) tuple, or an axis scale specification
-    interpreted by the `~proplot.constructor.Scale` constructor function,
-    any of which will be used to build a `~proplot.scale.FuncScale` and
-    applied to the dual axis (see `~proplot.scale.FuncScale` for details).
+    (function, function) tuple, or an axis scale specification interpreted
+    by the `~proplot.constructor.Scale` constructor function, any of which
+    will be used to build a `~proplot.scale.FuncScale` and applied
+    to the dual axis (see `~proplot.scale.FuncScale` for details).
 """
 _dual_docstring = _shared_docstring % {'descrip': _dual_descrip, 'extra': _dual_extra.lstrip()}  # noqa: E501
 docstring._snippet_manager['axes.dualx'] = _dual_docstring.format(**_shared_x_keys)

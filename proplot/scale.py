@@ -251,133 +251,112 @@ class FuncScale(_Scale, mscale.ScaleBase):
     #: The registered scale name
     name = 'function'
 
-    def __init__(
-        self, arg, invert=False, parent_scale=None,
-        major_locator=None, minor_locator=None,
-        major_formatter=None, minor_formatter=None,
-    ):
+    def __init__(self, transform, invert=False, parent_scale=None, **kwargs):
         """
         Parameters
         ----------
-        arg : callable, 2-tuple of callable, or `~matplotlib.scale.ScaleBase`
+        transform : callable, 2-tuple of callable, or scale-spec
             The transform used to translate units from the parent axis to
             the secondary axis. Input can be as follows:
 
-            * A single function that accepts a number and returns some
-              transformation of that number. If you do not provide the
-              inverse, the function must be `linear \
-<https://en.wikipedia.org/wiki/Linear_function>`__
-              or `involutory \
-<https://en.wikipedia.org/wiki/Involution_(mathematics)>`__.
-              For example, to convert Kelvin to Celsius, use
-              ``ax.dualx(lambda x: x - 273.15)``. To convert kilometers
-              to meters, use ``ax.dualx(lambda x: x * 1e3)``.
-            * A 2-tuple of such functions. The second function must be the
-              *inverse* of the first. For example, to apply the square, use
-              ``ax.dualx((lambda x: x**2, lambda x: x**0.5))``.
-              Again, if the first function is linear or involutory, you do
-              not need to provide the second!
-            * A scale specification interpreted by the `~proplot.constructor.Scale`
-              constructor function. The forward transformation, inverse transformation,
-              and default axis locators and formatters are borrowed from the resulting
-              `~matplotlib.scale.ScaleBase` instance. For example, to apply the
-              inverse, use ``ax.dualx('inverse')``. To apply the base-10
-              exponential function, use ``ax.dualx(('exp', 10))``.
+            * A single `linear <https://en.wikipedia.org/wiki/Linear_function>`__ or
+              `involutory <https://en.wikipedia.org/wiki/Involution_(mathematics)>`__
+              function that accepts a number and returns some transformation of
+              that number. For example, to convert Kelvin to Celsius, use
+              ``ax.dualx(lambda x: x - 273.15)``. To convert kilometers to
+              meters, use ``ax.dualx(lambda x: x * 1e3)``.
+            * A 2-tuple of arbitrary functions. This should only be used if your
+              functions are non-linear and non-involutory. The second function must
+              be the inverse of the first. For example, to apply the square, use
+              ``ax.dualx((lambda x: x ** 2, lambda x: x ** 0.5))``.
+            * A scale specification passed to the `~proplot.constructor.Scale`
+              constructor function. The transform and default locators and formatters
+              are borrowed from the resulting `~matplotlib.scale.ScaleBase` instance.
+              For example, to apply the inverse, use ``ax.dualx('inverse')``.
+              To apply the base-10 exponential, use ``ax.dualx(('exp', 10))``.
 
         invert : bool, optional
             If ``True``, the forward and inverse functions are *swapped*.
             Used when drawing dual axes.
         parent_scale : `~matplotlib.scale.ScaleBase`
             The axis scale of the "parent" axis. Its forward transform is
-            applied to the `FuncTransform`. Used when drawing dual axes.
-        major_locator, minor_locator : `~matplotlib.ticker.Locator`, optional
-            The default major and minor locator. By default these are
-            borrowed from `transform`. If `transform` is not an axis scale,
-            they are the same as `~matplotlib.scale.LinearScale`.
-        major_formatter, minor_formatter : `~matplotlib.ticker.Formatter`, optional
-            The default major and minor formatter. By default these are
-            borrowed from `transform`. If `transform` is not an axis scale,
-            they are the same as `~matplotlib.scale.LinearScale`.
+            applied to the `FuncTransform`. Default is `LinearScale`.
+        major_locator, minor_locator : locator-spec, optional
+            The default major and minor locator. Passed to the
+            `~proplot.constructor.Locator` constructor function. By default, these are
+            the same as the default locators on the input transform. If the input
+            transform was not an axis scale, these are borrowed from `parent_scale`.
+        major_formatter, minor_formatter : formatter-spec, optional
+            The default major and minor formatter. Passed to the
+            `~proplot.constructor.Formatter` constructor function. By default, these are
+            the same as the default formatters on the input transform. If the input
+            transform was not an axis scale, these are borrowed from `parent_scale`.
         """
-        # NOTE: We permit *arbitrary* parent axis scales. If the parent is
-        # non-linear, we use *its* default locators and formatters. Assumption
-        # is this is a log scale and the child is maybe some multiple or offset
-        # of that scale. If the parent axis scale is linear, use the funcscale
-        # defaults, which can inherit defaults.
+        # Parse input args
+        # NOTE: Permit *arbitrary* parent axis scales and infer default locators and
+        # formatters from the input scale (if it was passed) or the parent scale. Use
+        # case for latter is e.g. logarithmic scale with linear transformation.
         super().__init__()
+        from .constructor import Formatter, Locator, Scale
         inherit_scale = None  # scale for inheriting properties
-        if callable(arg):
-            forward = inverse = arg
-        elif np.iterable(arg) and len(arg) == 2 and all(map(callable, arg)):
-            forward, inverse = arg
+        if callable(transform):
+            forward = inverse = transform
+        elif (
+            np.iterable(transform)
+            and len(transform) == 2
+            and all(map(callable, transform))
+        ):
+            forward, inverse = transform
         else:
-            from .constructor import Scale
             try:
-                inherit_scale = Scale(arg)
+                inherit_scale = Scale(transform)
             except ValueError:
                 raise ValueError(
-                    'Input should be a function, 2-tuple of forward and and inverse '
-                    f'functions, or an axis scale specification, not {arg!r}.'
+                    'Expected a function, 2-tuple of forward and and inverse '
+                    f'functions, or an axis scale specification. Got {transform!r}.'
                 )
-            trans = inherit_scale.get_transform()
-            forward = trans.transform
-            inverse = trans.inverted().transform
+            t = inherit_scale.get_transform()
+            forward = t.transform
+            inverse = t.inverted().transform
 
-        # Create the FuncTransform or composite transform used for this class
-        # May need to invert functions for dualx() and dualy()
-        if invert:
+        # Create the transform
+        # NOTE: Linear scale is always identity transform (no-op).
+        # NOTE: Must transform parent scale cutoff arguments as well. Use inverse
+        # function because we are converting from some *other* axis to this one.
+        if invert:  # used for dualx and dualy
             forward, inverse = inverse, forward
-        functransform = FuncTransform(forward, inverse)
-
-        # Manage the parent axis scale
-        # NOTE: Must transform parent scale cutoff arguments as well.
-        # NOTE: Makes sense to use the inverse function here because this is
-        # a transformation from some *other* axis to this one, not vice versa.
-        if parent_scale is None:
-            pass
-        elif isinstance(parent_scale, mscale.ScaleBase):
-            if isinstance(parent_scale, mscale.SymmetricalLogScale):
-                keys = ('base', 'linthresh', 'linscale', 'subs')
-                kwargs = {key: getattr(parent_scale, key) for key in keys}
-                kwargs['linthresh'] = inverse(kwargs['linthresh'])
-                parent_scale = SymmetricalLogScale(**kwargs)
-            if isinstance(parent_scale, CutoffScale):
-                args = list(parent_scale.args)  # mutable copy
-                args[::2] = (inverse(arg) for arg in args[::2])  # transform cutoffs
-                parent_scale = CutoffScale(*args)
-            functransform = parent_scale.get_transform() + functransform
-        else:
-            raise ValueError(
-                f'parent_scale {parent_scale!r} must be a ScaleBase instance, '
-                f'not {type(parent_scale)!r}.'
-            )
-
-        # Transform and default stuff
+        parent_scale = _not_none(parent_scale, LinearScale())
+        if not isinstance(parent_scale, mscale.ScaleBase):
+            raise ValueError(f'Parent scale must be ScaleBase. Got {parent_scale!r}.')
+        if isinstance(parent_scale, CutoffScale):
+            args = list(parent_scale.args)  # mutable copy
+            args[::2] = (inverse(arg) for arg in args[::2])  # transform cutoffs
+            parent_scale = CutoffScale(*args)
+        if isinstance(parent_scale, mscale.SymmetricalLogScale):
+            keys = ('base', 'linthresh', 'linscale', 'subs')
+            kwsym = {key: getattr(parent_scale, key) for key in keys}
+            kwsym['linthresh'] = inverse(kwsym['linthresh'])
+            parent_scale = SymmetricalLogScale(**kwsym)
         self.functions = (forward, inverse)
-        self._transform = functransform
-        self._default_major_locator = major_locator
-        self._default_minor_locator = minor_locator
-        self._default_major_formatter = major_formatter
-        self._default_minor_formatter = minor_formatter
+        self._transform = parent_scale.get_transform() + FuncTransform(forward, inverse)
 
-        # Try to borrow locators and formatters
-        # WARNING: Using the same locator on multiple axes can evidently
-        # have unintended side effects! So we make copies.
-        for scale in (inherit_scale, parent_scale):
-            if not isinstance(scale, _Scale):
-                continue
-            if isinstance(scale, mscale.LinearScale):
-                continue
-            for name in (
-                'major_locator',
-                'minor_locator',
-                'major_formatter',
-                'minor_formatter'
-            ):
-                attr = f'_default_{name}'
-                obj = getattr(scale, attr)
-                if getattr(self, attr) is None and obj is not None:
-                    setattr(self, attr, copy.copy(obj))
+        # Apply default locators and formatters
+        # NOTE: We pass these through contructor functions
+        scale = inherit_scale or parent_scale
+        for which in ('major', 'minor'):
+            for type_, parser in (('locator', Locator), ('formatter', Formatter)):
+                key = which + '_' + type_
+                attr = '_default_' + key
+                ticker = kwargs.pop(key, None)
+                if ticker is None:
+                    ticker = getattr(scale, attr, None)
+                    if ticker is None:  # e.g. someone used a matplotlib scale
+                        continue  # revert to defaults
+                ticker = parser(ticker)
+                setattr(self, attr, copy.copy(ticker))
+
+        if kwargs:
+            raise TypeError(f'FuncScale got unexpected arguments: {kwargs}')
 
 
 class FuncTransform(mtransforms.Transform):
