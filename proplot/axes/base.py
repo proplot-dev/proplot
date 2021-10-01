@@ -2870,8 +2870,10 @@ class Axes(maxes.Axes):
         Parameters
         ----------
         x, y, [z] : float
-            The coordinates for the text
-        s : str
+            The coordinates for the text. `~proplot.axes.ThreeAxes` accept an
+            optional third coordinate. If only two are provided this automatically
+            redirects to the `~mpl_toolkits.mplot3d.Axes3D.text2D` method.
+        s, text : str
             The string for the text.
         %(axes.transform)s
 
@@ -2892,7 +2894,7 @@ class Axes(maxes.Axes):
         bboxstyle : boxstyle, optional
             The style of the bounding box. Default is ``'round'``.
         bboxalpha : float, optional
-            The alpha for the bounding box. Default is ``'0.5'``.
+            The alpha for the bounding box. Default is ``0.5``.
         bboxpad : float, optional
             The padding for the bounding box. Default is :rc:`title.bboxpad`.
         name, fontname
@@ -2934,23 +2936,18 @@ class Axes(maxes.Axes):
         # Translate positional args
         # Audo-redirect to text2D for 3D axes if not enough arguments passed
         # NOTE: The transform must be passed positionally for 3D axes with 2D coords
-        keys = tuple('xyz' if self._name == 'three' else 'xy')
-        keys += (('s', 'text'),)  # interpret both 's' and 'text'
+        keys = 'xy'
+        func = super().text
+        if self._name == 'three':
+            if len(args) >= 4 or 'z' in kwargs:
+                keys += 'z'
+            else:
+                func = self.text2D
+        keys = (*keys, ('s', 'text'), 'transform')
         args, kwargs = _kwargs_to_args(keys, *args, **kwargs)
-        if len(args) == len(keys) + 1:
-            add_text = super().text
-            *args, transform = args
-        elif len(args) == len(keys):
-            add_text = super().text
-            transform = kwargs.pop('transform', None)
-        elif len(args) == len(keys) - 1 and self._name == 'three':
-            add_text = self.text2D
-            transform = kwargs.pop('transform', None)
-        else:
-            raise TypeError(
-                f'Expected {len(keys) - 1} to {len(keys)} '
-                f'positional arguments but got {len(args)}.'
-            )
+        *args, transform = args
+        if any(arg is None for arg in args):
+            raise TypeError('Missing required positional argument.')
 
         # Translate keyword args
         # TODO: Translate all properties and emit warnings?
@@ -2966,7 +2963,7 @@ class Axes(maxes.Axes):
             transform = self._get_transform(transform)
 
         # Update the text object using monkey patch
-        obj = add_text(*args, transform=transform, **kwargs)
+        obj = func(*args, transform=transform, **kwargs)
         obj.update = text._update_text.__get__(obj)
         obj.update(
             {
