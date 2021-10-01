@@ -2,7 +2,7 @@
 """
 The "3D" axes class.
 """
-from . import plot, shared
+from . import base, shared
 
 try:
     from mpl_toolkits.mplot3d import Axes3D
@@ -10,7 +10,7 @@ except ImportError:
     Axes3D = object
 
 
-class ThreeAxes(shared._SharedAxes, plot.PlotAxes, Axes3D):
+class ThreeAxes(shared._SharedAxes, base.Axes, Axes3D):
     """
     Simple mix-in of `proplot.axes.PlotAxes` with `~mpl_toolkits.mplot3d.axes3d.Axes3D`.
     """
