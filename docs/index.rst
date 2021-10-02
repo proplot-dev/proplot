@@ -11,7 +11,7 @@ ProPlot
 A succinct `matplotlib <https://matplotlib.org/>`__ wrapper
 for making beautiful, publication-quality graphics. This project
 is `published on GitHub <https://github.com/lukelbd/proplot>`__ and can
-be cited using its `Zenodo DOI <https://zenodo.org/record/5234192>`__.
+be cited using its `Zenodo DOI <https://doi.org/10.5281/zenodo.3873878>`__.
 
 .. toctree::
    :maxdepth: 1
