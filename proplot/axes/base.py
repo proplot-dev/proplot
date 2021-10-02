@@ -674,7 +674,9 @@ class Axes(maxes.Axes):
         autoshare = kwargs.pop('autoshare', None)
         autoshare = _not_none(autoshare, True)
         rc_kw, rc_mode = _pop_rc(kwargs)
-        kw_format = {}
+        kw_format = _pop_props(kwargs, 'patch')  # background properties
+        if 'zorder' in kw_format:  # special case: refers to entire axes
+            kwargs['zorder'] = kw_format.pop('zorder')
         for sig in (self._format_signature, self._format_signature_base):
             if sig is not None:
                 kw_format.update(_pop_params(kwargs, sig))
