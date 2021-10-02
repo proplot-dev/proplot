@@ -28,6 +28,20 @@ ProPlot v1.0.0 (2022-##-##)
 This will be published when more comprehensive testing is completed
 and stability is improved.
 
+ProPlot v0.9.3 (2021-XX-XX)
+===========================
+
+Bug fixes
+---------
+
+* Fix bug instantiating 3D axes (:issue:`389`).
+* Stop inheriting `~proplot.axes.ThreeAxes` from `~proplot.axes.PlotAxes`,
+  instead just inherit from `~proplot.axes.Axes` (:commit:`64623d92`).
+* Stop changing default background of figure when `~proplot.axes.ThreeAxes` is present
+  -- instead just set default axes background to transparent (:commit:`e933614d`).
+* Permit passing background patch-related ``format`` keywords like
+  `facecolor` on axes instantiation (:commit:`f863afd8`).
+
 ProPlot v0.9.2 (2021-09-30)
 ===========================
 
