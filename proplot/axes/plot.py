@@ -295,9 +295,8 @@ discrete : bool, optional
     colormap. Instead, for non-contour plots, the number of levels will be
     roughly controlled by :rcraw:`cmap.lut`. This has a similar effect to
     using `levels=large_number` but it may improve rendering speed. Default
-    is ``False`` for `~proplot.axes.Axes.imshow`, `~proplot.axes.Axes.matshow`,
-    `~proplot.axes.Axes.spy`, `~proplot.axes.Axes.hexbin`, `~proplot.axes.Axes.hist2d`,
-    and `~proplot.axes.Axes.heatmap` plots, but ``True`` otherwise.
+    is ``True`` for only contour-plotting commands like `~proplot.axes.Axes.contourf`
+    and pseudocolor-plotting commands like `~proplot.axes.Axes.pcolor`.
 sequential, diverging, cyclic, qualitative : bool, optional
     Boolean arguments used if `cmap` is not passed. Set these to ``True``
     to use the default :rcraw:`cmap.sequential`, :rcraw:`cmap.diverging`,
@@ -316,11 +315,14 @@ docstring._snippet_manager['plot.cmap_norm'] = _cmap_norm_docstring
 # NOTE: In some functions we only need some components
 _vlim_levels_docstring = """
 vmin, vmax : float, optional
-    Used to determine level locations if `levels` or `values` is an integer.
-    Actual levels may not fall exactly on `vmin` and `vmax`, but the minimum
-    level will be no smaller than `vmin` and the maximum level will be
-    no larger than `vmax`. If `vmin` or `vmax` are not provided, the
-    minimum and maximum data values are used.
+    The minimum and maximum color scale values used with the `norm` normalizer.
+    If `discrete` is ``False`` these are the absolute limits, and if `discrete`
+    is ``True`` these are the approximate limits used to automatically determine
+    `levels` or `values` lists at "nice" intervals. If `levels` or `values` were
+    already passed as lists, the default `vmin` and `vmax` are the minimum and
+    maximum of the lists. If `robust` was passed, the default `vmin` and `vmax`
+    are some percentile range of the data values. Otherwise, the default `vmin`
+    and `vmax` are the minimum and maximum of the data values.
 """
 _manual_levels_docstring = """
 N
