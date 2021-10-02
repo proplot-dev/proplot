@@ -374,6 +374,15 @@ class GeoAxes(plot.PlotAxes):
     """
     Axes subclass for plotting in geographic projections. Uses either cartopy
     or basemap as a "backend".
+
+    Important
+    ---------
+    This axes subclass can be used by passing ``proj='proj_name'``
+    to axes-creation commands like `~proplot.figure.Figure.add_axes`,
+    `~proplot.figure.Figure.add_subplot`, and `~proplot.figure.Figure.subplots`,
+    where ``proj_name`` is a registered :ref:`PROJ projection name <proj_table>`.
+    You can also pass a `cartopy.crs.Projection` or `~mpl_toolkits.basemap.Basemap`
+    instance instead of a projection name.
     """
     @docstring._snippet_manager
     def __init__(self, *args, **kwargs):

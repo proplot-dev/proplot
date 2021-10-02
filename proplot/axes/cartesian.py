@@ -259,9 +259,15 @@ docstring._snippet_manager['axes.dualy'] = _dual_docstring.format(**_shared_y_ke
 
 class CartesianAxes(shared._SharedAxes, plot.PlotAxes):
     """
-    Axes subclass for plotting in ordinary Cartesian coordinates.
-    Adds the `~CartesianAxes.format` method and overrides several existing
-    methods.
+    Axes subclass for plotting in ordinary Cartesian coordinates. Adds the
+    `~CartesianAxes.format` method and overrides several existing methods.
+
+    Important
+    ---------
+    This is the default axes subclass. It can be specified explicitly by passing
+    ``proj='cart'``, ``proj='cartesian'``, ``proj='rect'``, or ``proj='rectilinear'``
+    to axes-creation commands like `~proplot.figure.Figure.add_axes`,
+    `~proplot.figure.Figure.add_subplot`, and `~proplot.figure.Figure.subplots`.
     """
     _name = 'cartesian'
     _name_aliases = ('cart', 'rect', 'rectilinar')  # include matplotlib name

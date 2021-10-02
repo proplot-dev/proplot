@@ -88,6 +88,12 @@ class PolarAxes(shared._SharedAxes, plot.PlotAxes, mproj.PolarAxes):
     """
     Axes subclass for plotting in polar coordinates. Adds the `~PolarAxes.format`
     method and overrides several existing methods.
+
+    Important
+    ---------
+    This axes subclass can be used by passing ``proj='polar'``
+    to axes-creation commands like `~proplot.figure.Figure.add_axes`,
+    `~proplot.figure.Figure.add_subplot`, and `~proplot.figure.Figure.subplots`.
     """
     _name = 'polar'
 
