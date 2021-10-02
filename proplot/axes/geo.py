@@ -88,24 +88,23 @@ latmax : float, optional
     Default is ``80``.
 labels : bool, optional
     Sets `lonlabels` and `latlabels` to ``True``. Default is :rc:`grid.labels`.
-lonlabels, latlabels
+lonlabels, latlabels : optional
     Whether to label longitudes and latitudes, and on which sides
     of the map. There are four different options:
 
     1. Boolean ``True``. Indicates the left side for latitudes,
-        bottom side for longitudes.
+       bottom side for longitudes.
     2. A string or tuple of strings indicating the side names, e.g.
-        ``'left'`` for latitudes or ``'bottom'`` for longitudes.
+       ``'left'`` for latitudes or ``'bottom'`` for longitudes.
     3. A string indicating the side names with single characters, e.g.
-        ``'lr'`` for latitudes or ``'bt'`` for longitudes.
+       ``'lr'`` for latitudes or ``'bt'`` for longitudes.
     4. A boolean 2-tuple indicating whether to draw labels on the
-        ``(left, right)`` sides for latitudes, or ``(bottom, top)``
-        sides for longitudes.
+       ``(left, right)`` sides for latitudes, or ``(bottom, top)``
+       sides for longitudes.
     5. A boolean 4-tuple indicating whether to draw labels on the
-        ``(left, right, bottom, top)`` sides, as with the basemap
-        `~mpl_toolkits.basemap.Basemap.drawmeridians` and
-        `~mpl_toolkits.basemap.Basemap.drawparallels` `labels`
-        keyword.
+       ``(left, right, bottom, top)`` sides, as with the basemap
+       `~mpl_toolkits.basemap.Basemap.drawmeridians` and
+       `~mpl_toolkits.basemap.Basemap.drawparallels` `labels` keyword.
 
 lonformatter, latformatter : formatter-spec, optional
     Formatter used to style longitude and latitude gridline labels.
