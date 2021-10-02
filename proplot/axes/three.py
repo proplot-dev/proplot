@@ -19,12 +19,5 @@ class ThreeAxes(shared._SharedAxes, base.Axes, Axes3D):
 
     def __init__(self, *args, **kwargs):
         import mpl_toolkits.mplot3d  # noqa: F401 verify package is available
-        # Initialize axes
+        kwargs.setdefault('alpha', 0.0)
         super().__init__(*args, **kwargs)
-
-    def _update_background(self, **kwargs):
-        # Force the figure face color to the axes patch color or else the axes
-        # look haphazardly thrown onto a square background patch and the spines
-        # and labels bleed into the figure edge region.
-        super()._update_background(**kwargs)
-        self.figure.patch.set_facecolor(self.patch.get_facecolor())
