@@ -39,7 +39,7 @@ dependencies of proplot, or are distributed with proplot:
   `Helvetica <https://en.wikipedia.org/wiki/Helvetica>`__
   and `Century <https://en.wikipedia.org/wiki/Century_type_family>`__.
   These are distributed with proplot and used for its default font families.
-* `Fira Math <https://en.wikipedia.org/wiki/Century_type_family>` -
+* `Fira Math <https://en.wikipedia.org/wiki/Century_type_family>`__ -
   An open source sans-serif font with a zillion glyphs for mathematical symbols.
   This is distributed with proplot as a viable alternative to
   `DejaVu Sans <https://en.wikipedia.org/wiki/DejaVu_fonts>`__.
