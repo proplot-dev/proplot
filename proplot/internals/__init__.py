@@ -90,11 +90,21 @@ ALIAS_MAPS = {
 }
 
 
+# Unit docstrings
+# NOTE: Try to fit this into a single line. Cannot break up with newline as that will
+# mess up docstring indentation since this is placed in indented param lines.
+_units_docstring = 'If float, units are {units}. If string, interpreted by `~proplot.utils.units`.'  # noqa: E501
+docstring._snippet_manager['units.pt'] = _units_docstring.format(units='points')
+docstring._snippet_manager['units.in'] = _units_docstring.format(units='inches')
+docstring._snippet_manager['units.em'] = _units_docstring.format(units='em-widths')
+
+
 # Style docstrings
 # NOTE: These are needed in a few different places
 _line_docstring = """
-lw, linewidth, linewidths : float, optional
+lw, linewidth, linewidths : unit-spec, optional
     The width of the line(s). Default is :rc:`lines.linewidth`.
+    %(units.pt)s
 ls, linestyle, linestyles : str, optional
     The style of the line(s). Default is :rc:`lines.linestyle`.
 c, color, colors : color-spec, optional
@@ -103,8 +113,9 @@ a, alpha, alphas : float, optional
     The opacity of the line(s).
 """
 _patch_docstring = """
-lw, linewidth, linewidths : float, optional
+lw, linewidth, linewidths : unit-spec, optional
     The edge width of the patch(es). Default is :rc:`patch.linewidth`.
+    %(units.pt)s
 ls, linestyle, linestyles : str, optional
     The edge style of the patch(es). Default is ``'-'``.
 ec, edgecolor, edgecolors : color-spec, optional
@@ -115,8 +126,9 @@ a, alpha, alphas : float, optional
     The opacity of the patch(es).
 """
 _pcolor_collection_docstring = """
-lw, linewidth, linewidths : float, optional
+lw, linewidth, linewidths : unit-spec, optional
     The width of lines between grid boxes.
+    %(units.pt)s
 ls, linestyle, linestyles : str, optional
     The style of lines between grid boxes.
 ec, edgecolor, edgecolors : color-spec, optional
@@ -125,9 +137,10 @@ a, alpha, alphas : float, optional
     The opacity of the grid boxes.
 """
 _contour_collection_docstring = """
-lw, linewidth, linewidths : float, optional
+lw, linewidth, linewidths : unit-spec, optional
     The width of the contour lines. For `contourf` plots,
     lines are added between the filled contours.
+    %(units.pt)s
 ls, linestyle, linestyles : str, optional
     The style of the contour lines. For `contourf` plots,
     lines are added between the filled contours.
@@ -306,9 +319,13 @@ def _pop_props(input, *categories, prefix=None, ignore=None, skip=None):
             if any(string in key for string in ignore):
                 warnings._warn_proplot(f'Ignoring property {key}={prop!r}.')
                 continue
-            if key in ('fontsize',):
-                from ..config import _fontsize_to_pt
-                prop = _fontsize_to_pt(prop)
+            if isinstance(prop, str):
+                if key in ('fontsize',):
+                    from ..config import _fontsize_to_pt
+                    prop = _fontsize_to_pt(prop)
+                if key in ('linewidth', 'linewidths', 'markersize'):
+                    from ..utils import units
+                    prop = units(prop, 'pt')
             output[key] = prop
     return output
 

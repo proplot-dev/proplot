@@ -56,15 +56,6 @@ UNIT_DICT = {
 }
 
 
-# Unit docstrings
-# NOTE: Try to fit this into a single line. Cannot break up with newline as that will
-# mess up docstring indentation since this is placed in indented param lines.
-_units_docstring = 'If float, units are {units}. If string, interpreted by `~proplot.utils.units`.'  # noqa: E501
-docstring._snippet_manager['units.pt'] = _units_docstring.format(units='points')
-docstring._snippet_manager['units.in'] = _units_docstring.format(units='inches')
-docstring._snippet_manager['units.em'] = _units_docstring.format(units='em-widths')
-
-
 # Color docstrings
 _docstring_rgba = """
 color : color-spec
