@@ -349,8 +349,6 @@ lowerlefttitle, lowercentertitle, lowerrighttitle : str, optoinal
     Additional titles in specific positions. This works as an alternative
     to the ``ax.format(title='Title', titleloc=loc)`` workflow and permits
     adding more than one title-like label for a single axes.
-c, color : color-spec, optional
-    Alias for `ec`, `edgecolor`.
 a, alpha, fc, facecolor, ec, edgecolor, lw, linewidth, ls, linestyle : optional
     Additional settings applied to the background patch, and their
     shorthands. Defaults are :rcraw:`axes.alpha`, :rcraw:`axes.facecolor`,
