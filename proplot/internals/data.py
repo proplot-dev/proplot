@@ -65,14 +65,24 @@ def _is_numeric(data):
     """
     Test whether input is numeric array rather than datetime or strings.
     """
-    return len(data) and np.issubdtype(_to_numpy_array(data).dtype, np.number)
+    array = _to_numpy_array(data)
+    return len(data) and (
+        np.issubdtype(array.dtype, np.number)
+        or np.issubdtype(array.dtype, np.object)
+        and all(isinstance(_, np.number) for _ in array.flat)
+    )
 
 
 def _is_categorical(data):
     """
     Test whether input is array of strings.
     """
-    return len(data) and np.issubdtype(_to_numpy_array(data).dtype, np.str)
+    array = _to_numpy_array(data)
+    return len(data) and (
+        np.issubdtype(array.dtype, np.str)
+        or np.issubdtype(array.dtype, np.object)
+        and any(isinstance(_, np.str) for _ in array.flat)
+    )
 
 
 def _to_duck_array(data, strip_units=False):
