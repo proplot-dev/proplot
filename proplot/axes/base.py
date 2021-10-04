@@ -349,9 +349,11 @@ lowerlefttitle, lowercentertitle, lowerrighttitle : str, optoinal
     Additional titles in specific positions. This works as an alternative
     to the ``ax.format(title='Title', titleloc=loc)`` workflow and permits
     adding more than one title-like label for a single axes.
+c, color : color-spec, optional
+    Alias for `ec`, `edgecolor`.
 a, alpha, fc, facecolor, ec, edgecolor, lw, linewidth, ls, linestyle : optional
-    Additional settings applied to the background patch, and their shorthands.
-    Defaults are :rcraw:`axes.alpha`, :rcraw:`axes.facecolor`,
+    Additional settings applied to the background patch, and their
+    shorthands. Defaults are :rcraw:`axes.alpha`, :rcraw:`axes.facecolor`,
     :rcraw:`axes.edgecolor`, :rcraw:`axes.linewidth`, and ``'-'``, respectively.
 """
 _figure_format_docstring = """
@@ -840,6 +842,8 @@ class Axes(maxes.Axes):
         # NOTE: Here we use 'color' as an alias for just 'edgecolor' rather than
         # both 'edgecolor' and 'facecolor' to match 'xcolor' and 'ycolor' arguments.
         props = _pop_props(kwargs, 'patch')
+        if 'color' in props:
+            props.setdefault('edgecolor', props.pop('color'))
         for key in ('alpha', 'facecolor', 'linewidth', 'edgecolor'):
             value = rc.find('axes.' + key, context=context)
             if value is not None:
