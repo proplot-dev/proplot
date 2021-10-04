@@ -980,8 +980,12 @@ class Axes(maxes.Axes):
         # Tick properties obtained with rc.category
         # NOTE: This loads 'size', 'width', 'pad', 'bottom', and 'top'
         axis = _not_none(axis, 'x')
-        kwticks = rc.category(axis + 'tick.' + which, context=True)
+        kwticks = rc.category(f'{axis}tick.{which}', context=True)
         kwticks.pop('visible', None)
+        for key in ('color', 'direction'):
+            value = rc.find(f'{axis}tick.{key}', context=True)
+            if value is not None:
+                kwticks[key] = value
         return kwticks
 
     def _get_size_inches(self):

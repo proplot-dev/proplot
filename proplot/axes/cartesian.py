@@ -160,8 +160,17 @@ xlinewidth, ylinewidth, linewidth : color-spec, optional
     Line width for the x and y axis spines and major ticks.
     Use `linewidth` to set both at once.
 xcolor, ycolor, color : color-spec, optional
-    Color for the x and y axis spines, ticks, tick labels, and
-    axis labels. Use `color` to set both at once.
+    Color for the x and y axis spines, ticks, tick labels, and axis
+    labels. Use `color` to set both at once.
+xtickcolor, ytickcolor, tickcolor : color-spec, optional
+    Color for the x and y axis ticks. Inherits from `color` by
+    default. Use `tickcolor` to set both at once.
+xticklabelcolor, yticklabelcolor, ticklabelcolor : color-spec, optional
+    Color for the x and y tick labels. Inherits from `color` by
+    default. Use `ticklabelcolor` to set both at once.
+xlabelcolor, ylabelcolor, labelcolor : color-spec, optional
+    Color for the x and y axis labels. Inherits from `color` by
+    default. Use `labelcolor` to set both at once.
 xgridcolor, ygridcolor, gridcolor : color-spec, optional
     Color for the x and y axis major and minor gridlines.
     Use `gridcolor` to set both at once.
@@ -847,6 +856,8 @@ class CartesianAxes(shared._SharedAxes, plot.PlotAxes):
         xticklenratio=None, yticklenratio=None,
         xlinewidth=None, ylinewidth=None,
         xcolor=None, ycolor=None, color=None,  # special case (see below)
+        xtickcolor=None, ytickcolor=None,
+        xticklabelcolor=None, yticklabelcolor=None,
         xlabelcolor=None, ylabelcolor=None,
         xgridcolor=None, ygridcolor=None,
         xlabel_kw=None, ylabel_kw=None,
@@ -898,13 +909,18 @@ class CartesianAxes(shared._SharedAxes, plot.PlotAxes):
             xminorlocator_kw = xminorlocator_kw or {}
             yminorlocator_kw = yminorlocator_kw or {}
 
-            # Special case: normally we rely on rc settings like 'grid', 'labelpad',
-            # etc. when x or y is not specified but a bald 'color' rc setting is
-            # too vague. So we apply 'color' right here.
+            # Color keyword arguments. Inherit from 'color' when necessary
             xcolor = _not_none(xcolor, color)
             ycolor = _not_none(ycolor, color)
-            xlabelcolor = _not_none(xlabelcolor, xcolor)
-            ylabelcolor = _not_none(ylabelcolor, ycolor)
+            if 'tick.color' not in rc_kw:
+                xtickcolor = _not_none(xtickcolor, xcolor)
+                ytickcolor = _not_none(ytickcolor, ycolor)
+            if 'tick.labelcolor' not in rc_kw:
+                xticklabelcolor = _not_none(xticklabelcolor, xcolor)
+                yticklabelcolor = _not_none(yticklabelcolor, ycolor)
+            if 'label.color' not in rc_kw:
+                xlabelcolor = _not_none(xlabelcolor, xcolor)
+                ylabelcolor = _not_none(ylabelcolor, ycolor)
 
             # Flexible keyword args, declare defaults
             xmargin = _not_none(xmargin, rc.find('axes.margin', context=True))
@@ -950,6 +966,7 @@ class CartesianAxes(shared._SharedAxes, plot.PlotAxes):
                 labelpad, ticklabelpad,
                 color, linewidth,
                 gridcolor, labelcolor,
+                tickcolor, ticklabelcolor,
                 ticklen, ticklenratio,
                 margin, bounds,
                 tickloc, spineloc,
@@ -971,6 +988,7 @@ class CartesianAxes(shared._SharedAxes, plot.PlotAxes):
                 (xlabelpad, ylabelpad), (xticklabelpad, yticklabelpad),
                 (xcolor, ycolor), (xlinewidth, ylinewidth),
                 (xgridcolor, ygridcolor), (xlabelcolor, ylabelcolor),
+                (xtickcolor, ytickcolor), (xticklabelcolor, yticklabelcolor),
                 (xticklen, yticklen), (xticklenratio, yticklenratio),
                 (xmargin, ymargin), (xbounds, ybounds),
                 (xtickloc, ytickloc), (xspineloc, yspineloc),
@@ -1023,9 +1041,8 @@ class CartesianAxes(shared._SharedAxes, plot.PlotAxes):
                 self._update_ticks(
                     x, grid=grid, gridminor=gridminor,
                     ticklen=ticklen, ticklenratio=ticklenratio,
-                    tickcolor=color, gridcolor=gridcolor,
-                    tickdir=tickdir, ticklabeldir=ticklabeldir,
-                    labelpad=ticklabelpad,
+                    tickdir=tickdir, labeldir=ticklabeldir, labelpad=ticklabelpad,
+                    tickcolor=tickcolor, gridcolor=gridcolor, labelcolor=ticklabelcolor,
                 )
 
                 # Axis label settings

@@ -50,9 +50,9 @@ class _SharedAxes(object):
             self.tick_params(axis=axis, which='minor', width=linewidth * ratio, **kw)
 
     def _update_ticks(
-        self, x, *, grid=None, gridminor=None, gridcolor=None, gridpad=None,
-        ticklen=None, ticklenratio=None, tickdir=None, ticklabeldir=None,
-        tickcolor=None, labelpad=None
+        self, x, *, grid=None, gridminor=None, gridpad=None, gridcolor=None,
+        ticklen=None, ticklenratio=None, tickdir=None, tickcolor=None,
+        labeldir=None, labelpad=None, labelcolor=None,
     ):
         """
         Update the gridlines and labels. Set `gridpad` to ``True`` to use grid padding.
@@ -76,6 +76,8 @@ class _SharedAxes(object):
                     kwtext.setdefault('labelcolor', tickcolor)
                 else:
                     kwtext['labelcolor'] = tickcolor
+            if labelcolor is not None:
+                kwtext['labelcolor'] = labelcolor
             if ticklen is not None or ticklenratio is not None:
                 if ticklen is None:  # must use private API so add graceful fallback
                     kwaxis = getattr(axis, f'_{which}_tick_kw', {})
@@ -108,7 +110,7 @@ class _SharedAxes(object):
         kwdir = {}
         if tickdir == 'in':  # ticklabels should be much closer
             kwdir['pad'] = 1.0
-        if ticklabeldir == 'in':  # put tick labels inside the plot
+        if labeldir == 'in':  # put tick labels inside the plot
             tickdir = 'in'
             kwdir['pad'] = (
                 - rc[f'{x}tick.major.size']
