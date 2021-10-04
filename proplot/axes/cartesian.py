@@ -144,10 +144,10 @@ xwraprange, ywraprange : 2-tuple of float, optional
     through 9 to be formatted as 0, 1, 2, 0, 1, 2, 0, 1, 2, 0. See
     `~proplot.ticker.AutoFormatter` for details.
 xmargin, ymargin, margin : float, optional
-    The default margin between plotted content and the x and y axis
-    spines. Value is proportional to the width, height of the axes.
-    Use this if you want whitespace between plotted content
-    and the spines, but don't want to explicitly set `xlim` or `ylim`.
+    The default margin between plotted content and the x and y axis spines.
+    Value is proportional to the width, height of the axes. Use this to add
+    whitespace between plotted content and axes edges without explicitly
+    setting `xlim` or `ylim`. Use `margin` to set both at once.
 xticklen, yticklen, ticklen : float or str, optional
     Tick lengths for the x and y axis. Default is :rc:`ticklen`.
     %(units.pt)s
@@ -895,14 +895,16 @@ class CartesianAxes(shared._SharedAxes, plot.PlotAxes):
             yminorlocator_kw = yminorlocator_kw or {}
 
             # Special case: normally we rely on rc settings like 'grid', 'labelpad',
-            # etc. when x or y is not specified but bald 'color' is too vague. So
-            # we apply 'color' right here.
+            # etc. when x or y is not specified but a bald 'color' rc setting is
+            # too vague. So we apply 'color' right here.
             xcolor = _not_none(xcolor, color)
             ycolor = _not_none(ycolor, color)
             xlabelcolor = _not_none(xlabelcolor, xcolor)
             ylabelcolor = _not_none(ylabelcolor, ycolor)
 
             # Flexible keyword args, declare defaults
+            xmargin = _not_none(xmargin, rc.find('axes.margin', context=True))
+            ymargin = _not_none(ymargin, rc.find('axes.margin', context=True))
             xtickdir = _not_none(xtickdir, rc.find('xtick.direction', context=True))
             ytickdir = _not_none(ytickdir, rc.find('ytick.direction', context=True))
             xformatter = _not_none(xformatter=xformatter, xticklabels=xticklabels)
