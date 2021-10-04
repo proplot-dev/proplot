@@ -442,11 +442,10 @@ values : sequence of float or str, optional
     strings are applied as tick labels.
 """
 _colorbar_kwargs_docstring = """
-extend : {None, 'neither', 'both', 'min', 'max'}, optional
-    Direction for drawing colorbar "extensions" (i.e. references to
-    out-of-bounds data with a unique color). These are triangles by
-    default. If ``None``, we try to use the ``extend`` attribute on the
-    mappable object. If the attribute is unavailable, we use ``'neither'``.
+extend : {'neither', 'both', 'min', 'max'}, optional
+    Direction for drawing colorbar "extensions" (i.e. color keys for out-of-bounds
+    data on the end of the colorbar). Default behavior is to use the value of `extend`
+    passed to the plotting command or use ``'neither'`` if the value is unknown.
 extendfrac : float, optional
     The length of the colorbar "extensions" relative to the length of the colorbar.
     This is a native matplotlib `~matplotlib.figure.Figure.colorbar` keyword.
@@ -454,6 +453,9 @@ extendsize : unit-spec, optional
     The length of the colorbar "extensions" in physical units. Default is
     :rc:`colorbar.insetextend` for inset colorbars and :rc:`colorbar.extend` for outer
     colorbars. %(units.em)s
+extendrect : bool, optional
+    Whether to draw colorbar "extensions" as rectangles. Default is ``False``
+    (i.e. extensions are drawn as triangles).
 norm : norm-spec, optional
     Ignored if `values` is ``None``. The normalizer for converting `values`
     to colormap colors. Passed to `~proplot.constructor.Norm`.
@@ -2863,8 +2865,7 @@ class Axes(maxes.Axes):
         self, *args,
         border=False, bordercolor='w', borderwidth=2, borderinvert=False,
         bbox=False, bboxcolor='w', bboxstyle='round', bboxalpha=0.5, bboxpad=None,
-        fontfamily=None, family=None, fontname=None, name=None,
-        fontsize=None, size=None, **kwargs
+        **kwargs
     ):
         """
         Add text to the axes.
@@ -2899,34 +2900,7 @@ class Axes(maxes.Axes):
             The alpha for the bounding box. Default is ``0.5``.
         bboxpad : float, optional
             The padding for the bounding box. Default is :rc:`title.bboxpad`.
-        name, fontname
-            Aliases for `family`, `fontfamily`.
-        family, fontfamily : str, optional
-            The font typeface name (e.g., ``'Fira Math'``) or font family name (e.g.,
-            ``'serif'``). Matplotlib falls back to the system default if not found.
-        size, fontsize : unit-spec or str, optional
-            The font size. %(units.pt)s
-            This can also be a string indicating some scaling relative to
-            :rcraw:`font.size`. The sizes and scalings are shown below. The
-            scalings ``'med'``, ``'med-small'``, and ``'med-large'`` are
-            added by proplot while the rest are native matplotlib sizes.
-
-            .. _font_table:
-
-            ==========================  =====
-            Size                        Scale
-            ==========================  =====
-            ``'xx-small'``              0.579
-            ``'x-small'``               0.694
-            ``'small'``, ``'smaller'``  0.833
-            ``'med-small'``             0.9
-            ``'med'``, ``'medium'``     1.0
-            ``'med-large'``             1.1
-            ``'large'``, ``'larger'``   1.2
-            ``'x-large'``               1.440
-            ``'xx-large'``              1.728
-            ``'larger'``                1.2
-            ==========================  =====
+        %(artist.text)s
 
         **kwargs
             Passed to `matplotlib.axes.Axes.text`.
@@ -2950,21 +2924,15 @@ class Axes(maxes.Axes):
         *args, transform = args
         if any(arg is None for arg in args):
             raise TypeError('Missing required positional argument.')
-
-        # Translate keyword args
-        # TODO: Translate all properties and emit warnings?
-        size = _not_none(size, fontsize)
-        family = _not_none(fontname, name, fontfamily, family)
-        if size is not None:
-            kwargs['size'] = _fontsize_to_pt(size)
-        if family is not None:
-            kwargs['fontfamily'] = family
         if transform is None:
             transform = self.transData
         else:
             transform = self._get_transform(transform)
+        with warnings.catch_warnings():  # ignore duplicates (internal issues?)
+            warnings.simplefilter('ignore', warnings.ProplotWarning)
+            kwargs.update(_pop_props(kwargs, 'text'))
 
-        # Update the text object using monkey patch
+        # Update the text object using a monkey patch
         obj = func(*args, transform=transform, **kwargs)
         obj.update = text._update_text.__get__(obj)
         obj.update(

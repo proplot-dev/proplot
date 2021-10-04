@@ -44,20 +44,6 @@ ALIAS_MAPS = {
         'linewidth': ('lw', 'linewidths', 'ew', 'edgewidth', 'edgewidths'),
         'zorder': ('z', 'zorders'),
     },
-    'collection': {  # WARNING: face color ignored for line collections
-        'alpha': ('a', 'alphas'),  # WARNING: collections and contours use singular!
-        'colors': ('c', 'color'),
-        'edgecolors': ('ec', 'edgecolor', 'mec', 'markeredgecolor', 'markeredgecolors'),
-        'facecolors': (
-            'fc', 'facecolor', 'fillcolor', 'fillcolors',
-            'mc', 'markercolor', 'markercolors', 'mfc', 'markerfacecolor', 'markerfacecolors'  # noqa: E501
-        ),
-        'linestyles': ('ls', 'linestyle'),
-        'linewidths': ('lw', 'linewidth', 'ew', 'edgewidth', 'edgewidths', 'mew', 'markeredgewidth', 'markeredgewidths'),  # noqa: E501
-        'marker': ('m', 'markers'),
-        'sizes': ('s', 'ms', 'markersize', 'markersizes'),
-        'zorder': ('z', 'zorders'),
-    },
     'line': {  # copied from lines.py but expanded to include plurals
         'alpha': ('a', 'alphas'),
         'color': ('c', 'colors'),
@@ -76,11 +62,23 @@ ALIAS_MAPS = {
         ),
         'zorder': ('z', 'zorders'),
     },
+    'collection': {  # WARNING: face color ignored for line collections
+        'alpha': ('a', 'alphas'),  # WARNING: collections and contours use singular!
+        'colors': ('c', 'color'),
+        'edgecolors': ('ec', 'edgecolor', 'mec', 'markeredgecolor', 'markeredgecolors'),
+        'facecolors': (
+            'fc', 'facecolor', 'fillcolor', 'fillcolors',
+            'mc', 'markercolor', 'markercolors', 'mfc', 'markerfacecolor', 'markerfacecolors'  # noqa: E501
+        ),
+        'linestyles': ('ls', 'linestyle'),
+        'linewidths': ('lw', 'linewidth', 'ew', 'edgewidth', 'edgewidths', 'mew', 'markeredgewidth', 'markeredgewidths'),  # noqa: E501
+        'marker': ('m', 'markers'),
+        'sizes': ('s', 'ms', 'markersize', 'markersizes'),
+        'zorder': ('z', 'zorders'),
+    },
     'text': {
-        'text': (),
         'color': ('c', 'fontcolor'),  # NOTE: see text.py source code
-        'fontfamily': ('family',),
-        'fontname': ('name',),
+        'fontfamily': ('family', 'name', 'fontname'),
         'fontsize': ('size',),
         'fontstretch': ('stretch',),
         'fontstyle': ('style',),
@@ -139,7 +137,37 @@ ec, edgecolor, edgecolors : color-spec, optional
 a, alpha, alpha : float, optional
     The opacity of the contours.
 """
+_text_docstring = """
+name, fontname, family, fontfamily : str, optional
+    The font typeface name (e.g., ``'Fira Math'``) or font family name (e.g.,
+    ``'serif'``). Matplotlib falls back to the system default if not found.
+size, fontsize : unit-spec or str, optional
+    The font size. %(units.pt)s
+    This can also be a string indicating some scaling relative to
+    :rcraw:`font.size`. The sizes and scalings are shown below. The
+    scalings ``'med'``, ``'med-small'``, and ``'med-large'`` are
+    added by proplot while the rest are native matplotlib sizes.
+
+    .. _font_table:
+
+    ==========================  =====
+    Size                        Scale
+    ==========================  =====
+    ``'xx-small'``              0.579
+    ``'x-small'``               0.694
+    ``'small'``, ``'smaller'``  0.833
+    ``'med-small'``             0.9
+    ``'med'``, ``'medium'``     1.0
+    ``'med-large'``             1.1
+    ``'large'``, ``'larger'``   1.2
+    ``'x-large'``               1.440
+    ``'xx-large'``              1.728
+    ``'larger'``                1.2
+    ==========================  =====
+
+"""
 docstring._snippet_manager['artist.line'] = _line_docstring
+docstring._snippet_manager['artist.text'] = _text_docstring
 docstring._snippet_manager['artist.patch'] = _patch_docstring.format(edgecolor='none')
 docstring._snippet_manager['artist.patch_black'] = _patch_docstring.format(edgecolor='black')  # noqa: E501
 docstring._snippet_manager['artist.collection_pcolor'] = _pcolor_collection_docstring
@@ -278,6 +306,9 @@ def _pop_props(input, *categories, prefix=None, ignore=None, skip=None):
             if any(string in key for string in ignore):
                 warnings._warn_proplot(f'Ignoring property {key}={prop!r}.')
                 continue
+            if key in ('fontsize',):
+                from ..config import _fontsize_to_pt
+                prop = _fontsize_to_pt(prop)
             output[key] = prop
     return output
 
