@@ -442,13 +442,13 @@ fig.format(suptitle='Auto normalization demo')
 pplt.rc['cmap.sequential'] = 'lapaz_r'
 pplt.rc['cmap.diverging'] = 'vik'
 for i, ax in enumerate(axs[:2]):
-    ax.pcolor(data - i * N * 5, colorbar='b')
+    ax.pcolor(data - i * N * 6, colorbar='b')
     ax.format(title='Diverging ' + ('on' if i else 'off'))
 
 # Auto range
 pplt.rc['cmap.sequential'] = 'lajolla'
 data = data[::-1, :]
-data[-1, 0] = 1e3
+data[-1, 0] = 2e3
 for i, ax in enumerate(axs[2:]):
     ax.pcolor(data, robust=bool(i), colorbar='b')
     ax.format(title='Robust ' + ('on' if i else 'off'))
