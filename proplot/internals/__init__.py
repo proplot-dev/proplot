@@ -346,7 +346,7 @@ def _pop_rc(src):
     mode = _not_none(mode, 2)  # only apply updated params by default
     for key, value in tuple(src.items()):
         name = rcsetup._rc_nodots.get(key, None)
-        if name in ('alpha', 'facecolor', 'edgecolor', 'linewidth'):
+        if name in ('alpha', 'color', 'facecolor', 'edgecolor', 'linewidth'):
             name = None  # former renamed settings
         if name is not None:
             kw[name] = src.pop(key)
