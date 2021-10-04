@@ -490,8 +490,10 @@ tickwidthratio : float, optional
 label, title : str, optional
     The colorbar label. The `title` keyword is also accepted for
     consistency with `~matplotlib.axes.Axes.legend`.
+labelloc : {'bottom', 'top', 'left', 'right'}
+    Where to draw the colorbar label. Inherits from `tickloc` by default.
 labelsize, labelweight, labelcolor : optional
-    The font size, weight, and color for colorbar label text.
+    The font size, weight, and color for the colorbar label.
 locator, ticks : locator-spec, optional
     Used to determine the colorbar tick positions. Passed to the
     `~proplot.constructor.Locator` constructor function.
@@ -2166,12 +2168,11 @@ class Axes(maxes.Axes):
         return mappable, kwargs
 
     def _draw_colorbar(
-        self, mappable, values=None, *, loc=None, space=None, pad=None,
-        align=None, extend=None, reverse=False,
-        ticklen=None, ticklenratio=None, tickwidth=None, tickwidthratio=None,
-        tickminor=None, tickdir=None, tickdirection=None,
-        ticklabelsize=None, ticklabelweight=None, ticklabelcolor=None,
-        title=None, label=None, labelsize=None, labelweight=None, labelcolor=None,
+        self, mappable, values=None, *, loc=None, space=None, pad=None, align=None,
+        extend=None, reverse=False, tickminor=None, ticklen=None, ticklenratio=None,
+        tickdir=None, tickdirection=None, tickwidth=None, tickwidthratio=None,
+        ticklabelsize=None, ticklabelweight=None, ticklabelcolor=None, title=None,
+        label=None, labelloc=None, labelsize=None, labelweight=None, labelcolor=None,
         rotation=None, grid=None, edges=None, drawedges=None, rasterize=None,
         c=None, color=None, lw=None, linewidth=None, edgefix=None,
         extendsize=None, extendfrac=None, **kwargs
@@ -2292,6 +2293,8 @@ class Axes(maxes.Axes):
         axis = cax.yaxis if orientation == 'vertical' else cax.xaxis
         if label is not None:
             obj.set_label(label)
+        if labelloc is not None:
+            axis.set_label_position(labelloc)
         axis.label.update(kw_label)
         for label in axis.get_ticklabels():
             label.update(kw_ticklabels)
@@ -2321,6 +2324,13 @@ class Axes(maxes.Axes):
             axis.set_ticks(ticks, minor=True)
             axis.set_ticklabels([], minor=True)
 
+        # Invert the axis if norm is a descending DiscreteNorm
+        norm = mappable.norm
+        if getattr(norm, 'descending', None):
+            axis.set_inverted(True)
+        if reverse:  # potentially double reverse, although that would be weird...
+            axis.set_inverted(True)
+
         # Fix colorbar outline
         kw_outline = {'edgecolor': color, 'linewidth': linewidth}
         if obj.outline is not None:
@@ -2332,13 +2342,6 @@ class Axes(maxes.Axes):
         if obj.solids:
             cax._apply_edgefix(obj.solids, edgefix=edgefix)
             obj.solids.set_rasterized(rasterize)
-
-        # Invert the axis if norm is a descending DiscreteNorm
-        norm = mappable.norm
-        if getattr(norm, 'descending', None):
-            axis.set_inverted(True)
-        if reverse:  # potentially double reverse, although that would be weird...
-            axis.set_inverted(True)
 
         # Return after registering location
         self._register_guide('colorbar', obj, loc)  # possibly replace another
