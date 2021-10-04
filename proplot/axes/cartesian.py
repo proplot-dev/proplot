@@ -935,8 +935,8 @@ class CartesianAxes(shared._SharedAxes, plot.PlotAxes):
                 ylabelcolor = _not_none(ylabelcolor, ycolor)
 
             # Flexible keyword args, declare defaults
-            xmargin = _not_none(xmargin, rc.find('axes.margin', context=True))
-            ymargin = _not_none(ymargin, rc.find('axes.margin', context=True))
+            xmargin = _not_none(xmargin, rc.find('axes.xmargin', context=True))
+            ymargin = _not_none(ymargin, rc.find('axes.ymargin', context=True))
             xtickdir = _not_none(xtickdir, rc.find('xtick.direction', context=True))
             ytickdir = _not_none(ytickdir, rc.find('ytick.direction', context=True))
             xformatter = _not_none(xformatter=xformatter, xticklabels=xticklabels)
