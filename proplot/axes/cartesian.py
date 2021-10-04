@@ -84,7 +84,7 @@ xoffsetloc, yoffsetloc : {'left', 'right'}, optional
     `ticklabelloc` by default (if `ticklabelloc` is a single side).
 xtickdir, ytickdir, tickdir : {'out', 'in', 'inout'}
     Direction that major and minor tick marks point for the x and y axis.
-    Use `tickdir` to control both.
+    Default is :rc:`tick.dir`. Use `tickdir` to control both.
 xticklabeldir, yticklabeldir : {'in', 'out'}
     Whether to place x and y axis tick label text inside
     or outside the axes.
