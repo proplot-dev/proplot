@@ -505,11 +505,11 @@ minorlocator, minorticks
 minorlocator_kw
     As with `locator_kw`, but for the minor ticks.
 maxn : int, optional
-    Used if `locator` is ``None``. Determines the maximum number of levels that
-    are ticked. Default depends on the colorbar length relative to the font size.
-    The name `maxn` is meant to be reminiscent of `~matplotlib.ticker.MaxNLocator`.
+    The maximum number of `~proplot.colors.DiscreteNorm` levels that should be assigned
+    major ticks. Ignored if `locator` was passed. Default depends on the colorbar and
+    tick label size. The name `maxn` was inspired by `~matplotlib.ticker.MaxNLocator`.
 maxn_minor
-    As with `maxn`, but for the minor ticks.
+    As with `maxn` but for minor ticks. Ignored if `minorlocator` was passed.
 format, formatter, ticklabels : formatter-spec, optional
     The tick label format. Passed to the `~proplot.constructor.Formatter`
     constructor function.
