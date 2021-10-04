@@ -175,8 +175,11 @@ def subplots(*args, **kwargs):
     matplotlib.figure.Figure
     """
     _parse_figsize(kwargs)
-    kw_subplots = _pop_params(kwargs, pfigure.Figure.add_subplots)
-    kw_gridspec = _pop_params(kwargs, pgridspec.GridSpec._update_params)
+    kwsubs = {}
+    kwsubs.update(_pop_params(kwargs, pfigure.Figure.add_subplots))
+    kwsubs.update(_pop_params(kwargs, pgridspec.GridSpec._update_params))
+    for key in ('subplot_kw', 'gridspec_kw'):
+        kwsubs[key] = kwargs.pop(key, None)
     fig = figure(**kwargs)
-    axs = fig.add_subplots(*args, **kw_subplots, **kw_gridspec)
+    axs = fig.add_subplots(*args, **kwsubs)
     return fig, axs
