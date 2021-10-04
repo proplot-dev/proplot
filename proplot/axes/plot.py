@@ -2031,7 +2031,6 @@ class PlotAxes(base.Axes):
             c = np.atleast_1d(c)  # should only have effect on 'scatter' input
             if infer_rgb and c.ndim == 2 and c.shape[1] in (3, 4):
                 c = list(map(pcolors.to_hex, c))  # avoid iterating over columns
-                methods += (self._parse_cycle,)
             else:
                 kwargs = self._parse_cmap(
                     x, y, c, plot_lines=True, default_discrete=False, **kwargs
@@ -2252,8 +2251,6 @@ class PlotAxes(base.Axes):
             levels. The latter is useful for single-color contour plots.
         norm, norm_kw : optional
             Passed to `Norm`. Used to possbily infer levels or to convert values.
-        vmin, vmax
-            Passed to ``_parse_autolev``.
         skip_autolev : bool, optional
             Whether to skip autolev parsing.
         min_levels : int, optional
@@ -2335,10 +2332,13 @@ class PlotAxes(base.Axes):
         # NOTE: Matplotlib colorbar algorithm *cannot* handle descending levels so
         # this function reverses them and adds special attribute to the normalizer.
         # Then colorbar() reads this attr and flips the axis and the colormap direction
-        if not np.iterable(levels) and not skip_autolev:
+        if np.iterable(levels):
+            pop = _pop_params(kwargs, self._parse_autolev, ignore_internal=True)
+            if pop:
+                warnings._warn_proplot(f'Ignoring unused keyword arg(s): {pop}')
+        elif not skip_autolev:
             levels, kwargs = self._parse_autolev(
-                *args, levels=levels, vmin=vmin, vmax=vmax,
-                norm=norm, norm_kw=norm_kw, extend=extend, **kwargs
+                *args, levels=levels, norm=norm, norm_kw=norm_kw, extend=extend, **kwargs  # noqa: E501
             )
         ticks = values if np.iterable(values) else levels
         if ticks is not None and np.iterable(ticks):
