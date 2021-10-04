@@ -321,7 +321,7 @@ def _pop_props(input, *categories, prefix=None, ignore=None, skip=None):
                 continue
             if isinstance(prop, str):
                 if key in ('fontsize',):
-                    from ..config import _fontsize_to_pt
+                    from ..utils import _fontsize_to_pt
                     prop = _fontsize_to_pt(prop)
                 if key in ('linewidth', 'linewidths', 'markersize'):
                     from ..utils import units

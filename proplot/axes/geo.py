@@ -161,6 +161,11 @@ reso : {'lo', 'med', 'hi', 'x-hi', 'xx-hi'}, optional
     *For cartopy axes only.*
     The resolution of geographic features. For basemap axes, this must
     be passed to `~proplot.constructor.Proj`.
+color : color-spec, optional
+    Color for the axes edge. Propagates to `gridlabelcolor` unless
+    specified otherwise (similar to `proplot.axes.CartesianAxes.format`).
+gridlabelcolor : color-spec, optional
+    Color for the grid labels. Inherits from `color` by default.
 """
 docstring._snippet_manager['geo.format'] = _format_docstring
 
@@ -557,6 +562,8 @@ class GeoAxes(plot.PlotAxes):
 
         # Initiate context block
         rc_kw, rc_mode = _pop_rc(kwargs)
+        if 'color' in kwargs and 'grid.labelcolor' not in rc_kw:
+            rc_kw['grid.labelcolor'] = kwargs['color']
         with rc.context(rc_kw, mode=rc_mode):
             # Label toggles
             labels = _not_none(labels, rc.find('grid.labels', context=True))

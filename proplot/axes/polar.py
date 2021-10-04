@@ -46,9 +46,6 @@ thetagrid, rgrid, grid : bool, optional
 thetagridminor, rgridminor, gridminor : bool, optional
     Whether to draw minor gridlines for the azimuthal and radial axis.
     Use `gridminor` to toggle both.
-thetagridcolor, rgridcolor, gridcolor : color-spec, optional
-    Color for the major and minor azimuthal and radial gridlines.
-    Use `gridcolor` to set both at once.
 thetalocator, rlocator : locator-spec, optional
     Used to determine the azimuthal and radial gridline positions.
     Passed to the `~proplot.constructor.Locator` constructor. Can be
@@ -80,6 +77,14 @@ labelpad : unit-spec, optional
     The padding between the axes edge and the radial and
     azimuthal labels. Default is :rcraw:`grid.labelpad`.
     %(units.pt)s
+color : color-spec, optional
+    Color for the axes edge. Propagates to `gridlabelcolor` unless
+    specified otherwise (similar to `proplot.axes.CartesianAxes.format`).
+thetagridcolor, rgridcolor, gridcolor : color-spec, optional
+    Color for the major and minor azimuthal and radial gridlines.
+    Use `gridcolor` to set both at once.
+gridlabelcolor : color-spec, optional
+    Color for the grid labels. Inherits from `color` by default.
 """
 docstring._snippet_manager['polar.format'] = _format_docstring
 
@@ -231,6 +236,8 @@ class PolarAxes(shared._SharedAxes, plot.PlotAxes, mproj.PolarAxes):
         # NOTE: Here we capture 'label.pad' rc argument normally used for
         # x and y axis labels as shorthand for 'tick.labelpad'.
         rc_kw, rc_mode = _pop_rc(kwargs)
+        if 'color' in kwargs and 'grid.labelcolor' not in kwargs:
+            rc_kw['grid.labelcolor'] = kwargs['color']
         with rc.context(rc_kw, mode=rc_mode):
             # Not mutable default args
             thetalocator_kw = thetalocator_kw or {}
@@ -293,7 +300,7 @@ class PolarAxes(shared._SharedAxes, plot.PlotAxes, mproj.PolarAxes):
                 # offset for grid labels is larger than for tick labels.
                 self._update_ticks(
                     x, grid=grid, gridminor=gridminor, gridcolor=gridcolor,
-                    labelpad=labelpad, gridpad=True  # use grid.labelpad
+                    labelpad=labelpad, gridpad=True,
                 )
 
                 # Axis locator
