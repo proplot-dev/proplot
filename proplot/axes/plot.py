@@ -128,7 +128,7 @@ transpose : bool, optional
     Whether to transpose the input data. This should be used when
     passing datasets with column-major dimension order ``(x, y)``.
     Otherwise row-major dimension order ``(y, x)`` is expected.
-order : {{'C', 'F'}}, optional
+order : {'C', 'F'}, optional
     Alternative to `transpose`. ``'C'`` corresponds to the default C-cyle
     row-major ordering (equivalent to ``transpose=False``). ``'F'`` corresponds
     to Fortran-style column-major ordering (equivalent to ``transpose=True``).
@@ -285,11 +285,16 @@ c, color, colors : color-spec or sequence of color-spec, optional
     The color(s) used to create a `~proplot.colors.DiscreteColormap`.
     If not passed, `cmap` is used.
 norm : norm-spec, optional
-    The continuous colormap normalizer, passed to the `~proplot.constructor.Norm`
-    constructor function. If `discrete` is ``True`` this is also used to normalize
-    values passed to `~proplot.colors.DiscreteNorm` before colors is selected.
+    The data value normalizer, passed to the `~proplot.constructor.Norm`
+    constructor function. If `discrete` is ``True`` then 1) this affects the default
+    level-generation algorithm (e.g. ``norm='log'`` builds levels in log-space) and
+    2) this is passed to `~proplot.colors.DiscreteNorm` to scale the colors before they
+    are discretized (if `norm` is not already a `~proplot.colors.DiscreteNorm`).
 norm_kw : dict-like, optional
     Passed to `~proplot.constructor.Norm`.
+extend : {'neither', 'both', 'min', 'max'}, optional
+    Direction for drawing colorbar "extensions" (i.e. color keys for out-of-bounds
+    data on the end of the colorbar). Default is ``'neither'``.
 discrete : bool, optional
     If ``False``, then `~proplot.colors.DiscreteNorm` is not applied to the
     colormap. Instead, for non-contour plots, the number of levels will be
@@ -303,9 +308,6 @@ sequential, diverging, cyclic, qualitative : bool, optional
     :rcraw:`cmap.cyclic`, and :rcraw:`cmap.qualitative` colormaps.
     The `diverging` option also applies `~proplot.colors.DivergingNorm`
     as the default continuous normalizer.
-extend : {{'neither', 'min', 'max', 'both'}}, optional
-    Whether to assign unique colors to out-of-bounds data and draw
-    colorbar "extensions" when a colorbar is drawn.
 """
 docstring._snippet_manager['plot.cycle'] = _cycle_docstring
 docstring._snippet_manager['plot.cmap_norm'] = _cmap_norm_docstring
@@ -313,7 +315,7 @@ docstring._snippet_manager['plot.cmap_norm'] = _cmap_norm_docstring
 
 # Levels docstrings
 # NOTE: In some functions we only need some components
-_vlim_levels_docstring = """
+_vmin_vmax_docstring = """
 vmin, vmax : float, optional
     The minimum and maximum color scale values used with the `norm` normalizer.
     If `discrete` is ``False`` these are the absolute limits, and if `discrete`
@@ -328,11 +330,10 @@ _manual_levels_docstring = """
 N
     Shorthand for `levels`.
 levels : int or sequence of float, optional
-    The number of level edges or a sequence of level edges. If the former,
-    `locator` is used to generate this many level edges at "nice" intervals.
-    If the latter, the levels should be monotonically increasing or
-    decreasing (note that decreasing levels will only work with ``pcolor``
-    plots, not ``contour`` plots). Default is :rc:`cmap.levels`.
+    The number of level edges or a sequence of level edges. If the former, `locator`
+    is used to generate this many level edges at "nice" intervals. If the latter,
+    the levels should be monotonically increasing or decreasing (note decreasing
+    levels fail with ``contour`` plots). Default is :rc:`cmap.levels`.
 values : int or sequence of float, optional
     The number of level centers or a sequence of level centers. If the former,
     `locator` is used to generate this many level centers at "nice" intervals.
@@ -353,8 +354,8 @@ inbounds : bool, optional
     or `~matplotlib.axes.Axes.set_ylim`, out-of-bounds data is ignored.
     Default is :rc:`cmap.inbounds`. See also :rcraw:`axes.inbounds`.
 locator : locator-spec, optional
-    The locator used to determine level locations if `levels` or `values`
-    is an integer. Passed to the `~proplot.constructor.Locator` constructor.
+    The locator used to determine level locations if `levels` or `values` were not
+    already passed as lists. Passed to the `~proplot.constructor.Locator` constructor.
     Default is `~matplotlib.ticker.MaxNLocator` with ``levels`` integer levels.
 locator_kw : dict-like, optional
     Passed to `~proplot.constructor.Locator`.
@@ -371,7 +372,7 @@ nozero : bool, optional
     If ``True``, ``0`` is removed from the level list. This is mainly useful for
     single-color `~matplotlib.axes.Axes.contour` plots.
 """
-docstring._snippet_manager['plot.vmin_vmax'] = _vlim_levels_docstring
+docstring._snippet_manager['plot.vmin_vmax'] = _vmin_vmax_docstring
 docstring._snippet_manager['plot.levels_manual'] = _manual_levels_docstring
 docstring._snippet_manager['plot.levels_auto'] = _auto_levels_docstring
 

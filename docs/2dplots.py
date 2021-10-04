@@ -300,8 +300,8 @@ pplt.rc.reset()
 # %% [raw] raw_mimetype="text/restructuredtext"
 # .. _ug_discrete:
 #
-# Distinct levels
-# ---------------
+# Discrete color levels
+# ---------------------
 #
 # By default, proplot uses `~proplot.colors.DiscreteNorm` to "discretize"
 # the possible colormap colors for contour and pseudocolor plotting commands,
@@ -310,16 +310,16 @@ pplt.rc.reset()
 # `~proplot.colors.DiscreteNorm` can be paired with arbitrary
 # continuous normalizers like `~matplotlib.colors.LogNorm`,
 # `~proplot.colors.DivergingNorm`, or `~proplot.colors.SegmentedNorm`.
-# Distinct color levels can help readers discern exact numeric values and
+# Discrete color levels can help readers discern exact numeric values and
 # tend to reveal qualitative structure in the data. `~proplot.colors.DiscreteNorm`
 # also repairs the colormap end-colors by ensuring the following conditions are met:
 #
 # #. All colormaps always span the *entire color range*,
 #    independent of the `extend` setting.
-# #. Cyclic colormaps always have *distinct color levels*
+# #. Cyclic colormaps always have *discrete color levels*
 #    on either end of the colorbar.
 #
-# To explicitly toggle distinct levels on or off, change :rcraw:`cmap.discrete`
+# To explicitly toggle discrete levels on or off, change :rcraw:`cmap.discrete`
 # or pass ``discrete=False`` or ``discrete=True`` to any plotting command
 # that accepts a `cmap` argument. The level edges or centers used with
 # `~proplot.colors.DiscreteNorm` can be explicitly specified using the `levels` and
@@ -347,7 +347,7 @@ data = 10 + (state.normal(0, 1, size=(33, 33))).cumsum(axis=0).cumsum(axis=1)
 
 # Figure
 fig, axs = pplt.subplots([[1, 1, 2, 2], [0, 3, 3, 0]], ref=3, refwidth=2.3)
-axs.format(yformatter='none', suptitle='Distinct vs. smooth colormap levels')
+axs.format(yformatter='none', suptitle='Discrete vs. smooth colormap levels')
 
 # Pcolor
 axs[0].pcolor(data, cmap='spectral_r', norm='div', colorbar='l')
