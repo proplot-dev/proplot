@@ -250,7 +250,7 @@ _panel_loc_docstring = """
     ==========  =====================
 """
 _panel_docstring = """
-Add a panel along the edge of the axes.
+Add a panel axes.
 
 Parameters
 ----------

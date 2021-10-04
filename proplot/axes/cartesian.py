@@ -207,16 +207,17 @@ _shared_docstring = """
 Parameters
 ----------
 %(extra)s**kwargs
-    Passed to `CartesianAxes`. Supports all valid  `~CartesianAxes.format` keywords.
-    You can optionally omit the {x} from keywords beginning with ``{x}`` -- for
-    example ``ax.alt{x}(lim=(0, 10))`` is equivalent to ``ax.alt{x}({x}lim=(0, 10))``.
-    You can also change the default side for the axis spine, axis tick marks, axis
-    tick labels, and/or axis labels by passing ``loc`` keywords. For example,
+    Passed to `~proplot.axes.CartesianAxes`. Supports all valid
+    `~proplot.axes.CartesianAxes.format` keywords. You can optionally
+    omit the {x} from keywords beginning with ``{x}`` -- for example
+    ``ax.alt{x}(lim=(0, 10))`` is equivalent to ``ax.alt{x}({x}lim=(0, 10))``.
+    You can also change the default side for the axis spine, axis tick marks,
+    axis tick labels, and/or axis labels by passing ``loc`` keywords. For example,
     ``ax.alt{x}(loc='{x1}')`` changes the default side from {x2} to {x1}.
 
 Returns
 -------
-CartesianAxes
+proplot.axes.CartesianAxes
     The resulting axes.
 
 Note
@@ -239,8 +240,8 @@ _alt_descrip = """
 Add an axes locked to the same location with a
 distinct {x} axis.
 This is an alias and possibly more intuitive name for
-`~CartesianAxes.twin{y}`, which generates two {x} axes
-with a shared ("twin") {y} axes.
+`~proplot.axes.CartesianAxes.twin{y}`, which generates
+two {x} axes with a shared ("twin") {y} axes.
 """
 _alt_docstring = _shared_docstring % {'descrip': _alt_descrip, 'extra': ''}
 docstring._snippet_manager['axes.altx'] = _alt_docstring.format(**_shared_x_keys)

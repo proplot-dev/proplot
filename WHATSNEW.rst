@@ -177,7 +177,7 @@ Features
 * Permit passing ``format`` keywords when instantiating figures and axes
   (:commit:`ae98378d`). For example: ``pplt.figure(suptitle='Super title')``
   or ``fig.add_subplot(111, xcolor='gray', xticks=10)`` .
-* Add back `color` as a valid `proplot.CartesianAxes.format` keyword
+* Add back `color` as a valid `proplot.axes.CartesianAxes.format` keyword
   arg for consistency with `xcolor` and `ycolor` (:commit:`ecb6fa3f`).
 
 Bug fixes
