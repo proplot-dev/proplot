@@ -614,16 +614,23 @@ Plot markers with flexible keyword arguments.
 Parameters
 ----------
 %(plot.args_1d_{y})s
-s, size, ms, markersize : float or sequence of float, optional
-    The marker size(s). If this is an array matching the shape of `x` and `y`,
-    the units are scaled by `smin` and `smax`.
+s, size, ms, markersize : float or sequence of float or unit-spec, optional
+    The marker area(s). If this is an array matching the shape of `x` and `y`, the
+    units are scaled by `smin` and `smax`. If this contains unit string(s), it is
+    processed by `~proplot.utils.units` and represents the width rather than area.
 c, color, colors, mc, markercolor, markercolors, fc, facecolor, facecolors \
 : array-like or color-spec, optional
     The marker color(s). If this is an array matching the shape of `x` and `y`,
-    the colors are generated using `cmap`, `norm`, `vmin`, and `vmax`.
+    the colors are generated using `cmap`, `norm`, `vmin`, and `vmax`. Otherwise,
+    this should be a valid matplotlib color.
 smin, smax : float, optional
-    The minimum and maximum marker size in units ``points**2`` used to scale
-    `s`. If not provided, the marker sizes are equivalent to the values in `s`.
+    The minimum and maximum marker size area in units ``points ** 2``. Ignored
+    if `absolute_size` is ``True``. Default value for `smin` is ``1`` and for
+    `smax` is the square of :rc:`lines.markersize`.
+absolute_size : bool, optional
+    Whether the marker sizes should be taken to be in physical units or
+    scaled by `smin` and `smax`. Default is ``True`` if `s` is scalar
+    and ``False`` if `s` is an array.
 %(plot.vmin_vmax)s
 %(plot.args_1d_shared)s
 
@@ -3059,18 +3066,30 @@ class PlotAxes(base.Axes):
         kwargs = _parse_vert(default_vert=False, **kwargs)
         return self._apply_lines(*args, **kwargs)
 
-    def _parse_markersize(self, s, *, smin=None, smax=None, **kwargs):
+    def _parse_markersize(
+        self, s, *, smin=None, smax=None, absolute_size=None, **kwargs
+    ):
         """
         Scale the marker sizes with optional keyword args.
         """
-        if np.atleast_1d(s).size == 1:  # None or scalar
-            return s, kwargs
-        smin_true, smax_true = data._safe_range(s)
-        smin_true = _not_none(smin_true, 0)
-        smax_true = _not_none(smax_true, rc['lines.markersize'])
-        smin = _not_none(smin, smin_true)
-        smax = _not_none(smax, smax_true)
-        s = smin + (smax - smin) * (s - smin_true) / (smax_true - smin_true)
+        default_size = True
+        if np.iterable(s):
+            s = np.asarray(s)
+            if not data._is_categorical(s):
+                default_size = False
+            else:
+                s = s.copy()
+                s.flat[:] = utils.units(s.flat, 'pt')
+                s = s.astype(np.float) ** 2
+        absolute_size = _not_none(absolute_size, default_size)
+        if not absolute_size or smin is not None or smax is not None:
+            smin = _not_none(smin, 1)
+            smax = _not_none(smax, rc['lines.markersize'] ** 2)
+            smin_true, smax_true = data._safe_range(s)
+            smin_true = _not_none(smin_true, smin)  # fallback behavior
+            smax_true = _not_none(smax_true, smax)
+            s = smin + (smax - smin) * (s - smin_true) / (smax_true - smin_true)
+        ic(s)
         return s, kwargs
 
     def _apply_scatter(self, xs, ys, ss, cc, *, vert=True, **kwargs):

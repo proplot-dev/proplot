@@ -72,7 +72,7 @@ def _is_categorical(data):
     """
     Test whether input is array of strings.
     """
-    return len(data) and isinstance(_to_numpy_array(data).item(0), str)
+    return len(data) and np.issubdtype(_to_numpy_array(data).dtype, np.str)
 
 
 def _to_duck_array(data, strip_units=False):
@@ -490,8 +490,9 @@ def _meta_coords(*args, which='x', **kwargs):
         if data.ndim > 1:
             raise ValueError('Non-1D string coordinate input is unsupported.')
         idx = np.arange(len(data))
+        data = list(map(str, data))  # ensure all are strings
         kwargs.setdefault(which + 'locator', FixedLocator(idx))
-        kwargs.setdefault(which + 'formatter', IndexFormatter(_to_numpy_array(data)))
+        kwargs.setdefault(which + 'formatter', IndexFormatter(data))
         kwargs.setdefault(which + 'minorlocator', NullLocator())
         res.append(idx)
     return (*res, kwargs)
