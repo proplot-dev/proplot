@@ -949,13 +949,6 @@ class Configurator(MutableMapping, dict):
                 }
             )
 
-        # When linewidth is zero set tick lengths to zero to avoid unnecessary
-        # padding of tick labels. TODO: Document this feature
-        elif contains('tick.width') and value == 0:
-            ikw_proplot, ikw_matplotlib = self._get_params('tick.len', 0)
-            kw_proplot.update(ikw_proplot)
-            kw_matplotlib.update(ikw_matplotlib)
-
         # Tick length/major-minor tick length ratio
         elif contains('tick.len', 'tick.lenratio'):
             if contains('tick.len'):
