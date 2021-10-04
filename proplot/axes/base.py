@@ -470,17 +470,18 @@ reverse : bool, optional
 grid, edges, drawedges : bool, optional
     Whether to draw level dividers (i.e., gridlines) between each distinct color.
     Default is :rc:`colorbar.grid`.
+tickminor : bool, optional
+    Whether to add minor ticks using `~matplotlib.colorbar.ColorbarBase.minorticks_on`.
+tickdir, tickdirection : {'out', 'in', 'inout'}, optional
+    Direction of major and minor colorbar ticks. Default is :rc:`tick.dir`.
 tickloc, ticklocation : {'bottom', 'top', 'left', 'right'}, optional
     Where to draw tick marks on the colorbar. Default is toward the outside
     of the subplot for outer colorbars and ``'bottom'`` for inset colorbars.
-tickdir, tickdirection : {'out', 'in', 'inout'}, optional
-    Direction of major and minor colorbar ticks. Default is :rc:`tick.dir`.
-tickminor : bool, optional
-    Whether to add minor ticks using `~matplotlib.colorbar.ColorbarBase.minorticks_on`.
 ticklen : unit-spec, optional
     Major tick lengths for the colorbar ticks. Default is :rc:`tick.len`.
 tickwidth : unit-spec, optional
-    Major tick widths for the colorbar ticks. Default is :rc:`tick.width`.
+    Major tick widths for the colorbar ticks. Default is `linewidth`
+    or :rc:`tick.width` if `linewidth` was not passed.
 ticklenratio : float, optional
     Relative scaling of `ticklen` used to determine minor tick lengths.
     Default is :rc:`tick.lenratio`.
@@ -2189,18 +2190,18 @@ class Axes(maxes.Axes):
         # using a Normalize (for example) to determine colors between the levels
         # (see: https://stackoverflow.com/q/42723538/4970632). Workaround makes
         # sure locators are in vmin/vmax range exclusively; cannot match values.
-        grid = _not_none(grid=grid, edges=edges, drawedges=drawedges, default=rc['colorbar.grid'])  # noqa: E501
         label = _not_none(title=title, label=label)
-        align = _translate_loc(align, 'panel', default='center', c='center', center='center')  # noqa: E501
-        rasterize = _not_none(rasterize, rc['colorbar.rasterize'])
         tickdir = _not_none(tickdir=tickdir, tickdirection=tickdirection)
-        ticklen = units(_not_none(ticklen, rc['tick.len']), 'pt')
-        ticklenratio = _not_none(ticklenratio, rc['tick.lenratio'])
-        tickwidth = units(_not_none(tickwidth, linewidth, rc['tick.width']), 'pt')
-        tickwidthratio = _not_none(tickwidthratio, rc['tick.widthratio'])
-        linewidth = _not_none(lw=lw, linewidth=linewidth, default=rc['axes.linewidth'])
-        linewidth = units(linewidth, 'pt')
+        linewidth = _not_none(lw=lw, linewidth=linewidth)
+        grid = _not_none(grid=grid, edges=edges, drawedges=drawedges, default=rc['colorbar.grid'])  # noqa: E501
         color = _not_none(c=c, color=color, default=rc['axes.edgecolor'])
+        align = _translate_loc(align, 'panel', default='center', c='center', center='center')  # noqa: E501
+        ticklen = units(_not_none(ticklen, rc['tick.len']), 'pt')
+        tickwidth = units(_not_none(tickwidth, linewidth, rc['tick.width']), 'pt')
+        linewidth = units(_not_none(linewidth, default=rc['axes.linewidth']), 'pt')
+        ticklenratio = _not_none(ticklenratio, rc['tick.lenratio'])
+        tickwidthratio = _not_none(tickwidthratio, rc['tick.widthratio'])
+        rasterize = _not_none(rasterize, rc['colorbar.rasterize'])
 
         # Generate an axes panel
         # NOTE: The inset axes function needs 'label' to know how to pad the box

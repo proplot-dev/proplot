@@ -161,8 +161,8 @@ xlinewidth, ylinewidth, linewidth : color-spec, optional
     Propagates to `tickwidth` unless specified otherwise.
     Use `linewidth` to set both at once.
 xtickwidth, ytickwidth, tickwidth, : unit-spec, optional
-    Major tick widths for the x ans y axis. Inherits from `linewidth` by
-    default. If `linewidth` is unspecified then default is :rc:`tick.width`.
+    Major tick widths for the x ans y axis. Default is `linewidth`
+    or :rc:`tick.width` if `linewidth` was not passed.
     %(units.pt)s
     Use `tickwidth` to set both at once.
 xtickwidthratio, ytickwidthratio, tickwidthratio
