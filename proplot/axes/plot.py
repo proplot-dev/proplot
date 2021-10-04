@@ -3089,7 +3089,6 @@ class PlotAxes(base.Axes):
             smin_true = _not_none(smin_true, smin)  # fallback behavior
             smax_true = _not_none(smax_true, smax)
             s = smin + (smax - smin) * (s - smin_true) / (smax_true - smin_true)
-        ic(s)
         return s, kwargs
 
     def _apply_scatter(self, xs, ys, ss, cc, *, vert=True, **kwargs):

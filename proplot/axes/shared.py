@@ -15,7 +15,9 @@ class _SharedAxes(object):
     Mix-in class with methods shared between `~proplot.axes.CartesianAxes`
     and `~proplot.axes.PolarAxes`.
     """
-    def _update_background(self, x=None, **kwargs):
+    def _update_background(
+        self, x=None, tickwidth=None, tickwidthratio=None, **kwargs
+    ):
         """
         Update the background patch and spines.
         """
@@ -33,21 +35,37 @@ class _SharedAxes(object):
 
         # Update the tick colors
         axis = 'both' if x is None else x
-        edgecolor = kw_edge.pop('edgecolor', None)
+        x = _not_none(x, 'x')
+        obj = getattr(self, x + 'axis')
+        edgecolor = kw_edge.get('edgecolor', None)
         if edgecolor is not None:
             self.tick_params(axis=axis, which='both', color=edgecolor)
 
         # Update the tick widths
-        # TODO: Either exclude case where 'linewidth' was retrieved from
-        # 'axes.linewidth' or make tick width a child of that setting?
-        # TODO: The same logic is used inside config.py to scale tick widths
-        # by tick ratios and to zero-out tick length. Share with helper func?
-        linewidth = kw_edge.pop('linewidth', None)
-        if linewidth is not None:
-            kw = {'length': 0} if linewidth == 0 else {}
-            self.tick_params(axis=axis, which='major', width=linewidth, **kw)
-            ratio = rc['tick.widthratio']
-            self.tick_params(axis=axis, which='minor', width=linewidth * ratio, **kw)
+        # NOTE: Only use 'linewidth' if it was explicitly passed. Do not
+        # include 'linewidth' inferred from rc['axes.linewidth'] setting.
+        kwmajor = getattr(obj, '_major_tick_kw', {})  # graceful fallback if API changes
+        kwminor = getattr(obj, '_minor_tick_kw', {})
+        if 'linewidth' in kwargs:
+            tickwidth = _not_none(tickwidth, kwargs['linewidth'])
+        tickwidth = _not_none(tickwidth, rc.find('tick.width', context=True))
+        tickwidthratio = _not_none(tickwidthratio, rc.find('tick.widthratio', context=True))  # noqa: E501
+        tickwidth_prev = kwmajor.get('width', rc[x + 'tick.major.width'])
+        if tickwidth_prev == 0:
+            tickwidthratio_prev = rc['tick.widthratio']  # no other way of knowing
+        else:
+            tickwidthratio_prev = kwminor.get('width', rc[x + 'tick.minor.width']) / tickwidth_prev  # noqa: E501
+        for which in ('major', 'minor'):
+            kwticks = {}
+            if tickwidth is not None or tickwidthratio is not None:
+                tickwidth = _not_none(tickwidth, tickwidth_prev)
+                kwticks['width'] = tickwidth = units(tickwidth, 'pt')
+                if tickwidth == 0:  # avoid unnecessary padding
+                    kwticks['size'] = 0
+                elif which == 'minor':
+                    tickwidthratio = _not_none(tickwidthratio, tickwidthratio_prev)
+                    kwticks['width'] *= tickwidthratio
+            self.tick_params(axis=axis, which=which, **kwticks)
 
     def _update_ticks(
         self, x, *, grid=None, gridminor=None, gridpad=None, gridcolor=None,
@@ -57,28 +75,38 @@ class _SharedAxes(object):
         """
         Update the gridlines and labels. Set `gridpad` to ``True`` to use grid padding.
         """
+        # Filter out text properties
+        axis = 'both' if x is None else x
+        kwtext = self._get_ticklabel_props(axis)
+        kwtext_extra = _pop_kwargs(kwtext, 'weight', 'family')
+        kwtext = {'label' + key: value for key, value in kwtext.items()}
+        if labelcolor is not None:
+            kwtext['labelcolor'] = labelcolor
+
         # Apply tick settings with tick_params when possible
         x = _not_none(x, 'x')
-        axis = getattr(self, x + 'axis')
-        kwtext = self._get_ticklabel_props(x)
-        kwextra = _pop_kwargs(kwtext, 'weight', 'family')
-        kwtext = {'label' + key: value for key, value in kwtext.items()}
+        obj = getattr(self, x + 'axis')
+        kwmajor = getattr(obj, '_major_tick_kw', {})  # graceful fallback if API changes
+        kwminor = getattr(obj, '_minor_tick_kw', {})
+        ticklen_prev = kwmajor.get('size', rc[x + 'tick.major.size'])
+        if ticklen_prev == 0:
+            ticklenratio_prev = rc['tick.lenratio']  # no other way of knowing
+        else:
+            ticklenratio_prev = kwminor.get('size', rc[x + 'tick.minor.size']) / ticklen_prev  # noqa: E501
         for b, which in zip((grid, gridminor), ('major', 'minor')):
             # Tick properties
             # NOTE: Must make 'tickcolor' overwrite 'labelcolor' or else 'color'
             # passed to __init__ will not apply correctly. Annoying but unavoidable
-            kwticks = self._get_tick_props(x, which=which)
+            kwticks = self._get_tick_props(axis, which=which)
             if labelpad is not None:
                 kwticks['pad'] = labelpad
             if tickcolor is not None:
                 kwticks['color'] = tickcolor
             if ticklen is not None or ticklenratio is not None:
-                if ticklen is None:  # must use private API so add graceful fallback
-                    kwaxis = getattr(axis, f'_{which}_tick_kw', {})
-                    ticklen = kwaxis.get('size', rc['tick.len'])
-                kwticks['size'] = units(ticklen, 'pt')
-                if which == 'minor':
-                    ticklenratio = _not_none(ticklenratio, rc['tick.lenratio'])
+                ticklen = _not_none(ticklen, ticklen_prev)
+                kwticks['size'] = ticklen = units(ticklen, 'pt')
+                if ticklen > 0 and which == 'minor':
+                    ticklenratio = _not_none(ticklenratio, ticklenratio_prev)
                     kwticks['size'] *= ticklenratio
             if gridpad:  # use grid.labelpad instead of tick.labelpad
                 kwticks.pop('pad', None)
@@ -86,36 +114,32 @@ class _SharedAxes(object):
                 if pad is not None:
                     kwticks['pad'] = units(pad, 'pt')
 
+            # Tick direction properties
+            # NOTE: These have no x and y-specific versions but apply here anyway
+            if labeldir == 'in':  # put tick labels inside the plot
+                tickdir = 'in'
+                kwticks.setdefault(
+                    - rc[f'{axis}tick.major.size']
+                    - _not_none(labelpad, rc[f'{axis}tick.major.pad'])
+                    - _fontsize_to_pt(rc[f'{axis}tick.labelsize'])
+                )
+            if tickdir is not None:
+                kwticks['direction'] = tickdir
+
             # Gridline properties
             # NOTE: Internally ax.grid() passes gridOn to ax.tick_params() but this
             # is undocumented and might have weird side effects. Just use ax.grid()
-            b = self._get_gridline_toggle(b, axis=x, which=which)
+            b = self._get_gridline_toggle(b, axis=axis, which=which)
             if b is not None:
-                self.grid(b, axis=x, which=which)
+                self.grid(b, axis=axis, which=which)
             kwlines = self._get_gridline_props(native=True, which=which)
             if gridcolor is not None:
                 kwlines['grid_color'] = gridcolor
 
             # Apply tick and gridline properties
-            self.tick_params(axis=x, which=which, **kwticks, **kwlines, **kwtext)
-
-        # Tick and tick label direction with padding corrections
-        # NOTE: The 'tick label direction' is right now just a cartesian thing
-        kwdir = {}
-        if tickdir == 'in':  # ticklabels should be much closer
-            kwdir['pad'] = 1.0
-        if labeldir == 'in':  # put tick labels inside the plot
-            tickdir = 'in'
-            kwdir['pad'] = (
-                - rc[f'{x}tick.major.size']
-                - rc[f'{x}tick.major.pad']
-                - _fontsize_to_pt(rc[f'{x}tick.labelsize'])
-            )
-        if tickdir is not None:
-            kwdir['direction'] = tickdir
-        self.tick_params(axis=x, which='both', **kwdir)
+            self.tick_params(axis=axis, which=which, **kwticks, **kwlines, **kwtext)
 
         # Apply settings that can't be controlled with tick_params
-        if kwextra:
-            for obj in axis.get_ticklabels():
-                obj.update(kwextra)
+        if kwtext_extra:
+            for lab in obj.get_ticklabels():
+                lab.update(kwtext_extra)

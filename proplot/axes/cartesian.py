@@ -148,17 +148,27 @@ xmargin, ymargin, margin : float, optional
     Value is proportional to the width, height of the axes. Use this to add
     whitespace between plotted content and axes edges without explicitly
     setting `xlim` or `ylim`. Use `margin` to set both at once.
-xticklen, yticklen, ticklen : float or str, optional
-    Major tick lengths for the x and y axis. Default is :rc:`ticklen`.
+xticklen, yticklen, ticklen : unit-spec, optional
+    Major tick lengths for the x and y axis. Default is :rc:`tick.len`.
     %(units.pt)s
     Use `ticklen` to set both at once.
 xticklenratio, yticklenratio, ticklenratio : float, optional
-    The scaling of `xticklen` and `yticklen` used to determine minor tick lengths.
-    Default is :rc:`tick.lenratio`.
+    Relative scaling of `xticklen` and `yticklen` used to determine
+    minor tick lengths. Default is :rc:`tick.lenratio`.
     Use `ticklenratio` to set both at once.
 xlinewidth, ylinewidth, linewidth : color-spec, optional
     Line width for the x and y axis spines and major ticks.
+    Propagates to `tickwidth` unless specified otherwise.
     Use `linewidth` to set both at once.
+xtickwidth, ytickwidth, tickwidth, : unit-spec, optional
+    Major tick widths for the x ans y axis. Inherits from `linewidth` by
+    default. If `linewidth` is unspecified then default is :rc:`tick.width`.
+    %(units.pt)s
+    Use `tickwidth` to set both at once.
+xtickwidthratio, ytickwidthratio, tickwidthratio
+    Relative scaling of `xtickwidth` and `ytickwidth` used to determine
+    minor tick widths. Default is :rc:`tick.widthratio`.
+    Use `tickwidthratio` to set both at once.
 xcolor, ycolor, color : color-spec, optional
     Color for the x and y axis spines, ticks, tick labels, and axis
     labels. Use `color` to set both at once.
@@ -854,6 +864,8 @@ class CartesianAxes(shared._SharedAxes, plot.PlotAxes):
         xmargin=None, ymargin=None,
         xticklen=None, yticklen=None,
         xticklenratio=None, yticklenratio=None,
+        xtickwidth=None, ytickwidth=None,
+        xtickwidthratio=None, ytickwidthratio=None,
         xlinewidth=None, ylinewidth=None,
         xcolor=None, ycolor=None, color=None,  # special case (see below)
         xtickcolor=None, ytickcolor=None,
@@ -968,6 +980,7 @@ class CartesianAxes(shared._SharedAxes, plot.PlotAxes):
                 gridcolor, labelcolor,
                 tickcolor, ticklabelcolor,
                 ticklen, ticklenratio,
+                tickwidth, tickwidthratio,
                 margin, bounds,
                 tickloc, spineloc,
                 ticklabelloc, labelloc,
@@ -990,6 +1003,7 @@ class CartesianAxes(shared._SharedAxes, plot.PlotAxes):
                 (xgridcolor, ygridcolor), (xlabelcolor, ylabelcolor),
                 (xtickcolor, ytickcolor), (xticklabelcolor, yticklabelcolor),
                 (xticklen, yticklen), (xticklenratio, yticklenratio),
+                (xtickwidth, ytickwidth), (xtickwidthratio, ytickwidthratio),
                 (xmargin, ymargin), (xbounds, ybounds),
                 (xtickloc, ytickloc), (xspineloc, yspineloc),
                 (xticklabelloc, yticklabelloc), (xlabelloc, ylabelloc),
@@ -1027,8 +1041,13 @@ class CartesianAxes(shared._SharedAxes, plot.PlotAxes):
                 # Axis spine settings
                 # NOTE: This sets spine-specific color and linewidth settings. For
                 # non-specific settings _update_background is called in Axes.format()
-                self._update_spines(x, loc=spineloc, bounds=bounds)
-                self._update_background(x, edgecolor=color, linewidth=linewidth)
+                self._update_spines(
+                    x, loc=spineloc, bounds=bounds
+                )
+                self._update_background(
+                    x, edgecolor=color, linewidth=linewidth,
+                    tickwidth=tickwidth, tickwidthratio=tickwidthratio,
+                )
 
                 # Axis tick settings
                 self._update_locs(
