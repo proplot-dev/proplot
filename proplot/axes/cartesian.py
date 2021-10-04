@@ -149,10 +149,13 @@ xmargin, ymargin, margin : float, optional
     whitespace between plotted content and axes edges without explicitly
     setting `xlim` or `ylim`. Use `margin` to set both at once.
 xticklen, yticklen, ticklen : float or str, optional
-    Tick lengths for the x and y axis. Default is :rc:`ticklen`.
+    Major tick lengths for the x and y axis. Default is :rc:`ticklen`.
     %(units.pt)s
-    Minor tick lengths are scaled according to :rc:`tick.lenratio`.
-    Use `ticklen` and `ticklenratio` to set both at once.
+    Use `ticklen` to set both at once.
+xticklenratio, yticklenratio, ticklenratio : float, optional
+    The scaling of `xticklen` and `yticklen` used to determine minor tick lengths.
+    Default is :rc:`tick.lenratio`.
+    Use `ticklenratio` to set both at once.
 xlinewidth, ylinewidth, linewidth : color-spec, optional
     Line width for the x and y axis spines and major ticks.
     Use `linewidth` to set both at once.
@@ -841,6 +844,7 @@ class CartesianAxes(shared._SharedAxes, plot.PlotAxes):
         xbounds=None, ybounds=None,
         xmargin=None, ymargin=None,
         xticklen=None, yticklen=None,
+        xticklenratio=None, yticklenratio=None,
         xlinewidth=None, ylinewidth=None,
         xcolor=None, ycolor=None, color=None,  # special case (see below)
         xlabelcolor=None, ylabelcolor=None,
@@ -944,8 +948,9 @@ class CartesianAxes(shared._SharedAxes, plot.PlotAxes):
             for (
                 x, label,
                 labelpad, ticklabelpad,
-                color, gridcolor, labelcolor,
-                ticklen, linewidth,
+                color, linewidth,
+                gridcolor, labelcolor,
+                ticklen, ticklenratio,
                 margin, bounds,
                 tickloc, spineloc,
                 ticklabelloc, labelloc,
@@ -964,8 +969,9 @@ class CartesianAxes(shared._SharedAxes, plot.PlotAxes):
             ) in zip(
                 ('x', 'y'), (xlabel, ylabel),
                 (xlabelpad, ylabelpad), (xticklabelpad, yticklabelpad),
-                (xcolor, ycolor), (xgridcolor, ygridcolor), (xlabelcolor, ylabelcolor),
-                (xticklen, yticklen), (xlinewidth, ylinewidth),
+                (xcolor, ycolor), (xlinewidth, ylinewidth),
+                (xgridcolor, ygridcolor), (xlabelcolor, ylabelcolor),
+                (xticklen, yticklen), (xticklenratio, yticklenratio),
                 (xmargin, ymargin), (xbounds, ybounds),
                 (xtickloc, ytickloc), (xspineloc, yspineloc),
                 (xticklabelloc, yticklabelloc), (xlabelloc, ylabelloc),
@@ -1016,7 +1022,8 @@ class CartesianAxes(shared._SharedAxes, plot.PlotAxes):
                 )
                 self._update_ticks(
                     x, grid=grid, gridminor=gridminor,
-                    ticklen=ticklen, tickcolor=color, gridcolor=gridcolor,
+                    ticklen=ticklen, ticklenratio=ticklenratio,
+                    tickcolor=color, gridcolor=gridcolor,
                     tickdir=tickdir, ticklabeldir=ticklabeldir,
                     labelpad=ticklabelpad,
                 )

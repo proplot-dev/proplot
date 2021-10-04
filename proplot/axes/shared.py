@@ -51,13 +51,15 @@ class _SharedAxes(object):
 
     def _update_ticks(
         self, x, *, grid=None, gridminor=None, gridcolor=None, gridpad=None,
-        ticklen=None, tickdir=None, ticklabeldir=None, tickcolor=None, labelpad=None
+        ticklen=None, ticklenratio=None, tickdir=None, ticklabeldir=None,
+        tickcolor=None, labelpad=None
     ):
         """
         Update the gridlines and labels. Set `gridpad` to ``True`` to use grid padding.
         """
         # Apply tick settings with tick_params when possible
         x = _not_none(x, 'x')
+        axis = getattr(self, x + 'axis')
         kwtext = self._get_ticklabel_props(x)
         kwextra = _pop_kwargs(kwtext, 'weight', 'family')
         kwtext = {'label' + key: value for key, value in kwtext.items()}
@@ -74,10 +76,14 @@ class _SharedAxes(object):
                     kwtext.setdefault('labelcolor', tickcolor)
                 else:
                     kwtext['labelcolor'] = tickcolor
-            if ticklen is not None:
+            if ticklen is not None or ticklenratio is not None:
+                if ticklen is None:  # must use private API so add graceful fallback
+                    kwaxis = getattr(axis, f'_{which}_tick_kw', {})
+                    ticklen = kwaxis.get('size', rc['tick.len'])
                 kwticks['size'] = units(ticklen, 'pt')
                 if which == 'minor':
-                    kwticks['size'] *= rc['tick.lenratio']
+                    ticklenratio = _not_none(ticklenratio, rc['tick.lenratio'])
+                    kwticks['size'] *= ticklenratio
             if gridpad:  # use grid.labelpad instead of tick.labelpad
                 kwticks.pop('pad', None)
                 pad = rc.find('grid.labelpad', context=True)
@@ -115,6 +121,5 @@ class _SharedAxes(object):
 
         # Apply settings that can't be controlled with tick_params
         if kwextra:
-            axis = getattr(self, x + 'axis')
             for obj in axis.get_ticklabels():
                 obj.update(kwextra)
