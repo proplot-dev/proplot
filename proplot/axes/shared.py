@@ -72,12 +72,6 @@ class _SharedAxes(object):
                 kwticks['pad'] = labelpad
             if tickcolor is not None:
                 kwticks['color'] = tickcolor
-                if rc._context_mode == 2:
-                    kwtext.setdefault('labelcolor', tickcolor)
-                else:
-                    kwtext['labelcolor'] = tickcolor
-            if labelcolor is not None:
-                kwtext['labelcolor'] = labelcolor
             if ticklen is not None or ticklenratio is not None:
                 if ticklen is None:  # must use private API so add graceful fallback
                     kwaxis = getattr(axis, f'_{which}_tick_kw', {})
