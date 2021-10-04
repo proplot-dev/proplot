@@ -31,22 +31,55 @@ and stability is improved.
 Version 0.9.3 (2021-XX-XX)
 ==========================
 
+Features
+--------
+
+* Stop changing default background of figure when `~proplot.axes.ThreeAxes` is present
+  -- instead just set the default axes background to transparent (:commit:`e933614d`).
+* Permit passing background patch-related ``format`` keywords like
+  `facecolor` on axes instantiation (:commit:`f863afd8`).
+* Add `xtickcolor`, `ytickcolor`, `xticklabelcolor`, and `yticklabelcolor`
+  `~proplot.axes.CartesianAxes.format` keywords to control tick mark and label colors
+  (:commit:`68cba1af`). Also add documentation for `xlabelcolor` and `ylabelcolor`.
+* Add `xticklenratio` and `yticklenratio` `~proplot.axes.CartesianAxes.format`
+  keywords to scale minor tick lengths (:commit:`26fdadf6`).
+* Add `xtickwidth`, `ytickwidth`, `xtickwidthratio`, and `ytickwidthratio` keywords
+  to `~proplot.axes.CartesianAxes.format`  to scale tick widths (:commit:`30a250f0`).
+* Set default `gridlabelcolor` to `color` when latter is passed to polar or geo
+  axes ``format`` methods, consistent with `proplot.axes.CartesianAxes`
+* Add `ticklen`, `ticklenratio`, `tickwidth`, `tickwidthratio` keywords to
+  `~proplot.axes.Axes.colorbar` to manage colorbar ticks (:commit:`08498abf`).
+* Add `labelloc` keyword to `~proplot.axes.Axes.colorbar` to change
+  the colorbar label location separately from `tickloc` (:commit:`32069370`).
+* Permit specifying `linewidth` keyword (and aliases) with arbitrary
+  physical units for format/colorbar/plotting commands (:commit:`c1ffbc8c`).
+* Add `absolute_size` key (analogous to `absolute_width` used with
+  `~proplot.axes.PlotAxes.bar`) to bypass auto-scaling of array input
+  to `~proplot.axes.PlotAxes.scatter` (:commit:`b4701411`).
+* Set the default `~proplot.axes.PlotAxes.scatter` `smin` and `smax` (used with
+  array-like input marker sizes `s`) to 1 and :rcraw:`lines.markersize` squared
+  rather than the data minimum and maximum (:commit:`b4701411`).
+
 Bug fixes
 ---------
 
-* Fix bug instantiating 3D axes (:issue:`389`).
-* Stop inheriting `~proplot.axes.ThreeAxes` from `~proplot.axes.PlotAxes`,
-  instead just inherit from `~proplot.axes.Axes` (:commit:`64623d92`).
-* Stop changing default background of figure when `~proplot.axes.ThreeAxes` is present
-  -- instead just set default axes background to transparent (:commit:`e933614d`).
-* Permit passing background patch-related ``format`` keywords like
-  `facecolor` on axes instantiation (:commit:`f863afd8`).
+* Fix fatal error instantiating `~proplot.axes.ThreeAxes` (:issue:`389`).
+* Fix issue with plotting in `~proplot.axes.ThreeAxes` by inheriting from from
+  `~proplot.axes.Axes` instead of `~proplot.axes.PlotAxes` (:commit:`64623d92`).
+* Fix issue where `~proplot.axes.CartesianAxes.format` ignores `margin` rather than
+  using it for both `xmargin` and `ymargin` (:commit:`ba32fd1a`).
+* Fix issue where `color` passed to ``format`` triggers deprecation warning even
+  though it is a valid background patch property (:commit:`a50eab0e`).
+* Fix issue where passing ``tickwidth=0`` to ``format`` changes the tick
+  length persistently outside of context block (:commit:`4966c8ab`).
+* Fix issue where ``tickratio`` and ``lenratio`` applied in successive calls to
+  `~proplot.axes.CartesianAxes.format` fails to update properly (:commit:`26fdadf6`).
 
 Documentation
 -------------
 
 * Change stylized name "ProPlot" to simply lowercase "proplot", consistent
-  with matplotlib, cartopy, numpy, etc. (:commit:`###`).
+  with matplotlib, cartopy, numpy, etc. (:commit:`b876b214`).
 
 Version 0.9.2 (2021-09-30)
 ==========================
