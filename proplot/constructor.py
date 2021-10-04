@@ -381,7 +381,7 @@ def Colormap(
 
         * If a registered colormap name, that colormap instance is looked up.
           If colormap instance is a native matplotlib colormap class, it is
-          converted to a ProPlot colormap class.
+          converted to a proplot colormap class.
         * If a filename string with valid extension, the colormap data
           is loaded with `proplot.colors.ContinuousColormap.from_file` or
           `proplot.colors.DiscreteColormap.from_file` depending on the value of
@@ -1255,7 +1255,7 @@ def Proj(name, basemap=None, **kwargs):
         full names (with links to the relevant
         `PROJ documentation <https://proj4.org/operations/projections>`__),
         and whether they are available in the cartopy and basemap packages.
-        (added) indicates a projection class that ProPlot has "added"
+        (added) indicates a projection class that proplot has "added"
         to cartopy using the cartopy API.
 
         .. _proj_table:
@@ -1329,10 +1329,9 @@ def Proj(name, basemap=None, **kwargs):
     Other parameters
     ----------------
     **kwargs
-        Passed to the `~mpl_toolkits.basemap.Basemap` or
-        cartopy `~cartopy.crs.Projection` class. For cartopy axes,
-        ProPlot translates `lon_0` and `lat_0` to `central_longitude` and
-        `central_latitude`.
+        Passed to the `mpl_toolkits.basemap.Basemap` or `cartopy.crs.Projection`
+        class. For cartopy axes, proplot translates `lon_0` and `lat_0` to
+        `central_longitude` and `central_latitude`.
 
     Returns
     -------

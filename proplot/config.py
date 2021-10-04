@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Tools for setting up ProPlot and configuring global settings.
+Tools for setting up proplot and configuring global settings.
 See the :ref:`configuration guide <ug_config>` for details.
 """
 # NOTE: The matplotlib analogue to this file is actually __init__.py
@@ -98,7 +98,7 @@ user : bool, optional
     Whether to load settings from the `~Configurator.user_file` file.
     Default is ``True``.
 default : bool, optional
-    Whether to reload built-in default ProPlot settings.
+    Whether to reload built-in default proplot settings.
     Default is ``True``.
 """
 docstring._snippet_manager['rc.params'] = _rc_docstring
@@ -152,7 +152,7 @@ user : bool, optional
     Whether to reload {objects} from `~Configurator.user_folder`. Default is
     ``False`` if positional arguments were passed and ``True`` otherwise.
 default : bool, optional
-    Whether to reload the default {objects} packaged with ProPlot.
+    Whether to reload the default {objects} packaged with proplot.
     Default is always ``False``.
 """
 docstring._snippet_manager['rc.cmap_params'] = _register_docstring.format(objects='colormaps')  # noqa: E501
@@ -249,7 +249,7 @@ def _get_style_dicts(style, infer=False, filter=True):
     """
     Return a dictionary of settings belonging to the requested style(s). If `infer`
     is ``True``, two dictionaries are returned, where the second contains custom
-    ProPlot settings "inferred" from the matplotlib settings. If `filter` is ``True``,
+    proplot settings "inferred" from the matplotlib settings. If `filter` is ``True``,
     invalid style parameters like `backend` are filtered out.
     """
     # NOTE: This is adapted from matplotlib source for the following changes:
@@ -260,7 +260,7 @@ def _get_style_dicts(style, infer=False, filter=True):
     #    matplotlibrc changes and runtime rcParams changes) but the word 'style'
     #    implies a rigid static format. This makes more sense.
     # 3. Add a separate function that returns lists of style dictionaries so that
-    #    we can modify the active style in a context block. ProPlot context is more
+    #    we can modify the active style in a context block. Proplot context is more
     #    conservative than matplotlib's rc_context because it gets called a lot
     #    (e.g. every time you make an axes and every format() call). Instead of
     #    copying the entire rcParams dict we just track the keys that were changed.
@@ -702,7 +702,7 @@ class Configurator(MutableMapping, dict):
     """
     A dictionary-like class for managing `matplotlib settings
     <https://matplotlib.org/stable/tutorials/introductory/customizing.html>`__
-    stored in `rc_matplotlib` and :ref:`ProPlot settings <ug_rcproplot>`
+    stored in `rc_matplotlib` and :ref:`proplot settings <ug_rcproplot>`
     stored in `rc_proplot`. This class is instantiated as the `rc` object
     on import. See the :ref:`user guide <ug_config>` for details.
     """
@@ -898,7 +898,7 @@ class Configurator(MutableMapping, dict):
         kw_matplotlib = {}  # builtin properties
         with warnings.catch_warnings():
             warnings.simplefilter('ignore', mpl.MatplotlibDeprecationWarning)
-            warnings.simplefilter('ignore', warnings.ProPlotWarning)
+            warnings.simplefilter('ignore', warnings.ProplotWarning)
             for key in keys:
                 if key in rc_matplotlib:
                     kw_matplotlib[key] = value
@@ -1156,7 +1156,7 @@ class Configurator(MutableMapping, dict):
 
             The options are as follows:
 
-            0. Matplotlib's `rc_matplotlib` settings and ProPlots `rc_proplot`
+            0. Matplotlib's `rc_matplotlib` settings and proplots `rc_proplot`
                settings are all returned, whether or not `~Configurator.context`
                has changed them.
             1. Unchanged `rc_matplotlib` settings return ``None`` but `rc_proplot`
@@ -1169,7 +1169,7 @@ class Configurator(MutableMapping, dict):
 
         Note
         ----
-        This is used by ProPlot internally but may also be useful for power users.
+        This is used by proplot internally but may also be useful for power users.
         It was invented to prevent successive calls to `~proplot.axes.Axes.format`
         from constantly looking up and re-applying unchanged settings. These
         gratuitous lookups increased runtime significantly, and resulted in successive
@@ -1377,7 +1377,7 @@ class Configurator(MutableMapping, dict):
                 added.add(key)
                 # Get child dictionaries. Careful to have informative messages
                 with warnings.catch_warnings():
-                    warnings.simplefilter('error', warnings.ProPlotWarning)
+                    warnings.simplefilter('error', warnings.ProplotWarning)
                     try:
                         ikw_proplot, ikw_matplotlib = self._get_params(key, val)
                     except KeyError:
@@ -1390,11 +1390,11 @@ class Configurator(MutableMapping, dict):
                             f'Invalid rc val {val!r} for key {key!r} on {message}: {err}', 'default'  # noqa: E501
                         )
                         continue
-                    except warnings.ProPlotWarning as err:
+                    except warnings.ProplotWarning as err:
                         warnings._warn_proplot(
                             f'Outdated rc key {key!r} on {message}: {err}', 'default'
                         )
-                        warnings.simplefilter('ignore', warnings.ProPlotWarning)
+                        warnings.simplefilter('ignore', warnings.ProplotWarning)
                         ikw_proplot, ikw_matplotlib = self._get_params(key, val)
                 # Update the settings
                 kw_proplot.update(ikw_proplot)
@@ -1440,7 +1440,7 @@ class Configurator(MutableMapping, dict):
             user_table = ('# Changed settings', user_table, '')
         proplot_dict = rcsetup._rc_proplot_table if description else rcsetup._rc_proplot_default  # noqa: E501
         proplot_table = rcsetup._yaml_table(proplot_dict, comment=comment, description=description)  # noqa: E501
-        proplot_table = ('# ProPlot settings', proplot_table, '')
+        proplot_table = ('# Proplot settings', proplot_table, '')
         matplotlib_dict = rcsetup._rc_matplotlib_default
         matplotlib_table = rcsetup._yaml_table(matplotlib_dict, comment=comment)
         matplotlib_table = ('# Matplotlib settings', matplotlib_table)
@@ -1507,7 +1507,7 @@ class Configurator(MutableMapping, dict):
     @property
     def changed(self):
         """
-        A dictionary of settings that have been changed from the ProPlot defaults.
+        A dictionary of settings that have been changed from the proplot defaults.
         """
         # Carefully detect changed settings
         rcdict = {}
@@ -1538,7 +1538,7 @@ _init_user_file()
 #: validated and restricted to recognized setting names.
 rc_matplotlib = mpl.rcParams  # PEP8 4 lyfe
 
-#: A dictionary-like container of ProPlot settings. Assignments are
+#: A dictionary-like container of proplot settings. Assignments are
 #: validated and restricted to recognized setting names.
 rc_proplot = rcsetup._rc_proplot_default.copy()  # a validated rcParams-style dict
 

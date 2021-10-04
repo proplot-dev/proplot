@@ -24,7 +24,7 @@
 # 1D plotting
 # ===========
 #
-# ProPlot adds :ref:`several new features <why_plotting>` to matplotlib's
+# Proplot adds :ref:`several new features <why_plotting>` to matplotlib's
 # plotting commands using the intermediate `~proplot.axes.PlotAxes` subclass.
 # For the most part, these additions represent a *superset* of matplotlib -- if
 # you are not interested, you can use the plotting commands just like you always
@@ -55,7 +55,7 @@
 #    By default, when just the *x* or *y* axis was explicitly fixed by
 #    `~matplotlib.axes.Axes.set_xlim` or `~matplotlib.axes.Axes.set_ylim`
 #    (or, equivalently, by passing `xlim` or `ylim` to
-#    `proplot.axes.CartesianAxes.format`), ProPlot ignores the out of bounds
+#    `proplot.axes.CartesianAxes.format`), proplot ignores the out of bounds
 #    data when determining the other axis limits. This can be useful if
 #    you wish to restrict the view within a large dataset. To disable
 #    this feature, pass ``inbounds=False`` to the plotting command or set
@@ -145,7 +145,7 @@ fig.format(
 #
 # These features restore some of the convenience you get with the builtin
 # `pandas`_ and `xarray`_ plotting functions. They are also *optional* --
-# installation of pandas and xarray are not required to use ProPlot. All of these
+# installation of pandas and xarray are not required to use proplot. All of these
 # features can be disabled by setting :rcraw:`autoformat` to ``False`` or by
 # passing ``autoformat=False`` to any plotting command.
 #
@@ -157,7 +157,7 @@ fig.format(
 #    ``ax.plot(y='y', data=dataset)`` are translated to ``ax.plot(dataset['y'])``.
 #    This is the preferred input style for most `seaborn`_ plotting commands.
 #    Also, if you pass a `pint.Quantity` or `~xarray.DataArray`
-#    containing a `pint.Quantity`, ProPlot will automatically call
+#    containing a `pint.Quantity`, proplot will automatically call
 #    `~pint.UnitRegistry.setup_matplotlib` so that the axes become unit-aware.
 
 # %%

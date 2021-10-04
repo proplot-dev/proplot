@@ -8,10 +8,10 @@ The comprehensive API reference. All of the below objects are imported
 into the top-level namespace. Use ``help(pplt.object)`` to read
 the docs during a python session.
 
-Please note that the documentation of plotting command "wrappers" from
-ProPlot < 0.8 is now found in the individual `~proplot.axes.PlotAxes`
+Please note that the documentation for "wrapper" functions from
+proplot < 0.8 is now found under the individual `~proplot.axes.PlotAxes`
 plotting commands. Using ``help(ax.command)`` during a python session shows both
-the ProPlot documentation and the original matplotlib documentation.
+the proplot documentation and the original matplotlib documentation.
 
 Figure class
 ============

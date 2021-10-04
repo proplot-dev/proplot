@@ -53,7 +53,7 @@ CMAPS_TABLE = {
     'Seaborn diverging': (
         'IceFire', 'Vlag',
     ),
-    'ProPlot sequential': (
+    'Proplot sequential': (
         'Fire',
         'Stellar',
         'Glacial',
@@ -63,7 +63,7 @@ CMAPS_TABLE = {
         'Sunrise',
         'Sunset',
     ),
-    'ProPlot diverging': (
+    'Proplot diverging': (
         'Div', 'NegPos', 'DryWet',
     ),
     'Other sequential': (
@@ -515,7 +515,7 @@ def show_cmaps(*args, **kwargs):
         The number of levels in each colorbar. Default is
         :rc:`image.lut`.
     unknown : str, optional
-        Category name for colormaps that are unknown to ProPlot. The
+        Category name for colormaps that are unknown to proplot. The
         default is ``'User'``. Set this to ``False`` to hide
         unknown colormaps.
     include : str or sequence of str, optional
@@ -577,7 +577,7 @@ def show_cycles(*args, **kwargs):
     *args : colormap-spec, optional
         Cycle names or objects.
     unknown : str, optional
-        Category name for cycles that are unknown to ProPlot. The default
+        Category name for cycles that are unknown to proplot. The default
         is ``'User'``. Set this to ``False`` to hide unknown colormaps.
     include : str or sequence of str, optional
         Category names to be shown in the table. Use this to limit
@@ -665,7 +665,7 @@ def show_colors(*, nhues=17, minsat=10, unknown='User', include=None, ignore=Non
         The threshold saturation, between ``0`` and ``100``, for designating
         "gray colors" in the color table.
     unknown : str, optional
-        Category name for color names that are unknown to ProPlot. The default
+        Category name for color names that are unknown to proplot. The default
         is ``'User'``. Set this to ``False`` to hide unknown color names.
     include : str or sequence of str, optional
         Category names to be shown in the table. Use this to limit

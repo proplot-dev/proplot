@@ -25,7 +25,7 @@
 # Creating figures
 # ----------------
 #
-# ProPlot works by creating a `proplot.figure.Figure` subclass of
+# Proplot works by creating a `proplot.figure.Figure` subclass of
 # `matplotlib.figure.Figure`, an `proplot.axes.Axes` and `proplot.axes.PlotAxes`
 # subclass of `matplotlib.axes.Axes`, and determining subplot locations using
 # a `proplot.gridspec.GridSpec` subclass of `matplotlib.gridspec.GridSpec`
@@ -42,11 +42,11 @@
 # %% [raw] raw_mimetype="text/restructuredtext"
 # .. note::
 #
-#    ProPlot changes the default :rcraw:`figure.facecolor` so that the figure
+#    Proplot changes the default :rcraw:`figure.facecolor` so that the figure
 #    backgrounds shown by the `matplotlib backend
 #    <https://matplotlib.org/faq/usage_faq#what-is-a-backend>`__ are light gray (the
 #    :rcraw:`savefig.facecolor` applied to saved figures is still white). This can be
-#    helpful when designing figures. ProPlot also controls the appearence of figures
+#    helpful when designing figures. Proplot also controls the appearence of figures
 #    in Jupyter notebooks using the new :rcraw:`inlinefmt` setting, which is passed
 #    to `~proplot.config.config_inline_backend` on import. This imposes a
 #    higher-quality default `"inline" format
@@ -55,7 +55,7 @@
 #    ``InlineBackend.print_figure_kwargs``, ensuring that the figures you save
 #    look like the figures displayed by the backend.
 #
-#    ProPlot also changes the default :rcraw:`savefig.format`
+#    Proplot also changes the default :rcraw:`savefig.format`
 #    from PNG to PDF for the following reasons:
 #
 #        #. Vector graphic formats are infinitely scalable.
@@ -65,7 +65,7 @@
 #        #. The EPS format is outdated and does not support transparent graphic
 #           elements.
 #
-#    In case you *do* need a raster format like PNG, ProPlot increases the
+#    In case you *do* need a raster format like PNG, proplot increases the
 #    default :rcraw:`savefig.dpi` to 1000 dots per inch, which is
 #    `recommended <https://www.pnas.org/page/authors/format>`__ by most journals
 #    as the minimum resolution for rasterized figures containing lines and text.
@@ -130,7 +130,7 @@ ax.format(suptitle='Single subplot', xlabel='x axis', ylabel='y axis')
 #
 # .. warning::
 #
-#    ProPlot employs :ref:`automatic axis sharing <ug_share>` by default. This lets
+#    Proplot employs :ref:`automatic axis sharing <ug_share>` by default. This lets
 #    subplots in the same row or column share the same axis limits, scales, ticks,
 #    and labels. This is often convenient, but may be annoying for some users. To
 #    keep this feature turned off, simply :ref:`change the default settings <ug_rc>`
@@ -223,8 +223,8 @@ fig.save('~/example4.png')
 # Matplotlib has
 # `two different interfaces <https://matplotlib.org/stable/api/index.html>`__:
 # an object-oriented interface and a MATLAB-style `~matplotlib.pyplot` interface
-# (which uses the object-oriented interface internally). Plotting with ProPlot is just
-# like plotting with matplotlib's *object-oriented* interface. ProPlot builds upon
+# (which uses the object-oriented interface internally). Plotting with proplot is just
+# like plotting with matplotlib's *object-oriented* interface. Proplot builds upon
 # the `proplot.axes.Axes` class with an intermediate `proplot.axes.PlotAxes` subclass.
 # This subclass adds several new plotting commands and adds new features to existing
 # commands. These additions do not change the usage or syntax of existing commands,
@@ -234,7 +234,7 @@ fig.save('~/example4.png')
 # plot commands `~proplot.axes.PlotAxes.plot`, `~proplot.axes.PlotAxes.scatter`,
 # `~proplot.axes.PlotAxes.pcolormesh`, and `~proplot.axes.PlotAxes.contourf`.
 # See the :ref:`1D plotting <ug_1dplots>` and :ref:`2D plotting <ug_2dplots>`
-# sections for details on the features added by ProPlot.
+# sections for details on the features added by proplot.
 
 
 # %%
@@ -266,7 +266,7 @@ fig.colorbar(m, loc='b', label='label')
 # Formatting stuff
 # ----------------
 #
-# ProPlot's ``format`` command is your one-stop-shop for changing figure and axes
+# Proplot's ``format`` command is your one-stop-shop for changing figure and axes
 # settings. While one-liner matplotlib setters like ``set_xlabel`` and ``set_title``
 # still work, ``format`` is usually more succinct -- it only needs to be called once.
 # The keyword arguments accepted by ``format`` fall into the following groups:
@@ -354,7 +354,7 @@ axs.format(
 #
 # In matplotlib, `~matplotlib.figure.Figure.subplots` returns a 2D `~numpy.ndarray` for
 # figures with more than one column and row, a 1D `~numpy.ndarray` for single-column or
-# row figures, or an `~matplotlib.axes.Axes` for single-subplot figures. In ProPlot,
+# row figures, or an `~matplotlib.axes.Axes` for single-subplot figures. In proplot,
 # `~proplot.figure.Figure.subplots` returns a `~proplot.gridspec.SubplotGrid` that
 # unifies these possible return values:
 #
@@ -412,13 +412,13 @@ axs[-1, -1].format(fc='gray2', grid=False)
 # -------------------
 #
 # A dictionary-like object named `~proplot.config.rc` is created when you import
-# ProPlot. `~proplot.config.rc` is similar to the matplotlib `~matplotlib.rcParams`
+# proplot. `~proplot.config.rc` is similar to the matplotlib `~matplotlib.rcParams`
 # dictionary, but can be used to change both `matplotlib settings
 # <https://matplotlib.org/stable/tutorials/introductory/customizing.html>`__ and
-# :ref:`ProPlot settings <ug_rcproplot>`. The matplotlib-specific settings are
+# :ref:`proplot settings <ug_rcproplot>`. The matplotlib-specific settings are
 # stored in `~proplot.config.rc_matplotlib` (our name for `matplotlib.rcParams`) and
-# the ProPlot-specific settings are stored in `~proplot.config.rc_proplot`.
-# ProPlot also includes a :rcraw:`style` setting that can be used to
+# the proplot-specific settings are stored in `~proplot.config.rc_proplot`.
+# Proplot also includes a :rcraw:`style` setting that can be used to
 # switch between `matplotlib stylesheets
 # <https://matplotlib.org/stable/gallery/style_sheets/style_sheets_reference.html>`__.
 # See the :ref:`configuration section <ug_config>` for details.

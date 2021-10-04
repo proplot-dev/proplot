@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-The various axes classes used throughout ProPlot.
+The various axes classes used throughout proplot.
 """
 import matplotlib.projections as mproj
 

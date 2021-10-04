@@ -9,11 +9,11 @@ This page contains links to related external projects.
 Python packages
 ===============
 
-The following packages inspired ProPlot, are required or optional dependencies
-of ProPlot, or are ported directly into the ProPlot source code:
+The following packages inspired proplot, are required or optional
+dependencies of proplot, or are distributed with proplot:
 
-* `matplotlib <https://matplotlib.org>`__ - The data visualization workhorse
-  we all know and love.
+* `matplotlib <https://matplotlib.org>`__ - The powerful data visualization
+  package we all know and love.
 * `xarray <http://xarray.pydata.org/en/stable/api.html>`__ - A package for working with
   annotated ND numpy arrays. If you haven't heard of it and you work with NetCDF files,
   it will change your life.
@@ -29,17 +29,26 @@ of ProPlot, or are ported directly into the ProPlot source code:
   plotting package. Basemap is less closely integrated with matplotlib than
   cartopy but still quite popular. As of 2020 it is no longer actively maintained.
 * `seaborn <https://seaborn.pydata.org>`__ - A statistical data visualization package.
-  Seaborn is based on matplotlib, but its interface is mostly separate from matplotlib.
+  Seaborn is based on matplotlib but its interface is mostly separate from matplotlib.
   It is not generally suitable for geophysical data.
 * `hsluv-python <https://github.com/hsluv/hsluv-python/blob/master/hsluv.py>`__ -
   A python implementation of `HSLuv <https://www.hsluv.org>`__ used for
-  the hue, chroma, luminance math required by `~proplot.colors.PerceptualColormap`.
+  the hue, saturation, luminance math required by `~proplot.colors.PerceptualColormap`.
+* `TeX Gyre <https://ctan.org/pkg/tex-gyre?lang=en>`__ -
+  An open source re-implementation of popular fonts like
+  `Helvetica <https://en.wikipedia.org/wiki/Helvetica>`__
+  and `Century <https://en.wikipedia.org/wiki/Century_type_family>`__.
+  These are distributed with proplot and used for its default font families.
+* `Fira Math <https://en.wikipedia.org/wiki/Century_type_family>` -
+  An open source sans-serif font with a zillion glyphs for mathematical symbols.
+  This is distributed with proplot as a viable alternative to
+  `DejaVu Sans <https://en.wikipedia.org/wiki/DejaVu_fonts>`__.
 
 Downloadable colormaps
 ======================
 
 The following colormap repositories are
-imported and registered by ProPlot.
+imported and registered by proplot.
 
 * `Color Brewer <http://colorbrewer2.org/#type=sequential&scheme=BuGn&n=3>`__ - The
   O.G. perceptually uniform colormap distribution. These are included with
@@ -62,10 +71,10 @@ Tools for making new colormaps
 ==============================
 
 Use these resources to make colormaps from scratch. Then import
-them into ProPlot by adding files to the ``.proplot/cmaps`` folder
+them into proplot by adding files to the ``.proplot/cmaps`` folder
 (see :ref:`this section <ug_cmaps_dl>` for details).
 
-* `ProPlot API <https://proplot.readthedocs.io/en/latest/colormaps.html#Making-new-colormaps>`__ -
+* `The proplot API <https://proplot.readthedocs.io/en/latest/colormaps.html#Making-new-colormaps>`__ -
   Namely, the `~proplot.colors.ContinuousColormap` class and
   `~proplot.constructor.Colormap` constructor function.
 * `HCL Wizard <http://hclwizard.org:64230/hclwizard/>`__ -
@@ -85,10 +94,10 @@ Tools for making new color cycles
 =================================
 
 Use these resources to make color cycles from scratch. Then import
-them into ProPlot by adding files to the ``.proplot/cycles`` folder
+them into proplot by adding files to the ``.proplot/cycles`` folder
 (see :ref:`this section <ug_cycles_dl>` for details).
 
-* `ProPlot API <https://proplot.readthedocs.io/en/latest/cycles.html#Making-new-color-cycles>`__ -
+* `The proplot API <https://proplot.readthedocs.io/en/latest/cycles.html#Making-new-color-cycles>`__ -
   Namely, the `~proplot.colors.DiscreteColormap` class and
   `~proplot.constructor.Cycle` constructor function.
 * `i want hue <http://medialab.github.io/iwanthue/>`__ -

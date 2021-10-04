@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-The second-level axes subclass used for all ProPlot figures.
+The second-level axes subclass used for all proplot figures.
 Implements plotting method overrides.
 """
 import inspect

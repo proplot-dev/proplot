@@ -406,7 +406,7 @@ class _RcParams(MutableMapping, dict):
         return dict.__len__(self)
 
     def __iter__(self):
-        # NOTE: ProPlot doesn't add deprecated args to dictionary so
+        # NOTE: Proplot doesn't add deprecated args to dictionary so
         # we don't have to suppress warning messages here.
         yield from sorted(dict.__iter__(self))
 
@@ -507,7 +507,7 @@ else:
                 _validate[_key] = _validate_or_none(_validator_replace)
 
 
-# ProPlot overrides of matplotlib default style
+# Proplot overrides of matplotlib default style
 # WARNING: Critical to include every parameter here that can be changed by a
 # "meta" setting so that _get_default_param returns the value imposed by *proplot*
 # and so that "changed" settings detected by Configurator.save are correct.

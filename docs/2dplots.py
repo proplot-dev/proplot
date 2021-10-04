@@ -24,7 +24,7 @@
 # 2D plotting
 # ===========
 #
-# ProPlot adds :ref:`several new features <why_plotting>` to matplotlib's
+# Proplot adds :ref:`several new features <why_plotting>` to matplotlib's
 # plotting commands using the intermediate `~proplot.axes.PlotAxes` subclass.
 # For the most part, these additions represent a *superset* of matplotlib -- if
 # you are not interested, you can use the plotting commands just like you always
@@ -55,7 +55,7 @@
 #
 # .. note::
 #
-#    By default, when ProPlot selects the default colormap :ref:`normalization
+#    By default, when proplot selects the default colormap :ref:`normalization
 #    range <ug_apply_cmap>`, it ignores data outside the *x* or *y* axis limits
 #    if they were previously fixed by `~matplotlib.axes.Axes.set_xlim` or
 #    `~matplotlib.axes.Axes.set_ylim` (or, equivalently, by passing `xlim` or
@@ -146,7 +146,7 @@ fig.format(
 #
 # These features restore some of the convenience you get with the builtin
 # `pandas`_ and `xarray`_ plotting functions. They are also *optional* --
-# installation of pandas and xarray are not required to use ProPlot. All of these
+# installation of pandas and xarray are not required to use proplot. All of these
 # features can be disabled by setting :rcraw:`autoformat` to ``False`` or by
 # passing ``autoformat=False`` to any plotting command.
 #
@@ -158,7 +158,7 @@ fig.format(
 #    ``ax.plot(y='y', data=dataset)`` are translated to ``ax.plot(dataset['y'])``.
 #    This is the preferred input style for most `seaborn`_ plotting commands.
 #    Also, if you pass a `pint.Quantity` or `~xarray.DataArray`
-#    containing a `pint.Quantity`, ProPlot will automatically call
+#    containing a `pint.Quantity`, proplot will automatically call
 #    `~pint.UnitRegistry.setup_matplotlib` so that the axes become unit-aware.
 
 # %%
@@ -303,7 +303,7 @@ pplt.rc.reset()
 # Distinct levels
 # ---------------
 #
-# By default, ProPlot uses `~proplot.colors.DiscreteNorm` to "discretize"
+# By default, proplot uses `~proplot.colors.DiscreteNorm` to "discretize"
 # the possible colormap colors for contour and pseudocolor plotting commands,
 # including `~proplot.axes.PlotAxes.contourf` and `~proplot.axes.PlotAxes.pcolor`.
 # This is analogous to `matplotlib.colors.BoundaryNorm`, except
@@ -399,7 +399,7 @@ for i, extend in enumerate(('min', 'max', 'neither', 'both')):
 #
 # By default, colormaps are normalized to span from roughly the minimum
 # data value to the maximum data value. However in the presence of outliers,
-# this is not desirable. ProPlot adds the `robust` option to change this
+# this is not desirable. Proplot adds the `robust` option to change this
 # behavior, inspired by the `xarray option
 # <http://xarray.pydata.org/en/stable/user-guide/plotting.html#robust>`__
 # of the same name. Passing ``robust=True`` to a `~proplot.axes.PlotAxes`
@@ -413,7 +413,7 @@ for i, extend in enumerate(('min', 'max', 'neither', 'both')):
 #
 # A related xarray feature is the `automatic detection
 # <http://xarray.pydata.org/en/stable/user-guide/plotting.html#colormaps>`__
-# of "diverging" datasets. ProPlot automatically applies the default
+# of "diverging" datasets. Proplot automatically applies the default
 # diverging colormap :rc:`cmap.diverging` (rather than the default sequential
 # colormap :rc:`cmap.sequential`) along with the default continuous normalizer
 # `~proplot.colors.DivergingNorm` (see :ref:`below <ug_norm>`) if the
@@ -460,7 +460,7 @@ pplt.rc.reset()
 # Special normalizers
 # -------------------
 #
-# ProPlot includes a few new colormap normalizers. `~proplot.colors.SegmentedNorm`
+# Proplot includes a few new colormap normalizers. `~proplot.colors.SegmentedNorm`
 # provides even color gradations with respect to *index* for an arbitrary
 # monotonically increasing or decreasing list of levels. This is automatically
 # applied if you pass unevenly spaced `levels` to a plotting command, or it can be

@@ -5,11 +5,11 @@ How to contribute?
 ==================
 
 Contributions of any size are highly appreciated! You can make
-a significant impact on ProPlot just by using it and
+a significant impact on proplot just by using it and
 reporting `issues <https://github.com/lukelbd/proplot/issues>`__.
 
 The following sections cover some general guidelines
-regarding development in ProPlot for contributors.
+regarding development in proplot for contributors.
 Feel free to suggest improvements or changes in the workflow.
 
 Feature requests and feedback
@@ -41,13 +41,13 @@ Write tests
 
 Most modern python packages have ``test_*.py`` scripts that are run by `pytest`
 via the `Travis Continuous Integration <https://travis-ci.com>`__ service
-whenever commits are pushed to the repository. Currently, ProPlot only tests
+whenever commits are pushed to the repository. Currently, proplot only tests
 the examples that appear on the website User Guide (see `.travis.yml`). While we
 try to make the examples comprehensive, this approach leaves out a lot of use
 cases and leaves the project more vulnerable to bugs. Adding tests is a
 *critical* item on our to-do list.
 
-If you can think of a useful test for ProPlot, feel free to submit a pull request.
+If you can think of a useful test for proplot, feel free to submit a pull request.
 Your test will be used in the future.
 
 
@@ -71,7 +71,7 @@ documentation files directly in the GitHub web interface without using a local c
   is ``py:obj``. Please include ``py:obj`` links whenever discussing particular
   functions or classes -- for example, if you are discussing the
   `~proplot.axes.Axes.format` method, please write ```~proplot.axes.Axes.format```
-  rather than ``format``. ProPlot also uses
+  rather than ``format``. Proplot also uses
   `intersphinx <http://www.sphinx-doc.org/en/stable/ext/intersphinx.html>`__ so you can
   link to external packages like matplotlib and cartopy.
 
@@ -113,7 +113,7 @@ Here is a quick guide for submitting pull requests:
    If you need some help with git, follow the
    `quick start guide <https://git.wiki.kernel.org/index.php/QuickStart>`__.
 
-#. Make an editable install of ProPlot by running:
+#. Make an editable install of proplot by running:
 
    .. code-block:: bash
 
@@ -194,18 +194,18 @@ Here is a quick guide for submitting pull requests:
       base: master
 
 Note that you can create the pull request before you're finished with your
-feature addition or bug fix. The PR will update as you add more commits. ProPlot
+feature addition or bug fix. The PR will update as you add more commits. Proplot
 developers and contributors can then review your code and offer suggestions.
 
 
 Release procedure
 =================
 
-Once version 1.0 is released, ProPlot will follow semantic versioning, with version
+Once version 1.0 is released, proplot will follow semantic versioning, with version
 numbers that look like ``vX.Y.Z``. A major version (``X``) causes incompatible
 API changes, a minor version (``Y``) adds functionality, and a patch (``Z``) covers
 bug fixes. But these are not strict rules -- more like guidelines.
-Currently, ProPlot's major version number is ``0``, reflecting the fact that
+Currently, proplot's major version number is ``0``, reflecting the fact that
 the API is new and subject to rapid changes (although we try to make sure the
 changes are not without warning).
 

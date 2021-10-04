@@ -187,7 +187,7 @@ napoleon_type_aliases = {
     'dict-like': ':term:`dict-like <mapping>`',
     'path-like': ':term:`path-like <path-like object>`',
     'array-like': ':term:`array-like <array_like>`',
-    # ProPlot defined terms
+    # Proplot defined terms
     'unit-spec': ':py:func:`unit-spec <proplot.utils.units>`',
     'locator-spec': ':py:func:`locator-spec <proplot.constructor.Locator>`',
     'formatter-spec': ':py:func:`formatter-spec <proplot.constructor.Formatter>`',

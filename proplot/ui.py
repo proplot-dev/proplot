@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-The starting point for creating ProPlot figures.
+The starting point for creating proplot figures.
 """
 import matplotlib.pyplot as plt
 

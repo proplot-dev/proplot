@@ -29,7 +29,7 @@
 # This section documents several advanced features for working with `polar`_
 # and :ref:`geographic projections <ug_geo>`. The geographic features are
 # powered by the `cartopy`_ and `basemap`_ packages. Note that these features are
-# *optional* -- installation of cartopy and basemap are not required to use ProPlot.
+# *optional* -- installation of cartopy and basemap are not required to use proplot.
 #
 # %% [raw] raw_mimetype="text/restructuredtext"
 # .. _ug_geo:
@@ -115,14 +115,14 @@ axs.format(
 #
 # .. note::
 #
-#    * By default, ProPlot gives circular boundaries to polar cartopy projections
+#    * By default, proplot gives circular boundaries to polar cartopy projections
 #      like `~cartopy.crs.NorthPolarStereo` (see `this example
 #      <https://scitools.org.uk/cartopy/docs/latest/gallery/lines_and_polygons/always_circular_stereo.html>`__
 #      from the cartopy website). This is consistent with basemap's default behavior.
 #      To disable this feature, set :rcraw:`cartopy.circular` to ``False``.
 #      Please note that cartopy cannot add gridline labels to polar plots
 #      with circular boundaries.
-#    * By default, ProPlot uses `~cartopy.mpl.geoaxes.GeoAxes.set_global` to give
+#    * By default, proplot uses `~cartopy.mpl.geoaxes.GeoAxes.set_global` to give
 #      non-polar cartopy projections global extent and bounds polar cartopy projections
 #      at the equator. This is a deviation from cartopy, which determines map boundaries
 #      automatically based on the coordinates of the plotted content. To revert to
@@ -137,7 +137,7 @@ axs.format(
 #      <https://matplotlib.org/basemap/users/intro.html#cartopy-new-management-and-eol-announcement>`__
 #      and will not work with matplotlib versions more recent than 3.2.2. However,
 #      basemap gridline labels often look nicer than cartopy -- especially when
-#      "inline" cartopy labels are disabled. This is the main reason ProPlot continues
+#      "inline" cartopy labels are disabled. This is the main reason proplot continues
 #      to support basemap. When cartopy gridline labels improve, basemap support
 #      may be deprecated.
 
@@ -170,8 +170,8 @@ pplt.rc.reset()
 # Plotting in projections
 # -----------------------
 #
-# In ProPlot, plotting with `~proplot.axes.GeoAxes` is very similar to plotting
-# with `~proplot.axes.CartesianAxes`. ProPlot makes longitude-latitude
+# In proplot, plotting with `~proplot.axes.GeoAxes` is very similar to plotting
+# with `~proplot.axes.CartesianAxes`. Proplot makes longitude-latitude
 # (i.e., Plate Carrée) coordinates the *default* coordinate system by passing
 # ``transform=ccrs.PlateCarree()`` to cartopy plotting commands and ``latlon=True`` to
 # basemap plotting commands. And again, note that basemap plotting commands are invoked
@@ -301,7 +301,7 @@ fig.format(
 # `latlim`, or `boundinglat` to `~proplot.axes.GeoAxes.format`. The `boundinglat`
 # keyword controls the circular latitude boundary for North Polar and
 # South Polar Stereographic, Azimuthal Equidistant, Lambert Azimuthal
-# Equal-Area, and Gnomonic projections. By default, ProPlot tries to use the
+# Equal-Area, and Gnomonic projections. By default, proplot tries to use the
 # degree-minute-second cartopy locators and formatters made available in cartopy
 # 0.18. You can switch from minute-second subintervals to traditional decimal
 # subintervals by passing ``dms=False`` to `~proplot.axes.GeoAxes.format`
@@ -383,7 +383,7 @@ pplt.rc.reset()
 # plotted below. The full table of projection names with links to the relevant
 # `PROJ <https://proj.org>`__ documentation is found :ref:`here <proj_table>`.
 #
-# ProPlot uses the cartopy API to add the Aitoff, Hammer, Winkel Tripel, and
+# Proplot uses the cartopy API to add the Aitoff, Hammer, Winkel Tripel, and
 # Kavrisky VII projections (i.e., ``'aitoff'``, ``'hammer'``, ``'wintri'``,
 # and ``'kav7'``), as well as North and South polar versions of the Azimuthal
 # Equidistant, Lambert Azimuthal Equal-Area, and Gnomic projections (i.e.,

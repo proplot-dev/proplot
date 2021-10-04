@@ -59,7 +59,7 @@ def _obfuscate_params(func):
 
 def _concatenate_inherited(func, prepend_summary=False):
     """
-    Concatenate docstrings from a matplotlib axes method with a ProPlot axes
+    Concatenate docstrings from a matplotlib axes method with a proplot axes
     method and obfuscate the call signature.
     """
     # NOTE: Do not bother inheriting from cartopy GeoAxes. Cartopy completely
@@ -93,7 +93,7 @@ def _concatenate_inherited(func, prepend_summary=False):
     # Make sure different sections are very visible
     doc = f"""
 =====================
-ProPlot documentation
+Proplot documentation
 =====================
 
 {doc}

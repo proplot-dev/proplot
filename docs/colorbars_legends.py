@@ -18,7 +18,7 @@
 # Colorbars and legends
 # =====================
 #
-# ProPlot includes some useful improvements to the matplotlib API that make
+# Proplot includes some useful improvements to the matplotlib API that make
 # working with colorbars and legends :ref:`much easier <why_colorbars_legends>`.
 
 
@@ -31,7 +31,7 @@
 # In matplotlib, colorbars are added to the edges of subplots
 # using the figure method `matplotlib.figure.Figure.colorbar`
 # (e.g., ``fig.colorbar(m, ax=ax, location='right')``.
-# In ProPlot, this is done using the axes method
+# In proplot, this is done using the axes method
 # `proplot.axes.Axes.colorbar` (e.g., ``ax.colorbar(m, loc='r')``.
 # `proplot.axes.Axes.colorbar` preserves subplot aspect ratios and visual symmetry
 # between subplots by allocating new slots in the `proplot.gridspec.GridSpec`
@@ -40,8 +40,8 @@
 # indexing the `~proplot.gridspec.GridSpec` will automatically ignore
 # slots allocated for colorbars and legends.
 #
-# ProPlot tries to make the usage of `proplot.axes.Axes.colorbar` and
-# `proplot.axes.Axes.legend` mutually consistent:
+# Proplot tries to make the usage of `proplot.axes.Axes.colorbar`
+# and `proplot.axes.Axes.legend` mutually consistent:
 #
 # * Just like `~proplot.axes.Axes.colorbar`, `proplot.axes.Axes.legend` can
 #   draw "outer" legends along the edges of subplots when you request
@@ -122,7 +122,7 @@ for j, ax in enumerate(axs):
 # Figure colorbars and legends
 # ----------------------------
 #
-# In ProPlot, colorbars and legends can be added to the edge of figures using the
+# In proplot, colorbars and legends can be added to the edge of figures using the
 # figure methods `proplot.figure.Figure.colorbar` and `proplot.figure.Figure.legend`.
 # These methods align colorbars and legends between the edges of the subplot grid
 # rather than the figure. As with :ref:`axes colorbars and legends <ug_cbars_axes>`,
@@ -199,7 +199,7 @@ for ax, title in zip(axs, ('2D {} #1', '2D {} #2', 'Line {} #1', 'Line {} #2')):
 # associated :ref:`colormap normalizer <ug_norm>` can be specified with the `norm` and
 # `norm_kw` keywords. Lists of artists are passed when you use the `colorbar` keyword
 # with :ref:`1D plot commands <ug_1dplots>` like `~proplot.axes.PlotAxes.plot`.
-# The colorbar ticks can be manually specified with `values`, or ProPlot will infer
+# The colorbar ticks can be manually specified with `values`, or proplot will infer
 # them from the `~matplotlib.artist.Artist` labels (non-numeric labels will be
 # applied to the colorbar as tick labels). This feature is useful for labeling
 # discrete plot elements that bear some numeric relationship to each other.

@@ -19,7 +19,7 @@
 # Color names
 # ===========
 #
-# ProPlot registers several new color names and includes tools for defining
+# Proplot registers several new color names and includes tools for defining
 # your own color names. These features are described below.
 
 
@@ -29,7 +29,7 @@
 # Included colors
 # ---------------
 #
-# ProPlot adds new color names from the `XKCD color survey
+# Proplot adds new color names from the `XKCD color survey
 # <https://blog.xkcd.com/2010/05/03/color-survey-results/>`__  and
 # the `Open Color <https://github.com/yeun/open-color>`__ UI design color
 # palettes. You can use `~proplot.demos.show_colors` to generate a table of these
@@ -39,12 +39,12 @@
 # and we encourage choosing colors from the below tables instead. XKCD colors
 # are `available in matplotlib
 # <https://matplotlib.org/stable/tutorials/colors/colors.html>`__ under the
-# ``xkcd:`` prefix, but ProPlot doesn't require this prefix because the XKCD
+# ``xkcd:`` prefix, but proplot doesn't require this prefix because the XKCD
 # selection is larger and the names are generally more likely to match your
 # intuition for what a color "should" look like.
 #
-# For all colors, ProPlot ensures that ``'grey'`` is a synonym of ``'gray'``
-# (for example, ``'grey5'`` and ``'gray5'`` are both valid). ProPlot also
+# For all colors, proplot ensures that ``'grey'`` is a synonym of ``'gray'``
+# (for example, ``'grey5'`` and ``'gray5'`` are both valid). Proplot also
 # retricts the available XKCD colors with a filtering algorithm so they are
 # "distinct" in :ref:`perceptually uniform space <ug_perceptual>`. This
 # makes it a bit easier to pick out colors from the table generated with

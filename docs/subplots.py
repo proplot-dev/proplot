@@ -18,7 +18,7 @@
 # The subplot
 # ===========
 #
-# This section documents a variety of features related to ProPlot subplots,
+# This section documents a variety of features related to proplot subplots,
 # including automatic a-b-c subplot labels, axis sharing between subplots,
 # automatic spacing between subplots, and a unique feature where the figure
 # size is determined automatically from the subplot geometry.
@@ -29,7 +29,7 @@
 # A-b-c labels
 # ------------
 #
-# ProPlot can quickly add "a-b-c" labels to subplots. This is possible because we
+# Proplot can quickly add "a-b-c" labels to subplots. This is possible because we
 # assign a `~proplot.axes.Axes.number` to each subplot. The number can be specified
 # manually by passing a `number` keyword to `~proplot.figure.Figure.add_subplot`.
 # Otherwise the subplot number is incremented by ``1`` each time you call
@@ -92,12 +92,12 @@ axs.format(
 # Automatic sizes
 # ---------------
 #
-# By default, ProPlot determines the suitable figure size given the
+# By default, proplot determines the suitable figure size given the
 # geometry of the subplot grid and the size of a "reference" subplot.
 # This "reference" subplot is specified with the `~proplot.figure.Figure`
 # keyword `refnum` (default is ``1``, i.e. the first subplot added to the figure
 # or the subplot in the upper-left corner when generated with `~proplot.ui.subplots`).
-# ProPlot can also determine the suitable figure height given a fixed figure
+# Proplot can also determine the suitable figure height given a fixed figure
 # width, and the suitable figure width given a fixed figure height.
 #
 # The figure size is ultimately controlled by the following
@@ -137,7 +137,7 @@ axs.format(
 #      images and geographic projections.
 #    * The physical widths of `~proplot.axes.Axes.colorbar`\ s and
 #      `~proplot.axes.Axes.panel`\ s are always preserved during figure resizing.
-#      ProPlot specifies their widths in physical units to help avoid colorbars
+#      Proplot specifies their widths in physical units to help avoid colorbars
 #      and panels that look "too skinny" or "too fat".
 
 # %%
@@ -191,14 +191,14 @@ pplt.rc.reset()
 # Subplot spaces
 # --------------
 #
-# By default, ProPlot automatically determines the suitable space between
+# By default, proplot automatically determines the suitable space between
 # subplots using a tight layout algorithm. This algorithm automatically
 # expands or contracts the space between subplots to accommodate labels.
 # It can be disabled by passing ``tight=False`` to `~proplot.ui.subplots`
 # or setting :rcraw:`subplots.tight` to ``False``. In contrast to
 # `matplotlib's tight layout algorithm
 # <https://matplotlib.org/stable/tutorials/intermediate/tight_layout_guide.html>`__,
-# ProPlot's algorithm may change the figure size to accommodate the correct
+# proplot's algorithm may change the figure size to accommodate the correct
 # spacing and permits variable spacing between subsequent subplot rows and
 # columns (see `proplot.gridspec.GridSpec` for details).
 #
@@ -288,7 +288,7 @@ axs[:, 0].format(ylabel='ylabel')
 # Figures with lots of subplots often have :ref:`redundant labels <why_redundant>`.
 # To help address this, `matplotlib.pyplot.subplots` includes the `sharex` and
 # `sharey` keyword arguments that permit sharing axis limits, ticks, and tick labels
-# between like rows and columns of subplots. ProPlot builds on this feature by...
+# between like rows and columns of subplots. Proplot builds on this feature by...
 #
 # #. Automatically sharing axes between subplots and :ref:`panels <ug_panels>`
 #    occupying the same rows or columns of the `~proplot.gridspec.GridSpec`. This
@@ -371,7 +371,7 @@ for b in (False, True):
 # Physical units
 # --------------
 #
-# ProPlot supports arbitrary physical units for controlling the figure
+# Proplot supports arbitrary physical units for controlling the figure
 # `figwidth` and `figheight`, the reference subplot `refwidth` and `refheight`,
 # the gridspec spacing and tight layout padding values `left`, `right`, `bottom`,
 # `top`, `wspace`, `hspace`, `outerpad`, `innerpad`, `panelpad`, `wpad`, and `hpad`,

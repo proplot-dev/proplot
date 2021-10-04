@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-The gridspec and subplot grid classes used throughout ProPlot.
+The gridspec and subplot grid classes used throughout proplot.
 """
 import functools
 import inspect
@@ -101,7 +101,7 @@ def _disable_method(attr):
     Disable the inherited method.
     """
     def _dummy_method(*args):
-        raise AttributeError(f'Method {attr}() is disabled on ProPlot gridspecs.')
+        raise AttributeError(f'Method {attr}() is disabled on proplot gridspecs.')
     _dummy_method.__name__ = attr
     return _dummy_method
 
@@ -1108,7 +1108,7 @@ class GridSpec(mgridspec.GridSpec):
     def figure(self, fig):
         from .figure import Figure
         if not isinstance(fig, Figure):
-            raise ValueError('Figure must be a ProPlot figure.')
+            raise ValueError('Figure must be a proplot figure.')
         self._figure = fig
         self._update_params(**fig._gridspec_params)
         fig._gridspec_params.clear()
@@ -1347,7 +1347,7 @@ class SubplotGrid(MutableSequence, list):
         """
         gridspec = None
         message = (
-            'SubplotGrid can only be filled with ProPlot subplots '
+            'SubplotGrid can only be filled with proplot subplots '
             'belonging to the same GridSpec. Instead got {!r}.'
         )
         items = np.atleast_1d(items)
@@ -1368,7 +1368,7 @@ class SubplotGrid(MutableSequence, list):
         elif items.size == 1:
             items = items.flat[0]
         else:
-            raise ValueError('Input must be a single ProPlot axes.')
+            raise ValueError('Input must be a single proplot axes.')
         return items
 
     @docstring._snippet_manager

@@ -11,23 +11,23 @@
 .. _usage:
 
 =============
-Using ProPlot
+Using proplot
 =============
 
-This page offers a condensed overview of ProPlot's features. It is populated
+This page offers a condensed overview of proplot's features. It is populated
 with links to the :ref:`API reference` and :ref:`User Guide <ug_basics>`.
-For a more in-depth discussion, see :ref:`Why ProPlot?`
+For a more in-depth discussion, see :ref:`Why proplot?`.
 
 .. _usage_background:
 
 Background
 ==========
 
-ProPlot is an object-oriented matplotlib wrapper. The "wrapper" part means
-that ProPlot's features are largely a *superset* of matplotlib.  You can use
+Proplot is an object-oriented matplotlib wrapper. The "wrapper" part means
+that proplot's features are largely a *superset* of matplotlib.  You can use
 plotting commands like `~matplotlib.axes.Axes.plot`, `~matplotlib.axes.Axes.scatter`,
 `~matplotlib.axes.Axes.contour`, and `~matplotlib.axes.Axes.pcolor` like you always
-have. The "object-oriented" part means that ProPlot's features are implemented with
+have. The "object-oriented" part means that proplot's features are implemented with
 *subclasses* of the `~matplotlib.figure.Figure` and `~matplotlib.axes.Axes` classes.
 
 If you tend to use `~matplotlib.pyplot` and are not familiar with the figure and axes
@@ -35,7 +35,7 @@ classes, check out `this guide <https://matplotlib.org/stable/api/index.html>`__
 Directly working with matplotlib classes tends to be more clear and concise than
 `~matplotlib.pyplot`, makes things easier when working with multiple figures and axes,
 and is certainly more "`pythonic <https://www.python.org/dev/peps/pep-0020/>`__".
-Therefore, although many ProPlot features may still work, we do not officially
+Therefore, although many proplot features may still work, we do not officially
 support the `~matplotlib.pyplot` interface.
 
 .. _usage_import:
@@ -43,18 +43,18 @@ support the `~matplotlib.pyplot` interface.
 Importing proplot
 =================
 
-Importing ProPlot immediately adds several
+Importing proplot immediately adds several
 new :ref:`colormaps <ug_cmaps>`, :ref:`property cycles <ug_cycles>`,
 :ref:`color names <ug_colors>`, and :ref:`fonts <ug_fonts>` to matplotlib.
 If you are only interested in these features, you may want to
-import ProPlot at the top of your script and do nothing else!
-We recommend importing ProPlot as follows:
+import proplot at the top of your script and do nothing else!
+We recommend importing proplot as follows:
 
 .. code-block:: python
 
    import proplot as pplt
 
-This differentiates ProPlot from the usual ``plt`` abbreviation reserved for
+This differentiates proplot from the usual ``plt`` abbreviation reserved for
 the `~matplotlib.pyplot` module.
 
 .. _usage_classes:
@@ -62,7 +62,7 @@ the `~matplotlib.pyplot` module.
 Figure and axes classes
 =======================
 
-Creating figures with ProPlot is very similar to
+Creating figures with proplot is very similar to
 matplotlib. You can either create the figure and
 all of its subplots at once:
 
@@ -92,11 +92,11 @@ sizes and aspect ratios (particularly useful for grids of map projections
 and images). All sizing arguments take :ref:`arbitrary units <ug_units>`,
 including metric units like ``cm`` and ``mm``.
 
-Instead of the native `matplotlib.figure.Figure` and `matplotlib.axes.Axes` classes,
-ProPlot uses the `proplot.figure.Figure`, `proplot.axes.Axes`, and
-`proplot.axes.PlotAxes` subclasses. ProPlot figures are saved with
+Instead of the native `matplotlib.figure.Figure` and `matplotlib.axes.Axes`
+classes, proplot uses the `proplot.figure.Figure`, `proplot.axes.Axes`, and
+`proplot.axes.PlotAxes` subclasses. Proplot figures are saved with
 `~proplot.figure.Figure.save` or `~matplotlib.figure.Figure.savefig`,
-and ProPlot axes belong to one of the following three child classes:
+and proplot axes belong to one of the following three child classes:
 
 * `proplot.axes.CartesianAxes`:
   For ordinary plots with *x* and *y* coordinates.
@@ -105,7 +105,7 @@ and ProPlot axes belong to one of the following three child classes:
 * `proplot.axes.PolarAxes`:
   For polar plots with *azimuth* and *radius* coordinates.
 
-Most of ProPlot's features are implemented using these subclasses.
+Most of proplot's features are implemented using these subclasses.
 They include several new figure and axes methods and added
 functionality to existing figure and axes methods.
 
@@ -121,7 +121,7 @@ functionality to existing figure and axes methods.
   commands draw colorbars or legends along the edges of figures (aligned by subplot
   boundaries). These commands considerably :ref:`simplify <ug_cbars_legends>`
   the process of drawing colorbars and legends.
-* The `proplot.axes.PlotAxes` subclass (used for all ProPlot axes)
+* The `proplot.axes.PlotAxes` subclass (used for all proplot axes)
   adds many, many useful features to virtually every plotting command
   (including `~proplot.axes.PlotAxes.plot`, `~proplot.axes.PlotAxes.scatter`,
   `~proplot.axes.PlotAxes.bar`, `~proplot.axes.PlotAxes.area`,
@@ -135,7 +135,7 @@ functionality to existing figure and axes methods.
 Integration features
 ====================
 
-ProPlot includes *optional* integration features with four external
+Proplot includes *optional* integration features with four external
 packages: the `pandas`_ and `xarray`_ packages, used for working with annotated
 tables and arrays, and the `cartopy`_ and `basemap`_ geographic
 plotting packages.
@@ -157,8 +157,8 @@ plotting packages.
   interfaces. Figures can be filled with `~proplot.axes.GeoAxes` by passing the
   `proj` keyword to `~proplot.ui.subplots`.
 
-Since these features are optional, ProPlot can be used without installing
-any of these packages.
+Since these features are optional,
+proplot can be used without installing any of these packages.
 
 .. _usage_features:
 
@@ -166,7 +166,7 @@ Additional features
 ===================
 
 Outside of the features provided by the `proplot.figure.Figure` and
-`proplot.axes.Axes` subclasses, ProPlot includes several useful
+`proplot.axes.Axes` subclasses, proplot includes several useful
 classes and :ref:`constructor functions <why_constructor>`.
 
 * The `~proplot.constructor.Colormap` and `~proplot.constructor.Cycle`

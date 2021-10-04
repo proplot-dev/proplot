@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-The standard Cartesian axes used for most ProPlot figures.
+The standard Cartesian axes used for most proplot figures.
 """
 import copy
 import inspect

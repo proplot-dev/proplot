@@ -29,7 +29,7 @@
 # section should be read before this section. Some of these tools will be
 # expanded in the future, but for a more comprehensive suite of statistical
 # plotting utilities, you may be interested in `seaborn`_ (we try to ensure
-# that seaborn plotting commands are compatible with ProPlot figures and axes).
+# that seaborn plotting commands are compatible with proplot figures and axes).
 
 # %% [raw] raw_mimetype="text/restructuredtext"
 # .. _ug_errorbars:
@@ -142,7 +142,7 @@ for orientation, array in zip(('horizontal', 'vertical'), (harray, varray)):
 # `~proplot.axes.PlotAxes.boxploth`, and `~proplot.axes.PlotAxes.violinploth` (or
 # their new shorthands, `~proplot.axes.PlotAxes.box`, `~proplot.axes.PlotAxes.violin`,
 # `~proplot.axes.PlotAxes.boxh`, and `~proplot.axes.PlotAxes.violinh`). The
-# ProPlot versions employ aesthetically pleasing defaults and permit flexible
+# proplot versions employ aesthetically pleasing defaults and permit flexible
 # configuration using keywords like `color`, `barcolor`, and `fillcolor`.
 # They also automatically apply axis labels based on the `~pandas.DataFrame`
 # or `~xarray.DataArray` column labels. Violin plot error bars are controlled
@@ -202,7 +202,7 @@ ax.format(title='Multiple colors', ymargin=0.15)
 # the :ref:`2D plotting section <ug_apply_cmap>`). Marginal distributions
 # for the 2D histograms can be added using :ref:`panel axes <ug_panels>`.
 #
-# In the future, ProPlot will include options for adding "smooth" kernel density
+# In the future, proplot will include options for adding "smooth" kernel density
 # estimations to histograms plots using a `kde` keyword. It will also include
 # separate `proplot.axes.PlotAxes.kde` and `proplot.axes.PlotAxes.kde2d` commands.
 # The `~proplot.axes.PlotAxes.violin` and `~proplot.axes.PlotAxes.violinh` commands

@@ -26,7 +26,7 @@
 #
 # It is often useful to have narrow "panels" along the edge of a larger
 # subplot for plotting secondary 1-dimensional datasets or summary statistics.
-# In ProPlot, you can generate panels using the `~proplot.axes.Axes.panel_axes`
+# In proplot, you can generate panels using the `~proplot.axes.Axes.panel_axes`
 # command (or its shorthand, `~proplot.axes.Axes.panel`). The panel location
 # is specified with a string, e.g. ``ax.panel('r')`` or ``ax.panel('right')``
 # for a right-hand side panel, and the resulting panels are instances of

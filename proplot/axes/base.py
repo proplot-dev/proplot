@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-The first-level axes subclass used for all ProPlot figures.
+The first-level axes subclass used for all proplot figures.
 Implements basic shared functionality.
 """
 import copy
@@ -2521,7 +2521,7 @@ class Axes(maxes.Axes):
             )
         if labels and not handles:
             warnings._warn_proplot(
-                'Passing labels without handles is unsupported in ProPlot. '
+                'Passing labels without handles is unsupported in proplot. '
                 'Please explicitly pass the handles to legend() or pass labels '
                 "to plotting commands with e.g. plot(data_1d, label='label') or "
                 "plot(data_2d, labels=['label1', 'label2', ...]). After passing "
@@ -2909,7 +2909,7 @@ class Axes(maxes.Axes):
             This can also be a string indicating some scaling relative to
             :rcraw:`font.size`. The sizes and scalings are shown below. The
             scalings ``'med'``, ``'med-small'``, and ``'med-large'`` are
-            added by ProPlot while the rest are native matplotlib sizes.
+            added by proplot while the rest are native matplotlib sizes.
 
             .. _font_table:
 

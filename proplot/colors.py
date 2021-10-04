@@ -2773,7 +2773,7 @@ def _get_cmap_subtype(name, subtype):
 
 def _translate_cmap(cmap, lut=None, cyclic=None, listedthresh=None):
     """
-    Translate the input argument to a ProPlot colormap subclass. Auto-detect
+    Translate the input argument to a proplot colormap subclass. Auto-detect
     cyclic colormaps based on names and re-apply default lookup table size.
     """
     # Parse args
@@ -3012,7 +3012,7 @@ class ColormapDatabase(MutableMapping, dict):
         if not found and test in CMAPS_REMOVED:
             version = CMAPS_REMOVED[test]
             raise ValueError(
-                f'ProPlot colormap {key!r} was removed in version {version}.'
+                f'Proplot colormap {key!r} was removed in version {version}.'
             )
         if not found and test in CMAPS_RENAMED:
             test_new, version = CMAPS_RENAMED[test]

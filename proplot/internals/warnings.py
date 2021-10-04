@@ -11,7 +11,7 @@ import warnings
 REGEX_INTERNAL = re.compile(r'\A(matplotlib|mpl_toolkits|proplot)\.')
 
 # Trivial warning class meant only to communicate the source of the warning
-ProPlotWarning = type('ProPlotWarning', (UserWarning,), {})
+ProplotWarning = type('ProplotWarning', (UserWarning,), {})
 
 # Add due to overwriting the module name
 catch_warnings = warnings.catch_warnings
@@ -20,7 +20,7 @@ simplefilter = warnings.simplefilter
 
 def _warn_proplot(message, action=None):
     """
-    Emit a `ProPlotWarning` and show the stack level outside of matplotlib and
+    Emit a `ProplotWarning` and show the stack level outside of matplotlib and
     proplot. This is adapted from matplotlib's warning system.
     """
     frame = sys._getframe()
@@ -32,8 +32,8 @@ def _warn_proplot(message, action=None):
         stacklevel += 1
     with warnings.catch_warnings():
         if action:  # used internally
-            warnings.simplefilter(action, ProPlotWarning)
-        warnings.warn(message, ProPlotWarning, stacklevel=stacklevel)
+            warnings.simplefilter(action, ProplotWarning)
+        warnings.warn(message, ProplotWarning, stacklevel=stacklevel)
 
 
 def _rename_objs(version, **kwargs):

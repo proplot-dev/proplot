@@ -774,7 +774,7 @@ def units(
 ):
     """
     Convert values between arbitrary physical units. This is used internally all
-    over ProPlot, permitting flexible units for various keyword arguments.
+    over proplot, permitting flexible units for various keyword arguments.
 
     Parameters
     ----------

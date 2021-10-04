@@ -4,19 +4,19 @@
 
 .. _ug_config:
 
-Configuring ProPlot
+Configuring proplot
 ===================
 
 Overview
 --------
 
 A dictionary-like object named `~proplot.config.rc`, belonging to the
-`~proplot.config.Configurator` class, is created when you import ProPlot.
+`~proplot.config.Configurator` class, is created when you import proplot.
 This is your one-stop shop for working with
 `matplotlib settings <ug_rcmpl_>`_
 stored in `~proplot.config.rc_matplotlib`
 (our name for the `~matplotlib.rcParams` dictionary)
-and :ref:`ProPlot settings <ug_rcproplot>`
+and :ref:`proplot settings <ug_rcproplot>`
 stored in `~proplot.config.rc_proplot`.
 
 To change global settings on-the-fly, simply update `~proplot.config.rc`
@@ -70,21 +70,21 @@ Matplotlib settings
 -------------------
 
 Matplotlib settings are natively stored in the `~matplotlib.rcParams`
-dictionary. ProPlot makes this dictionary available in the top-level namespace as
+dictionary. Proplot makes this dictionary available in the top-level namespace as
 `~proplot.config.rc_matplotlib`. All matplotlib settings can also be changed with
 `~proplot.config.rc`. Details on the matplotlib settings can be found on
 `this page <ug_rcmpl_>`_.
 
 .. _ug_rcproplot:
 
-ProPlot settings
+Proplot settings
 ----------------
 
-ProPlot settings are natively stored in the `~proplot.config.rc_proplot` dictionary.
+Proplot settings are natively stored in the `~proplot.config.rc_proplot` dictionary.
 In general they should be changed with `~proplot.config.rc` rather than
 `~proplot.config.rc_proplot` to ensure that :ref:`meta-settings <ug_meta>` are
 synced. These settings are not found in `~matplotlib.rcParams` -- they either
-control ProPlot-managed features (e.g., a-b-c labels and geographic gridlines)
+control proplot-managed features (e.g., a-b-c labels and geographic gridlines)
 or they represent existing matplotlib settings rearranged to be
 more clearly ordered. Here's a broad overview of the new settings:
 
@@ -114,8 +114,8 @@ more clearly ordered. Here's a broad overview of the new settings:
 Meta-settings
 -------------
 
-Some ProPlot settings may be more accurately described as "meta-settings",
-as they change several matplotlib and ProPlot settings at once (note that settings
+Some proplot settings may be more accurately described as "meta-settings",
+as they change several matplotlib and proplot settings at once (note that settings
 are only synced when they are changed on the `~proplot.config.rc` object rather than
 the `~proplot.config.rc_proplot` and `~proplot.config.rc_matplotlib` dictionaries).
 Here's a broad overview of the "meta-settings":
@@ -150,7 +150,7 @@ Here's a broad overview of the "meta-settings":
 Table of settings
 -----------------
 
-A comprehensive table of the new ProPlot settings is shown below.
+A comprehensive table of the new proplot settings is shown below.
 
 .. include:: _static/rctable.rst
 
@@ -159,9 +159,9 @@ A comprehensive table of the new ProPlot settings is shown below.
 The proplotrc file
 ------------------
 
-When you import ProPlot for the first time, a ``proplotrc`` file is generated with
+When you import proplot for the first time, a ``proplotrc`` file is generated with
 all lines commented out. This file is just like `matplotlibrc <ug_mplrc_>`_,
-except it controls both matplotlib *and* ProPlot settings. The syntax is essentially
+except it controls both matplotlib *and* proplot settings. The syntax is essentially
 the same as matplotlibrc, and the file path is very similar to matplotlibrc. On most
 platforms it is found in ``~/.proplot/proplotrc``, but a loose hidden file in the
 home directory named ``~/.proplotrc`` is also allowed (use

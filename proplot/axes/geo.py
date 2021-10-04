@@ -764,7 +764,7 @@ class _CartopyAxes(GeoAxes, _GeoAxes):
 
     def _init_gridlines(self):
         """
-        Create monkey patched "major" and "minor" gridliners managed by ProPlot.
+        Create monkey patched "major" and "minor" gridliners managed by proplot.
         """
         # Cartopy 0.18 monkey patch. This fixes issue where we get overlapping
         # gridlines on dateline. See the "nx -= 1" line in Gridliner._draw_gridliner

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Utilities for benchmarking ProPlot performance.
+Utilities for benchmarking proplot performance.
 """
 import time
 

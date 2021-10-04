@@ -31,7 +31,7 @@
 # Colormaps
 # =========
 #
-# ProPlot defines **continuous colormaps** as color palettes that sample some
+# Proplot defines **continuous colormaps** as color palettes that sample some
 # *continuous function* between two end colors. They are generally used
 # to encode data values on a pseudo-third dimension. They are are implemented
 # with the `~proplot.colors.ContinuousColormap` and
@@ -39,7 +39,7 @@
 # :ref:`subclassed from <ug_cmaps_new>`
 # `matplotlib.colors.LinearSegmentedColormap`.
 #
-# ProPlot :ref:`adds several features <why_colormaps_cycles>` to help you use
+# Proplot :ref:`adds several features <why_colormaps_cycles>` to help you use
 # colormaps effectively in your figures. This section documents the new registered
 # colormaps, explains how to make and modify colormaps, and shows how to apply them
 # to your plots.
@@ -51,7 +51,7 @@
 # Included colormaps
 # ------------------
 #
-# On import, ProPlot registers a few sample
+# On import, proplot registers a few sample
 # :ref:`perceptually uniform colormaps <ug_perceptual>`, plus several
 # colormaps from other online data viz projects. Use
 # `~proplot.demos.show_cmaps` to generate a table of registered maps. The
@@ -60,7 +60,7 @@
 # * "User" colormaps created with `~proplot.constructor.Colormap`
 #   or loaded from `~proplot.config.Configurator.user_folder`.
 # * `Matplotlib <matplotlib_>`_ and `seaborn <seaborn_>`_ original colormaps.
-# * ProPlot original :ref:`perceptually uniform colormaps <ug_perceptual>`.
+# * Proplot original :ref:`perceptually uniform colormaps <ug_perceptual>`.
 # * The `cmOcean <cmocean_>`_ colormaps, designed for
 #   oceanographic data but useful for everyone.
 # * Fabio Crameri's `"scientific colour maps" <fabio_>`_.
@@ -75,7 +75,7 @@
 # .. note::
 #
 #    Colormap and :ref:`color cycle <ug_cycles>` identification is more flexible in
-#    ProPlot. The names are are case-insensitive (e.g., ``'Viridis'``, ``'viridis'``,
+#    proplot. The names are are case-insensitive (e.g., ``'Viridis'``, ``'viridis'``,
 #    and ``'ViRiDiS'`` are equivalent), diverging colormap names can be specified in
 #    their "reversed" form (e.g., ``'BuRd'`` is equivalent to ``'RdBu_r'``), and
 #    appending ``'_r'`` or ``'_s'`` to *any* colormap name will return a
@@ -94,7 +94,7 @@ fig, axs = pplt.show_cmaps()
 # Perceptually uniform colormaps
 # ------------------------------
 #
-# ProPlot's custom colormaps are instances of the
+# Proplot's custom colormaps are instances of the
 # `~proplot.colors.PerceptualColormap` class. These colormaps
 # generate colors by interpolating between coordinates in any
 # of the following three hue-saturation-luminance colorspaces:
@@ -125,7 +125,7 @@ fig, axs = pplt.show_cmaps()
 # and luminance (second figure, top row). In practice, this is
 # difficult to accomplish due to impossible colors. Matplotlib's and seaborn's
 # ``'magma'`` and ``'Rocket'`` colormaps are fairly linear with respect to
-# hue and luminance, but not chroma. ProPlot's ``'Fire'`` is linear in hue,
+# hue and luminance, but not chroma. Proplot's ``'Fire'`` is linear in hue,
 # luminance, and *HSL saturation* (bottom left), while ``'Dusk'`` is linear
 # in hue, luminance, and *HPL saturation* (bottom right).
 
@@ -151,7 +151,7 @@ for cmaps in (('magma', 'rocket'), ('fire', 'dusk')):
 # Making colormaps
 # ----------------
 #
-# ProPlot doesn't just include new colormaps -- it provides tools
+# Proplot doesn't just include new colormaps -- it provides tools
 # for merging colormaps, modifying existing colormaps, making new
 # :ref:`perceptually uniform colormaps <ug_perceptual>`, and saving colormaps
 # for future use. Most of these features can be accessed via the
@@ -266,7 +266,7 @@ fig, axs = pplt.show_channels(cmap3, cmap4, refwidth=1.5, rgb=False)
 # :ref:`special argument <ug_cmaps_new>` that generates a new colormap
 # on-the-fly. This lets you create new diverging colormaps and segmented
 # `SciVisColor <https://sciviscolor.org/home/colormoves/>`__ style colormaps
-# right inside ProPlot. Segmented colormaps are often desirable for complex
+# right inside proplot. Segmented colormaps are often desirable for complex
 # datasets with complex statistical distributions.
 #
 # In the below example, we create a new divering colormap and
@@ -317,7 +317,7 @@ for ax, cmap, title in zip(axs, (cmap1, cmap2, cmap3), (title1, title2, title3))
 # Modifying colormaps
 # -------------------
 #
-# ProPlot lets you create modified versions of *existing* colormaps
+# Proplot lets you create modified versions of *existing* colormaps
 # using the `~proplot.constructor.Colormap` constructor function and the
 # new `~proplot.colors.ContinuousColormap` and
 # `~proplot.colors.DiscreteColormap` classes, which replace the native
@@ -336,7 +336,7 @@ for ax, cmap, title in zip(axs, (cmap1, cmap2, cmap3), (title1, title2, title3))
 #   `cut` is negative) to expand the "neutral" region of the colormap.
 # * To rotate a cyclic colormap,  pass `shift` to
 #   `~proplot.constructor.Colormap`. This calls the
-#   `~proplot.colors.ContinuousColormap.shifted` method. ProPlot ensures
+#   `~proplot.colors.ContinuousColormap.shifted` method. Proplot ensures
 #   the colors at the ends of "shifted" colormaps are *distinct* so that
 #   levels never blur together.
 # * To change the opacity of a colormap or add an opacity *gradation*, pass

@@ -32,7 +32,7 @@
 #
 # Matplotlib `tick locators
 # <https://matplotlib.org/stable/gallery/ticks_and_spines/tick-locators.html>`__
-# select sensible tick locations based on the axis data limits. In ProPlot, you can
+# select sensible tick locations based on the axis data limits. In proplot, you can
 # change the tick locator using the `~proplot.axes.CartesianAxes.format` keyword
 # arguments `xlocator`, `ylocator`, `xminorlocator`, and `yminorlocator` (or their
 # aliases, `xticks`, `yticks`, `xminorticks`, and `yminorticks`). This is powered by
@@ -47,7 +47,7 @@
 # If you want to work with the locator classes directly, they are available in the
 # top-level namespace (e.g., ``xlocator=pplt.MultipleLocator(...)`` is allowed).
 #
-# To generate lists of tick locations, we recommend using ProPlot's
+# To generate lists of tick locations, we recommend using proplot's
 # `~proplot.utils.arange` function -- it’s basically an endpoint-inclusive
 # version of `numpy.arange`, which is usually what you'll want in this context.
 
@@ -124,7 +124,7 @@ pplt.rc.reset()
 #
 # Matplotlib `tick formatters
 # <https://matplotlib.org/stable/gallery/ticks_and_spines/tick-formatters.html>`__
-# convert floating point numbers to nicely-formatted tick labels. In ProPlot, you can
+# convert floating point numbers to nicely-formatted tick labels. In proplot, you can
 # change the tick formatter using the `~proplot.axes.CartesianAxes.format` keyword
 # arguments `xformatter` and `yformatter` (or their aliases, `xticklabels` and
 # `yticklabels`). This is powered by the `~proplot.constructor.Formatter`
@@ -135,7 +135,7 @@ pplt.rc.reset()
 # (e.g., ``xformatter='log'``), to apply a ``%``-style format directive with
 # `~matplotlib.ticker.FormatStrFormatter` (e.g., ``xformatter='%.0f'``), or
 # to apply custom tick labels with `~matplotlib.ticker.FixedFormatter` (just
-# like `~matplotlib.axes.Axes.set_xticklabels`). You can also apply one of ProPlot's
+# like `~matplotlib.axes.Axes.set_xticklabels`). You can also apply one of proplot's
 # new tick formatters -- for example, ``xformatter='deglat'`` to label ticks
 # as geographic latitude coordinates, ``xformatter='pi'`` to label ticks as
 # fractions of :math:`\pi`, or ``xformatter='sci'`` to label ticks with
@@ -143,7 +143,7 @@ pplt.rc.reset()
 # directly, they are available in the top-level namespace
 # (e.g., ``xformatter=pplt.SciFormatter(...)`` is allowed).
 #
-# ProPlot also changes the default tick formatter to
+# Proplot also changes the default tick formatter to
 # `~proplot.ticker.AutoFormatter`. This class trims trailing zeros by
 # default, can optionally omit or wrap tick values within particular
 # number ranges, and can add prefixes and suffixes to each label. See
@@ -166,7 +166,7 @@ axs.format(
 # Formatter comparison
 locator = [0, 0.25, 0.5, 0.75, 1]
 axs[0].format(xformatter='scalar', yformatter='scalar', title='Matplotlib formatter')
-axs[1].format(title='ProPlot formatter')
+axs[1].format(title='Proplot formatter')
 axs[:2].format(xlocator=locator, ylocator=locator)
 
 # Limiting the tick range
@@ -252,7 +252,7 @@ pplt.rc.reset()
 # Datetime axes
 # -------------
 #
-# ProPlot can also be used to customize the tick locations and tick label
+# Proplot can also be used to customize the tick locations and tick label
 # format of "datetime" axes. To draw ticks on some particular time unit, just use a
 # unit string (e.g., ``xlocator='month'``). To draw ticks every ``N`` time units,
 # just use a (unit, N) tuple (e.g., ``xlocator=('day', 5)``). For `% style formatting
@@ -326,7 +326,7 @@ pplt.rc.reset()
 # coordinate system. To change the axis scale, pass e.g. ``xscale='log'`` or
 # ``yscale='log'`` to `~proplot.axes.Axes.format`. This is powered by the
 # `~proplot.constructor.Scale` :ref:`constructor function <why_constructor>`.
-# ProPlot makes several changes to the axis scale API:
+# Proplot makes several changes to the axis scale API:
 #
 # * The `~proplot.ticker.AutoFormatter` formatter is now used for all axis scales
 #   by default, including ``'log'`` and ``'symlog'``. Matplotlib's behavior can
@@ -340,14 +340,14 @@ pplt.rc.reset()
 #   addition to "registered" names like ``'log'``.
 # * While matplotlib axis scales must be instantiated with an
 #   `~matplotlib.axis.Axis` instance (for backwards compatibility reasons),
-#   ProPlot axis scales can be instantiated without the axis instance
+#   proplot axis scales can be instantiated without the axis instance
 #   (e.g., ``pplt.LogScale()`` instead of ``pplt.LogScale(ax.xaxis)``).
 # * The default `subs` for the ``'symlog'`` axis scale is now ``np.arange(1, 10)``,
 #   and the default `linthresh` is now ``1``. Also the ``'log'`` and ``'symlog'``
 #   axis scales now accept the keywords `base`, `linthresh`, `linscale`, and
 #   `subs` rather than keywords with trailing ``x`` or ``y``.
 #
-# ProPlot also includes a few new axis scales. The ``'cutoff'`` scale (see
+# Proplot also includes a few new axis scales. The ``'cutoff'`` scale (see
 # `~proplot.scale.CutoffScale`) is useful when the statistical distribution
 # of your data is very unusual. The ``'sine'`` scale `~proplot.scale.SineLatitudeScale`
 # scales the axis with a sine function (resulting in an area-weighted spherical latitude
@@ -480,13 +480,13 @@ ax.format(ymin=0.05, yscale=('power', 0.5), title=title)
 #
 # The `matplotlib.axes.Axes` class includes `~matplotlib.axes.Axes.twinx`
 # and `~matplotlib.axes.Axes.twiny` commands for drawing "twin" *x* and
-# *y* axes in the same subplot. ProPlot expands on these commands and adds
+# *y* axes in the same subplot. Proplot expands on these commands and adds
 # the arguably more intuitive `~proplot.axes.CartesianAxes.altx` and
 # `~proplot.axes.CartesianAxes.alty` options. Here `~proplot.axes.CartesianAxes.altx`
 # is equivalent to `~proplot.axes.CartesianAxes.twiny` (makes an alternate *x*
 # axes and an identical twin *y* axes) and `~proplot.axes.CartesianAxes.alty`
 # is equivalent to `~proplot.axes.CartesianAxes.twinx` (makes an alternate *y*
-# axes and an identical twin *x* axes). The ProPlot versions can be quickly
+# axes and an identical twin *x* axes). The proplot versions can be quickly
 # formatted by passing `proplot.axes.CartesianAxes.format` keyword arguments
 # to the commands (e.g., ``ax.alty(ycolor='red')`` or, since the ``y`` prefix in
 # this context is redundant, just ``ax.alty(color='red')``). They also enforce

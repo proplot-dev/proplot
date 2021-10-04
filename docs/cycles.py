@@ -18,11 +18,11 @@
 # Color cycles
 # ============
 #
-# ProPlot defines **color cycles** or **discrete colormaps** as color palettes
+# Proplot defines **color cycles** or **discrete colormaps** as color palettes
 # comprising sets of *distinct colors*. Unlike :ref:`continuous colormaps <ug_cmaps>`,
 # interpolation between these colors may not make sense. Generally, color cycles are
 # used with line plots, bar plots, and other distinct plot elements. Occasionally,
-# they are used as colormaps for qualitative or categorical data. ProPlot's
+# they are used as colormaps for qualitative or categorical data. Proplot's
 # color cycles are registered as `~proplot.colors.DiscreteColormap`\ s,
 # and can be converted into matplotlib `property cyclers
 # <https://matplotlib.org/stable/tutorials/intermediate/color_cycle.html>`__
@@ -30,7 +30,7 @@
 # constructor function. `~proplot.constructor.Cycle` can also
 # :ref:`extract colors <ug_cycles_new>` from `~proplot.colors.ContinuousColormap`\ s.
 #
-# ProPlot :ref:`adds several features <why_colormaps_cycles>` to help you use color
+# Proplot :ref:`adds several features <why_colormaps_cycles>` to help you use color
 # cycles effectively in your figures. This section documents the new registered
 # color cycles, explains how to make and modify color cycles, and shows how to
 # apply them to your plots.
@@ -64,7 +64,7 @@ fig, axs = pplt.show_cycles()
 # `~proplot.axes.PlotAxes.scatter` now accept a `cycle` keyword
 # passed to the `~proplot.constructor.Cycle` constructor function
 # (see the :ref:`1D plotting section <ug_apply_cycle>`). To save
-# your color cycle data and use it every time ProPlot is imported, simply pass
+# your color cycle data and use it every time proplot is imported, simply pass
 # ``save=True`` to `~proplot.constructor.Cycle`. If you want to change the global
 # property cycler, pass a `~proplot.colors.DiscreteColormap` or colormap name
 # to :rcraw:`cycle` or pass the result of `~proplot.constructor.Cycle`
@@ -127,7 +127,7 @@ ax.format(title='Multiple plot calls')
 # the :ref:`colormaps section <ug_cmaps>` for details.
 #
 # In the below example, several cycles are constructed from scratch, and the
-# lines are referenced with colorbars and legends. Note that ProPlot allows
+# lines are referenced with colorbars and legends. Note that proplot allows
 # you to :ref:`generate colorbars from lists of artists <ug_cbars>`.
 
 # %%

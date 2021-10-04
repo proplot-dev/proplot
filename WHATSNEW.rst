@@ -22,14 +22,14 @@ See the :ref:`author page <authors>` for a list of contributors, and see
 the :ref:`contribution guide <contributions>` if you are interested in
 submitting your own changes.
 
-ProPlot v1.0.0 (2022-##-##)
-===========================
+Version 1.0.0 (2022-##-##)
+==========================
 
 This will be published when more comprehensive testing is completed
 and stability is improved.
 
-ProPlot v0.9.3 (2021-XX-XX)
-===========================
+Version 0.9.3 (2021-XX-XX)
+==========================
 
 Bug fixes
 ---------
@@ -42,8 +42,14 @@ Bug fixes
 * Permit passing background patch-related ``format`` keywords like
   `facecolor` on axes instantiation (:commit:`f863afd8`).
 
-ProPlot v0.9.2 (2021-09-30)
-===========================
+Documentation
+-------------
+
+* Change stylized name "ProPlot" to simply lowercase "proplot", consistent
+  with matplotlib, cartopy, numpy, etc. (:commit:`###`).
+
+Version 0.9.2 (2021-09-30)
+==========================
 
 Features
 --------
@@ -121,9 +127,8 @@ Bug fixes
 * Fix issue where "sticky edges" fail for datetime data
   (:commit:`33fa9654`).
 
-
-ProPlot v0.9.1 (2021-09-14)
-===========================
+Version 0.9.1 (2021-09-14)
+==========================
 
 Style changes
 -------------
@@ -164,8 +169,8 @@ Documentation
 * Fix documentation compiling issue due to Natural
   Earth server change (:commit:`d1d47911`).
 
-ProPlot v0.9.0 (2021-09-08)
-===========================
+Version 0.9.0 (2021-09-08)
+==========================
 
 Deprecated
 ----------
@@ -331,8 +336,8 @@ Documentation
 * Improve documentation of `proplot.gridspec.SubplotGrid` methods
   (:commit:`902502cc`). Docstrings are no longer stubs.
 
-ProPlot v0.8.1 (2021-08-22)
-===========================
+Version 0.8.1 (2021-08-22)
+==========================
 
 Features
 --------
@@ -389,8 +394,8 @@ Documentation
   callable dictionary-like `_SnippetsManager` instance (:commit:`b73fe9e3`). This
   helps prevent bug where assigned snippets have unfilled ``%(snippet)s`` markers.
 
-ProPlot v0.8.0 (2021-08-18)
-===========================
+Version 0.8.0 (2021-08-18)
+==========================
 
 Deprecated
 ----------
@@ -507,8 +512,8 @@ Features
 --------
 
 * Dynamically add classes that are "registered" by contructor functions
-  to the top-level namespace (:commit:`4382a1b1`). This is consistent with behavior
-  of importing custom-ProPlot tickers, norms, etc. to top-level namespace.
+  to the top-level namespace (:commit:`4382a1b1`). This is consistent with
+  behavior of importing custom-proplot tickers, norms, etc. to top-level namespace.
   Now e.g. ``pplt.MultipleLocator`` or ``pplt.LogNorm`` are allowed.
 * Allow creating subplots with `~proplot.ui.figure` and either (1) subsequently
   calling `~proplot.figure.Fiugure.subplots` or (2) passing integers or subplot specs
@@ -791,8 +796,8 @@ Documentation
   implementation of different cartographic "backends" -- behavior of public
   methods is the same for both. Instead just document `proplot.axes.GeoAxes`.
 
-ProPlot v0.7.0 (2021-07-11)
-===========================
+Version 0.7.0 (2021-07-11)
+==========================
 
 Deprecated
 ----------
@@ -1084,7 +1089,7 @@ Documentation
 -------------
 
 * Finally use ``pplt`` as the recommended abbreviation: ``import proplot as pplt``.
-* Major clean up of "Why ProPlot?" page and user guide pages.
+* Major clean up of "Why proplot?" page and user guide pages.
 * Fix incomplete ``cmap.from_file`` docstrings (:commit:`54f1bc7c`).
 * Rename "Changelog" to "What's New?" and list all contributors in "About the Authors".
 * Remove v0.6.0 renamed classes (e.g. `ProjAxes`) from top-level namespace
@@ -1096,9 +1101,8 @@ Documentation
 * Rename public/documented funcs `cmap_changer` and `cycle_changer`
   to `apply_cmap` and `apply_cycle` (:commit:`86f7699a`).
 
-
-ProPlot v0.6.4 (2020-06-13)
-===========================
+Version 0.6.4 (2020-06-13)
+==========================
 
 Features
 --------
@@ -1127,16 +1131,16 @@ Bug fixes
   to ``0.6`` to match proplot's default line width for lines, axes edges, and
   hatches (:issue:`186`).
 
-ProPlot v0.6.3 (2020-06-02)
-===========================
+Version 0.6.3 (2020-06-02)
+==========================
 
 Bug fixes
 ---------
 
 * Fix issue where proplot import fails if cartopy is not installed (:commit:`e29d49e8`).
 
-ProPlot v0.6.2 (2020-06-02)
-===========================
+Version 0.6.2 (2020-06-02)
+==========================
 
 Features
 --------
@@ -1193,9 +1197,8 @@ Documentation
   read-only properties (:commit:`7b455008`). The getters were only for object
   introspection. The setters never worked properly/were unused in examples.
 
-
-ProPlot v0.6.1 (2020-05-20)
-===========================
+Version 0.6.1 (2020-05-20)
+==========================
 
 Bug fixes
 ---------
@@ -1209,8 +1212,8 @@ Bug fixes
 * Fix issue where basemap minor gridlines did not update when
   major gridlines were updated (:commit:`427326a7`).
 
-ProPlot v0.6.0 (2020-05-20)
-===========================
+Version 0.6.0 (2020-05-20)
+==========================
 
 Deprecated
 ----------
@@ -1234,7 +1237,7 @@ Deprecated
   from ``.rgb`` and ``.txt`` files (:commit:`4fa72b0c`).
 * Remove ``'Blue0'`` SciVisColor colormap (:pr:`149`, :commit:`7cb4ce0f`). It was odd
   man out in the table, and not even really perceptually uniform.
-* Remove custom ProPlot cycles -- these should be thought out much more
+* Remove custom proplot cycles -- these should be thought out much more
   carefully (:commit:`43f65d17`).
 * Remove "crayola" colors and clean up the `~proplot.setup.register_colors` algorithm
   (:pr:`149`, :commit:`8922d6de`). Crayola color names less intuitive than XKCD.
@@ -1262,7 +1265,7 @@ Style changes
 
 * Increase default :rcraw:`savefig.dpi` to 1200, matching recommendations from academic
   journals (:pr:`167`, :commit:`c00e7314`). Also add detailed discussion to user guide.
-* Stop reversing the ``'Spectral'`` colormap when ProPlot is imported
+* Stop reversing the ``'Spectral'`` colormap when proplot is imported
   (:pr:`149`, :commit:`ce4ef6a0`).
 * Change default rc settings closer to matplotlib, including margins and line
   width (:pr:`166`, :commit:`f801852b`). Many were changed for no good reason.
@@ -1438,9 +1441,8 @@ Documentation
   `~proplot.colors.ColormapDatabase` (:pr:`149`, :commit:`9d7fd3e0`).
   These classes are public just for documentation.
 
-
-ProPlot v0.5.0 (2020-02-10)
-===========================
+Version 0.5.0 (2020-02-10)
+==========================
 
 Deprecated
 ----------
@@ -1501,9 +1503,8 @@ Internals
 * Improve ``GrayCycle`` colormap, is now much shorter and built from
   reflected Fabio ``GrayC`` colormaps (:commit:`5b2c7eb7`).
 
-
-ProPlot v0.4.3 (2020-01-21)
-===========================
+Version 0.4.3 (2020-01-21)
+==========================
 
 Features
 --------
@@ -1524,15 +1525,15 @@ Internals
   (:issue:`112`, :pr:`113`). Move inline backend configuration to a hidden
   method that gets called whenever the ``rc_configurator`` is initalized.
 
-ProPlot v0.4.2 (2020-01-09)
-===========================
+Version 0.4.2 (2020-01-09)
+==========================
 
 Features
 --------
 
 * Add ``family`` keyword arg to `~proplot.styletools.show_fonts` (:pr:`106`).
 * Package the `TeX Gyre <http://www.gust.org.pl/projects/e-foundry/tex-gyre>`__
-  font series with ProPlot (:pr:`106`). Remove a couple other fonts.
+  font series with proplot (:pr:`106`). Remove a couple other fonts.
 * Put the TeX Gyre fonts at the head of the serif, sans-serif, monospace,
   cursive, and fantasy ``rcParams`` font family lists (:issue:`104`, :pr:`106`).
 
@@ -1541,8 +1542,8 @@ Bug fixes
 
 * Fix issues with Fira Math weights unrecognized by matplotlib (:pr:`106`).
 
-ProPlot v0.4.1 (2020-01-08)
-===========================
+Version 0.4.1 (2020-01-08)
+==========================
 
 Features
 --------
@@ -1574,8 +1575,8 @@ Internals
   errors while calls to `~proplot.styletools.register_cmaps` and
   `~proplot.styletools.register_cycles` still issue warnings (:pr:`100`).
 
-ProPlot v0.4.0 (2020-01-07)
-===========================
+Version 0.4.0 (2020-01-07)
+==========================
 
 Deprecated
 ----------
@@ -1656,8 +1657,8 @@ Internals
   (:pr:`91`). Remove `wflush`, `hflush`, and `flush` keyword args from
   `~proplot.subplots.subplots` that should have been removed long ago.
 
-ProPlot v0.3.1 (2019-12-16)
-===========================
+Version 0.3.1 (2019-12-16)
+==========================
 
 Bug fixes
 ---------
@@ -1666,8 +1667,8 @@ Bug fixes
 * Fix issue with latest versions of matplotlib where ``%matplotlib inline``
   fails *silently* so the backend is not instantiated (:commit:`cc39dc56`).
 
-ProPlot v0.3.0 (2019-12-15)
-===========================
+Version 0.3.0 (2019-12-15)
+==========================
 
 Deprecated
 ----------
@@ -1705,8 +1706,8 @@ Internals
 
 * Change `~time.clock` to `~time.perf_counter` (:pr:`86`).
 
-ProPlot v0.2.7 (2019-12-09)
-===========================
+Version 0.2.7 (2019-12-09)
+==========================
 
 Bug fixes
 ---------
@@ -1730,17 +1731,16 @@ Internals
   `~proplot.styletools.SimpleFormatter` (:commit:`8520e363`). The latter
   should just be used for contours.
 
-ProPlot v0.2.6 (2019-12-08)
-===========================
+Version 0.2.6 (2019-12-08)
+==========================
 
 Bug fixes
 ---------
 
 * Fix issue where twin axes are drawn *twice* (:commit:`56145122`).
 
-
-ProPlot v0.2.5 (2019-12-07)
-===========================
+Version 0.2.5 (2019-12-07)
+==========================
 
 Features
 --------
@@ -1748,8 +1748,8 @@ Features
 * Much better `~proplot.axistools.CutoffScale` algorithm, permit arbitrary
   cutoffs (:pr:`83`).
 
-ProPlot v0.2.4 (2019-12-07)
-===========================
+Version 0.2.4 (2019-12-07)
+==========================
 
 Deprecated
 ----------
@@ -1771,8 +1771,8 @@ Internals
 
 * Improvements to `~proplot.styletools.register_colors`.
 
-ProPlot v0.2.3 (2019-12-05)
-===========================
+Version 0.2.3 (2019-12-05)
+==========================
 
 Bug fixes
 ---------
@@ -1797,8 +1797,8 @@ Internals
   handle minor ticks using the builtin matplotlib API just like major ticks
   (:commit:`b9976220`).
 
-ProPlot v0.2.2 (2019-12-04)
-===========================
+Version 0.2.2 (2019-12-04)
+==========================
 
 Deprecated
 ----------
@@ -1817,8 +1817,8 @@ Documentation
 * Make notebook examples PEP8 compliant (:commit:`97f5ffd4`). Much more
   readable now.
 
-ProPlot v0.2.1 (2019-12-02)
-===========================
+Version 0.2.1 (2019-12-02)
+==========================
 
 Deprecated
 ----------
@@ -1828,8 +1828,8 @@ Deprecated
   and `~proplot.rctools.ipython_matplotlib`, respectively
   (:commit:`84e80c1e`).
 
-ProPlot v0.2.0 (2019-12-02)
-===========================
+Version 0.2.0 (2019-12-02)
+==========================
 
 Deprecated
 ----------
@@ -1869,8 +1869,8 @@ Internals
   `~matplotlib.figure.Figure.savefig` but critical for correctly displaying
   already-drawn notebook figures.
 
-ProPlot v0.1.0 (2019-12-01)
-===========================
+Version 0.1.0 (2019-12-01)
+==========================
 
 Internals
 ---------
@@ -1878,9 +1878,8 @@ Internals
 * Include `flake8` in Travis CI testing (:commit:`8743b857`).
 * Enforce source code PEP8 compliance (:commit:`78da51a7`).
 * Use pre-commit for all future commits (:commit:`e14f6809`).
-* Implement tight layout stuff with canvas monkey patches
-  (:commit:`67221d10`).  ProPlot now works for arbitrary backends, not just
-  inline and qt.
+* Implement tight layout stuff with canvas monkey patches (:commit:`67221d10`).
+  Proplot now works for arbitrary backends, not just inline and qt.
 
 Documentation
 -------------
@@ -1889,8 +1888,8 @@ Documentation
   <https://github.com/readthedocs/readthedocs.org/issues/6412>`__ (e.g.
   :commit:`37633a4c`).
 
-ProPlot v0.0.0 (2019-11-27)
-===========================
+Version 0.0.0 (2019-11-27)
+==========================
 
 The first version released on `PyPi <https://pypi.org/project/proplot/>`__.
 
