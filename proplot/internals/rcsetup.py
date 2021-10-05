@@ -804,15 +804,20 @@ _rc_proplot_table = {
         _validate_bool,
         'Toggles country border lines on and off.'
     ),
+    'borders.alpha': (
+        None,
+        _validate_or_none(_validate_float),
+        'Opacity for country border lines.',
+    ),
     'borders.color': (
         BLACK,
         _validate_color,
-        'Line color for country borders.'
+        'Line color for country border lines.'
     ),
     'borders.linewidth': (
         LINEWIDTH,
         _validate_pt,
-        'Line width for country borders.'
+        'Line width for country border lines.'
     ),
     'borders.zorder': (
         ZLINES,
@@ -868,6 +873,11 @@ _rc_proplot_table = {
         _validate_bool,
         'Toggles coastline lines on and off.'
     ),
+    'coast.alpha': (
+        None,
+        _validate_or_none(_validate_float),
+        'Opacity for coast lines',
+    ),
     'coast.color': (
         BLACK,
         _validate_color,
@@ -877,6 +887,11 @@ _rc_proplot_table = {
         LINEWIDTH,
         _validate_pt,
         'Line width for coast lines.'
+    ),
+    'coast.zorder': (
+        ZLINES,
+        _validate_float,
+        'Z-order for coast lines.'
     ),
 
     # Colorbars
@@ -1224,7 +1239,7 @@ _rc_proplot_table = {
     'gridminor.alpha': (
         GRIDALPHA,
         _validate_float,
-        'Minor gridline transparency.'
+        'Minor gridline opacity.'
     ),
     'gridminor.color': (
         BLACK,
@@ -1267,20 +1282,25 @@ _rc_proplot_table = {
         'Toggles internal political border lines (e.g. states and provinces) '
         'on and off.'
     ),
+    'innerborders.alpha': (
+        None,
+        _validate_or_none(_validate_float),
+        'Opacity for internal political border lines',
+    ),
     'innerborders.color': (
         BLACK,
         _validate_color,
-        'Line color for internal political borders.'
+        'Line color for internal political border lines.'
     ),
     'innerborders.linewidth': (
         LINEWIDTH,
         _validate_pt,
-        'Line width for internal political borders.'
+        'Line width for internal political border lines.'
     ),
     'innerborders.zorder': (
         ZLINES,
         _validate_float,
-        'Z-order for internal border lines.'
+        'Z-order for internal political border lines.'
     ),
 
     # Axis label settings
@@ -1312,6 +1332,11 @@ _rc_proplot_table = {
         _validate_bool,
         'Toggles lake patches on and off.'
     ),
+    'lakes.alpha': (
+        None,
+        _validate_or_none(_validate_float),
+        'Opacity for lake patches',
+    ),
     'lakes.color': (
         WHITE,
         _validate_color,
@@ -1328,6 +1353,11 @@ _rc_proplot_table = {
         False,
         _validate_bool,
         'Toggles land patches on and off.'
+    ),
+    'land.alpha': (
+        None,
+        _validate_or_none(_validate_float),
+        'Opacity for land patches',
     ),
     'land.color': (
         BLACK,
@@ -1418,6 +1448,11 @@ _rc_proplot_table = {
         _validate_bool,
         'Toggles ocean patches on and off.'
     ),
+    'ocean.alpha': (
+        None,
+        _validate_or_none(_validate_float),
+        'Opacity for ocean patches',
+    ),
     'ocean.color': (
         WHITE,
         _validate_color,
@@ -1470,6 +1505,11 @@ _rc_proplot_table = {
         False,
         _validate_bool,
         'Toggles river lines on and off.'
+    ),
+    'rivers.alpha': (
+        None,
+        _validate_or_none(_validate_float),
+        'Opacity for river lines.',
     ),
     'rivers.color': (
         BLACK,

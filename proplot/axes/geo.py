@@ -155,8 +155,8 @@ land, ocean, coast, rivers, lakes, borders, innerborders : bool, optional
     The style can be modified using additional `rc` settings.
 
     For example, to change :rcraw:`land.color`, use
-    ``ax.format(landcolor='green')``, and to change :rcraw:`land.zorder`,
-    use ``ax.format(landzorder=4)``.
+    ``ax.format(landcolor='green')``, and to change
+    :rcraw:`land.zorder`, use ``ax.format(landzorder=4)``.
 reso : {'lo', 'med', 'hi', 'x-hi', 'xx-hi'}, optional
     *For cartopy axes only.*
     The resolution of geographic features. For basemap axes, this must
