@@ -38,6 +38,10 @@ Features
   -- instead just set the default axes background to transparent (:commit:`e933614d`).
 * Permit passing background patch-related ``format`` keywords like
   `facecolor` on axes instantiation (:commit:`f863afd8`).
+* Add :rcraw:`land.alpha`, :rcraw:`ocean.alpha`, :rcraw:`coast.alpha`,
+  :rcraw:`rivers.alpha`, :rcraw:`lakes.alpha`, :rcraw:`borders.alpha`,
+  and :rcraw:`innerborders.alpha` settings to change opacity of geographic
+  features (:commit:`8bb49a02`). Also add missing :rcraw:`coast.zorder`.
 * Add `xtickcolor`, `ytickcolor`, `xticklabelcolor`, and `yticklabelcolor`
   `~proplot.axes.CartesianAxes.format` keywords to control tick mark and label colors
   (:commit:`68cba1af`). Also add documentation for `xlabelcolor` and `ylabelcolor`.
