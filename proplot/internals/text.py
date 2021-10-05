@@ -34,18 +34,19 @@ def _update_text(text, props=None, **kwargs):
     bordercolor = props.pop('bordercolor', 'w')
     borderinvert = props.pop('borderinvert', False)
     borderwidth = props.pop('borderwidth', 2)
+    borderstyle = props.pop('borderstyle', 'miter')
     if border:
         facecolor, bgcolor = text.get_color(), bordercolor
         if borderinvert:
             facecolor, bgcolor = bgcolor, facecolor
-        kwargs = {
+        kw = {
             'linewidth': borderwidth,
             'foreground': bgcolor,
-            'joinstyle': 'miter',
+            'joinstyle': borderstyle,
         }
         text.set_color(facecolor)
         text.set_path_effects(
-            [mpatheffects.Stroke(**kwargs), mpatheffects.Normal()],
+            [mpatheffects.Stroke(**kw), mpatheffects.Normal()],
         )
     elif border is False:
         text.set_path_effects(None)

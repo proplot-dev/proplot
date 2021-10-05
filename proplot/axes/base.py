@@ -2891,10 +2891,9 @@ class Axes(maxes.Axes):
     @docstring._concatenate_inherited
     @docstring._snippet_manager
     def text(
-        self, *args,
-        border=False, bordercolor='w', borderwidth=2, borderinvert=False,
-        bbox=False, bboxcolor='w', bboxstyle='round', bboxalpha=0.5, bboxpad=None,
-        **kwargs
+        self, *args, border=False, bbox=False,
+        bordercolor='w', borderwidth=2, borderinvert=False, borderstyle='miter',
+        bboxcolor='w', bboxstyle='round', bboxalpha=0.5, bboxpad=None, **kwargs
     ):
         """
         Add text to the axes.
@@ -2919,6 +2918,10 @@ class Axes(maxes.Axes):
             The color of the text border. Default is ``'w'``.
         borderinvert : bool, optional
             If ``True``, the text and border colors are swapped.
+        borderstyle : {'miter', 'round', 'bevel'}, optional
+            The `line join style \
+<https://matplotlib.org/stable/gallery/lines_bars_and_markers/joinstyle.html>`__
+            used for the border.
         bbox : bool, optional
             Whether to draw a bounding box around text.
         bboxcolor : color-spec, optional
@@ -2970,6 +2973,7 @@ class Axes(maxes.Axes):
                 'bordercolor': bordercolor,
                 'borderinvert': borderinvert,
                 'borderwidth': borderwidth,
+                'borderstyle': borderstyle,
                 'bbox': bbox,
                 'bboxcolor': bboxcolor,
                 'bboxstyle': bboxstyle,
