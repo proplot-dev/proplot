@@ -775,8 +775,8 @@ _rc_proplot_table = {
 
     # Axes additions
     'axes.alpha': (
-        1.0,
-        _validate_float,
+        None,
+        _validate_or_none(_validate_float),
         'Opacity of the background axes patch.'
     ),
     'axes.inbounds': (
