@@ -60,6 +60,8 @@ Features
 * Add `absolute_size` key (analogous to `absolute_width` used with
   `~proplot.axes.PlotAxes.bar`) to bypass auto-scaling of array input
   to `~proplot.axes.PlotAxes.scatter` (:commit:`b4701411`).
+* Add `borderstyle` keyword to change the `joinstyle` used for
+  the path effects border (:commit:`25e21c76`).
 * Set the default `~proplot.axes.PlotAxes.scatter` `smin` and `smax` (used with
   array-like input marker sizes `s`) to 1 and :rcraw:`lines.markersize` squared
   rather than the data minimum and maximum (:commit:`b4701411`).
