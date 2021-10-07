@@ -405,18 +405,25 @@ def _dist_range(
         label_default = f'{pctiles[1] - pctiles[0]}% range'
         err = np.nanpercentile(distribution, pctiles, axis=0)
     else:
-        raise ValueError('You must provide error bounds.')
+        warnings._warn_proplot(
+            'Error indications are missing from the dataset reduced by a '
+            'mean or median operation. Consider passing e.g. bars=True.'
+        )
+        err = None
 
-    # Return data with legend entry
-    if not absolute:  # for errorbar() ingestion
+    # Adjust error bounds
+    if err is not None and not absolute:  # for errorbar() ingestion
         err = err - y
         err[0, :] *= -1  # absolute deviations from central points
+
+    # Apply legend entry
     if isinstance(label, str):
         pass
-    elif label:
+    elif label:  # e.g. label=True says to use a default label
         label = label_default
     else:
         label = None
+
     return err, label
 
 

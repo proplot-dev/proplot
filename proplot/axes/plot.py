@@ -1370,18 +1370,20 @@ class PlotAxes(base.Axes):
                 stds=barstds, pctiles=barpctiles, errdata=bardata,
                 stds_default=(-3, 3), pctiles_default=(0, 100),
             )
-            obj = self.errorbar(ex, ey, **barprops, **{sy + 'err': edata})
-            eobjs.append(obj)
+            if edata is not None:
+                obj = self.errorbar(ex, ey, **barprops, **{sy + 'err': edata})
+                eobjs.append(obj)
         if boxes:  # must go after so scatter point can go on top
             edata, _ = data._dist_range(
                 y, distribution,
                 stds=boxstds, pctiles=boxpctiles, errdata=boxdata,
                 stds_default=(-1, 1), pctiles_default=(25, 75),
             )
-            obj = self.errorbar(ex, ey, **boxprops, **{sy + 'err': edata})
-            if boxmarker.get('marker', None):
-                self.scatter(ex, ey, **boxmarker)
-            eobjs.append(obj)
+            if edata is not None:
+                obj = self.errorbar(ex, ey, **boxprops, **{sy + 'err': edata})
+                if boxmarker.get('marker', None):
+                    self.scatter(ex, ey, **boxmarker)
+                eobjs.append(obj)
 
         kwargs['distribution'] = distribution
         return (*eobjs, kwargs)
@@ -1438,8 +1440,9 @@ class PlotAxes(base.Axes):
                 stds_default=(-3, 3), pctiles_default=(0, 100),
                 label=fadelabel, absolute=True,
             )
-            eobj = fill(x, *edata, label=label, **fadeprops)
-            eobjs.append(eobj)
+            if edata is not None:
+                eobj = fill(x, *edata, label=label, **fadeprops)
+                eobjs.append(eobj)
         if shade:
             edata, label = data._dist_range(
                 y, distribution,
@@ -1447,8 +1450,9 @@ class PlotAxes(base.Axes):
                 stds_default=(-2, 2), pctiles_default=(10, 90),
                 label=shadelabel, absolute=True,
             )
-            eobj = fill(x, *edata, label=label, **shadeprops)
-            eobjs.append(eobj)
+            if edata is not None:
+                eobj = fill(x, *edata, label=label, **shadeprops)
+                eobjs.append(eobj)
 
         kwargs['distribution'] = distribution
         return (*eobjs, kwargs)
