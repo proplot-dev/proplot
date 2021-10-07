@@ -57,11 +57,17 @@ Features
   the colorbar label location separately from `tickloc` (:commit:`32069370`).
 * Permit specifying `linewidth` keyword (and aliases) with arbitrary
   physical units for format/colorbar/plotting commands (:commit:`c1ffbc8c`).
-* Add `absolute_size` key (analogous to `absolute_width` used with
-  `~proplot.axes.PlotAxes.bar`) to bypass auto-scaling of array input
-  to `~proplot.axes.PlotAxes.scatter` (:commit:`b4701411`).
-* Add `borderstyle` keyword to change the `joinstyle` used for
-  the path effects border (:commit:`25e21c76`).
+* Add `absolute_size` key to `~proplot.axes.PlotAxes.scatter` (analogous to
+  `absolute_width` used with `~proplot.axes.PlotAxes.bar`) to bypass
+  auto-scaling of array input (:commit:`b4701411`).
+* Add more intuitive ``bars``, ``boxes``, ``shade``, and ``fade`` keywords
+  as alternatives to ``barstds``, etc. (:commit:`15812cd4`).
+* Ignore masked and invalid values in datasets passed to ``boxplot`` and
+  ``violinplot`` (:commit:`daa666e2`).
+* Convert ``showextrema=True`` passed to `~proplot.axes.Axes.violinplot` to
+  ``barpctiles=True`` (i.e., show 0--100 percentile range) (:commit:`42f613d6`).
+* Add `borderstyle` `~proplot.axes.Axes.text` keyword to change the `joinstyle` used
+  for the path effects border (:commit:`25e21c76`).
 * Set the default `~proplot.axes.PlotAxes.scatter` `smin` and `smax` (used with
   array-like input marker sizes `s`) to 1 and :rcraw:`lines.markersize` squared
   rather than the data minimum and maximum (:commit:`b4701411`).
