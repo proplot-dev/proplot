@@ -782,8 +782,8 @@ Other parameters
 fill : bool, optional
     Whether to fill the box with a color. Default is ``True``.
 mean, means : bool, optional
-    If ``True``, this passes ``showmeans=True`` and ``meanline=True``
-    to `~matplotlib.axes.Axes.boxplot`.
+    If ``True``, this passes ``showmeans=True`` and ``meanline=True`` to
+    `matplotlib.axes.Axes.boxplot`. Adds mean lines alongside the median.
 %(plot.cycle)s
 %(artist.patch_black)s
 m, marker, ms, markersize : float or str, optional
@@ -842,15 +842,13 @@ Other parameters
 %(plot.cycle)s
 %(artist.patch_black)s
 %(plot.labels_1d)s
+showmeans, showmedians : bool, optional
+    Interpreted as ``means=True`` and ``medians=True`` when passed.
+showextrema : bool, optional
+    Interpreted as ``barpctiles=True`` when passed (i.e. shows minima and maxima).
 %(plot.error_bars)s
 **kwargs
     Passed to `matplotlib.axes.Axes.violinplot`.
-
-Note
-----
-It is no longer possible to show minima and maxima with whiskers --
-while this is useful for `~matplotlib.axes.Axes.boxplot`\\ s it is
-redundant for `~matplotlib.axes.Axes.violinplot`\\ s.
 
 See also
 --------
@@ -1309,14 +1307,16 @@ class PlotAxes(base.Axes):
 
     def _plot_errorbars(
         self, x, y, *_, distribution=None,
-        default_bars=True, default_boxes=False,
+        default_barstds=False, default_boxstds=False,
+        default_barpctiles=False, default_boxpctiles=False, default_marker=False,
         bars=None, boxes=None,
         barstd=None, barstds=None, barpctile=None, barpctiles=None, bardata=None,
         boxstd=None, boxstds=None, boxpctile=None, boxpctiles=None, boxdata=None,
         capsize=None, **kwargs,
     ):
         """
-        Add up to 2 error indicators: thick "boxes" and thin "bars".
+        Add up to 2 error indicators: thick "boxes" and thin "bars". The ``default``
+        keywords toggle default range indicators when distributions are passed.
         """
         # Parse input args
         # NOTE: Want to keep _plot_errorbars() and _plot_errorshading() separate.
@@ -1335,9 +1335,11 @@ class PlotAxes(base.Axes):
         )
         if distribution is not None and not shade:
             if not bars:
-                barstds = bars = default_bars
+                bars = any(_ is not None for _ in (default_barstds, default_barpctiles))
+                barstds, barpctiles = default_barstds, default_barpctiles
             if not boxes:
-                boxstds = boxes = default_boxes
+                boxes = any(_ is not None for _ in (default_boxstds, default_boxpctiles))  # noqa: E501
+                boxstds, boxpctiles = default_boxstds, default_boxpctiles
 
         # Error bar properties
         edgecolor = kwargs.get('edgecolor', rc['boxplot.whiskerprops.color'])
@@ -1366,7 +1368,7 @@ class PlotAxes(base.Axes):
         boxmarker['linewidth'] = boxmarker.pop('markerlinewidth', None)
         if boxmarker.get('marker') is True:
             boxmarker['marker'] = 'o'
-        elif default_boxes:  # enable by default
+        elif default_marker:
             boxmarker.setdefault('marker', 'o')
 
         # Draw thin or thick error bars from distributions or explicit errdata
@@ -2763,7 +2765,7 @@ class PlotAxes(base.Axes):
             guide_kw = _pop_params(kw, self._update_guide)  # after standardize
             for _, n, x, y, kw in self._iter_arg_cols(xs, ys, **kw):
                 kw = self._parse_cycle(n, **kw)
-                *eb, kw = self._plot_errorbars(x, y, vert=vert, **kw)
+                *eb, kw = self._plot_errorbars(x, y, vert=vert, default_barstds=True, **kw)  # noqa: E501
                 *es, kw = self._plot_errorshading(x, y, vert=vert, **kw)
                 xsides.append(x)
                 if not vert:
@@ -3147,7 +3149,7 @@ class PlotAxes(base.Axes):
         for _, n, x, y, s, c, kw in self._iter_arg_cols(xs, ys, ss, cc, **kw):
             kw['s'], kw['c'] = s, c  # make _parse_cycle() detect these
             kw = self._parse_cycle(n, cycle_manually=cycle_manually, **kw)
-            *eb, kw = self._plot_errorbars(x, y, vert=vert, **kw)
+            *eb, kw = self._plot_errorbars(x, y, vert=vert, default_barstds=True, **kw)
             *es, kw = self._plot_errorshading(x, y, vert=vert, color_key='c', **kw)
             if not vert:
                 x, y = y, x
@@ -3347,7 +3349,7 @@ class PlotAxes(base.Axes):
                 o = 0.5 * (n - 1)  # center coordinate
                 x = x + w * (i - o)  # += may cause integer/float casting issue
             # Draw simple bars
-            *eb, kw = self._plot_errorbars(x, b + h, orientation=orientation, **kw)
+            *eb, kw = self._plot_errorbars(x, b + h, default_barstds=True, orientation=orientation, **kw)  # noqa: E501
             if negpos:
                 obj = self._plot_negpos_objs(name, x, h, w, b, use_zero=True, **kw)
             else:
@@ -3558,7 +3560,10 @@ class PlotAxes(base.Axes):
         kwargs = _parse_vert(default_vert=False, **kwargs)
         return self._apply_boxplot(*args, **kwargs)
 
-    def _apply_violinplot(self, x, y, vert=True, **kwargs):
+    def _apply_violinplot(
+        self, x, y, vert=True, mean=None, means=None, median=None, medians=None,
+        showmeans=None, showmedians=None, showextrema=None, **kwargs
+    ):
         """
         Apply the violinplot.
         """
@@ -3566,10 +3571,12 @@ class PlotAxes(base.Axes):
         kw = kwargs.copy()
         kw.update(_pop_props(kw, 'patch'))
         kw.setdefault('capsize', 0)  # caps are redundant for violin plots
-        kw.setdefault('means', kw.pop('showmeans', None))  # for _indicate_error
-        kw.setdefault('medians', kw.pop('showmedians', None))
-        if kw.pop('showextrema', None):
-            warnings._warn_proplot('Ignoring showextrema=True.')
+        means = _not_none(mean=mean, means=means, showmeans=showmeans)
+        medians = _not_none(median=median, medians=medians, showmedians=showmedians)
+        if showextrema:
+            kw['default_barpctiles'] = True
+            if not means and not medians:
+                medians = _not_none(medians, True)
         linewidth = kw.pop('linewidth', None)
         edgecolor = kw.pop('edgecolor', 'black')
         fillcolor = kw.pop('facecolor', None)
@@ -3590,8 +3597,8 @@ class PlotAxes(base.Axes):
             fillcolor = [fillcolor] * x.size
 
         # Plot violins
-        y, kw = data._dist_reduce(y, **kw)
-        *eb, kw = self._plot_errorbars(x, y, vert=vert, default_boxes=True, **kw)
+        y, kw = data._dist_reduce(y, means=means, medians=medians, **kw)
+        *eb, kw = self._plot_errorbars(x, y, vert=vert, default_boxstds=True, default_marker=True, **kw)  # noqa: E501
         kw.pop('labels', None)  # already applied in _parse_plot1d
         kw.setdefault('positions', x)  # coordinates passed as keyword
         if 'distribution' in kw:  # i.e. was reduced
