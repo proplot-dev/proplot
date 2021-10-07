@@ -1328,8 +1328,8 @@ class PlotAxes(base.Axes):
         barpctiles = _not_none(barpctile=barpctile, barpctiles=barpctiles)
         boxpctiles = _not_none(boxpctile=boxpctile, boxpctiles=boxpctiles)
         if distribution is not None and not any(
-            key + typ in key for key in kwargs
-            for key in ('shade', 'fade') for typ in ('', 'std', 'pctile', 'data')
+            typ + mode in key for key in kwargs
+            for typ in ('shade', 'fade') for mode in ('', 'std', 'pctile', 'data')
         ):  # ugly kludge to check for shading
             if all(_ is None for _ in (bardata, barstds, barpctiles)):
                 barstds, barpctiles = default_barstds, default_barpctiles
