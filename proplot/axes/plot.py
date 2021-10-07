@@ -189,6 +189,8 @@ median, medians : bool, optional
     specified, this also sets ``barstd=True`` (and ``boxstd=True`` for violin plots).
 """
 _error_bars_docstring = """
+bars : bool, optional
+    Shorthand for `barstd`, `barstds`.
 barstd, barstds : bool, float, or 2-tuple of float, optional
     Valid only if `mean` or `median` is ``True``. Standard deviation multiples for
     *thin error bars* with optional whiskers (i.e., caps). If scalar, then +/- that
@@ -202,6 +204,8 @@ bardata : array-like, optional
     Valid only if `mean` and `median` are ``False``. If shape is 2 x N, these
     are the lower and upper bounds for the thin error bars. If shape is N, these
     are the absolute, symmetric deviations from the central points.
+boxes : bool, optional
+    Shorthand for `boxstd`, `boxstds`.
 boxstd, boxstds, boxpctile, boxpctiles, boxdata : optional
     As with `barstd`, `barpctile`, and `bardata`, but for *thicker error bars*
     representing a smaller interval than the thin error bars. If `boxstds` is
@@ -230,11 +234,15 @@ boxmc, boxmarkercolor, boxmec, boxmarkeredgecolor : color-spec, optional
     and edge color are ``'w'``.
 """
 _error_shading_docstring = """
+shade : bool, optional
+    Shorthand for `shadestd`.
 shadestd, shadestds, shadepctile, shadepctiles, shadedata : optional
     As with `barstd`, `barpctile`, and `bardata`, but using *shading* to indicate
     the error range. If `shadestds` is ``True``, the default standard deviation
     range of +/-2 is used. If `shadepctiles` is ``True``, the default
     percentile range of 10 to 90 is used.
+fade : bool, optional
+    Shorthand for `fadestd`.
 fadestd, fadestds, fadepctile, fadepctiles, fadedata : optional
     As with `shadestd`, `shadepctile`, and `shadedata`, but for an additional,
     more faded, *secondary* shaded region. If `fadestds` is ``True``, the default
@@ -1302,6 +1310,7 @@ class PlotAxes(base.Axes):
     def _plot_errorbars(
         self, x, y, *_, distribution=None,
         default_bars=True, default_boxes=False,
+        bars=None, boxes=None,
         barstd=None, barstds=None, barpctile=None, barpctiles=None, bardata=None,
         boxstd=None, boxstds=None, boxpctile=None, boxpctiles=None, boxdata=None,
         capsize=None, **kwargs,
@@ -1314,15 +1323,15 @@ class PlotAxes(base.Axes):
         # But also want default behavior where some default error indicator is shown
         # if user requests means/medians only. Result is the below kludge.
         kwargs, vert = _get_vert(**kwargs)
-        barstds = _not_none(barstd=barstd, barstds=barstds)
-        boxstds = _not_none(boxstd=boxstd, boxstds=boxstds)
+        barstds = _not_none(bars=bars, barstd=barstd, barstds=barstds)
+        boxstds = _not_none(boxes=boxes, boxstd=boxstd, boxstds=boxstds)
         barpctiles = _not_none(barpctile=barpctile, barpctiles=barpctiles)
         boxpctiles = _not_none(boxpctile=boxpctile, boxpctiles=boxpctiles)
         bars = any(_ is not None for _ in (bardata, barstds, barpctiles))
         boxes = any(_ is not None for _ in (boxdata, boxstds, boxpctiles))
         shade = any(  # annoying kludge
-            prefix + suffix in key for key in kwargs
-            for prefix in ('shade', 'fade') for suffix in ('std', 'pctile', 'data')
+            key + typ in key for key in kwargs
+            for key in ('shade', 'fade') for typ in ('', 'std', 'pctile', 'data')
         )
         if distribution is not None and not shade:
             if not bars:
@@ -1390,16 +1399,18 @@ class PlotAxes(base.Axes):
 
     def _plot_errorshading(
         self, x, y, *_, distribution=None, color_key='color',
-        shadestd=None, shadestds=None, shadepctile=None, shadepctiles=None, shadedata=None,  # noqa: E501
-        fadestd=None, fadestds=None, fadepctile=None, fadepctiles=None, fadedata=None,
+        shade=None, shadestd=None, shadestds=None,
+        shadepctile=None, shadepctiles=None, shadedata=None,
+        fade=None, fadestd=None, fadestds=None,
+        fadepctile=None, fadepctiles=None, fadedata=None,
         shadelabel=False, fadelabel=False, **kwargs
     ):
         """
         Add up to 2 error indicators: more opaque "shading" and less opaque "fading".
         """
         kwargs, vert = _get_vert(**kwargs)
-        shadestds = _not_none(shadestd=shadestd, shadestds=shadestds)
-        fadestds = _not_none(fadestd=fadestd, fadestds=fadestds)
+        shadestds = _not_none(shade=shade, shadestd=shadestd, shadestds=shadestds)
+        fadestds = _not_none(fade=fade, fadestd=fadestd, fadestds=fadestds)
         shadepctiles = _not_none(shadepctile=shadepctile, shadepctiles=shadepctiles)
         fadepctiles = _not_none(fadepctile=fadepctile, fadepctiles=fadepctiles)
         shade = any(_ is not None for _ in (shadedata, shadestds, shadepctiles))
