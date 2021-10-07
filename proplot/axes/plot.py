@@ -1327,19 +1327,20 @@ class PlotAxes(base.Axes):
         boxstds = _not_none(boxes=boxes, boxstd=boxstd, boxstds=boxstds)
         barpctiles = _not_none(barpctile=barpctile, barpctiles=barpctiles)
         boxpctiles = _not_none(boxpctile=boxpctile, boxpctiles=boxpctiles)
-        bars = any(_ is not None for _ in (bardata, barstds, barpctiles))
-        boxes = any(_ is not None for _ in (boxdata, boxstds, boxpctiles))
-        shade = any(  # annoying kludge
+        if distribution is not None and not any(
             key + typ in key for key in kwargs
             for key in ('shade', 'fade') for typ in ('', 'std', 'pctile', 'data')
-        )
-        if distribution is not None and not shade:
-            if not bars:
-                bars = any(_ is not None for _ in (default_barstds, default_barpctiles))
+        ):  # ugly kludge to check for shading
+            if all(_ is None for _ in (bardata, barstds, barpctiles)):
                 barstds, barpctiles = default_barstds, default_barpctiles
-            if not boxes:
-                boxes = any(_ is not None for _ in (default_boxstds, default_boxpctiles))  # noqa: E501
+            if all(_ is None for _ in (boxdata, boxstds, boxpctile)):
                 boxstds, boxpctiles = default_boxstds, default_boxpctiles
+        showbars = any(
+            _ is not None and _ is not False for _ in (barstds, barpctiles, bardata)
+        )
+        showboxes = any(
+            _ is not None and _ is not False for _ in (boxstds, boxpctiles, boxdata)
+        )
 
         # Error bar properties
         edgecolor = kwargs.get('edgecolor', rc['boxplot.whiskerprops.color'])
@@ -1372,10 +1373,12 @@ class PlotAxes(base.Axes):
             boxmarker.setdefault('marker', 'o')
 
         # Draw thin or thick error bars from distributions or explicit errdata
+        # NOTE: Now impossible to make thin bar width different from cap width!
+        # NOTE: Boxes must go after so scatter point can go on top
         sy = 'y' if vert else 'x'  # yerr
         ex, ey = (x, y) if vert else (y, x)
         eobjs = []
-        if bars:  # now impossible to make thin bar width different from cap width!
+        if showbars:  # noqa: E501
             edata, _ = data._dist_range(
                 y, distribution,
                 stds=barstds, pctiles=barpctiles, errdata=bardata,
@@ -1384,7 +1387,7 @@ class PlotAxes(base.Axes):
             if edata is not None:
                 obj = self.errorbar(ex, ey, **barprops, **{sy + 'err': edata})
                 eobjs.append(obj)
-        if boxes:  # must go after so scatter point can go on top
+        if showboxes:  # noqa: E501
             edata, _ = data._dist_range(
                 y, distribution,
                 stds=boxstds, pctiles=boxpctiles, errdata=boxdata,
@@ -1415,8 +1418,14 @@ class PlotAxes(base.Axes):
         fadestds = _not_none(fade=fade, fadestd=fadestd, fadestds=fadestds)
         shadepctiles = _not_none(shadepctile=shadepctile, shadepctiles=shadepctiles)
         fadepctiles = _not_none(fadepctile=fadepctile, fadepctiles=fadepctiles)
-        shade = any(_ is not None for _ in (shadedata, shadestds, shadepctiles))
-        fade = any(_ is not None for _ in (fadedata, fadestds, fadepctiles))
+        drawshade = any(
+            _ is not None and _ is not False
+            for _ in (shadestds, shadepctiles, shadedata)
+        )
+        drawfade = any(
+            _ is not None and _ is not False
+            for _ in (fadestds, fadepctiles, fadedata)
+        )
 
         # Shading properties
         shadeprops = _pop_props(kwargs, 'patch', prefix='shade')
@@ -1434,8 +1443,8 @@ class PlotAxes(base.Axes):
         # that plotting function will not advance to next cycler color.
         # TODO: More robust treatment of 'color' vs. 'facecolor'
         if (
-            shade and shadeprops.get('facecolor', None) is None
-            or fade and fadeprops.get('facecolor', None) is None
+            drawshade and shadeprops.get('facecolor', None) is None
+            or drawfade and fadeprops.get('facecolor', None) is None
         ):
             color = kwargs.get(color_key, None)
             if color is None:  # add to outgoing
@@ -1446,7 +1455,7 @@ class PlotAxes(base.Axes):
         # Draw dark and light shading from distributions or explicit errdata
         eobjs = []
         fill = self.fill_between if vert else self.fill_betweenx
-        if fade:
+        if drawfade:
             edata, label = data._dist_range(
                 y, distribution,
                 stds=fadestds, pctiles=fadepctiles, errdata=fadedata,
@@ -1456,7 +1465,7 @@ class PlotAxes(base.Axes):
             if edata is not None:
                 eobj = fill(x, *edata, label=label, **fadeprops)
                 eobjs.append(eobj)
-        if shade:
+        if drawshade:
             edata, label = data._dist_range(
                 y, distribution,
                 stds=shadestds, pctiles=shadepctiles, errdata=shadedata,
