@@ -3480,6 +3480,7 @@ class PlotAxes(base.Axes):
         kw.setdefault('positions', x)
         if means:
             kw['showmeans'] = kw['meanline'] = True
+        y = data._dist_clean(y)
         artists = self._plot_native('boxplot', y, vert=vert, **kw)
         artists = artists or {}  # necessary?
         artists = {
@@ -3592,8 +3593,10 @@ class PlotAxes(base.Axes):
         y, kw = data._dist_reduce(y, **kw)
         *eb, kw = self._plot_errorbars(x, y, vert=vert, default_boxes=True, **kw)
         kw.pop('labels', None)  # already applied in _parse_plot1d
-        kw.setdefault('positions', x)
-        y = _not_none(kw.pop('distribution'), y)  # might not have reduced the data
+        kw.setdefault('positions', x)  # coordinates passed as keyword
+        if 'distribution' in kw:  # i.e. was reduced
+            y = kw.pop('distribution')
+        y = data._dist_clean(y)
         artists = self._plot_native(
             'violinplot', y, vert=vert,
             showmeans=False, showmedians=False, showextrema=False, **kw

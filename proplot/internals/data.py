@@ -285,7 +285,23 @@ def _preprocess_args(*keys, keywords=None, allow_extra=True):
 
 
 # Stats utiltiies
-def _dist_reduce(y, *, mean=None, means=None, median=None, medians=None, **kwargs):
+def _dist_clean(distribution):
+    """
+    Clean the distrubtion data for processing by `boxplot` or `violinplot`.
+    Without this invalid values break the algorithm.
+    """
+    if distribution.ndim == 1:
+        distribution = distribution[:, None]
+    distribution, units = _to_masked_array(distribution)  # no copy needed
+    distribution = tuple(
+        distribution[..., i].compressed() for i in range(distribution.shape[-1])
+    )
+    if units is not None:
+        distribution = tuple(dist * units for dist in distribution)
+    return distribution
+
+
+def _dist_reduce(data, *, mean=None, means=None, median=None, medians=None, **kwargs):
     """
     Reduce statistical distributions to means and medians. Tack on a
     distribution keyword argument for processing down the line.
@@ -300,25 +316,26 @@ def _dist_reduce(y, *, mean=None, means=None, median=None, medians=None, **kwarg
         )
         medians = None
     if means or medians:
-        dist = y
-        dist, units = _to_masked_array(dist)
-        dist = dist.filled()
-        if dist.ndim != 2:
-            raise ValueError(f'Expected 2D array for means=True. Got {dist.ndim}D.')
+        distribution, units = _to_masked_array(data)
+        distribution = distribution.filled()
+        if distribution.ndim != 2:
+            raise ValueError(
+                f'Expected 2D array for means=True. Got {distribution.ndim}D.'
+            )
         if units is not None:
-            dist = dist * units
+            distribution = distribution * units
         if means:
-            y = np.nanmean(dist, axis=0)
+            data = np.nanmean(distribution, axis=0)
         else:
-            y = np.nanmedian(dist, axis=0)
-        kwargs['distribution'] = dist
+            data = np.nanmedian(distribution, axis=0)
+        kwargs['distribution'] = distribution
 
     # Save argument passed to _error_bars
-    return (y, kwargs)
+    return (data, kwargs)
 
 
 def _dist_range(
-    y, distribution, *, errdata=None, absolute=False, label=False,
+    data, distribution, *, errdata=None, absolute=False, label=False,
     stds=None, pctiles=None, stds_default=None, pctiles_default=None,
 ):
     """
@@ -377,27 +394,31 @@ def _dist_range(
     # NOTE: Include option to pass symmetric deviation from central points
     if errdata is not None:
         # Manual error data
-        if y.ndim != 1:
-            raise ValueError('errdata with 2D y coordinates is not yet supported.')
+        if data.ndim != 1:
+            raise ValueError(
+                "Passing both 2D data coordinates and 'errdata' is not yet supported."
+            )
         label_default = 'uncertainty'
         err = _to_numpy_array(errdata)
         if (
             err.ndim not in (1, 2)
-            or err.shape[-1] != y.size
+            or err.shape[-1] != data.size
             or err.ndim == 2 and err.shape[0] != 2
         ):
-            raise ValueError(f'errdata has shape {err.shape}. Expected (2, {y.size}).')
+            raise ValueError(
+                f"Input 'errdata' has shape {err.shape}. Expected (2, {data.size})."
+            )
         if err.ndim == 1:
             abserr = err
             err = np.empty((2, err.size))
-            err[0, :] = y - abserr  # translated back to absolute deviations below
-            err[1, :] = y + abserr
+            err[0, :] = data - abserr  # translated back to absolute deviations below
+            err[1, :] = data + abserr
     elif stds is not None:
         # Standard deviations
         # NOTE: Invalid values were handled by _dist_reduce
         label_default = fr'{abs(stds[1])}$\sigma$ range'
         stds = _to_numpy_array(stds)[:, None]
-        err = y + stds * np.nanstd(distribution, axis=0)
+        err = data + stds * np.nanstd(distribution, axis=0)
     elif pctiles is not None:
         # Percentiles
         # NOTE: Invalid values were handled by _dist_reduce
@@ -412,7 +433,7 @@ def _dist_range(
 
     # Adjust error bounds
     if err is not None and not absolute:  # for errorbar() ingestion
-        err = err - y
+        err = err - data
         err[0, :] *= -1  # absolute deviations from central points
 
     # Apply legend entry
