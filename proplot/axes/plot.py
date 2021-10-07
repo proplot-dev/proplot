@@ -15,6 +15,7 @@ import matplotlib.cm as mcm
 import matplotlib.collections as mcollections
 import matplotlib.colors as mcolors
 import matplotlib.contour as mcontour
+import matplotlib.image as mimage
 import matplotlib.lines as mlines
 import matplotlib.patches as mpatches
 import matplotlib.ticker as mticker
@@ -1559,7 +1560,6 @@ class PlotAxes(base.Axes):
         kwargs.setdefault('va', 'center')
 
         # Apply colors and hide edge colors for empty grids
-        # NOTE: Could also
         labs = []
         array = obj.get_array()
         paths = obj.get_paths()
@@ -3868,8 +3868,15 @@ class PlotAxes(base.Axes):
         labels_kw = _pop_params(kw, self._add_auto_labels)
         guide_kw = _pop_params(kw, self._update_guide)
         m = self._plot_native('pcolorfast', x, y, z, **kw)
-        self._apply_edgefix(m, **edgefix_kw, **kw)
-        self._add_auto_labels(m, **labels_kw)
+        if not isinstance(m, mimage.AxesImage):  # NOTE: PcolorImage is derivative
+            self._apply_edgefix(m, **edgefix_kw, **kw)
+            self._add_auto_labels(m, **labels_kw)
+        elif edgefix_kw or labels_kw:
+            kw = {**edgefix_kw, **labels_kw}
+            warnings._warn_proplot(
+                f'Ignoring unused keyword argument(s): {kw}. These only work with '
+                'QuadMesh, not AxesImage. Consider using pcolor() or pcolormesh().'
+            )
         self._update_guide(m, queue_colorbar=False, **guide_kw)
         return m
 
