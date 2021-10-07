@@ -139,9 +139,9 @@ Limitation
 
 Matplotlib and `cartopy`_ define several classes with verbose names like
 `~matplotlib.ticker.MultipleLocator`, `~matplotlib.ticker.FormatStrFormatter`,
-and `~cartopy.crs.LambertAzimuthalEqualArea`. They also keep them out of the top-level
-package namespace. Since plotting code has a half life of about 30 seconds, typing out
-these extra class names and import statements can be a *major* drag.
+and `~cartopy.crs.LambertAzimuthalEqualArea`. They also keep them out of the
+top-level package namespace. Since plotting code has a half life of about 30 seconds,
+typing out these extra class names and import statements can be kind of a drag.
 
 Parts of matplotlib's interface were actually designed with this in mind.
 `Backend classes <https://matplotlib.org/faq/usage_faq.html#what-is-a-backend>`__,
@@ -176,9 +176,6 @@ namespace -- so class instances can be directly created with e.g.
 relying on constructor functions.
 
 The below table lists the constructor functions and the keyword arguments that use them.
-Note that
-`~matplotlib.axes.Axes.set_xscale` and `~matplotlib.axes.Axes.set_yscale` accept
-instances of `~matplotlib.scale.ScaleBase` thanks to a patch applied by proplot.
 
 ================================  ============================================================  ==============================================================================  ================================================================================================================================================================================================
 Function                          Return type                                                   Used by                                                                         Keyword argument(s)
