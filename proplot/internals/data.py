@@ -302,10 +302,9 @@ def _dist_reduce(y, *, mean=None, means=None, median=None, medians=None, **kwarg
     if means or medians:
         dist = y
         dist, units = _to_masked_array(dist)
+        dist = dist.filled()
         if dist.ndim != 2:
             raise ValueError(f'Expected 2D array for means=True. Got {dist.ndim}D.')
-        if not dist.size:
-            raise ValueError('The input dist contains all masked or NaN values.')
         if units is not None:
             dist = dist * units
         if means:
