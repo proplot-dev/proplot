@@ -111,8 +111,8 @@ docstring._snippet_manager['plot.args_2d_flow'] = _args_2d_docstring.format(z='u
 _args_1d_shared_docstring = """
 data : dict-like, optional
     A dict-like dataset container (e.g., `~pandas.DataFrame` or
-    `~xarray.DataArray`). If passed, positional arguments can optionally
-    be string `data` keys and the arrays used for plotting are retrieved
+    `~xarray.Dataset`). If passed, each data argument can optionally
+    be a string `key` and the arrays used for plotting are retrieved
     with ``data[key]``. This is a `native matplotlib feature
     <https://matplotlib.org/stable/gallery/misc/keyword_plotting.html>`__.
 autoformat : bool, optional
@@ -152,7 +152,7 @@ docstring._snippet_manager['plot.args_2d_shared'] = _args_2d_shared_docstring
 _guide_docstring = """
 colorbar : bool, int, or str, optional
     If not ``None``, this is a location specifying where to draw an
-    *inner* or *outer* colorbar from the resulting object(s). If ``True``,
+    *inset* or *outer* colorbar from the resulting object(s). If ``True``,
     the default :rc:`colorbar.loc` is used. If the same location is
     used in successive plotting calls, object(s) will be added to the
     existing colorbar in that location (valid for colorbars built from lists
@@ -160,7 +160,7 @@ colorbar : bool, int, or str, optional
 colorbar_kw : dict-like, optional
     Extra keyword args for the call to `~proplot.axes.Axes.colorbar`.
 legend : bool, int, or str, optional
-    Location specifying where to draw an *inner* or *outer* legend from the
+    Location specifying where to draw an *inset* or *outer* legend from the
     resulting object(s). If ``True``, the default :rc:`legend.loc` is used.
     If the same location is used in successive plotting calls, object(s)
     will be added to existing legend in that location. Valid locations
@@ -846,8 +846,8 @@ redundant for `~matplotlib.axes.Axes.violinplot`\\ s.
 
 See also
 --------
-PlotAxes.violins
-PlotAxes.violinsh
+PlotAxes.violin
+PlotAxes.violinh
 PlotAxes.violinplot
 PlotAxes.violinploth
 matplotlib.axes.Axes.violinplot

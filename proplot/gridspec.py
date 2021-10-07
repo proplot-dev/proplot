@@ -33,17 +33,17 @@ _shared_docstring = """
 left, right, top, bottom : unit-spec, optional
     The fixed space between the subplots and the figure edge. Default is ``None``.
     %(units.em)s
-    If ``None``, the space is determined automatically based on the font size and
-    axis sharing settings. If :rcraw:`subplots.tight` is ``True``, the space is
-    determined by the tight layout algorithm.
+    If ``None``, the space is determined automatically based on the tick and
+    label settings. If :rcraw:`subplots.tight` is ``True`` or ``tight=True`` was
+    passed to the figure, the space is determined by the tight layout algorithm.
 """
 _scalar_docstring = """
 wspace, hspace, space : unit-spec, optional
     The fixed space between grid columns, rows, or both. Default is ``None``.
     %(units.em)s
-    If ``None``, the space is determined automatically based on the font size and
-    axis sharing settings. If :rcraw:`subplots.tight` is ``True``, the space is
-    determined by the tight layout algorithm.
+    If ``None``, the space is determined automatically based on the font size and axis
+    sharing settings. If :rcraw:`subplots.tight` is ``True`` or ``tight=True`` was
+    passed to the figure, the space is determined by the tight layout algorithm.
 """
 _vector_docstring = """
 wspace, hspace, space : unit-spec or sequence, optional
@@ -54,9 +54,9 @@ wspace, hspace, space : unit-spec or sequence, optional
     %(units.em)s
 
     For elements equal to ``None``, the space is determined automatically based
-    on the font and tick settings. If :rcraw:`subplots.tight` is ``True``, the
-    space is determined by the tight layout algorithm. Otherwise, a sensible default
-    value is chosen. For example, ``subplots(ncols=3, tight=True, wspace=(2, None))``
+    on the tick and label settings. If :rcraw:`subplots.tight` is ``True`` or
+    ``tight=True`` was passed to the figure, the space is determined by the tight
+    layout algorithm. For example, ``subplots(ncols=3, tight=True, wspace=(2, None))``
     fixes the space between columns 1 and 2 but lets the tight layout algorithm
     determine the space between columns 2 and 3.
 wratios, hratios : float or sequence, optional
@@ -64,21 +64,22 @@ wratios, hratios : float or sequence, optional
     ratios for the subplot grid. Length of `wratios` must match the number
     of rows, and length of `hratios` must match the number of columns.
 width_ratios, height_ratios
-    Aliases for `wratios`, `hratios`. Included for consistency with
-    the `matplotlib.pyplot.subplots` command.
+    Aliases for `wratios`, `hratios`. Included for
+    consistency with `matplotlib.gridspec.GridSpec`.
 wpad, hpad, pad : unit-spec or sequence, optional
-    The tight layout padding between columns, rows, and both, respectively. Unlike
-    ``space``, these control the padding between subplot content (including text,
-    ticks, etc.) rather than subplot edges. As with ``space``, these can be scalars
-    or arrays optionally containing ``None``. Default is `innerpad`.
+    The tight layout padding between columns, rows, and both, respectively.
+    Unlike ``space``, these control the padding between subplot content
+    (including text, ticks, etc.) rather than subplot edges. As with
+    ``space``, these can be scalars or arrays optionally containing ``None``.
+    For elements equal to ``None``, the default is `innerpad`.
     %(units.em)s
 """
 _tight_docstring = """
 wequal, hequal, equal :  bool, optional
-    Whether to make the tight layout algorithm apply equal spacing between columns,
-    rows, or both. Default is ``False``. Ignored if :rcraw:`tight` is ``False``.
+    Whether to make the tight layout algorithm apply equal spacing
+    between columns, rows, or both. Default is ``False``.
 outerpad : unit-spec, optional
-    The tight layout padding around the left, right, top, and bottom edges
+    The scalar tight layout padding around the left, right, top, and bottom edges
     of the figure.  Default is :rc:`subplots.outerpad`.
     %(units.em)s
 innerpad : unit-spec, optional
@@ -86,8 +87,8 @@ innerpad : unit-spec, optional
     `pad`. Default is :rc:`subplots.innerpad`.
     %(units.em)s
 panelpad : unit-spec, optional
-    The tight layout padding between subplots and axes panels and between "stacked"
-    panels. Default is :rc:`subplots.panelpad`.
+    The scalar tight layout padding between subplots and their panels, colorbars, and
+    legends and between "stacks" of these objects. Default is :rc:`subplots.panelpad`.
     %(units.em)s
 """
 docstring._snippet_manager['gridspec.shared'] = _shared_docstring
