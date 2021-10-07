@@ -3601,8 +3601,7 @@ class PlotAxes(base.Axes):
         *eb, kw = self._plot_errorbars(x, y, vert=vert, default_boxstds=True, default_marker=True, **kw)  # noqa: E501
         kw.pop('labels', None)  # already applied in _parse_plot1d
         kw.setdefault('positions', x)  # coordinates passed as keyword
-        if 'distribution' in kw:  # i.e. was reduced
-            y = kw.pop('distribution')
+        y = _not_none(kw.pop('distribution'), y)  # i.e. was reduced
         y = data._dist_clean(y)
         artists = self._plot_native(
             'violinplot', y, vert=vert,
