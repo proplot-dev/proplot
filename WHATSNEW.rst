@@ -50,27 +50,24 @@ Features
 * Add `xtickwidth`, `ytickwidth`, `xtickwidthratio`, and `ytickwidthratio` keywords
   to `~proplot.axes.CartesianAxes.format`  to scale tick widths (:commit:`30a250f0`).
 * Set default `gridlabelcolor` to `color` when latter is passed to polar or geo
-  axes ``format`` methods, consistent with `proplot.axes.CartesianAxes`
+  axes ``format`` methods, consistent with `proplot.axes.CartesianAxes` `color`.
 * Add `ticklen`, `ticklenratio`, `tickwidth`, `tickwidthratio` keywords to
   `~proplot.axes.Axes.colorbar` to manage colorbar ticks (:commit:`08498abf`).
 * Add `labelloc` keyword to `~proplot.axes.Axes.colorbar` to change
   the colorbar label location separately from `tickloc` (:commit:`32069370`).
-* Permit specifying `linewidth` keyword (and aliases) with arbitrary
+* Permit specifying `linewidth` and `markersize` keywords (and aliases) with arbitrary
   physical units for format/colorbar/plotting commands (:commit:`c1ffbc8c`).
 * Add `absolute_size` key to `~proplot.axes.PlotAxes.scatter` (analogous to
   `absolute_width` used with `~proplot.axes.PlotAxes.bar`) to bypass
   auto-scaling of array input (:commit:`b4701411`).
-* Add more intuitive ``bars``, ``boxes``, ``shade``, and ``fade`` keywords
-  as alternatives to ``barstds``, etc. (:commit:`15812cd4`).
+* Add more intuitive ``bars``, ``boxes``, ``shade``, ``fade`` keywords as alternatives
+  to ``barstds``, ``boxstds``, ``shadestds``, and ``fadestds`` (:commit:`15812cd4`).
 * Ignore masked and invalid values in datasets passed to ``boxplot`` and
   ``violinplot`` (:commit:`daa666e2`).
 * Convert ``showextrema=True`` passed to `~proplot.axes.Axes.violinplot` to
   ``barpctiles=True`` (i.e., show 0--100 percentile range) (:commit:`42f613d6`).
 * Add `borderstyle` `~proplot.axes.Axes.text` keyword to change the `joinstyle` used
   for the path effects border (:commit:`25e21c76`).
-* Set the default `~proplot.axes.PlotAxes.scatter` `smin` and `smax` (used with
-  array-like input marker sizes `s`) to 1 and :rcraw:`lines.markersize` squared
-  rather than the data minimum and maximum (:commit:`b4701411`).
 
 Bug fixes
 ---------
@@ -82,10 +79,18 @@ Bug fixes
   using it for both `xmargin` and `ymargin` (:commit:`ba32fd1a`).
 * Fix issue where `color` passed to ``format`` triggers deprecation warning even
   though it is a valid background patch property (:commit:`a50eab0e`).
+* Fix issue where calling `~proplot.axes.PlotAxes.violinplot` always emits
+  warning due to masked array input (:commit:`daa666e2`).
+* Fix issue where calling `~proplot.axes.PlotAxes.pcolorfast` with image
+  output emits warning (:commit:`5d081306`).
 * Fix issue where passing ``tickwidth=0`` to ``format`` changes the tick
   length persistently outside of context block (:commit:`4966c8ab`).
 * Fix issue where ``tickratio`` and ``lenratio`` applied in successive calls to
   `~proplot.axes.CartesianAxes.format` fails to update properly (:commit:`26fdadf6`).
+* Fix issue with default `~proplot.axes.PlotAxes.scatter` `smin` and `smax` (used
+  to convert array-like input sizes `s` from data units to ``points ** 2``) by
+  switching defaults to ``1`` and :rcraw:`lines.markersize` rather than the
+  data minimum and maximum (:commit:`b4701411`).
 
 Documentation
 -------------
