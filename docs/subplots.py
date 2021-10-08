@@ -15,8 +15,8 @@
 # %% [raw] raw_mimetype="text/restructuredtext"
 # .. _ug_layout:
 #
-# The subplot
-# ===========
+# Subplots
+# ========
 #
 # This section documents a variety of features related to proplot subplots,
 # including automatic a-b-c subplot labels, axis sharing between subplots,
@@ -30,18 +30,18 @@
 # ------------
 #
 # Proplot can quickly add "a-b-c" labels to subplots. This is possible because we
-# assign a `~proplot.axes.Axes.number` to each subplot. The number can be specified
-# manually by passing a `number` keyword to `~proplot.figure.Figure.add_subplot`.
-# Otherwise the subplot number is incremented by ``1`` each time you call
-# `~proplot.figure.Figure.add_subplot`.
-#
+# assign a `~proplot.axes.Axes.number` to each subplot.
+
+# If you add subplots one-by-one with `~proplot.figure.Figure.add_subplot`, you can
+# manually specify the number with the `number` keyword. By default, the subplot number
+# is incremented by ``1`` each time you call `~proplot.figure.Figure.add_subplot`.
 # If you draw all of your subplots at once with `~proplot.figure.Figure.add_subplots`,
 # the numbers depend on the input arguments. If you
 # :ref:`passed an array <ug_intro>`, the subplot numbers correspond to the numbers
 # in the array. But if you used the `ncols` and `nrows` keyword arguments, the
 # number order is row-major by default and can be switched to column-major by
-# passing ``order='F'``. The number order also determines the subplot order in
-# the `~proplot.gridspec.SubplotGrid` returned by `~proplot.figure.Figure.add_subplots`.
+# passing ``order='F'`` (note the number order also determines the list order in the
+# `~proplot.gridspec.SubplotGrid` returned by `~proplot.figure.Figure.add_subplots`).
 #
 # To turn on "a-b-c" labels, set :rcraw:`abc` to ``True`` or pass ``abc=True``
 # to `~proplot.axes.Axes.format` (see :ref:`the format command <ug_format>`
@@ -92,13 +92,14 @@ axs.format(
 # Automatic sizes
 # ---------------
 #
-# By default, proplot determines the suitable figure size given the
-# geometry of the subplot grid and the size of a "reference" subplot.
+# Proplot figure sizes can optionally be determined automatically.
+# By default, the figure size is determined from the geometry
+# of the subplot grid and the size of a "reference" subplot.
 # This "reference" subplot is specified with the `~proplot.figure.Figure`
 # keyword `refnum` (default is ``1``, i.e. the first subplot added to the figure
 # or the subplot in the upper-left corner when generated with `~proplot.ui.subplots`).
-# Proplot can also determine the suitable figure height given a fixed figure
-# width, and the suitable figure width given a fixed figure height.
+# The figure height (width) can also be determined from the geometry of the subplot
+# grid and the fixed, user-input figure width (height).
 #
 # The figure size is ultimately controlled by the following
 # `~proplot.figure.Figure` keyword arguments:

@@ -499,7 +499,7 @@ locator, ticks : locator-spec, optional
     Used to determine the colorbar tick positions. Passed to the
     `~proplot.constructor.Locator` constructor function.
 locator_kw : dict-like, optional
-    The locator settings. Passed to `~proplot.constructor.Locator`.
+    Keyword arguments passed to `matplotlib.ticker.Locator` class.
 minorlocator, minorticks
     As with `locator`, `ticks` but for the minor ticks.
 minorlocator_kw
@@ -514,7 +514,7 @@ format, formatter, ticklabels : formatter-spec, optional
     The tick label format. Passed to the `~proplot.constructor.Formatter`
     constructor function.
 formatter_kw : dict-like, optional
-    The formatter settings. Passed to `~proplot.constructor.Formatter`.
+    Keyword arguments passed to `matplotlib.ticker.Formatter` class.
 rotation : float, optional
     The tick label rotation. Default is ``0``.
 ticklabelsize, ticklabelweight, ticklabelcolor : optional

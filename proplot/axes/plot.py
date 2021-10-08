@@ -367,7 +367,7 @@ locator : locator-spec, optional
     already passed as lists. Passed to the `~proplot.constructor.Locator` constructor.
     Default is `~matplotlib.ticker.MaxNLocator` with ``levels`` integer levels.
 locator_kw : dict-like, optional
-    Passed to `~proplot.constructor.Locator`.
+    Keyword arguments passed to `matplotlib.ticker.Locator` class.
 symmetric : bool, optional
     If ``True``, automatically generated levels are symmetric about zero.
     Default is always ``False``.
@@ -413,9 +413,11 @@ labels_kw : dict-like, optional
     Ignored if `labels` is ``False``. Extra keyword args for the labels.
     For contour plots, this is passed to `~matplotlib.axes.Axes.clabel`.
     Otherwise, this is passed to `~matplotlib.axes.Axes.text`.
-fmt : format-spec, optional
+formatter, fmt : formatter-spec, optional
     The `~matplotlib.ticker.Formatter` used to format number labels.
     Passed to the `~proplot.constructor.Formatter` constructor.
+formatter_kw : dict-like, optional
+    Keyword arguments passed to `matplotlib.ticker.Formatter` class.
 precision : int, optional
     The maximum number of decimal places for number labels generated
     with the default formatter `~proplot.ticker.Simpleformatter`.
