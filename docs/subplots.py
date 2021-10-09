@@ -23,6 +23,21 @@
 # automatic spacing between subplots, and a unique feature where the figure
 # size is determined automatically from the subplot geometry.
 #
+# .. note::
+#
+#    Proplot subplots can only use one `~proplot.figure.Figure.gridspec` per figure
+#    (see :ref:`this section <ug_subplot>`) and proplot does not officially support
+#    "nested" matplotlib structures like `matplotlib.figure.SubFigure` and
+#    `matplotlib.gridspec.GridSpecFromSubplotSpec`. These restrictions considerably
+#    simplify the algorithm used to calculate :ref:`figure sizes <ug_autosize>` and
+#    :ref:`subplot spaces <ug_spaces>` and makes :ref:`a-b-c label assignment <ug_abc>`
+#    less ambiguous. Many features associated with "nested" matplotlib structures can
+#    be reproduced with proplot, including :ref:`different spaces <ug_spaces>` between
+#    different subplot rows and columns and :ref:`different formatting <ug_subplotgrid>`
+#    for groups of subplots. "Highlighting" behind groups of subplots (analogous to
+#    different subfigure background colors) will also be supported in the future.
+#
+#
 # %% [raw] raw_mimetype="text/restructuredtext"
 # .. _ug_abc:
 #
@@ -89,8 +104,8 @@ axs.format(
 # %% [raw] raw_mimetype="text/restructuredtext"
 # .. _ug_autosize:
 #
-# Automatic sizes
-# ---------------
+# Figure sizes
+# ------------
 #
 # Proplot figure sizes can optionally be determined automatically.
 # By default, the figure size is determined from the geometry
