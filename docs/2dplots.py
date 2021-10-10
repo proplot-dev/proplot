@@ -266,31 +266,39 @@ data = 11 ** (0.25 * np.cumsum(state.rand(N, N), axis=0))
 # Create figure
 pplt.rc['cmap.diverging'] = 'IceFire'
 pplt.rc['cmap.sequential'] = 'magma'
-gs = pplt.GridSpec(ncols=2, nrows=2)
+gs = pplt.GridSpec(ncols=2, nrows=3)
 fig = pplt.figure(refwidth=2.3, span=False)
 
 # Different normalizers
-ax = fig.subplot(gs[0, 0])
+ax = fig.subplot(gs[0, 0], title='Default normalizer')
 ax.pcolormesh(data, colorbar='b')
-ax.format(title='Default normalizer')
-ax = fig.subplot(gs[0, 1])
+ax = fig.subplot(gs[0, 1], title='Logarithmic normalizer')
 ax.pcolormesh(data, norm='log', colorbar='b')
-ax.format(title='Logarithmic normalizer')
 
-# Different colormaps
-ax = fig.subplot(gs[1, 0])
+# Continuous "diverging" colormaps
+data = np.log(data) - 4
+ax = fig.subplot(gs[1, 0], title='Default continuous colormap')
 ax.pcolormesh(
-    np.log(data) - 4, colorbar='b',
+    data, colorbar='b',
     diverging=True,  # use the default
 )
-ax.format(title='Default colormap')
-ax = fig.subplot(gs[1, 1])
+ax = fig.subplot(gs[1, 1], title='On-the-fly continuous colormap')
 ax.pcolormesh(
-    np.log(data) - 4, colorbar='b',
+    data, colorbar='b',
     cmap=('cobalt', 'white', 'violet red'),
     cmap_kw={'space': 'hsl', 'cut': 0.15}
 )
-ax.format(title='On-the-fly colormap')
+
+# Discrete "qualitative" colormaps
+data = data + 4
+ax = fig.subplot(gs[2, 0], title='Preset discrete colormap')
+ax.pcolormesh(
+    data, colorbar='b', cmap='tableau',
+)
+ax = fig.subplot(gs[2, 1], title='On-the-fly discrete colormap')
+ax.pcolormesh(
+    data, colorbar='b', colors=['red5', 'blue5', 'yellow5', 'gray5']
+)
 
 # Format figure
 fig.format(xlabel='xlabel', ylabel='ylabel', grid=True)
