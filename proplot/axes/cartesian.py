@@ -453,11 +453,7 @@ class CartesianAxes(shared._SharedAxes, plot.PlotAxes):
         skipticks = lambda xs: [  # noqa: E731
             x for x in xs if all((l is None or x >= l) and (h is None or x <= h) for (l, h) in bounds)  # noqa: E501
         ]
-        if (
-            fixticks
-            or any(x is not None for b in bounds for x in b)
-            or axis.get_scale() == 'cutoff'
-        ):
+        if fixticks or any(x is not None for b in bounds for x in b):
             # Major locator
             locator = getattr(axis, '_major_locator_cached', None)
             if locator is None:
