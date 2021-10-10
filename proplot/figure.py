@@ -245,8 +245,8 @@ See also
 --------
 proplot.ui.figure
 proplot.ui.subplots
-proplot.figure.Figure
-matplotlib.figure.Figure
+proplot.figure.Figure.subplot
+proplot.figure.Figure.add_subplot
 proplot.gridspec.SubplotGrid
 proplot.axes.Axes
 """
@@ -296,7 +296,14 @@ autoshare : bool, optional
 Other parameters
 ----------------
 **kwargs
-    Passed to `matplotlib.axes.Axes`.
+    Passed to the axes class `proplot.axes.CartesianAxes`, `proplot.axes.PolarAxes`,
+    `proplot.axes.GeoAxes`, or `proplot.axes.ThreeAxes`.
+
+See also
+--------
+proplot.figure.Figure.add_axes
+proplot.figure.Figure.subplots
+proplot.figure.Figure.add_subplots
 """
 docstring._snippet_manager['figure.subplot'] = _subplot_docstring
 
@@ -313,6 +320,19 @@ rect : 4-tuple of float
 %(axes.proj)s
 %(axes.proj_kw)s
 %(axes.basemap)s
+
+Other parameters
+----------------
+**kwargs
+    Passed to the axes class `proplot.axes.CartesianAxes`, `proplot.axes.PolarAxes`,
+    `proplot.axes.GeoAxes`, or `proplot.axes.ThreeAxes`.
+
+See also
+--------
+proplot.figure.Figure.subplot
+proplot.figure.Figure.add_subplot
+proplot.figure.Figure.subplots
+proplot.figure.Figure.add_subplots
 """
 docstring._snippet_manager['figure.axes'] = _axes_docstring
 
