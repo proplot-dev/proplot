@@ -1926,11 +1926,13 @@ for _key, (_key_new, _) in _rc_renamed.items():
         _rc_children[_key] = _rc_children[_key_new]
 
 # The default settings dictionary. Analogous to matplotlib's rcParamsDefault
+# Also surreptitiously add font keys (boolean always evaluates to True)
 _rc_proplot_default = {
     key: value for key, (value, _, _) in _rc_proplot_table.items()
 }
 _rc_proplot_validate = {
     key: validator for key, (_, validator, _) in _rc_proplot_table.items()
+    if not (validator is _validate_fontsize and FONT_KEYS.add(key))
 }
 _rc_proplot_default = _RcParams(_rc_proplot_default, _rc_proplot_validate)
 
