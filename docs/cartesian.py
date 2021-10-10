@@ -335,8 +335,8 @@ pplt.rc.reset()
 # e.g. `loc` or `spineloc` to :ref:`"alternate" axes commands <ug_alt>`.
 # These keywords provide the functionality of matplotlib's
 # `~matplotlib.axis.YAxis.tick_left`, `~matplotlib.axis.YAxis.tick_right`,
-# `~matplotlib.axes.XAxis.tick_top`, and `~matplotlib.axes.XAxis.tick_bottom`,
-# but with additional flexibility (see below).
+# `~matplotlib.axis.XAxis.tick_top`, and `~matplotlib.axis.XAxis.tick_bottom`,
+# but with additional flexibility.
 
 # %%
 import proplot as pplt
