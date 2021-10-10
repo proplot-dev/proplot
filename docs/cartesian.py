@@ -358,6 +358,7 @@ ax.format(ylabel='tick both, label right', ylabelloc='right')
 ax = fig.subplot(122, title='Zero-centered spines', titlepad='1em')
 ax.format(xlim=(-10, 10), ylim=(-3, 3), yticks=1)
 ax.format(xloc='zero', yloc='zero')
+pplt.rc.reset()
 
 
 # %% [raw] raw_mimetype="text/restructuredtext"
