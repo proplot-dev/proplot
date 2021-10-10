@@ -328,8 +328,8 @@ pplt.rc.reset()
 # `proplot.axes.CartesianAxes.format` keyword arguments like `xspineloc`
 # (shorthand `xloc`), `xtickloc`, `xticklabelloc`, and `xlabelloc`. Valid
 # locations include ``'left'``, ``'right'``, ``'top'``, ``'bottom'``, ``'neither'``,
-# ``'none'``, or ``'both'``. Spine locations can also be set to a coordinate
-# `matplotlib.spines.Spine.set_position` position, e.g. ``'zero'`` or
+# ``'none'``, or ``'both'``. Spine locations can also be set to a valid
+# `~matplotlib.spines.Spine.set_position` value, e.g. ``'zero'`` or
 # ``('axes', 1.5)``. The top or right spine is used when the coordinate is
 # more than halfway across the axes. This is often convenient when passing
 # e.g. `loc` or `spineloc` to :ref:`"alternate" axes commands <ug_alt>`.
