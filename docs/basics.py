@@ -269,7 +269,11 @@ fig.colorbar(m, loc='b', label='label')
 # Proplot's ``format`` command is your one-stop-shop for changing figure and axes
 # settings. While one-liner matplotlib setters like ``set_xlabel`` and ``set_title``
 # still work, ``format`` is usually more succinct -- it only needs to be called once.
-# The keyword arguments accepted by ``format`` fall into the following groups:
+# You can also pass arbitrary ``format`` arguments to axes-creation commands
+# like `~proplot.figure.Figure.subplots`, `~proplot.figure.Figure.add_subplot`,
+# `~proplot.axes.Axes.inset_axes`, `~proplot.axes.Axes.panel_axes`,
+# and `~proplot.axes.Axes.twinx` or `~proplot.axes.Axes.twiny`. The keyword
+# arguments accepted by ``format`` fall into the following groups:
 #
 # * Figure settings. These are related to row labels, column labels, and
 #   figure "super" titles -- for example, ``fig.format(suptitle='Super title')``
