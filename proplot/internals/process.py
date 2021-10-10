@@ -150,32 +150,7 @@ def _to_masked_array(data, *, copy=False):
     return data, units
 
 
-# Processing utilities
-def _to_centers(x, y, z):
-    """
-    Enforce that coordinates are centers. Convert from edges if possible.
-    """
-    xlen, ylen = x.shape[-1], y.shape[0]
-    if z.ndim == 2 and z.shape[1] == xlen - 1 and z.shape[0] == ylen - 1:
-        # Get centers given edges
-        if all(z.ndim == 1 and z.size > 1 and _is_numeric(z) for z in (x, y)):
-            x = 0.5 * (x[1:] + x[:-1])
-            y = 0.5 * (y[1:] + y[:-1])
-        else:
-            if x.ndim == 2 and x.shape[0] > 1 and x.shape[1] > 1 and _is_numeric(x):
-                x = 0.25 * (x[:-1, :-1] + x[:-1, 1:] + x[1:, :-1] + x[1:, 1:])
-            if y.ndim == 2 and y.shape[0] > 1 and y.shape[1] > 1 and _is_numeric(y):
-                y = 0.25 * (y[:-1, :-1] + y[:-1, 1:] + y[1:, :-1] + y[1:, 1:])
-    elif z.shape[-1] != xlen or z.shape[0] != ylen:
-        # Helpful error message
-        raise ValueError(
-            f'Input shapes x {x.shape} and y {y.shape} '
-            f'must match z centers {z.shape} '
-            f'or z borders {tuple(i+1 for i in z.shape)}.'
-        )
-    return x, y
-
-
+# Input data transformations
 def _to_edges(x, y, z):
     """
     Enforce that coordinates are edges. Convert from centers if possible.
@@ -202,6 +177,32 @@ def _to_edges(x, y, z):
     return x, y
 
 
+def _to_centers(x, y, z):
+    """
+    Enforce that coordinates are centers. Convert from edges if possible.
+    """
+    xlen, ylen = x.shape[-1], y.shape[0]
+    if z.ndim == 2 and z.shape[1] == xlen - 1 and z.shape[0] == ylen - 1:
+        # Get centers given edges
+        if all(z.ndim == 1 and z.size > 1 and _is_numeric(z) for z in (x, y)):
+            x = 0.5 * (x[1:] + x[:-1])
+            y = 0.5 * (y[1:] + y[:-1])
+        else:
+            if x.ndim == 2 and x.shape[0] > 1 and x.shape[1] > 1 and _is_numeric(x):
+                x = 0.25 * (x[:-1, :-1] + x[:-1, 1:] + x[1:, :-1] + x[1:, 1:])
+            if y.ndim == 2 and y.shape[0] > 1 and y.shape[1] > 1 and _is_numeric(y):
+                y = 0.25 * (y[:-1, :-1] + y[:-1, 1:] + y[1:, :-1] + y[1:, 1:])
+    elif z.shape[-1] != xlen or z.shape[0] != ylen:
+        # Helpful error message
+        raise ValueError(
+            f'Input shapes x {x.shape} and y {y.shape} '
+            f'must match z centers {z.shape} '
+            f'or z borders {tuple(i+1 for i in z.shape)}.'
+        )
+    return x, y
+
+
+# Input argument processing
 def _from_data(data, *args):
     """
     Try to convert positional `key` arguments to `data[key]`. If argument is string
