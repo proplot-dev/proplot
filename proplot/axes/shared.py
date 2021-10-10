@@ -70,7 +70,7 @@ class _SharedAxes(object):
     def _update_ticks(
         self, x, *, grid=None, gridminor=None, gridpad=None, gridcolor=None,
         ticklen=None, ticklenratio=None, tickdir=None, tickcolor=None,
-        labeldir=None, labelpad=None, labelcolor=None,
+        labeldir=None, labelpad=None, labelcolor=None, labelsize=None, labelweight=None,
     ):
         """
         Update the gridlines and labels. Set `gridpad` to ``True`` to use grid padding.
@@ -82,6 +82,10 @@ class _SharedAxes(object):
         kwtext = {'label' + key: value for key, value in kwtext.items()}
         if labelcolor is not None:
             kwtext['labelcolor'] = labelcolor
+        if labelsize is not None:
+            kwtext['labelsize'] = labelsize
+        if labelweight is not None:
+            kwtext_extra['weight'] = labelweight
 
         # Apply tick settings with tick_params when possible
         x = _not_none(x, 'x')

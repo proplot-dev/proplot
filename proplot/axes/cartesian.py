@@ -37,16 +37,13 @@ aspect : {'auto', 'equal'} or float, optional
 xlabel, ylabel : str, optional
     The x and y axis labels. Applied with `~matplotlib.axes.Axes.set_xlabel`
     and `~matplotlib.axes.Axes.set_ylabel`.
-xlabelpad, ylabelpad : unit-spec, optional
-    The padding between the x and y axis bounding box and the
-    x and y axis labels. Default is :rc:`label.pad`.
-    %(units.pt)s
 xlabel_kw, ylabel_kw : dict-like, optional
-    Additional settings used to update the axis labels with ``text.update()``.
+    Additional axis label settings applied with `~matplotlib.axes.Axes.set_xlabel`
+    and `~matplotlib.axes.Axes.set_ylabel`. See also `labelpad`, `labelcolor`,
+    `labelsize`, and `labelweight` below.
 xlim, ylim : 2-tuple of floats or None, optional
-    The x and y axis data limits. Applied with
-    `~matplotlib.axes.Axes.set_xlim` and
-    `~matplotlib.axes.Axes.set_ylim`.
+    The x and y axis data limits. Applied with `~matplotlib.axes.Axes.set_xlim`
+    and `~matplotlib.axes.Axes.set_ylim`.
 xmin, ymin : float, optional
     The x and y minimum data limits. Useful if you do not want
     to set the maximum limits.
@@ -62,6 +59,24 @@ xscale, yscale : scale-spec, optional
     ``xscale=('cutoff', 100, 2)`` applies a `~proplot.scale.CutoffScale`.
 xscale_kw, yscale_kw : dict-like, optional
     The x and y axis scale settings. Passed to `~proplot.scale.Scale`.
+xmargin, ymargin, margin : float, optional
+    The default margin between plotted content and the x and y axis spines in
+    axes-relative coordinates. Use this to add whitespace between plotted content and
+    axes edges without explicitly setting the limits. Use `margin` to set both at once.
+xbounds, ybounds : 2-tuple of float, optional
+    The x and y axis data bounds within which to draw the spines. For example,
+    ``xlim=(0, 4)`` combined with ``xbounds=(1, 4)`` will prevent the spines
+    from meeting at the origin.
+xtickrange, ytickrange : 2-tuple of float, optional
+    The x and y axis data ranges within which major tick marks are labelled.
+    For example, ``xlim=(-5, 5)`` combined with ``xtickrange=(-1, 1)`` and a
+    tick interval of 1 will only label the ticks marks at -1, 0, and 1. See
+    `~proplot.ticker.AutoFormatter` for details.
+xwraprange, ywraprange : 2-tuple of float, optional
+    The x and y axis data ranges with which major tick mark values are wrapped. For
+    example, ``xwraprange=(0, 3)`` causes the values 0 through 9 to be formatted as
+    0, 1, 2, 0, 1, 2, 0, 1, 2, 0. See `~proplot.ticker.AutoFormatter` for details. This
+    can be combined with `xtickrange` and `ytickrange` to make "stacked" line plots.
 xloc, yloc : optional
     Shorthands for `xspineloc`, `yspineloc`.
 xspineloc, yspineloc : {'bottom', 'top', 'left', 'right', \
@@ -88,10 +103,9 @@ xtickdir, ytickdir, tickdir : {'out', 'in', 'inout'}
 xticklabeldir, yticklabeldir : {'in', 'out'}
     Whether to place x and y axis tick label text inside
     or outside the axes.
-xticklabelpad, yticklabelpad : unit-spec, optional
-    The padding between the x and y axis ticks and
-    tick labels. Default is :rcraw:`tick.labelpad`.
-    %(units.pt)s
+xrotation, yrotation : float, optional
+    The rotation for x and y axis tick labels. Default is ``0``
+    for normal axes, :rc:`formatter.timerotation` for time x axes.
 xgrid, ygrid, grid : bool, optional
     Whether to draw major gridlines on the x and y axis.
     Use `grid` to toggle both.
@@ -125,29 +139,18 @@ xformatter, yformatter : formatter-spec, optional
     instance. Use ``[]``, ``'null'``, or ``'none'`` for no labels.
 xformatter_kw, yformatter_kw : dict-like, optional
     Keyword arguments passed to the `matplotlib.ticker.Formatter` class.
-xrotation, yrotation : float, optional
-    The rotation for x and y axis tick labels. Default is ``0``
-    for normal axes, :rc:`formatter.timerotation` for time x axes.
-xbounds, ybounds : 2-tuple of float, optional
-    The x and y axis data bounds within which to draw the spines.
-    For example, the axis range ``(0, 4)`` with bounds ``(1, 4)``
-    will prevent the spines from meeting at the origin.
-xtickrange, ytickrange : 2-tuple of float, optional
-    The x and y axis data ranges within which major tick marks
-    are labelled. For example, the tick range ``(-1, 1)`` with
-    axis range ``(-5, 5)`` and a tick interval of 1 will only
-    label the ticks marks at -1, 0, and 1. See
-    `~proplot.ticker.AutoFormatter` for details.
-xwraprange, ywraprange : 2-tuple of float, optional
-    The x and y axis data ranges with which major tick mark values are
-    wrapped. For example, the wrap range ``(0, 3)`` causes the values 0
-    through 9 to be formatted as 0, 1, 2, 0, 1, 2, 0, 1, 2, 0. See
-    `~proplot.ticker.AutoFormatter` for details.
-xmargin, ymargin, margin : float, optional
-    The default margin between plotted content and the x and y axis spines.
-    Value is proportional to the width, height of the axes. Use this to add
-    whitespace between plotted content and axes edges without explicitly
-    setting `xlim` or `ylim`. Use `margin` to set both at once.
+xcolor, ycolor, color : color-spec, optional
+    Color for the x and y axis spines, ticks, tick labels, and axis
+    labels. Use `color` to set both at once.
+xgridcolor, ygridcolor, gridcolor : color-spec, optional
+    Color for the x and y axis major and minor gridlines. Default is :rc:`grid.color`.
+    Use `gridcolor` to set both at once.
+xlinewidth, ylinewidth, linewidth : color-spec, optional
+    Line width for the x and y axis spines and major ticks. Propagates to
+    `tickwidth` unless specified otherwise. Use `linewidth` to set both at once.
+xtickcolor, ytickcolor, tickcolor : color-spec, optional
+    Color for the x and y axis ticks. Default is `xcolor`, `ycolor`, and `color` or
+    :rc:`tick.color` if they were not passed. Use `tickcolor` to set both at once.
 xticklen, yticklen, ticklen : unit-spec, optional
     Major tick lengths for the x and y axis. Default is :rc:`tick.len`.
     %(units.pt)s
@@ -156,10 +159,6 @@ xticklenratio, yticklenratio, ticklenratio : float, optional
     Relative scaling of `xticklen` and `yticklen` used to determine
     minor tick lengths. Default is :rc:`tick.lenratio`.
     Use `ticklenratio` to set both at once.
-xlinewidth, ylinewidth, linewidth : color-spec, optional
-    Line width for the x and y axis spines and major ticks.
-    Propagates to `tickwidth` unless specified otherwise.
-    Use `linewidth` to set both at once.
 xtickwidth, ytickwidth, tickwidth, : unit-spec, optional
     Major tick widths for the x ans y axis. Default is `linewidth`
     or :rc:`tick.width` if `linewidth` was not passed.
@@ -169,21 +168,34 @@ xtickwidthratio, ytickwidthratio, tickwidthratio
     Relative scaling of `xtickwidth` and `ytickwidth` used to determine
     minor tick widths. Default is :rc:`tick.widthratio`.
     Use `tickwidthratio` to set both at once.
-xcolor, ycolor, color : color-spec, optional
-    Color for the x and y axis spines, ticks, tick labels, and axis
-    labels. Use `color` to set both at once.
-xtickcolor, ytickcolor, tickcolor : color-spec, optional
-    Color for the x and y axis ticks. Inherits from `color` by
-    default. Use `tickcolor` to set both at once.
+xticklabelpad, yticklabelpad : unit-spec, optional
+    The padding between the x and y axis ticks and
+    tick labels. Default is :rcraw:`tick.labelpad`.
+    %(units.pt)s
 xticklabelcolor, yticklabelcolor, ticklabelcolor : color-spec, optional
-    Color for the x and y tick labels. Inherits from `color` by
-    default. Use `ticklabelcolor` to set both at once.
+    Color for the x and y tick labels. Default is `xcolor`, `ycolor`, and `color` or
+    :rc:`tick.labelcolor` if they were not passed. Use `ticklabelcolor` to set both.
+xticklabelsize, yticklabelsize, ticklabelsize : unit-spec or str, optional
+    Font size for the x and y tick labels. Default is :rc:`tick.labelsize`.
+    %(units.pt)s
+    Use `ticklabelsize` to set both at once.
+xticklabelweight, yticklabelweight, ticklabelweight : str, optional
+    Font weight for the x and y axis labels. Default is :rc:`label.weight`.
+    Use `ticklabelweight` to set both at once.
+xlabelpad, ylabelpad : unit-spec, optional
+    The padding between the x and y axis bounding box and
+    the x and y axis labels. Default is :rc:`label.pad`.
+    %(units.pt)s
 xlabelcolor, ylabelcolor, labelcolor : color-spec, optional
-    Color for the x and y axis labels. Inherits from `color` by
-    default. Use `labelcolor` to set both at once.
-xgridcolor, ygridcolor, gridcolor : color-spec, optional
-    Color for the x and y axis major and minor gridlines.
-    Use `gridcolor` to set both at once.
+    Color for the x and y axis labels. Default is `xcolor`, `ycolor`, and `color` or
+    :rc:`label.color` if they were not passed. Use `labelcolor` to set both at once.
+xlabelsize, ylabelsize, labelsize : unit-spec or str, optional
+    Font size for the x and y axis labels. Default is :rc:`label.size`.
+    %(units.pt)s
+    Use `labelsize` to set both at once.
+xlabelweight, ylabelweight, labelweight : str, optional
+    Font weight for the x and y axis labels. Default is :rc:`label.weight`.
+    Use `labelweight` to set both at once.
 fixticks : bool, optional
     Whether to always transform the tick locators to a
     `~matplotlib.ticker.FixedLocator` instance. Default is ``False``.
@@ -835,25 +847,15 @@ class CartesianAxes(shared._SharedAxes, plot.PlotAxes):
         aspect=None,
         xloc=None, yloc=None,
         xspineloc=None, yspineloc=None,
-        xtickloc=None, ytickloc=None, fixticks=False,
-        xlabelloc=None, ylabelloc=None,
         xoffsetloc=None, yoffsetloc=None,
-        xticklabelloc=None, yticklabelloc=None,
-        xtickdir=None, ytickdir=None,
-        xgrid=None, ygrid=None,
-        xgridminor=None, ygridminor=None,
-        xtickminor=None, ytickminor=None,
-        xticklabeldir=None, yticklabeldir=None,
-        xticklabelpad=None, yticklabelpad=None,
-        xtickrange=None, ytickrange=None,
         xwraprange=None, ywraprange=None,
         xreverse=None, yreverse=None,
-        xlabel=None, ylabel=None,
-        xlabelpad=None, ylabelpad=None,
         xlim=None, ylim=None,
         xmin=None, ymin=None,
         xmax=None, ymax=None,
         xscale=None, yscale=None,
+        xbounds=None, ybounds=None,
+        xmargin=None, ymargin=None,
         xrotation=None, yrotation=None,
         xformatter=None, yformatter=None,
         xticklabels=None, yticklabels=None,
@@ -861,17 +863,31 @@ class CartesianAxes(shared._SharedAxes, plot.PlotAxes):
         xlocator=None, ylocator=None,
         xminorticks=None, yminorticks=None,
         xminorlocator=None, yminorlocator=None,
-        xbounds=None, ybounds=None,
-        xmargin=None, ymargin=None,
+        xcolor=None, ycolor=None,
+        xlinewidth=None, ylinewidth=None,
+        xtickloc=None, ytickloc=None, fixticks=False,
+        xtickdir=None, ytickdir=None,
+        xtickminor=None, ytickminor=None,
+        xtickrange=None, ytickrange=None,
+        xtickcolor=None, ytickcolor=None,
         xticklen=None, yticklen=None,
         xticklenratio=None, yticklenratio=None,
         xtickwidth=None, ytickwidth=None,
         xtickwidthratio=None, ytickwidthratio=None,
-        xlinewidth=None, ylinewidth=None,
-        xcolor=None, ycolor=None, color=None,  # special case (see below)
-        xtickcolor=None, ytickcolor=None,
+        xticklabelloc=None, yticklabelloc=None,
+        xticklabeldir=None, yticklabeldir=None,
+        xticklabelpad=None, yticklabelpad=None,
         xticklabelcolor=None, yticklabelcolor=None,
+        xticklabelsize=None, yticklabelsize=None,
+        xticklabelweight=None, yticklabelweight=None,
+        xlabel=None, ylabel=None,
+        xlabelloc=None, ylabelloc=None,
+        xlabelpad=None, ylabelpad=None,
         xlabelcolor=None, ylabelcolor=None,
+        xlabelsize=None, ylabelsize=None,
+        xlabelweight=None, ylabelweight=None,
+        xgrid=None, ygrid=None,
+        xgridminor=None, ygridminor=None,
         xgridcolor=None, ygridcolor=None,
         xlabel_kw=None, ylabel_kw=None,
         xscale_kw=None, yscale_kw=None,
@@ -923,6 +939,7 @@ class CartesianAxes(shared._SharedAxes, plot.PlotAxes):
             yminorlocator_kw = yminorlocator_kw or {}
 
             # Color keyword arguments. Inherit from 'color' when necessary
+            color = kwargs.pop('color', None)
             xcolor = _not_none(xcolor, color)
             ycolor = _not_none(ycolor, color)
             if 'tick.color' not in rc_kw:
@@ -975,52 +992,99 @@ class CartesianAxes(shared._SharedAxes, plot.PlotAxes):
 
             # Loop over axes
             for (
-                x, label,
-                labelpad, ticklabelpad,
-                color, linewidth,
-                gridcolor, labelcolor,
-                tickcolor, ticklabelcolor,
-                ticklen, ticklenratio,
-                tickwidth, tickwidthratio,
-                margin, bounds,
-                tickloc, spineloc,
-                ticklabelloc, labelloc,
-                offsetloc,
-                grid, gridminor,
-                tickminor, minorlocator,
-                min_, max_, lim,
-                reverse, scale,
-                locator, tickrange,
+                x,
+                min_,
+                max_,
+                lim,
+                reverse,
+                margin,
+                bounds,
+                tickrange,
                 wraprange,
-                formatter, tickdir,
-                ticklabeldir, rotation,
-                label_kw, scale_kw,
-                locator_kw, minorlocator_kw,
-                formatter_kw
+                scale,
+                scale_kw,
+                spineloc,
+                tickloc,
+                ticklabelloc,
+                labelloc,
+                offsetloc,
+                grid,
+                gridminor,
+                locator,
+                locator_kw,
+                minorlocator,
+                minorlocator_kw,
+                formatter,
+                formatter_kw,
+                label,
+                label_kw,
+                color,
+                gridcolor,
+                linewidth,
+                rotation,
+                tickminor,
+                tickdir,
+                tickcolor,
+                ticklen,
+                ticklenratio,
+                tickwidth,
+                tickwidthratio,
+                ticklabeldir,
+                ticklabelpad,
+                ticklabelcolor,
+                ticklabelsize,
+                ticklabelweight,
+                labelpad,
+                labelcolor,
+                labelsize,
+                labelweight,
             ) in zip(
-                ('x', 'y'), (xlabel, ylabel),
-                (xlabelpad, ylabelpad), (xticklabelpad, yticklabelpad),
-                (xcolor, ycolor), (xlinewidth, ylinewidth),
-                (xgridcolor, ygridcolor), (xlabelcolor, ylabelcolor),
-                (xtickcolor, ytickcolor), (xticklabelcolor, yticklabelcolor),
-                (xticklen, yticklen), (xticklenratio, yticklenratio),
-                (xtickwidth, ytickwidth), (xtickwidthratio, ytickwidthratio),
-                (xmargin, ymargin), (xbounds, ybounds),
-                (xtickloc, ytickloc), (xspineloc, yspineloc),
-                (xticklabelloc, yticklabelloc), (xlabelloc, ylabelloc),
-                (xoffsetloc, yoffsetloc),
-                (xgrid, ygrid), (xgridminor, ygridminor),
-                (xtickminor, ytickminor), (xminorlocator, yminorlocator),
-                (xmin, ymin), (xmax, ymax), (xlim, ylim),
-                (xreverse, yreverse), (xscale, yscale),
-                (xlocator, ylocator), (xtickrange, ytickrange),
+                ('x', 'y'),
+                (xmin, ymin),
+                (xmax, ymax),
+                (xlim, ylim),
+                (xreverse, yreverse),
+                (xmargin, ymargin),
+                (xbounds, ybounds),
+                (xtickrange, ytickrange),
                 (xwraprange, ywraprange),
-                (xformatter, yformatter), (xtickdir, ytickdir),
-                (xticklabeldir, yticklabeldir), (xrotation, yrotation),
-                (xlabel_kw, ylabel_kw), (xscale_kw, yscale_kw),
+                (xscale, yscale),
+                (xscale_kw, yscale_kw),
+                (xspineloc, yspineloc),
+                (xtickloc, ytickloc),
+                (xticklabelloc, yticklabelloc),
+                (xlabelloc, ylabelloc),
+                (xoffsetloc, yoffsetloc),
+                (xgrid, ygrid),
+                (xgridminor, ygridminor),
+                (xlocator, ylocator),
                 (xlocator_kw, ylocator_kw),
+                (xminorlocator, yminorlocator),
                 (xminorlocator_kw, yminorlocator_kw),
+                (xformatter, yformatter),
                 (xformatter_kw, yformatter_kw),
+                (xlabel, ylabel),
+                (xlabel_kw, ylabel_kw),
+                (xcolor, ycolor),
+                (xgridcolor, ygridcolor),
+                (xlinewidth, ylinewidth),
+                (xrotation, yrotation),
+                (xtickminor, ytickminor),
+                (xtickdir, ytickdir),
+                (xtickcolor, ytickcolor),
+                (xticklen, yticklen),
+                (xticklenratio, yticklenratio),
+                (xtickwidth, ytickwidth),
+                (xtickwidthratio, ytickwidthratio),
+                (xticklabeldir, yticklabeldir),
+                (xticklabelpad, yticklabelpad),
+                (xticklabelcolor, yticklabelcolor),
+                (xticklabelsize, yticklabelsize),
+                (xticklabelweight, yticklabelweight),
+                (xlabelpad, ylabelpad),
+                (xlabelcolor, ylabelcolor),
+                (xlabelsize, ylabelsize),
+                (xlabelweight, ylabelweight),
             ):
                 # Axis scale
                 # WARNING: This relies on monkey patch of mscale.scale_factory
@@ -1063,14 +1127,20 @@ class CartesianAxes(shared._SharedAxes, plot.PlotAxes):
                     ticklen=ticklen, ticklenratio=ticklenratio,
                     tickdir=tickdir, labeldir=ticklabeldir, labelpad=ticklabelpad,
                     tickcolor=tickcolor, gridcolor=gridcolor, labelcolor=ticklabelcolor,
+                    labelsize=ticklabelsize, labelweight=ticklabelweight,
                 )
 
                 # Axis label settings
-                # NOTE: This must come after set_label_position, or ha or va overrides
-                # in label_kw are overwritten.
-                self._update_labels(
-                    x, label, color=labelcolor, labelpad=labelpad, **label_kw
+                # NOTE: This must come after set_label_position, or any ha and va
+                # overrides in label_kw are overwritten.
+                kw = dict(
+                    labelpad=labelpad,
+                    color=labelcolor,
+                    size=labelsize,
+                    weight=labelweight,
+                    **label_kw
                 )
+                self._update_labels(x, label, **kw)
 
                 # Axis locator
                 if minorlocator is True or minorlocator is False:  # must test identity

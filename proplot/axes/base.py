@@ -445,6 +445,22 @@ _colorbar_kwargs_docstring = """
 orientation : {None, 'horizontal', 'vertical'}, optional
     The colorbar orientation. By default this depends on the "side" of the subplot
     or figure where the colorbar is drawn. Inset colorbars are always horizontal.
+norm : norm-spec, optional
+    Ignored if `values` is ``None``. The normalizer for converting `values`
+    to colormap colors. Passed to `~proplot.constructor.Norm`.
+norm_kw : dict-like, optional
+    The normalizer settings. Passed to `~proplot.constructor.Norm`.
+label, title : str, optional
+    The colorbar label. The `title` keyword is also accepted for
+    consistency with `~matplotlib.axes.Axes.legend`.
+reverse : bool, optional
+    Whether to reverse the direction of the colorbar. This is done automatically
+    when descending levels are used with `~proplot.colors.DiscreteNorm`.
+rotation : float, optional
+    The tick label rotation. Default is ``0``.
+grid, edges, drawedges : bool, optional
+    Whether to draw level dividers (i.e., gridlines) between each distinct color.
+    Default is :rc:`colorbar.grid`.
 extend : {'neither', 'both', 'min', 'max'}, optional
     Direction for drawing colorbar "extensions" (i.e. color keys for out-of-bounds
     data on the end of the colorbar). Default behavior is to use the value of `extend`
@@ -459,42 +475,6 @@ extendsize : unit-spec, optional
 extendrect : bool, optional
     Whether to draw colorbar "extensions" as rectangles. Default is ``False``
     (i.e. extensions are drawn as triangles).
-norm : norm-spec, optional
-    Ignored if `values` is ``None``. The normalizer for converting `values`
-    to colormap colors. Passed to `~proplot.constructor.Norm`.
-norm_kw : dict-like, optional
-    The normalizer settings. Passed to `~proplot.constructor.Norm`.
-reverse : bool, optional
-    Whether to reverse the direction of the colorbar. This is done automatically
-    when descending levels are used with `~proplot.colors.DiscreteNorm`.
-grid, edges, drawedges : bool, optional
-    Whether to draw level dividers (i.e., gridlines) between each distinct color.
-    Default is :rc:`colorbar.grid`.
-tickminor : bool, optional
-    Whether to add minor ticks using `~matplotlib.colorbar.ColorbarBase.minorticks_on`.
-tickdir, tickdirection : {'out', 'in', 'inout'}, optional
-    Direction of major and minor colorbar ticks. Default is :rc:`tick.dir`.
-tickloc, ticklocation : {'bottom', 'top', 'left', 'right'}, optional
-    Where to draw tick marks on the colorbar. Default is toward the outside
-    of the subplot for outer colorbars and ``'bottom'`` for inset colorbars.
-ticklen : unit-spec, optional
-    Major tick lengths for the colorbar ticks. Default is :rc:`tick.len`.
-tickwidth : unit-spec, optional
-    Major tick widths for the colorbar ticks. Default is `linewidth`
-    or :rc:`tick.width` if `linewidth` was not passed.
-ticklenratio : float, optional
-    Relative scaling of `ticklen` used to determine minor tick lengths.
-    Default is :rc:`tick.lenratio`.
-tickwidthratio : float, optional
-    Relative scaling of `tickwidth` used to determine minor tick widths.
-    Default is :rc:`tick.widthratio`.
-label, title : str, optional
-    The colorbar label. The `title` keyword is also accepted for
-    consistency with `~matplotlib.axes.Axes.legend`.
-labelloc : {'bottom', 'top', 'left', 'right'}
-    Where to draw the colorbar label. Inherits from `tickloc` by default.
-labelsize, labelweight, labelcolor : optional
-    The font size, weight, and color for the colorbar label.
 locator, ticks : locator-spec, optional
     Used to determine the colorbar tick positions. Passed to the
     `~proplot.constructor.Locator` constructor function.
@@ -515,13 +495,36 @@ format, formatter, ticklabels : formatter-spec, optional
     constructor function.
 formatter_kw : dict-like, optional
     Keyword arguments passed to `matplotlib.ticker.Formatter` class.
-rotation : float, optional
-    The tick label rotation. Default is ``0``.
-ticklabelsize, ticklabelweight, ticklabelcolor : optional
-    The font size, weight, and color for colorbar tick labels.
 frame, frameon : bool, optional
     For inset colorbars only. Indicates whether to draw a "frame", just
     like `~matplotlib.axes.Axes.legend`. Default is :rc:`colorbar.frameon`.
+tickminor : bool, optional
+    Whether to add minor ticks using `~matplotlib.colorbar.ColorbarBase.minorticks_on`.
+tickloc, ticklocation : {'bottom', 'top', 'left', 'right'}, optional
+    Where to draw tick marks on the colorbar. Default is toward the outside
+    of the subplot for outer colorbars and ``'bottom'`` for inset colorbars.
+tickdir, tickdirection : {'out', 'in', 'inout'}, optional
+    Direction of major and minor colorbar ticks. Default is :rc:`tick.dir`.
+ticklen : unit-spec, optional
+    Major tick lengths for the colorbar ticks. Default is :rc:`tick.len`.
+ticklenratio : float, optional
+    Relative scaling of `ticklen` used to determine minor tick lengths.
+    Default is :rc:`tick.lenratio`.
+tickwidth : unit-spec, optional
+    Major tick widths for the colorbar ticks. Default is `linewidth`
+    or :rc:`tick.width` if `linewidth` was not passed.
+tickwidthratio : float, optional
+    Relative scaling of `tickwidth` used to determine minor tick widths.
+    Default is :rc:`tick.widthratio`.
+ticklabelcolor, ticklabelsize, ticklabelweight : optional
+    The font color, size, and weight for colorbar tick labels. Defaults
+    are :rc:`tick.labelcolor`, :rc:`tick.labelsize`, :rc:`tick.labelweight`.
+labelloc, labellocation : {'bottom', 'top', 'left', 'right'}
+    The colorbar label location. Inherits from `tickloc` by default. Default is toward
+    the outside of the subplot for outer colorbars and ``'bottom'`` for inset colorbars.
+labelcolor, labelsize, labelweight : optional
+    The font color, size, and weight for the colorbar label. Defaults are
+    :rc:`label.color`, :rc:`label.size`, and :rc:`label.weight`.
 a, alpha, framealpha, fc, facecolor, framecolor, ec, edgecolor, ew, edgewidth : optional
     For inset colorbars only. Controls the transparency and color of the frame.
     Defaults are :rc:`colorbar.framealpha` and :rc:`colorbar.framecolor`.
@@ -2003,7 +2006,7 @@ class Axes(maxes.Axes):
         return ax, kwargs
 
     def _parse_colorbar_ticks(
-        self, mappable, ticks=None, locator=None, locator_kw=None,
+        self, ticks=None, locator=None, locator_kw=None,
         format=None, formatter=None, ticklabels=None, formatter_kw=None,
         minorticks=None, minorlocator=None, minorlocator_kw=None,
         maxn=None, maxn_minor=None, tickminor=None, fontsize=None, **kwargs,
@@ -2172,14 +2175,17 @@ class Axes(maxes.Axes):
         return mappable, kwargs
 
     def _draw_colorbar(
-        self, mappable, values=None, *, loc=None, space=None, pad=None, align=None,
-        extend=None, reverse=False, tickminor=None, ticklen=None, ticklenratio=None,
+        self, mappable, values=None, *,
+        loc=None, space=None, pad=None, align=None,
+        label=None, title=None, reverse=False,
+        rotation=None, grid=None, edges=None, drawedges=None,
+        extend=None, extendsize=None, extendfrac=None,
+        tickminor=None, ticklen=None, ticklenratio=None,
         tickdir=None, tickdirection=None, tickwidth=None, tickwidthratio=None,
-        ticklabelsize=None, ticklabelweight=None, ticklabelcolor=None, title=None,
-        label=None, labelloc=None, labelsize=None, labelweight=None, labelcolor=None,
-        rotation=None, grid=None, edges=None, drawedges=None, rasterize=None,
-        c=None, color=None, lw=None, linewidth=None, edgefix=None,
-        extendsize=None, extendfrac=None, **kwargs
+        ticklabelsize=None, ticklabelweight=None, ticklabelcolor=None,
+        labelloc=None, labellocation=None, labelsize=None, labelweight=None,
+        labelcolor=None, c=None, color=None, lw=None, linewidth=None,
+        edgefix=None, rasterize=None, **kwargs
     ):
         """
         The driver function for adding axes colorbars.
@@ -2196,6 +2202,7 @@ class Axes(maxes.Axes):
         label = _not_none(title=title, label=label)
         tickdir = _not_none(tickdir=tickdir, tickdirection=tickdirection)
         linewidth = _not_none(lw=lw, linewidth=linewidth)
+        labelloc = _not_none(labelloc=labelloc, labellocation=labellocation)
         grid = _not_none(grid=grid, edges=edges, drawedges=drawedges, default=rc['colorbar.grid'])  # noqa: E501
         color = _not_none(c=c, color=color, default=rc['axes.edgecolor'])
         align = _translate_loc(align, 'panel', default='center', c='center', center='center')  # noqa: E501
@@ -2231,7 +2238,7 @@ class Axes(maxes.Axes):
             mappable, values, **kwargs
         )
         locator, formatter, minorlocator, kwargs = cax._parse_colorbar_ticks(
-            mappable, fontsize=ticklabelsize, tickminor=tickminor, **kwargs,
+            tickminor=tickminor, fontsize=ticklabelsize, **kwargs,
         )
         if isinstance(locator, mticker.NullLocator):
             locator = []  # passed as 'ticks'

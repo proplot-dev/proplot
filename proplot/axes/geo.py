@@ -162,10 +162,16 @@ reso : {'lo', 'med', 'hi', 'x-hi', 'xx-hi'}, optional
     The resolution of geographic features. For basemap axes, this must
     be passed to `~proplot.constructor.Proj`.
 color : color-spec, optional
-    Color for the axes edge. Propagates to `gridlabelcolor` unless
+    Color for the axes edge. Propagates to `labelcolor` unless
     specified otherwise (similar to `proplot.axes.CartesianAxes.format`).
-gridlabelcolor : color-spec, optional
-    Color for the grid labels. Inherits from `color` by default.
+labelcolor, gridlabelcolor : color-spec, optional
+    Color for the grid labels. Default is `color` or :rc:`grid.labelcolor`
+    if `color` was not passed.
+labelsize, gridlabelsize : unit-spec or str, optional
+    Font size for the gridline labels. Default is :rc:`grid.labelsize`.
+    %(units.pt)s
+labelweight, gridlabelweight : str, optional
+    Font weight for the gridline labels. Default is :rc:`grid.labelweight`.
 """
 docstring._snippet_manager['geo.format'] = _format_docstring
 
@@ -524,7 +530,8 @@ class GeoAxes(plot.PlotAxes):
         lonformatter_kw=None, latformatter_kw=None,
         labels=None, latlabels=None, lonlabels=None,
         loninline=None, latinline=None, inlinelabels=None, rotatelabels=None,
-        labelpad=None, dms=None, nsteps=None,
+        labelpad=None, labelcolor=None, labelsize=None, labelweight=None,
+        dms=None, nsteps=None,
         **kwargs,
     ):
         """
@@ -562,8 +569,13 @@ class GeoAxes(plot.PlotAxes):
 
         # Initiate context block
         rc_kw, rc_mode = _pop_rc(kwargs)
-        if 'color' in kwargs and 'grid.labelcolor' not in rc_kw:
-            rc_kw['grid.labelcolor'] = kwargs['color']
+        labelcolor = _not_none(labelcolor, kwargs.get('color', None))
+        if labelcolor is not None:
+            rc_kw['grid.labelcolor'] = labelcolor
+        if labelsize is not None:
+            rc_kw['grid.labelsize'] = labelsize
+        if labelweight is not None:
+            rc_kw['grid.labelweight'] = labelweight
         with rc.context(rc_kw, mode=rc_mode):
             # Label toggles
             labels = _not_none(labels, rc.find('grid.labels', context=True))

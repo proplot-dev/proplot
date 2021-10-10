@@ -28,6 +28,23 @@ Version 1.0.0 (2022-##-##)
 This will be published when more comprehensive testing is completed
 and stability is improved.
 
+Version 0.10.0 (2021-XX-XX)
+==========================
+
+Features
+--------
+
+* Add `[xy]labelsize`, `[xy]labelweight`, `[xy]ticklabelsize`, `[xy]ticklabelweight`
+  keywords to `proplot.axes.CartesianAxes.format` (:commit:`###`).
+* Add `labelsize` and `labelweight` keywords to `proplot.axes.PolarAxes.format`,
+  `proplot.axes.GeoAxes.format` (:commit:`###`).
+
+Internals
+---------
+
+* Add unit tests with image comparisons powered by
+  `pytest-mpl <https://pypi.org/project/pytest-mpl/>`__.
+
 Version 0.9.3 (2021-10-09)
 ==========================
 
