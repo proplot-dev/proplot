@@ -123,6 +123,7 @@ class _SharedAxes(object):
             if labeldir == 'in':  # put tick labels inside the plot
                 tickdir = 'in'
                 kwticks.setdefault(
+                    'pad',
                     - rc[f'{axis}tick.major.size']
                     - _not_none(labelpad, rc[f'{axis}tick.major.pad'])
                     - _fontsize_to_pt(rc[f'{axis}tick.labelsize'])
