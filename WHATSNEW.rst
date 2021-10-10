@@ -34,6 +34,8 @@ Version 0.9.4 (2021-XX-XX)
 Features
 --------
 
+* Permit passing arbitrary ``format`` arguments to multi-axes creation commands
+  like `~proplot.ui.subplots` (:commit:`0b801442`).
 * Add `[xy]labelsize`, `[xy]labelweight`, `[xy]ticklabelsize`, `[xy]ticklabelweight`
   keywords to `proplot.axes.CartesianAxes.format` (:commit:`975025df`).
 * Add `labelsize` and `labelweight` keywords to `proplot.axes.PolarAxes.format`,
