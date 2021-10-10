@@ -28,7 +28,7 @@ Version 1.0.0 (2022-##-##)
 This will be published when more comprehensive testing is completed
 and stability is improved.
 
-Version 0.10.0 (2021-XX-XX)
+Version 0.9.4 (2021-XX-XX)
 ==========================
 
 Features
