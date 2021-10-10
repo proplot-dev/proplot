@@ -450,7 +450,7 @@ class CartesianAxes(shared._SharedAxes, plot.PlotAxes):
         axis = getattr(self, x + 'axis')
         sides = ('bottom', 'top') if x == 'x' else ('left', 'right')
         bounds = tuple(self.spines[side].get_bounds() or (None, None) for side in sides)
-        skipticks = lambda xs: [
+        skipticks = lambda xs: [  # noqa: E731
             x for x in xs if all((l is None or x >= l) and (h is None or x <= h) for (l, h) in bounds)  # noqa: E501
         ]
         if (
