@@ -625,10 +625,10 @@ Plot markers with flexible keyword arguments.
 Parameters
 ----------
 %(plot.args_1d_{y})s
-s, size, ms, markersize : float or sequence of float or unit-spec, optional
-    The marker area(s). If this is an array matching the shape of `x` and `y`, the
-    units are scaled by `smin` and `smax`. If this contains unit string(s), it is
-    processed by `~proplot.utils.units` and represents the width rather than area.
+s, size, ms, markersize : float or array-like or unit-spec, optional
+    The marker size area(s). If this is an array matching the shape of `x` and `y`,
+    the units are scaled by `smin` and `smax`. If this contains unit string(s), it
+    is processed by `~proplot.utils.units` and represents the width rather than area.
 c, color, colors, mc, markercolor, markercolors, fc, facecolor, facecolors \
 : array-like or color-spec, optional
     The marker color(s). If this is an array matching the shape of `x` and `y`,
@@ -639,9 +639,9 @@ smin, smax : float, optional
     if `absolute_size` is ``True``. Default value for `smin` is ``1`` and for
     `smax` is the square of :rc:`lines.markersize`.
 absolute_size : bool, optional
-    Whether the marker sizes should be taken to be in physical units or
-    scaled by `smin` and `smax`. Default is ``True`` if `s` is scalar
-    and ``False`` if `s` is an array.
+    Whether `s` should be taken to represent "absolute" marker size areas in units
+    ``points ** 2`` or "relative" marker size areas scaled by `smin` and `smax`.
+    Default is ``True`` if `s` is scalar and ``False`` if `s` is array-like.
 %(plot.vmin_vmax)s
 %(plot.args_1d_shared)s
 
@@ -1175,6 +1175,25 @@ docstring._snippet_manager['plot.quiver'] = _flow_docstring.format(
 docstring._snippet_manager['plot.stream'] = _flow_docstring.format(
     descrip='streamlines', command='streamplot'
 )
+
+
+def _default_absolute():
+    """
+    Try to detect `seaborn` calls to `scatter` and `bar` and then automatically
+    apply `absolute_size` and `absolute_width`.
+    """
+    frame = sys._getframe()
+    absolute_names = (
+        'seaborn.distributions',
+        'seaborn.categorical',
+        'seaborn.relational',
+        'seaborn.regression',
+    )
+    while frame is not None:
+        if frame.f_globals.get('__name__', '') in absolute_names:
+            return True
+        frame = frame.f_back
+    return False
 
 
 def _get_vert(vert=None, orientation=None, **kwargs):
@@ -3109,7 +3128,11 @@ class PlotAxes(base.Axes):
                 s = s.copy()
                 s.flat[:] = utils.units(s.flat, 'pt')
                 s = s.astype(np.float) ** 2
-        absolute_size = _not_none(absolute_size, default_size)
+        if absolute_size is None:
+            if _default_absolute():
+                absolute_size = True
+            else:
+                absolute_size = default_size
         if not absolute_size or smin is not None or smax is not None:
             smin = _not_none(smin, 1)
             smax = _not_none(smax, rc['lines.markersize'] ** 2)
@@ -3326,18 +3349,8 @@ class PlotAxes(base.Axes):
         stack = _not_none(stack=stack, stacked=stacked)
         xs, hs, kw = self._parse_plot1d(xs, hs, orientation=orientation, **kw)
         edgefix_kw = _pop_params(kw, self._apply_edgefix)
-
-        # Default absolute width with horrible kludge
-        # (the faint of heart should look away now).
         if absolute_width is None:
-            frame = sys._getframe()
-            absolute_width = False
-            absolute_names = ('seaborn.distributions', 'seaborn.categorical')
-            while frame is not None:
-                if frame.f_globals.get('__name__', '') in absolute_names:
-                    absolute_width = True
-                    break
-                frame = frame.f_back
+            absolute_width = _default_absolute()
 
         # Call func after converting bar width
         b0 = 0

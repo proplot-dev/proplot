@@ -352,7 +352,7 @@ fig.format(suptitle='Line plots demo', xlabel='xlabel', ylabel='ylabel')
 # `~proplot.axes.PlotAxes.scatter` also now accepts keywords
 # that look like `~proplot.axes.PlotAxes.plot` keywords (e.g., `color` instead of
 # `c` and `markersize` instead of `s`). This way, `~proplot.axes.PlotAxes.scatter`
-# can be used simply to "plot markers, not lines" without changing the input
+# can be used to simply "plot markers, not lines" without changing the input
 # arguments relative to `~proplot.axes.PlotAxes.plot`.
 #
 # The property cycler used by `~proplot.axes.PlotAxes.scatter` can be changed
@@ -360,8 +360,19 @@ fig.format(suptitle='Line plots demo', xlabel='xlabel', ylabel='ylabel')
 # properties like `marker` and `markersize`. The colormap `cmap` and normalizer
 # `norm` used with the optional `c` color array are now passed through the
 # `~proplot.constructor.Colormap` and `~proplot.constructor.Norm` constructor
-# functions, and the the `s` marker size array can now be conveniently scaled using
-# the keywords `smin` and `smax` (analogous to `vmin` and `vmax` used for colors).
+# functions.
+
+# .. important::
+#
+#    In matplotlib, arrays passed to the marker size keyword `s` always represent the
+#    area in units ``points ** 2``. In proplot, arrays passed to `s` are scaled so
+#    that the minimum data value has the area ``1`` while the maximum data value
+#    has the area :rc:`lines.markersize` squared. These minimum and maximum marker
+#    sizes can also be specified manually with the `smin` and `smax` keywords,
+#    analogous to `vmin` and `vmax` used to scale the color array `c`. This feature
+#    can be disabled by passing ``absolute_size=True`` to `~proplot.axes.Axes.scatter`
+#    or `~proplot.axes.Axes.scatterx`. This is done automatically when `seaborn`_
+#    calls `~proplot.axes.Axes.scatter` internally.
 
 # %%
 import proplot as pplt
@@ -474,9 +485,7 @@ ax.colorbar(m, loc='b', maxn=10, label='parametric coordinate')
 # The `~proplot.axes.PlotAxes.bar` and `~proplot.axes.PlotAxes.barh` commands
 # apply default *x* or *y* coordinates if you failed to provide them explicitly
 # and can *group* or *stack* successive columns of data if you pass 2D arrays instead
-# of 1D arrays -- just like `pandas`_. The widths of bars are expressed in step
-# size-relative units by default, but matplotlib's behavior can be restored by
-# passing ``absolute_width=True``. When bars are grouped, their widths are
+# of 1D arrays -- just like `pandas`_. When bars are grouped, their widths and
 # positions are adjusted according to the number of bars in the group.
 #
 # The `~proplot.axes.PlotAxes.fill_between` and `~proplot.axes.PlotAxes.fill_betweenx`
@@ -488,6 +497,21 @@ ax.colorbar(m, loc='b', maxn=10, label='parametric coordinate')
 # default *x* bounds for shading drawn with `~proplot.axes.PlotAxes.area` and *y*
 # bounds for shading drawn with `~proplot.axes.PlotAxes.areax` is now "sticky",
 # i.e. there is no padding between the shading and axes edges by default.
+
+# .. important::
+#
+#    In matplotlib, bar widths for horizontal `~matplotlib.axes.Axes.barh` plots
+#    are expressed with the `height` keyword. In proplot, bar widths are always
+#    expressed with the `width` keyword. Note that bar widths can also be passed
+#    as a third positional argument.
+#
+#    Additionally, matplotlib bar widths are always expressed in data units,
+#    while proplot bar widths are expressed in step size-relative units by
+#    default. For example, ``width=1`` with a dependent coordinate step
+#    size of ``2`` fills 100% of the space between each bar rather than 50%. This
+#    can be disabled by passing ``absolute_width=True`` to `~proplot.axes.Axes.bar`
+#    or `~proplot.axes.Axes.barh`. This is done automatically when `seaborn`_ calls
+#    `~proplot.axes.Axes.bar` or `~proplot.axes.Axes.barh` internally.
 
 # %%
 import proplot as pplt
