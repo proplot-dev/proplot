@@ -38,12 +38,20 @@ Features
   keywords to `proplot.axes.CartesianAxes.format` (:commit:`975025df`).
 * Add `labelsize` and `labelweight` keywords to `proplot.axes.PolarAxes.format`,
   `proplot.axes.GeoAxes.format` (:commit:`975025df`).
+* Automatically set `xpineloc` and `yspineloc` to ``'bottom'`` and ``'left'``
+  when `xbounds` or `ybounds` are passed to `proplot.axes.CartesianAxes.format` only
+  if both spines are currently visible (:commit:`a2396afe`).
+* Automatically use the top/right spine rather than the bottom/left spine when setting
+  `xspineloc` or `yspineloc` to the position ``('axes', coord)`` or ``('data', coord)``
+  when ``coord`` is more than halfway across the axis (:commit:`a2396afe`).
 
 Bug fixes
 ---------
 
 * Fix issue where passing `fontsize` to `~proplot.axes.Axes.format` fails to update
   fontsize-relative title and a-b-c label sizes (:commit:`64406726`).
+* Fix issue where `xbounds`, `ybounds`, and `fixticks` fail due to
+  errors in tick restriction algorithm (:commit:`a2396afe`).
 
 Internals
 ---------
