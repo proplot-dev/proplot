@@ -66,28 +66,6 @@ COLORS_KEEP = (
     'white',
     'black'
 )
-FONT_KEYS = (  # re-apply these whenever 'font.size' is changed
-    'abc.size',
-    'axes.labelsize',
-    'label.size',  # alias
-    'axes.titlesize',
-    'title.size',  # alias
-    'figure.titlesize',
-    'suptitle.size',  # alias
-    'tick.labelsize',
-    'grid.labelsize',
-    'xtick.labelsize',
-    'ytick.labelsize',
-    'toplabel.size',
-    'bottomlabel.size',
-    'leftlabel.size',
-    'rightlabel.size',
-    'title.size',
-    'font.smallsize',
-    'font.largesize',
-    'legend.fontsize',
-    'legend.title_fontsize'
-)
 
 # Configurator docstrings
 _rc_docstring = """
