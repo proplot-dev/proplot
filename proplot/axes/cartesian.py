@@ -478,13 +478,15 @@ class CartesianAxes(shared._SharedAxes, plot.PlotAxes):
         sides = ('bottom', 'top') if x == 'x' else ('left', 'right')
         centers = ('zero', 'center')
         options = (*sides, 'both', 'neither', 'none')
-        if np.iterable(loc) and len(loc) == 2 and loc[0] in ('axes', 'data'):
-            if loc[0] == 'axes':
+        if np.iterable(loc) and len(loc) == 2 and loc[0] in ('axes', 'data', 'outward'):
+            lim = getattr(self, f'get_{x}lim')()
+            if loc[0] == 'outward':  # ambiguous so just choose first side
+                side = sides[0]
+            elif loc[0] == 'axes':
                 side = sides[int(loc[1] > 0.5)]
             else:
-                lim = getattr(self, f'get_{x}lim')()
                 side = sides[int(loc[1] > lim[0] + 0.5 * (lim[1] - lim[0]))]
-        elif loc in centers:
+        elif loc in centers:  # ambiguous so just choose first side
             side = sides[0]
         elif loc is None or loc in options:
             side = loc
@@ -492,7 +494,8 @@ class CartesianAxes(shared._SharedAxes, plot.PlotAxes):
             raise ValueError(
                 f'Invalid {x} spine location {loc!r}. Options are: '
                 + ', '.join(map(repr, (*options, *centers)))
-                + " or a coordinate position ('axes', coord) or ('data', coord)."
+                + " or a coordinate position ('axes', coord), "
+                + " ('data', coord), or ('outward', coord)."
             )
         return side
 
