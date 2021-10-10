@@ -222,7 +222,17 @@ order : {'C', 'F'}, optional
 docstring._snippet_manager['figure.subplots_params'] = _subplots_params_docstring
 
 
-# Composed subplots docstring
+# Extra args docstring
+_axes_params_docstring = """
+**kwargs
+    Passed to the proplot class `proplot.axes.CartesianAxes`, `proplot.axes.PolarAxes`,
+    `proplot.axes.GeoAxes`, or `proplot.axes.ThreeAxes`. This can include keyword
+    arguments for projection-specific ``format`` commands.
+"""
+docstring._snippet_manager['figure.axes_params'] = _axes_params_docstring
+
+
+# Multiple subplots docstring
 _subplots_docstring = """
 Add an arbitrary grid of subplots to the figure.
 
@@ -233,8 +243,7 @@ Parameters
 Other parameters
 ----------------
 %(figure.figure)s
-**kwargs
-    Passed to `Figure.add_subplot`.
+%(figure.axes_params)s
 
 Returns
 -------
@@ -253,7 +262,7 @@ proplot.axes.Axes
 docstring._snippet_manager['figure.subplots'] = _subplots_docstring
 
 
-# Single subplots
+# Single subplot docstring
 _subplot_docstring = """
 Add a subplot axes to the figure.
 
@@ -295,9 +304,7 @@ autoshare : bool, optional
 
 Other parameters
 ----------------
-**kwargs
-    Passed to the axes class `proplot.axes.CartesianAxes`, `proplot.axes.PolarAxes`,
-    `proplot.axes.GeoAxes`, or `proplot.axes.ThreeAxes`.
+%(figure.axes_params)s
 
 See also
 --------
@@ -323,9 +330,7 @@ rect : 4-tuple of float
 
 Other parameters
 ----------------
-**kwargs
-    Passed to the axes class `proplot.axes.CartesianAxes`, `proplot.axes.PolarAxes`,
-    `proplot.axes.GeoAxes`, or `proplot.axes.ThreeAxes`.
+%(figure.axes_params)s
 
 See also
 --------
@@ -1326,6 +1331,8 @@ class Figure(mfigure.Figure):
 
         # Create gridspec and add subplots with subplotspecs
         # NOTE: The gridspec is added to the figure when we pass the subplotspec
+        # NOTE: Permit figure format keywords for e.g. 'collabels'
+        figure_kw = _pop_params(kwargs, self._format_signature)
         gridspec_kw = _pop_params(kwargs, pgridspec.GridSpec._update_params)
         gs = pgridspec.GridSpec(nrows, ncols, **gridspec_kw)
         axs = naxs * [None]  # list of axes
@@ -1340,6 +1347,7 @@ class Figure(mfigure.Figure):
             kw = {**kwargs, **axes_kw[num], 'number': num}
             axs[idx] = self.add_subplot(ss, **kw)
 
+        self.format(**figure_kw)
         return pgridspec.SubplotGrid(axs)
 
     @docstring._snippet_manager

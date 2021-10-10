@@ -4,10 +4,11 @@ The starting point for creating proplot figures.
 """
 import matplotlib.pyplot as plt
 
+from . import axes as paxes
 from . import figure as pfigure
 from . import gridspec as pgridspec
 from .internals import ic  # noqa: F401
-from .internals import _not_none, _pop_params, docstring
+from .internals import _not_none, _pop_params, _pop_rc, docstring
 
 __all__ = [
     'figure',
@@ -128,7 +129,7 @@ def figure(**kwargs):
     Other parameters
     ----------------
     **kwargs
-        Passed to `matplotlib.figure.Figure`.
+        Passed to `proplot.figure.Figure.format`.
 
     See also
     --------
@@ -157,7 +158,8 @@ def subplots(*args, **kwargs):
     ----------------
     %(figure.figure)s
     **kwargs
-        Passed to `matplotlib.figure.Figure`.
+        Passed to `proplot.figure.Figure.format` or the
+        projection-specific ``format`` command for each axes.
 
     Returns
     -------
@@ -174,12 +176,20 @@ def subplots(*args, **kwargs):
     proplot.figure.Figure
     matplotlib.figure.Figure
     """
+    # Subplots keywords
     _parse_figsize(kwargs)
-    kwsubs = {}
-    kwsubs.update(_pop_params(kwargs, pfigure.Figure.add_subplots))
+    kwsubs = _pop_params(kwargs, pfigure.Figure.add_subplots)
     kwsubs.update(_pop_params(kwargs, pgridspec.GridSpec._update_params))
     for key in ('subplot_kw', 'gridspec_kw'):
         kwsubs[key] = kwargs.pop(key, None)
-    fig = figure(**kwargs)
+    # Format keywords
+    rc_kw, rc_mode = _pop_rc(kwargs)
+    kwformat = _pop_params(kwargs, pfigure.Figure._format_signature)
+    kwformat.update(_pop_params(kwargs, paxes.Axes._format_signature_base))
+    for cls in (paxes.CartesianAxes, paxes.PolarAxes, paxes.GeoAxes):
+        kwformat.update(_pop_params(kwargs, cls._format_signature_proj))
+    # Initialize
+    fig = figure(rc_kw=rc_kw, **kwargs)
     axs = fig.add_subplots(*args, **kwsubs)
+    axs.format(rc_kw=rc_kw, **kwformat)
     return fig, axs

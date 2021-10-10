@@ -289,6 +289,8 @@ def _pop_params(kwargs, *funcs, ignore_internal=False):
             sig = func
         elif callable(func):
             sig = inspect.signature(func)
+        elif func is None:
+            continue
         else:
             raise RuntimeError(f'Internal error. Invalid function {func!r}.')
         for key in sig.parameters:

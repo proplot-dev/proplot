@@ -1219,7 +1219,7 @@ class CartesianAxes(shared._SharedAxes, plot.PlotAxes):
         """
         Optionally omit the leading x or y from "twin axes" methods.
         """
-        keys = tuple(k[1:] for k in self._format_signature.parameters if k[0] == x)
+        keys = tuple(k[1:] for k in self._format_signature_proj.parameters if k[0] == x)
         kwargs = {(x + k if k in keys else k): v for k, v in kwargs.items()}
         for axis in 'xy':  # standardize format() location aliases
             if axis + 'spineloc' in kwargs:
@@ -1349,5 +1349,5 @@ class CartesianAxes(shared._SharedAxes, plot.PlotAxes):
 
     # Apply signature obfuscation after getting keys
     # NOTE: This is needed for __init__, altx, and alty
-    _format_signature = inspect.signature(format)
+    _format_signature_proj = inspect.signature(format)
     format = docstring._obfuscate_kwargs(format)

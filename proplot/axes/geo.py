@@ -683,7 +683,7 @@ class GeoAxes(plot.PlotAxes):
 
     # Apply signature obfuscation after getting keys
     # NOTE: This is needed for __init__
-    _format_signature = inspect.signature(format)
+    _format_signature_proj = inspect.signature(format)
     format = docstring._obfuscate_kwargs(format)
 
 
