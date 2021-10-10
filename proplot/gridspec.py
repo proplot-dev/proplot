@@ -220,6 +220,15 @@ class GridSpec(mgridspec.GridSpec):
         %(gridspec.vector)s
         %(gridspec.tight)s
 
+        See also
+        --------
+        proplot.ui.figure
+        proplot.figure.Figure
+        proplot.ui.subplots
+        proplot.figure.Figure.subplots
+        proplot.figure.Figure.add_subplots
+        matplotlib.gridspec.GridSpec
+
         Note
         ----
         Adding axes panels, axes or figure colorbars, and axes or figure legends
@@ -289,7 +298,7 @@ class GridSpec(mgridspec.GridSpec):
         """
         Get a `~matplotlib.gridspec.SubplotSpec`. Slots allocated for axes panels,
         colorbars, and legends are ignored. For example, given a gridspec with 3
-        subplot rows, 3 subplot columns, 6 panel rows, and 6 panel columns, calling
+        subplot rows, 3 subplot columns, and 3 "bottom" panel rows, calling
         ``gs[1, 1]`` returns a `~matplotlib.gridspec.SubplotSpec` corresponding to
         the second *subplot* row and column rather than a *panel* row or column.
         """
@@ -1200,8 +1209,9 @@ class SubplotGrid(MutableSequence, list):
 
         See also
         --------
-        proplot.figure.Figure.subplots
         proplot.ui.subplots
+        proplot.figure.Figure.subplots
+        proplot.figure.Figure.add_subplots
         """
         n = kwargs.pop('n', None)
         order = kwargs.pop('order', None)
