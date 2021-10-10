@@ -539,9 +539,12 @@ rasterize : bool, optional
 _edgefix_docstring = """
 edgefix : bool or float, optional
     Whether to fix the common issue where white lines appear between adjacent
-    patches in saved vector graphics. This can slow down figure rendering.
-    Default is :rc:`edgefix`. If ``True``, a small default linewidth is
-    used to cover up the white lines. If float, this linewidth is used.
+    patches in saved vector graphics (this can slow down figure rendering).
+    See this `stackoverflow post <https://stackoverflow.com/q/27092991/4970632>`__
+    for a demonstration of the problem. Default is :rc:`edgefix`. If ``True``,
+    a small default linewidth is used to cover up the white lines. If float (e.g.
+    ``edgefix=0.5``), this specific linewidth is used to cover up the white lines.
+    This feature is automatically disabled when the patches have transparency.
 """
 docstring._snippet_manager['axes.edgefix'] = _edgefix_docstring
 docstring._snippet_manager['axes.colorbar_args'] = _colorbar_args_docstring
