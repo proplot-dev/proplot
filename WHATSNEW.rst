@@ -35,9 +35,15 @@ Features
 --------
 
 * Add `[xy]labelsize`, `[xy]labelweight`, `[xy]ticklabelsize`, `[xy]ticklabelweight`
-  keywords to `proplot.axes.CartesianAxes.format` (:commit:`###`).
+  keywords to `proplot.axes.CartesianAxes.format` (:commit:`975025df`).
 * Add `labelsize` and `labelweight` keywords to `proplot.axes.PolarAxes.format`,
-  `proplot.axes.GeoAxes.format` (:commit:`###`).
+  `proplot.axes.GeoAxes.format` (:commit:`975025df`).
+
+Bug fixes
+---------
+
+* Fix issue where passing `fontsize` to `~proplot.axes.Axes.format` fails to update
+  fontsize-relative title and a-b-c label sizes (:commit:`64406726`).
 
 Internals
 ---------
