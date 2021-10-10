@@ -1009,9 +1009,9 @@ class CartesianAxes(shared._SharedAxes, plot.PlotAxes):
             yspineloc = _not_none(yloc=yloc, yspineloc=yspineloc)
             xside = self._get_spine_side('x', xspineloc)
             yside = self._get_spine_side('y', yspineloc)
-            if xside is not None and xside not in ('zero', 'center'):
+            if xside is not None and xside not in ('zero', 'center', 'both'):
                 xtickloc = _not_none(xtickloc, xside)
-            if yside is not None and yside not in ('zero', 'center'):
+            if yside is not None and yside not in ('zero', 'center', 'both'):
                 ytickloc = _not_none(ytickloc, yside)
             if xtickloc != 'both':  # then infer others
                 xticklabelloc = _not_none(xticklabelloc, xtickloc)
