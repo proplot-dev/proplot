@@ -317,6 +317,50 @@ pplt.rc.reset()
 
 
 # %% [raw] raw_mimetype="text/restructuredtext"
+# .. _ug_loc:
+#
+# Axis positions
+# --------------
+#
+# The locations of `axis spines
+# <https://matplotlib.org/stable/gallery/ticks_and_spines/spines.html>`__,
+# tick marks, tick labels, and axis labels can be controlled with
+# `proplot.axes.CartesianAxes.format` keyword arguments like `xspineloc`
+# (shorthand `xloc`), `xtickloc`, `xticklabelloc`, and `xlabelloc`. Valid
+# locations include ``'left'``, ``'right'``, ``'top'``, ``'bottom'``, ``'neither'``,
+# ``'none'``, or ``'both'``. Spine locations can also be set to a coordinate
+# `matplotlib.spines.Spine.set_position` position, e.g. ``'zero'`` or
+# ``('axes', 1.5)``. The top or right spine is used when the coordinate is
+# more than halfway across the axes. This is often convenient when passing
+# e.g. `loc` or `spineloc` to :ref:`"alternate" axes commands <ug_alt>`.
+# These keywords provide the functionality of matplotlib's
+# `~matplotlib.axis.YAxis.tick_left`, `~matplotlib.axis.YAxis.tick_right`,
+# `~matplotlib.axes.XAxis.tick_top`, and `~matplotlib.axes.XAxis.tick_bottom`,
+# but with additional flexibility (see below).
+
+# %%
+import proplot as pplt
+pplt.rc.update(
+    metawidth=1.2, fontsize=10, figurefacecolor='w',
+    axesedgecolor='deep orange', gridcolor='coral',
+)
+fig = pplt.figure(share=False, refwidth=2, suptitle='Axis locations demo')
+
+# Spine location demonstration
+ax = fig.subplot(121, title='Various locations')
+ax.format(xloc='bottom', xlabel='original axis')
+ax.twiny(xloc=('axes', 1.1), xlabel='offset twin')
+ax.twiny(xloc=('axes', -0.25), xlabel='offset twin')
+ax.format(ytickloc='both', yticklabelloc='both')
+ax.format(ylabel='tick both, label right', ylabelloc='right')
+
+# Other locations locations
+ax = fig.subplot(122, title='Zero-centered spines', titlepad='1em')
+ax.format(xlim=(-10, 10), ylim=(-3, 3), yticks=1)
+ax.format(xloc='zero', yloc='zero')
+
+
+# %% [raw] raw_mimetype="text/restructuredtext"
 # .. _ug_scales:
 #
 # Axis scales
