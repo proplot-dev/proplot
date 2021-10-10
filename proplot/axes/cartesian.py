@@ -65,8 +65,9 @@ xmargin, ymargin, margin : float, optional
     axes edges without explicitly setting the limits. Use `margin` to set both at once.
 xbounds, ybounds : 2-tuple of float, optional
     The x and y axis data bounds within which to draw the spines. For example,
-    ``xlim=(0, 4)`` combined with ``xbounds=(1, 4)`` will prevent the spines
-    from meeting at the origin.
+    ``xlim=(0, 4)`` combined with ``xbounds=(2, 4)`` will prevent the spines
+    from meeting at the origin. This also applies ``xspineloc='bottom'`` and
+    ``yspineloc='left'`` by default if both spines are currently visible.
 xtickrange, ytickrange : 2-tuple of float, optional
     The x and y axis data ranges within which major tick marks are labelled.
     For example, ``xlim=(-5, 5)`` combined with ``xtickrange=(-1, 1)`` and a
@@ -435,6 +436,41 @@ class CartesianAxes(shared._SharedAxes, plot.PlotAxes):
         child.set_ylim(nlim, emit=False)
         child._dualy_prevstate = (scale, *olim)
 
+    def _fix_ticks(self, x, fixticks=False):
+        """
+        Ensure there are no out-of-bounds ticks. Mostly a brute-force version of
+        `~matplotlib.axis.Axis.set_smart_bounds` (which I couldn't get to work).
+        """
+        # NOTE: Previously triggered this every time FixedFormatter was found
+        # on axis but 1) that seems heavy-handed + strange and 2) internal
+        # application of FixedFormatter by boxplot resulted in subsequent format()
+        # successfully calling this and messing up the ticks for some reason.
+        # So avoid using this when possible, and try to make behavior consistent
+        # by cacheing the locators before we use them for ticks.
+        axis = getattr(self, x + 'axis')
+        sides = ('bottom', 'top') if x == 'x' else ('left', 'right')
+        bounds = tuple(self.spines[side].get_bounds() or (None, None) for side in sides)
+        skipticks = lambda xs: [
+            x for x in xs if all((l is None or x >= l) and (h is None or x <= h) for (l, h) in bounds)  # noqa: E501
+        ]
+        if (
+            fixticks
+            or any(x is not None for b in bounds for x in b)
+            or axis.get_scale() == 'cutoff'
+        ):
+            # Major locator
+            locator = getattr(axis, '_major_locator_cached', None)
+            if locator is None:
+                locator = axis._major_locator_cached = axis.get_major_locator()
+            locator = constructor.Locator(skipticks(locator()))
+            axis.set_major_locator(locator)
+            # Minor locator
+            locator = getattr(axis, '_minor_locator_cached', None)
+            if locator is None:
+                locator = axis._minor_locator_cached = axis.get_minor_locator()
+            locator = constructor.Locator(skipticks(locator()))
+            axis.set_minor_locator(locator)
+
     def _is_panel_group_member(self, other):
         """
         Return whether the axes belong in a panel sharing stack..
@@ -539,35 +575,6 @@ class CartesianAxes(shared._SharedAxes, plot.PlotAxes):
             self._sharey = sharey
         if level > 1 and limits:
             self._sharey_limits(sharey)
-
-    def _update_bounds(self, x, fixticks=False):
-        """
-        Ensure there are no out-of-bounds labels. Mostly a brute-force version of
-        `~matplotlib.axis.Axis.set_smart_bounds` (which I couldn't get to work).
-        """
-        # NOTE: Previously triggered this every time FixedFormatter was found
-        # on axis but 1) that seems heavy-handed + strange and 2) internal
-        # application of FixedFormatter by boxplot resulted in subsequent format()
-        # successfully calling this and messing up the ticks for some reason.
-        # So avoid using this when possible, and try to make behavior consistent
-        # by cacheing the locators before we use them for ticks.
-        axis = getattr(self, x + 'axis')
-        sides = ('bottom', 'top') if x == 'x' else ('left', 'right')
-        bounds = tuple(self.spines[side].get_bounds() is not None for side in sides)
-        if fixticks or any(bounds) or axis.get_scale() == 'cutoff':
-            # Major locator
-            lim = bounds[0] or bounds[1] or getattr(self, 'get_' + x + 'lim')()
-            locator = getattr(axis, '_major_locator_cached', None)
-            if locator is None:
-                locator = axis._major_locator_cached = axis.get_major_locator()
-            locator = constructor.Locator([x for x in locator() if lim[0] <= x <= lim[1]])  # noqa: E501
-            axis.set_major_locator(locator)
-            # Minor locator
-            locator = getattr(axis, '_minor_locator_cached', None)
-            if locator is None:
-                locator = axis._minor_locator_cached = axis.get_minor_locator()
-            locator = constructor.Locator([x for x in locator() if lim[0] <= x <= lim[1]])  # noqa: E501
-            axis.set_minor_locator(locator)
 
     def _update_formatter(
         self, x, formatter=None, *, formatter_kw=None,
@@ -736,14 +743,25 @@ class CartesianAxes(shared._SharedAxes, plot.PlotAxes):
         """
         # Iterate over spines associated with this axis
         sides = ('bottom', 'top') if x == 'x' else ('left', 'right')
+        vboth = all(self.spines[side].get_visible() for side in sides)  # both visible
+        pside = sides[0]  # side for spine.set_position()
+        if np.iterable(loc) and len(loc) == 2 and loc[0] in ('axes', 'data'):
+            if loc[0] == 'data':
+                lim = getattr(self, f'get_{x}lim')()
+                center = lim[0] + 0.5 * (lim[1] - lim[0])
+            else:
+                center = 0.5
+            pside = sides[int(loc[1] > center)]
         for side in sides:
             # Change default spine location from 'both' to the first relevant
             # side if the user passes 'bounds'.
             spine = self.spines[side]
-            if loc is None and bounds is not None:
+            if vboth and bounds is not None:
                 loc = _not_none(loc, sides[0])
             # Eliminate sides
-            if loc == 'neither':
+            if loc is None:
+                pass
+            elif loc == 'neither':
                 spine.set_visible(False)
             elif loc == 'both':
                 spine.set_visible(True)
@@ -752,18 +770,17 @@ class CartesianAxes(shared._SharedAxes, plot.PlotAxes):
             # Special spine location, usually 'zero', 'center', or tuple with
             # (units, location) where 'units' can be 'axes', 'data', or 'outward'.
             # Matplotlib internally represents these with 'bottom' and 'left'.
-            elif loc is not None:
-                if side == sides[1]:
-                    spine.set_visible(False)
-                else:
-                    spine.set_visible(True)
-                    try:
-                        spine.set_position(loc)
-                    except ValueError:
-                        raise ValueError(
-                            f'Invalid {x} spine location {loc!r}. Options are: '
-                            + ', '.join(map(repr, (*sides, 'both', 'neither'))) + '.'
-                        )
+            elif pside != side:
+                spine.set_visible(False)
+            else:
+                try:
+                    spine.set_position(loc)
+                except ValueError:
+                    raise ValueError(
+                        f'Invalid {x} spine location {loc!r}. Options are: '
+                        + ', '.join(map(repr, (*sides, 'both', 'neither'))) + '.'
+                    )
+                spine.set_visible(True)
             # Apply spine bounds
             if bounds is not None:
                 spine.set_bounds(*bounds)
@@ -1163,7 +1180,7 @@ class CartesianAxes(shared._SharedAxes, plot.PlotAxes):
                 )
 
                 # Ensure ticks are within axis bounds
-                self._update_bounds(x, fixticks=fixticks)
+                self._fix_ticks(x, fixticks=fixticks)
 
         # Parent format method
         if aspect is not None:
