@@ -367,7 +367,7 @@ fig.format(suptitle='Line plots demo', xlabel='xlabel', ylabel='ylabel')
 #    In matplotlib, arrays passed to the marker size keyword `s` always represent the
 #    area in units ``points ** 2``. In proplot, arrays passed to `s` are scaled so
 #    that the minimum data value has the area ``1`` while the maximum data value
-#    has the area :rc:`lines.markersize` squared. These minimum and maximum marker
+#    has the area :rcraw:`lines.markersize` squared. These minimum and maximum marker
 #    sizes can also be specified manually with the `smin` and `smax` keywords,
 #    analogous to `vmin` and `vmax` used to scale the color array `c`. This feature
 #    can be disabled by passing ``absolute_size=True`` to `~proplot.axes.Axes.scatter`
@@ -411,7 +411,7 @@ ax.format(title='With colormap')
 data = state.rand(2, 100)
 obj = ax.scatter(
     *data,
-    s=state.rand(100), smin=3, smax=60, marker='o',
+    s=state.rand(100), smin=6, smax=60, marker='o',
     c=data.sum(axis=0), cmap='maroon',
     colorbar='lr', colorbar_kw={'label': 'label'},
 )
@@ -504,7 +504,6 @@ ax.colorbar(m, loc='b', maxn=10, label='parametric coordinate')
 #    are expressed with the `height` keyword. In proplot, bar widths are always
 #    expressed with the `width` keyword. Note that bar widths can also be passed
 #    as a third positional argument.
-#
 #    Additionally, matplotlib bar widths are always expressed in data units,
 #    while proplot bar widths are expressed in step size-relative units by
 #    default. For example, ``width=1`` with a dependent coordinate step

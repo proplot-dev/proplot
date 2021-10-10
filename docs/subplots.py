@@ -15,19 +15,20 @@
 # %% [raw] raw_mimetype="text/restructuredtext"
 # .. _ug_layout:
 #
-# Subplots and gridspecs
-# ======================
+# Subplots
+# ========
 #
-# This section documents a variety of features related to proplot subplots and
-# gridspecs, including a-b-c subplot labels, axis sharing between subplots,
-# gridspec spacing between subplots, and a unique feature where the figure
-# size is determined from a reference subplot and the gridspec geometry.
+# This section documents a variety of features related to proplot subplots,
+# including a-b-c subplot labels, axis sharing between subplots, automatic
+# spacing between subplots, and a unique feature where the figure size is
+# automatically determined from a reference subplot and the subplot geometry.
 #
 # .. important::
 #
-#    Proplot does not officially support "nested" matplotlib structures like
-#    `~matplotlib.figure.SubFigure` and `~matplotlib.gridspec.GridSpecFromSubplotSpec`
-#    and proplot subplots are only allowed to use one `~proplot.figure.Figure.gridspec`
+#    Proplot does not officially support "nested" matplotlib
+#    structures like `~matplotlib.figure.SubFigure` and
+#    `~matplotlib.gridspec.GridSpecFromSubplotSpec`. Also,
+#    proplot subplots are only allowed to use one `~proplot.figure.Figure.gridspec`
 #    per figure (see :ref:`this section <ug_subplot>`). These restrictions considerably
 #    simplify the algorithm used to calculate :ref:`figure sizes <ug_autosize>` and
 #    :ref:`subplot spaces <ug_tight>` and makes the default :ref:`a-b-c label
@@ -109,14 +110,14 @@ axs.format(
 # ------------
 #
 # Depending on the keyword arguments passed to `~proplot.figure.Figure`, proplot
-# figure sizes may be flexible. By default, the figure size is automatically
-# calculated from the figure-wide `~proplot.figure.Figure.gridspec` and the physical
-# size of a "reference" subplot whose `~proplot.axes.Axes.number` matches the
-# `~proplot.figure.Figure` keyword `refnum` (the default value ``1`` usually
-# corresponds to the subplot in the upper-left corner -- see :ref:`this section
-# <ug_abc>` for more on subplot numbers). Alternatively, the figure height
-# (width) may be automatically calculated from the figure-wide
-# `~proplot.figure.Figure.gridspec` and a user-input figure width (height).
+# figure sizes may be flexible. By default, the figure size is calculated
+# automatically from the `~proplot.figure.Figure.gridspec` geometry and the physical
+# size of a "reference" subplot. This subplot has a `~proplot.axes.Axes.number`
+# matching the `~proplot.figure.Figure` keyword `refnum` (the default value ``1``
+# usually corresponds to the subplot in the upper-left corner -- see :ref:`this
+# section <ug_abc>` for more on subplot numbers). Alternatively, the figure
+# height (width) may be calculated automatically from the
+# `~proplot.figure.Figure.gridspec` geometry and a user-input figure width (height).
 #
 # The figure size ultimately depends on the following `~proplot.figure.Figure`
 # keyword arguments:
@@ -210,7 +211,7 @@ pplt.rc.reset()
 #
 # Depending on the keyword arguments passed to `~proplot.figure.Figure` and
 # `~proplot.gridspec.GridSpec`, the spaces between proplot subplots may be flexible.
-# By default, the spaces are automatically calculated to accomadate text labels using
+# By default, the spaces are calculated automatically to accomadate text labels using
 # a custom "tight layout" algorithm. This algorithm can be disabled by passing
 # ``tight=False`` to `~proplot.figure.Figure` or by setting :rcraw:`subplots.tight`
 # to ``False``. In contrast to `matplotlib's tight layout algorithm
@@ -302,8 +303,8 @@ axs[:, 0].format(ylabel='ylabel')
 # ------------
 #
 # Figures with lots of subplots often have :ref:`redundant labels <why_redundant>`.
-# To help address this, `matplotlib.pyplot.subplots` includes the `sharex` and
-# `sharey` keyword arguments that permit sharing axis limits, ticks, and tick labels
+# To help address this, the matplotlib command `matplotlib.pyplot.subplots` includes
+# `sharex` and `sharey` keywords that permit sharing axis limits, ticks, and tick labels
 # between like rows and columns of subplots. Proplot builds on this feature by...
 #
 # #. Automatically sharing axes between subplots and :ref:`panels <ug_panels>`
