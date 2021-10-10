@@ -1315,18 +1315,18 @@ class CartesianAxes(shared._SharedAxes, plot.PlotAxes):
         return ax
 
     @docstring._snippet_manager
-    def twinx(self):
+    def twinx(self, **kwargs):
         """
         %(axes.twinx)s
         """
-        return self.alty()
+        return self.alty(**kwargs)
 
     @docstring._snippet_manager
-    def twiny(self):
+    def twiny(self, **kwargs):
         """
         %(axes.twiny)s
         """
-        return self.altx()
+        return self.altx(**kwargs)
 
     def draw(self, renderer=None, *args, **kwargs):
         # Perform extra post-processing steps
