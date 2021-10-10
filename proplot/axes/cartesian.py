@@ -447,11 +447,14 @@ class CartesianAxes(shared._SharedAxes, plot.PlotAxes):
         # successfully calling this and messing up the ticks for some reason.
         # So avoid using this when possible, and try to make behavior consistent
         # by cacheing the locators before we use them for ticks.
-        axis = getattr(self, x + 'axis')
+        axis = getattr(self, f'{x}axis')
         sides = ('bottom', 'top') if x == 'x' else ('left', 'right')
+        l0, l1 = getattr(self, f'get_{x}lim')()
         bounds = tuple(self.spines[side].get_bounds() or (None, None) for side in sides)
         skipticks = lambda xs: [  # noqa: E731
-            x for x in xs if all((l is None or x >= l) and (h is None or x <= h) for (l, h) in bounds)  # noqa: E501
+            x for x in xs if not any(
+                x < _not_none(b0, l0) or x > _not_none(b1, l1) for (b0, b1) in bounds
+            )
         ]
         if fixticks or any(x is not None for b in bounds for x in b):
             # Major locator
