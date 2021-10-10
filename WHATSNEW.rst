@@ -52,6 +52,9 @@ Bug fixes
   fontsize-relative title and a-b-c label sizes (:commit:`64406726`).
 * Fix issue where `xbounds`, `ybounds`, and `fixticks` fail due to
   errors in tick restriction algorithm (:commit:`a2396afe`).
+* Fix issue where arguments can only be passed to `~proplot.axes.CartesianAxes.altx`
+  and `~proplot.axes.CartesianAxes.alty`, but not `~proplot.axes.CartesianAxes.twinx`
+  and `~proplot.axes.CartesianAxes.twiny` (:commit:`223b55a6`).
 
 Internals
 ---------
