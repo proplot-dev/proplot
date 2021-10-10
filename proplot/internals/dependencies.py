@@ -4,6 +4,7 @@ Utilities for handling dependencies and version changes.
 """
 from numbers import Real
 
+from . import ic  # noqa: F401
 from . import warnings
 
 

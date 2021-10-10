@@ -28,7 +28,7 @@ from .internals import (
     context,
     dependencies,
     docstring,
-    text,
+    textmods,
     warnings,
 )
 from .utils import units
@@ -1007,7 +1007,7 @@ class Figure(mfigure.Figure):
         # Copy text from central label to spanning label
         # NOTE: Must use spaces rather than newlines, otherwise tight layout
         # won't make room. Reason is Text implementation (see Text._get_layout())
-        text._transfer_text(axis.label, label)  # text, color, and font properties
+        textmods._transfer_text(axis.label, label)  # text, color, and font properties
         space = '\n'.join(' ' * (1 + label.get_text().count('\n')))
         for axis in axislist:  # should include original 'axis'
             axis.label.set_text(space)

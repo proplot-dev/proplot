@@ -4,6 +4,8 @@ Utilties related to legends and colorbars.
 """
 import numpy as np
 
+from . import ic  # noqa: F401
+
 
 def _fill_guide_kw(kwargs, **pairs):
     """

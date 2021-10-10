@@ -1,12 +1,14 @@
 #!/usr/bin/env python3
 """
-Utilities for processing input data.
+Utilities for processing data passed to plotting commands.
 """
 import functools
 import sys
 
 import numpy as np
 import numpy.ma as ma
+
+from . import ic  # noqa: F401
 
 try:
     from cartopy.crs import PlateCarree
@@ -544,8 +546,8 @@ def _meta_labels(data, axis=0, always=True):
     # data values metadata but that is incorrect. The paradigm for 1D plots
     # is we have row coordinates representing x, data values representing y,
     # and column coordinates representing individual series.
-    labels = None
     _load_objects()
+    labels = None
     if axis not in (0, 1, 2):
         raise ValueError(f'Invalid axis {axis}.')
     if isinstance(data, (ndarray, Quantity)):
@@ -586,8 +588,8 @@ def _meta_title(data, include_units=True):
     Return the "title" of an array-like object with metadata.
     Include units in the title if `include_units` is ``True``.
     """
-    title = units = None
     _load_objects()
+    title = units = None
     if isinstance(data, ndarray):
         pass
     # Xarray object with possible long_name, standard_name, and units attributes.

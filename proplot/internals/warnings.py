@@ -7,6 +7,8 @@ import re
 import sys
 import warnings
 
+from . import ic  # noqa: F401
+
 # Internal modules omitted from warning message
 REGEX_INTERNAL = re.compile(r'\A(matplotlib|mpl_toolkits|proplot)\.')
 

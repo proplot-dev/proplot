@@ -5,6 +5,8 @@ Utilities related to matplotlib text objects.
 import matplotlib.patheffects as mpatheffects
 import matplotlib.text as mtext
 
+from . import ic  # noqa: F401
+
 
 def _transfer_text(src, dest):
     """

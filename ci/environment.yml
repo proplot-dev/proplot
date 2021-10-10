@@ -1,5 +1,6 @@
 # Hard requirements for running tests
 # See docs/environment.yml for dependency notes
+# WARNING: Keep this up-to-date with ci/environment.yml
 name: proplot-dev
 channels:
   - conda-forge
@@ -12,12 +13,12 @@ dependencies:
   - cartopy==0.19.0.post1
   - ipykernel
   - pandoc
-  - pip
   - python-build
   - setuptools
   - setuptools_scm
   - setuptools_scm_git_archive
   - wheel
+  - pip
   - pip:
     - ..
     - flake8

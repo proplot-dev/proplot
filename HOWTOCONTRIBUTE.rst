@@ -4,19 +4,19 @@
 How to contribute?
 ==================
 
-Contributions of any size are highly appreciated! You can make
-a significant impact on proplot just by using it and
+Contributions of any size are greatly appreciated! You can
+make a significant impact on proplot by just using it and
 reporting `issues <https://github.com/lukelbd/proplot/issues>`__.
 
 The following sections cover some general guidelines
-regarding development in proplot for contributors.
-Feel free to suggest improvements or changes in the workflow.
+regarding proplot development for new contributors. Feel
+free to suggest improvements or changes to this workflow.
 
 Feature requests and feedback
 =============================
 
-We are eager to hear your requests for new features, suggestions regarding the
-current API, and so on. You can submit these as
+We are eager to hear your requests for new features and
+suggestions regarding the current API. You can submit these as
 `issues <https://github.com/lukelbd/proplot/issues/new>`__ on Github.
 Please make sure to explain in detail how the feature should work and keep the scope as
 narrow as possible. This will make it easier to implement in small pull requests.
@@ -24,17 +24,16 @@ narrow as possible. This will make it easier to implement in small pull requests
 If you are feeling inspired, feel free to add the feature yourself and
 submit a pull request!
 
-
 Report bugs
 ===========
 
-Bugs should be reported on the Github
+Bugs should be reported using the Github
 `issues <https://github.com/lukelbd/proplot/issues>`__ page. When reporting a
 bug, please follow the template message and include copy-pasteable code that
 reproduces the issue. This is critical for contributors to fix the bug quickly.
 
-If you can figure out how to fix the bug yourself, feel free to submit a pull
-request.
+If you can figure out how to fix the bug yourself, feel free to submit
+a pull request.
 
 Write tests
 ===========
@@ -50,7 +49,6 @@ cases and leaves the project more vulnerable to bugs. Adding tests is a
 If you can think of a useful test for proplot, feel free to submit a pull request.
 Your test will be used in the future.
 
-
 Write documentation
 ===================
 
@@ -62,18 +60,17 @@ documentation files directly in the GitHub web interface without using a local c
   with `numpydoc <https://numpydoc.readthedocs.io/en/latest/>`__ style headers.
   They are embedded in the :ref:`API reference` section using a
   `fork of sphinx-automodapi <https://github.com/lukelbd/sphinx-automodapi>`__.
-* Other sections are written using ``.rst`` and files and ``.py`` files
-  (translated to python notebooks via
-  `jupytext <https://jupytext.readthedocs.io/en/latest/>`__)
-  in the ``docs`` folder. The notebooks are embedded in the User Guide using
-  `nbsphinx <https://nbsphinx.readthedocs.io/en/0.5.0/>`__.
+* Other sections are written using ``.rst`` files and ``.py`` files in the ``docs``
+  folder. The ``.py`` files are translated to python notebooks via
+  `jupytext <https://jupytext.readthedocs.io/en/latest/>`__ then embedded in
+  the User Guide using `nbsphinx <https://nbsphinx.readthedocs.io/en/0.5.0/>`__.
 * The `default ReST role <https://www.sphinx-doc.org/en/master/usage/configuration.html#confval-default_role>`__
   is ``py:obj``. Please include ``py:obj`` links whenever discussing particular
   functions or classes -- for example, if you are discussing the
-  `~proplot.axes.Axes.format` method, please write ```~proplot.axes.Axes.format```
-  rather than ``format``. Proplot also uses
-  `intersphinx <http://www.sphinx-doc.org/en/stable/ext/intersphinx.html>`__ so you can
-  link to external packages like matplotlib and cartopy.
+  `~proplot.axes.Axes.format` method, please write
+  ```~proplot.axes.Axes.format``` rather than ``format``. Proplot also uses
+  `intersphinx <http://www.sphinx-doc.org/en/stable/ext/intersphinx.html>`__
+  so you can link to external packages like matplotlib and cartopy.
 
 To build the documentation locally, use the following commands:
 
@@ -93,6 +90,7 @@ The built documentation should be available in ``docs/_build/html``.
 Preparing pull requests
 =======================
 
+New features and bug fixes should be addressed using pull requests.
 Here is a quick guide for submitting pull requests:
 
 #. Fork the
@@ -197,20 +195,20 @@ Note that you can create the pull request before you're finished with your
 feature addition or bug fix. The PR will update as you add more commits. Proplot
 developers and contributors can then review your code and offer suggestions.
 
-
 Release procedure
 =================
 
-Once version 1.0 is released, proplot will follow semantic versioning, with version
-numbers that look like ``vX.Y.Z``. A major version (``X``) causes incompatible
-API changes, a minor version (``Y``) adds functionality, and a patch (``Z``) covers
-bug fixes. But these are not strict rules -- more like guidelines.
-Currently, proplot's major version number is ``0``, reflecting the fact that
-the API is new and subject to rapid changes (although we try to make sure the
-changes are not without warning).
+Once version 1.0 is released, proplot will follow semantic versioning. Given the
+version number ``X.Y.Z``, the major version ``X`` will be incremented when something
+is deprecated, the minor version ``Y`` will be incremented when features are added,
+and the patch number ``Z`` will be incremented when bugs are fixed.
 
-For now, `Luke Davis <https://github.com/lukelbd>`__ is the only one who can publish
-releases on PyPi, but this will change in the future. Releases should
+Currently, proplot's major version number is ``0``, reflecting the fact that
+the API is new and subject to rapid changes. In general, the minor version number
+is incremented when something is deprecated or the default style is changed.
+
+For now, `Luke Davis <https://github.com/lukelbd>`__ is the only one who can
+publish releases on PyPi, but this will change in the future. Releases should
 be carried out as follows:
 
 #. Create a new branch ``release-vX.Y.Z`` with the version for the release.

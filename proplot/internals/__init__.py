@@ -2,6 +2,11 @@
 """
 Internal utilities.
 """
+try:  # print debugging (used with internal modules)
+    from icecream import ic
+except ImportError:  # graceful fallback if IceCream isn't installed
+    ic = lambda *args: print(*args)  # noqa: E731
+
 import inspect
 from numbers import Integral, Real
 
@@ -9,13 +14,16 @@ import numpy as np
 from matplotlib import rcParams as rc_matplotlib
 
 from . import (  # noqa: F401
-    benchmarks, context, data, dependencies, docstring, rcsetup, text, warnings
+    benchmarks,
+    context,
+    dependencies,
+    docstring,
+    guides,
+    process,
+    rcsetup,
+    textmods,
+    warnings
 )
-
-try:  # print debugging
-    from icecream import ic
-except ImportError:  # graceful fallback if IceCream isn't installed
-    ic = lambda *args: print(*args)  # noqa: E731
 
 
 # Style aliases. We use this rather than matplotlib's normalize_kwargs and _alias_maps.

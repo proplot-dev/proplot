@@ -4,6 +4,8 @@ Utilities for benchmarking proplot performance.
 """
 import time
 
+from . import ic  # noqa: F401
+
 BENCHMARK = False  # toggle this to turn on benchmarking (see timers.py)
 
 

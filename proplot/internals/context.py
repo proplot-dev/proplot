@@ -2,6 +2,7 @@
 """
 Utilities for manging context.
 """
+from . import ic  # noqa: F401
 
 
 class _empty_context(object):
