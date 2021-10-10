@@ -102,8 +102,8 @@ xtickdir, ytickdir, tickdir : {'out', 'in', 'inout'}
     Direction that major and minor tick marks point for the x and y axis.
     Default is :rc:`tick.dir`. Use `tickdir` to control both.
 xticklabeldir, yticklabeldir : {'in', 'out'}
-    Whether to place x and y axis tick label text inside
-    or outside the axes.
+    Whether to place x and y axis tick label text inside or outside the axes.
+    Propagates to `xtickdir` and `ytickdir` unless specified otherwise.
 xrotation, yrotation : float, optional
     The rotation for x and y axis tick labels. Default is ``0``
     for normal axes, :rc:`formatter.timerotation` for time x axes.
@@ -970,6 +970,7 @@ class CartesianAxes(shared._SharedAxes, plot.PlotAxes):
                 ylabelcolor = _not_none(ylabelcolor, ycolor)
 
             # Flexible keyword args, declare defaults
+            # NOTE: 'xtickdir' and 'ytickdir' read from 'tickdir' arguments here
             xmargin = _not_none(xmargin, rc.find('axes.xmargin', context=True))
             ymargin = _not_none(ymargin, rc.find('axes.ymargin', context=True))
             xtickdir = _not_none(xtickdir, rc.find('xtick.direction', context=True))
@@ -982,6 +983,11 @@ class CartesianAxes(shared._SharedAxes, plot.PlotAxes):
             ytickminor = _not_none(ytickminor, rc.find('ytick.minor.visible', context=True))  # noqa: E501
             xminorlocator = _not_none(xminorlocator=xminorlocator, xminorticks=xminorticks)  # noqa: E501
             yminorlocator = _not_none(yminorlocator=yminorlocator, yminorticks=yminorticks)  # noqa: E501
+            ticklabeldir = kwargs.pop('ticklabeldir', None)
+            xticklabeldir = _not_none(xticklabeldir, ticklabeldir)
+            yticklabeldir = _not_none(yticklabeldir, ticklabeldir)
+            xtickdir = _not_none(xtickdir, xticklabeldir)
+            ytickdir = _not_none(ytickdir, yticklabeldir)
 
             # Sensible defaults for spine, tick, tick label, and label locs
             # NOTE: Allow tick labels to be present without ticks! User may
