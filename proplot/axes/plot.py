@@ -2521,19 +2521,23 @@ class PlotAxes(base.Axes):
             The minimum number of valid levels. This is 1 for line contour plots.
         """
         # Parse keyword args
-        # NOTE: Always disable 'autodiverging' when an unknown colormap is passed to
-        # avoid awkwardly combining 'DivergingNorm' with sequential colormaps.
-        # However let people use diverging=False with diverging cmaps because
-        # some use them (wrongly IMO but nbd) for increased color contrast.
         cmap_kw = cmap_kw or {}
         norm_kw = norm_kw or {}
         vmin = _not_none(vmin=vmin, norm_kw_vmin=norm_kw.pop('vmin', None))
         vmax = _not_none(vmax=vmax, norm_kw_vmax=norm_kw.pop('vmax', None))
         extend = _not_none(extend, 'neither')
         colors = _not_none(c=c, color=color, colors=colors)  # in case untranslated
+
+        # Disable autodiverging when unknown colormap is passed. This avoids
+        # awkwardly combining 'DivergingNorm' with sequential colormaps.
+        # NOTE: Let people use diverging=False with diverging cmaps because
+        # some use them (wrongly IMO but nbd) for increased color contrast.
         autodiverging = rc['cmap.autodiverging']
         name = getattr(cmap, 'name', cmap)
-        if isinstance(name, str) and name not in pcolors.CMAPS_DIVERGING:
+        if not isinstance(name, str):
+            name = pcolors.DEFAULT_NAME
+        name = re.sub(r'\A_*(.*?)(?:_r|_s|_copy)*\Z', r'\1', name.lower())
+        if not any(name in opts for opts in pcolors.CMAPS_DIVERGING.items()):
             autodiverging = False  # avoid auto-truncation of sequential colormaps
 
         # Build qualitative colormap using 'colors'
