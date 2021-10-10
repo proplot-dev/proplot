@@ -467,6 +467,31 @@ class CartesianAxes(shared._SharedAxes, plot.PlotAxes):
             locator = constructor.Locator(skipticks(locator()))
             axis.set_minor_locator(locator)
 
+    def _get_spine_side(self, x, loc):
+        """
+        Get the spine side implied by the input location or position. This
+        propagates to tick mark, tick label, and axis label positions.
+        """
+        sides = ('bottom', 'top') if x == 'x' else ('left', 'right')
+        centers = ('zero', 'center')
+        options = (*sides, 'both', 'neither', 'none')
+        if np.iterable(loc) and len(loc) == 2 and loc[0] in ('axes', 'data'):
+            if loc[0] == 'axes':
+                side = sides[int(loc[1] > 0.5)]
+            elif loc[0] == 'data':
+                lim = getattr(self, f'get_{x}lim')()
+                side = sides[int(loc[1] > lim[0] + 0.5 * (lim[1] - lim[0]))]
+        elif loc in centers:
+            side = sides[0]
+        elif loc is None or loc in options:
+            side = loc
+        else:
+            raise ValueError(
+                f'Invalid {x} spine location {loc!r}. Options are: '
+                + ', '.join(map(repr, (*options, *centers)))
+            )
+        return side
+
     def _is_panel_group_member(self, other):
         """
         Return whether the axes belong in a panel sharing stack..
@@ -739,25 +764,17 @@ class CartesianAxes(shared._SharedAxes, plot.PlotAxes):
         """
         # Iterate over spines associated with this axis
         sides = ('bottom', 'top') if x == 'x' else ('left', 'right')
-        vboth = all(self.spines[side].get_visible() for side in sides)  # both visible
-        pside = sides[0]  # side for spine.set_position()
-        if np.iterable(loc) and len(loc) == 2 and loc[0] in ('axes', 'data'):
-            if loc[0] == 'data':
-                lim = getattr(self, f'get_{x}lim')()
-                center = lim[0] + 0.5 * (lim[1] - lim[0])
-            else:
-                center = 0.5
-            pside = sides[int(loc[1] > center)]
+        pside = self._get_spine_side(x, loc)  # side for set_position()
+        if bounds is not None and all(self.spines[s].get_visible() for s in sides):
+            loc = _not_none(loc, sides[0])
         for side in sides:
             # Change default spine location from 'both' to the first relevant
             # side if the user passes 'bounds'.
             spine = self.spines[side]
-            if vboth and bounds is not None:
-                loc = _not_none(loc, sides[0])
             # Eliminate sides
             if loc is None:
                 pass
-            elif loc == 'neither':
+            elif loc == 'neither' or loc == 'none':
                 spine.set_visible(False)
             elif loc == 'both':
                 spine.set_visible(True)
@@ -769,6 +786,7 @@ class CartesianAxes(shared._SharedAxes, plot.PlotAxes):
             elif pside != side:
                 spine.set_visible(False)
             else:
+                spine.set_visible(True)
                 try:
                     spine.set_position(loc)
                 except ValueError:
@@ -776,7 +794,6 @@ class CartesianAxes(shared._SharedAxes, plot.PlotAxes):
                         f'Invalid {x} spine location {loc!r}. Options are: '
                         + ', '.join(map(repr, (*sides, 'both', 'neither'))) + '.'
                     )
-                spine.set_visible(True)
             # Apply spine bounds
             if bounds is not None:
                 spine.set_bounds(*bounds)
@@ -990,10 +1007,12 @@ class CartesianAxes(shared._SharedAxes, plot.PlotAxes):
             # want this sometimes! Same goes for spines!
             xspineloc = _not_none(xloc=xloc, xspineloc=xspineloc)
             yspineloc = _not_none(yloc=yloc, yspineloc=yspineloc)
-            if isinstance(xspineloc, str) and xspineloc not in ('zero', 'center'):
-                xtickloc = _not_none(xtickloc, xspineloc)
-            if isinstance(yspineloc, str) and yspineloc not in ('zero', 'center'):
-                ytickloc = _not_none(ytickloc, yspineloc)
+            xside = self._get_spine_side('x', xspineloc)
+            yside = self._get_spine_side('y', yspineloc)
+            if xside is not None and xside not in ('zero', 'center'):
+                xtickloc = _not_none(xtickloc, xside)
+            if yside is not None and yside not in ('zero', 'center'):
+                ytickloc = _not_none(ytickloc, yside)
             if xtickloc != 'both':  # then infer others
                 xticklabelloc = _not_none(xticklabelloc, xtickloc)
                 if xticklabelloc in ('bottom', 'top'):
