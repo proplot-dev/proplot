@@ -392,26 +392,35 @@ class GeoAxes(plot.PlotAxes):
     `~proplot.figure.Figure.add_subplot`, and `~proplot.figure.Figure.subplots`,
     where ``proj_name`` is a registered :ref:`PROJ projection name <proj_table>`.
     You can also pass a `cartopy.crs.Projection` or `~mpl_toolkits.basemap.Basemap`
-    instance instead of a projection name.
+    instance instead of a projection name. Alternatively, you can pass any of the
+    matplotlib-recognized axes subclass names ``proj='cartopy'``, ``proj='geo'``, or
+    ``proj='geographic'`` with a `cartopy.crs.Projection` `map_projection` keyword
+    argument, or pass ``proj='basemap'`` with a `~mpl_toolkits.basemap.Basemap`
+    `map_projection` keyword argument.
     """
     @docstring._snippet_manager
     def __init__(self, *args, **kwargs):
         """
         Parameters
         ----------
+        *args
+            Passed to `matplotlib.axes.Axes`.
         autoextent : bool, optional
-            *For cartopy axes only*. Whether to automatically adjust map bounds
-            based on plotted content or enforce global map extent. Default is
-            :rc:`cartopy.autoextent`.
+            *For cartopy axes only*. Whether to automatically adjust map bounds based
+            on plotted content or enforce a global map extent (or a map bounded at the
+            equator for polar projections). The extent can subsequently by adjusted
+            with the `~GeoAxes.format` keywords `lonlim`, `latlim`, and `boundinglat`,
+            or with `~cartopy.mpl.geoaxes.GeoAxes.set_extent`.
+            Default is :rc:`cartopy.autoextent`.
         circular : bool, optional
             *For cartopy axes only*. Whether to bound polar projections with circles
-            rather than squares. Default is :rc:`cartopy.circular`.
+            rather than squares. Note that outer gridline labels cannot be added to
+            circularly bounded polar projections. Default is :rc:`cartopy.circular`.
         map_projection : `~mpl_toolkits.basemap.Basemap` or `~cartopy.crs.Projection`
             The cartopy or basemap projection instance. This is passed automatically
-            when calling commands like `~proplot.figure.Figure.add_subplot`.
+            when calling axes-creation commands
+            like `~proplot.figure.Figure.add_subplot`.
         %(geo.format)s
-        *args, **kwargs
-            Passed to `proplot.axes.Axes`.
 
         Other parameters
         ----------------

@@ -112,9 +112,9 @@ class PolarAxes(shared._SharedAxes, plot.PlotAxes, mproj.PolarAxes):
         """
         Parameters
         ----------
+        *args
+            Passed to `matplotlib.axes.Axes`.
         %(polar.format)s
-        *args, **kwargs
-            Passed to `proplot.axes.Axes`.
 
         Other parameters
         ----------------

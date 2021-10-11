@@ -1406,9 +1406,8 @@ def Proj(name, basemap=None, **kwargs):
     # Invalid
     elif not isinstance(name, str):
         raise ValueError(
-            f'Unexpected Proj() argument {name!r}. '
-            'Must be name, mpl_toolkits.basemap.Basemap instance, '
-            'or cartopy.crs.CRS instance.'
+            f'Unexpected projection {name!r}. Must be PROJ string name, '
+            'cartopy.crs.Projection, or mpl_toolkits.basemap.Basemap.'
         )
 
     # Basemap

@@ -313,9 +313,9 @@ class CartesianAxes(shared._SharedAxes, plot.PlotAxes):
         """
         Parameters
         ----------
+        *args
+            Passed to `matplotlib.axes.Axes`.
         %(cartesian.format)s
-        *args, **kwargs
-            Passed to `proplot.axes.Axes`.
 
         Other parameters
         ----------------

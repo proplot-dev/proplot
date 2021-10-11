@@ -397,13 +397,15 @@ rc_mode : int, optional
 rc_kw : dict-like, optional
     An alternative to passing extra keyword arguments. See below.
 **kwargs
-    Passed to `proplot.config.Configurator.context` and used to update
-    the axes-relevant `~proplot.config.rc` settings. For example, ``abc='A.'``
-    modifies the :rcraw:`abc` setting, ``titleloc='left'`` modifies the
-    :rcraw:`title.loc` setting, ``gridminor=True`` modifies the :rcraw:`gridminor`
-    setting, and ``gridbelow=True`` modifies the :rcraw:`grid.below` setting.
-    Many of the keyword arguments documented above are actually applied by updating
-    the `~proplot.config.rc` settings then retrieving the updated settings.
+    Unknown keyword arguments are passed to `matplotlib.axes.Axes`. Other keyword
+    arguments that match the name of an `~proplot.config.rc` setting are passed to
+    `proplot.config.Configurator.context` and used to update the axes. If the setting
+    name has "dots" you can simply omit the dots. For example, ``abc='A.'`` modifies
+    the :rcraw:`abc` setting, ``titleloc='left'`` modifies the :rcraw:`title.loc`
+    setting, ``gridminor=True`` modifies the :rcraw:`gridminor` setting, and
+    ``gridbelow=True`` modifies the :rcraw:`grid.below` setting. Many of the keyword
+    arguments documented above are internally applied by retrieving settings passed
+    to `~proplot.config.Configurator.context`.
 """
 docstring._snippet_manager['axes.rc'] = _rc_format_docstring
 docstring._snippet_manager['axes.format'] = _axes_format_docstring
@@ -670,10 +672,9 @@ class Axes(maxes.Axes):
         """
         Parameters
         ----------
+        *args
+            Passed to `matplotlib.axes.Axes`.
         %(axes.format)s
-        *args, **kwargs
-            Passed to `matplotlib.axes.Axes` or the
-            projection-specific ``format`` command.
 
         Other parameters
         ----------------
