@@ -39,9 +39,9 @@ except ImportError:
 try:
     import cartopy.crs as ccrs
     import cartopy.mpl.ticker as cticker
-    from cartopy.crs import CRS
+    from cartopy.crs import Projection
 except ModuleNotFoundError:
-    CRS = ccrs = cticker = object
+    Projection = ccrs = cticker = object
 
 __all__ = [
     'Proj',
@@ -1391,13 +1391,12 @@ def Proj(name, basemap=None, **kwargs):
     .. _wintri: https://proj4.org/operations/projections/wintri.html
     """  # noqa: E501
     # Class instances
-    is_crs = CRS is not object and isinstance(name, CRS)
+    basemap = _not_none(basemap, rc['basemap'])
+    is_crs = Projection is not object and isinstance(name, Projection)
     is_basemap = Basemap is not object and isinstance(name, Basemap)
-    use_basemap = _not_none(basemap, rc['basemap'])
     if is_crs or is_basemap:
         proj = name
-        if basemap is not None:
-            kwargs['basemap'] = basemap
+        package = 'cartopy' if is_crs else 'basemap'
         if kwargs:
             warnings._warn_proplot(f'Ignoring Proj() keyword arg(s): {kwargs!r}.')
 
@@ -1417,8 +1416,9 @@ def Proj(name, basemap=None, **kwargs):
     # https://stackoverflow.com/questions/56299971/ (also triggers 'no room for axes')
     # NOTE: Unlike cartopy, basemap resolution is configured
     # on initialization and controls *all* features.
-    elif use_basemap:
+    elif basemap:
         import mpl_toolkits.basemap as mbasemap
+        package = 'basemap'
         if dependencies._version_mpl >= 3.3:
             raise RuntimeError(
                 'Basemap is no longer maintained and is incompatible with '
@@ -1464,6 +1464,7 @@ def Proj(name, basemap=None, **kwargs):
     # NOTE: Error message matches basemap invalid projection message
     else:
         import cartopy.crs as ccrs  # noqa: F401
+        package = 'cartopy'
         kwproj = {
             PROJ_ALIASES_KW.get(key, key): value
             for key, value in kwargs.items()
@@ -1489,6 +1490,7 @@ def Proj(name, basemap=None, **kwargs):
             )
         proj = crs(**kwproj)
 
+    proj._proj_package = package
     return proj
 
 

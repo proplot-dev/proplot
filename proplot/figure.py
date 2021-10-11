@@ -400,30 +400,6 @@ matplotlib.figure.Figure.savefig
 docstring._snippet_manager['figure.save'] = _save_docstring
 
 
-def _get_proj_package(basemap=None):
-    """
-    Try to get the projection package.
-    """
-    use_basemap = _not_none(basemap, rc['basemap'])
-    if use_basemap:
-        package = 'basemap'
-        try:
-            import mpl_toolkits.basemap  # noqa: F401
-        except ImportError:
-            installed = False
-        else:
-            installed = True
-    else:
-        package = 'cartopy'
-        try:
-            import cartopy  # noqa: F401
-        except ImportError:
-            installed = False
-        else:
-            installed = True
-    return package, installed
-
-
 def _get_journal_size(preset):
     """
     Return the width and height corresponding to the given preset.
@@ -796,28 +772,35 @@ class Figure(mfigure.Figure):
             raise ValueError('Matplotlib axes cannot be added to proplot figures.')
 
         # Search axes projections
-        subclass = None
+        name = None
         if isinstance(proj, str):
             try:
                 mproj.get_projection_class('proplot_' + proj)
             except (KeyError, ValueError):
                 pass
             else:
-                subclass = proj
-
-        # Redirect to basemap or cartopy projection
-        if subclass is None:
-            subclass, installed = _get_proj_package(basemap=basemap)
-            if not installed:
-                raise ValueError(
-                    f'Invalid projection name {proj!r}. Valid axes subclasses are '
-                    + ', '.join(map(repr, paxes.CLASSES)) + '. If you are trying to '
-                    + f'create a geographic axes then {subclass} must be installed.'
-                )
+                name = proj
+        # Helpful error message
+        if (
+            name is None
+            and basemap is None
+            and isinstance(proj, str)
+            and constructor.Projection is object
+            and constructor.Basemap is object
+        ):
+            raise ValueError(
+                f'Invalid projection name {proj!r}. Valid axes subclasses are '
+                + ', '.join(map(repr, paxes.CLASSES)) + '. If you are trying to '
+                + 'create a geographic axes then cartopy or basemap must be installed.'
+            )
+        # Search geographic projections
+        # NOTE: Also raises errors due to unexpected projection type
+        if name is None:
             proj = constructor.Proj(proj, basemap=basemap, **proj_kw)
+            name = proj._proj_package
             kwargs['map_projection'] = proj
 
-        kwargs['projection'] = 'proplot_' + subclass
+        kwargs['projection'] = 'proplot_' + name
         return kwargs
 
     def _get_align_axes(self, side):
