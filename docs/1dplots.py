@@ -72,27 +72,24 @@ with pplt.rc.context({'axes.prop_cycle': pplt.Cycle('Grays', N=N, left=0.3)}):
     # Sample data
     x = np.linspace(-5, 5, N)
     y = state.rand(N, 5)
-    fig = pplt.figure(share=False)
+    fig = pplt.figure(share=False, suptitle='Standardized input demonstration')
 
     # Plot by passing both x and y coordinates
-    ax = fig.subplot(121)
+    ax = fig.subplot(121, title='Manual x coordinates')
     ax.area(x, -1 * y / N, stack=True)
     ax.bar(x, y, linewidth=0, alpha=1, width=0.8)
     ax.plot(x, y + 1, linewidth=2)
     ax.scatter(x, y + 2, marker='s', markersize=5**2)
-    ax.format(title='Manual x coordinates')
 
     # Plot by passing just y coordinates
     # Default x coordinates are inferred from DataFrame,
     # inferred from DataArray, or set to np.arange(0, y.shape[0])
-    ax = fig.subplot(122)
+    ax = fig.subplot(122, title='Auto x coordinates')
     ax.area(-1 * y / N, stack=True)
     ax.bar(y, linewidth=0, alpha=1)
     ax.plot(y + 1, linewidth=2)
     ax.scatter(y + 2, marker='s', markersize=5**2)
-    ax.format(title='Auto x coordinates')
     fig.format(xlabel='xlabel', ylabel='ylabel')
-    fig.format(suptitle='Standardized input demonstration')
 
 # %%
 import proplot as pplt
@@ -199,8 +196,7 @@ df.columns.name = 'category'
 
 # %%
 import proplot as pplt
-fig = pplt.figure(share=False)
-fig.format(suptitle='Automatic subplot formatting')
+fig = pplt.figure(share=False, suptitle='Automatic subplot formatting')
 
 # Plot DataArray
 cycle = pplt.Cycle('dark blue', space='hpl', N=da.shape[1])
@@ -251,8 +247,7 @@ data2 += state.rand(M, N)
 with pplt.rc.context({'lines.linewidth': 3}):
     # Use property cycle for columns of 2D input data
     fig = pplt.figure(share=False)
-    ax = fig.subplot(121)
-    ax.format(title='Single plot call')
+    ax = fig.subplot(121, title='Single plot call')
     ax.plot(
         2 * data1 + data2,
         cycle='black',  # cycle from monochromatic colormap
@@ -260,8 +255,7 @@ with pplt.rc.context({'lines.linewidth': 3}):
     )
 
     # Use property cycle with successive plot() calls
-    ax = fig.subplot(122)
-    ax.format(title='Multiple plot calls')
+    ax = fig.subplot(122, title='Multiple plot calls')
     for i in range(data1.shape[1]):
         ax.plot(data1[:, i], cycle='Reds', cycle_kw={'N': N, 'left': 0.3})
     for i in range(data1.shape[1]):
@@ -302,39 +296,33 @@ fig = pplt.figure(refwidth=2.2, span=False, share='labels')
 
 # Vertical vs. horizontal
 data = (state.rand(10, 5) - 0.5).cumsum(axis=0)
-ax = fig.subplot(gs[0])
-ax.format(title='Dependent x-axis')
+ax = fig.subplot(gs[0], title='Dependent x-axis')
 ax.line(data, lw=2.5, cycle='seaborn')
-ax = fig.subplot(gs[1])
-ax.format(title='Dependent y-axis')
+ax = fig.subplot(gs[1], title='Dependent y-axis')
 ax.linex(data, lw=2.5, cycle='seaborn')
 
 # Vertical lines
 gray = 'gray7'
 data = state.rand(20) - 0.5
-ax = fig.subplot(gs[2])
+ax = fig.subplot(gs[2], title='Vertical lines')
 ax.area(data, color=gray, alpha=0.2)
 ax.vlines(data, negpos=True, lw=2)
-ax.format(title='Vertical lines')
 
 # Horizontal lines
-ax = fig.subplot(gs[3])
+ax = fig.subplot(gs[3], title='Horizontal lines')
 ax.areax(data, color=gray, alpha=0.2)
 ax.hlines(data, negpos=True, lw=2)
-ax.format(title='Horizontal lines')
 
 # Step
-ax = fig.subplot(gs[4])
+ax = fig.subplot(gs[4], title='Step plot')
 data = state.rand(20, 4).cumsum(axis=1).cumsum(axis=0)
 cycle = ('gray6', 'blue7', 'red7', 'gray4')
 ax.step(data, cycle=cycle, labels=list('ABCD'), legend='ul', legend_kw={'ncol': 2})
-ax.format(title='Step plot')
 
 # Stems
-ax = fig.subplot(gs[5])
+ax = fig.subplot(gs[5], title='Stem plot')
 data = state.rand(20)
 ax.stem(data)
-ax.format(title='Stem plot')
 fig.format(suptitle='Line plots demo', xlabel='xlabel', ylabel='ylabel')
 
 
@@ -390,24 +378,20 @@ gs = pplt.GridSpec(ncols=2, nrows=2)
 fig = pplt.figure(refwidth=2.2, share='labels', span=False)
 
 # Vertical vs. horizontal
-ax = fig.subplot(gs[0])
-ax.format(title='Dependent x-axis')
+ax = fig.subplot(gs[0], title='Dependent x-axis')
 ax.scatter(data, cycle='538')
-ax = fig.subplot(gs[1])
-ax.format(title='Dependent y-axis')
+ax = fig.subplot(gs[1], title='Dependent y-axis')
 ax.scatterx(data, cycle='538')
 
 # Scatter plot with property cycler
-ax = fig.subplot(gs[2])
-ax.format(title='With property cycle')
+ax = fig.subplot(gs[2], title='With property cycle')
 obj = ax.scatter(
     x, data, legend='ul', legend_kw={'ncols': 2},
     cycle='Set2', cycle_kw={'m': ['x', 'o', 'x', 'o'], 'ms': [5, 10, 20, 30]}
 )
 
 # Scatter plot with colormap
-ax = fig.subplot(gs[3])
-ax.format(title='With colormap')
+ax = fig.subplot(gs[3], title='With colormap')
 data = state.rand(2, 100)
 obj = ax.scatter(
     *data,
@@ -532,18 +516,17 @@ gs = pplt.GridSpec(nrows=2, hratios=(3, 2))
 fig = pplt.figure(refaspect=2, refwidth=4.8, share=False)
 
 # Side-by-side bars
-ax = fig.subplot(gs[0])
+ax = fig.subplot(gs[0], title='Side-by-side')
 obj = ax.bar(
     data, cycle='Reds', edgecolor='red9', colorbar='ul', colorbar_kw={'frameon': False}
 )
-ax.format(xlocator=1, xminorlocator=0.5, ytickminor=False, title='Side-by-side')
+ax.format(xlocator=1, xminorlocator=0.5, ytickminor=False)
 
 # Stacked bars
-ax = fig.subplot(gs[1])
+ax = fig.subplot(gs[1], title='Stacked')
 obj = ax.barh(
     data.iloc[::-1, :], cycle='Blues', edgecolor='blue9', legend='ur', stack=True,
 )
-ax.format(title='Stacked')
 fig.format(grid=False, suptitle='Bar plot demo')
 pplt.rc.reset()
 
@@ -562,20 +545,18 @@ pplt.rc.titleloc = 'l'
 fig = pplt.figure(refwidth=2.3, share=False)
 
 # Overlaid area patches
-ax = fig.subplot(121)
+ax = fig.subplot(121, title='Fill between columns')
 ax.area(
     np.arange(5), data, data + state.rand(5)[:, None], cycle=cycle, alpha=0.7,
     legend='uc', legend_kw={'center': True, 'ncols': 2, 'labels': ['z', 'y', 'qqqq']},
 )
-ax.format(title='Fill between columns')
 
 # Stacked area patches
-ax = fig.subplot(122)
+ax = fig.subplot(122, title='Stack between columns')
 ax.area(
     np.arange(5), data, stack=True, cycle=cycle, alpha=0.8,
     legend='ul', legend_kw={'center': True, 'ncols': 2, 'labels': ['z', 'y', 'qqqq']},
 )
-ax.format(title='Stack between columns')
 fig.format(grid=False, xlabel='xlabel', ylabel='ylabel', suptitle='Area plot demo')
 pplt.rc.reset()
 

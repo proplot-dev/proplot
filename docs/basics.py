@@ -79,10 +79,9 @@ import numpy as np
 import proplot as pplt
 state = np.random.RandomState(51423)
 data = 2 * (state.rand(100, 5) - 0.5).cumsum(axis=0)
-fig = pplt.figure()
-ax = fig.subplot()
+fig = pplt.figure(suptitle='Single subplot')
+ax = fig.subplot(xlabel='x axis', ylabel='y axis')
 ax.plot(data, lw=2)
-ax.format(suptitle='Single subplot', xlabel='x axis', ylabel='y axis')
 
 
 # %% [raw] raw_mimetype="text/restructuredtext"

@@ -84,7 +84,7 @@ import numpy as np
 # Loop through "vertical" and "horizontal" versions
 varray = [[1], [2], [3]]
 harray = [[1, 1], [2, 3], [2, 3]]
-for orientation, array in zip(('horizontal', 'vertical'), (harray, varray)):
+for orientation, array in zip(('vertical', 'horizontal'), (varray, harray)):
     # Figure
     fig = pplt.figure(refwidth=4, refaspect=1.5, share=False)
     axs = fig.subplots(array, hratios=(2, 1, 1))

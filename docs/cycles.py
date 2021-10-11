@@ -82,27 +82,23 @@ kwargs = {'legend': 'b', 'labels': list('abcdef')}
 # Figure
 lw = 5
 pplt.rc.cycle = '538'
-fig = pplt.figure(refwidth=1.9)
-fig.format(suptitle='Changing the color cycle')
+fig = pplt.figure(refwidth=1.9, suptitle='Changing the color cycle')
 
 # Modify the default color cycle
-ax = fig.subplot(131)
+ax = fig.subplot(131, title='Global color cycle')
 ax.plot(data, lw=lw, **kwargs)
-ax.format(title='Global color cycle')
 
 # Pass the cycle to a plotting command
-ax = fig.subplot(132)
+ax = fig.subplot(132, title='Local color cycle')
 ax.plot(data, cycle='qual1', lw=lw, **kwargs)
-ax.format(title='Local color cycle')
 
 # As above but draw each line individually
 # Note that passing cycle=name to successive plot calls does
 # not reset the cycle position if the cycle is unchanged
-ax = fig.subplot(133)
+ax = fig.subplot(133, title='Multiple plot calls')
 labels = kwargs['labels']
 for i in range(data.shape[1]):
     ax.plot(data[:, i], cycle='qual1', legend='b', label=labels[i], lw=lw)
-ax.format(title='Multiple plot calls')
 
 
 # %% [raw] raw_mimetype="text/restructuredtext"
@@ -178,8 +174,7 @@ data = (state.rand(20, 4) - 0.5).cumsum(axis=0)
 data = pd.DataFrame(data, columns=pd.Index(['a', 'b', 'c', 'd'], name='label'))
 
 # Plot data
-fig, ax = pplt.subplots(refwidth=2.5)
-ax.format(suptitle='Plot without color cycle')
+fig, ax = pplt.subplots(refwidth=2.5, suptitle='Plot without color cycle')
 obj = ax.plot(
     data, cycle=cycle, legend='ll',
     legend_kw={'ncols': 2, 'handlelength': 2.5}

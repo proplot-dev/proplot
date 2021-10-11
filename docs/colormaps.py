@@ -203,15 +203,13 @@ data = state.rand(30, 30).cumsum(axis=1)
 # Colormap from a color
 # The trailing '_r' makes the colormap go dark-to-light instead of light-to-dark
 fig = pplt.figure(refwidth=2, span=False)
-ax = fig.subplot(121)
-ax.format(title='From single named color')
+ax = fig.subplot(121, title='From single named color')
 cmap1 = pplt.Colormap('prussian blue_r', l=100, name='Pacific', space='hpl')
 m = ax.contourf(data, cmap=cmap1)
 ax.colorbar(m, loc='b', ticks='none', label=cmap1.name)
 
 # Colormap from lists
-ax = fig.subplot(122)
-ax.format(title='From list of colors')
+ax = fig.subplot(122, title='From list of colors')
 cmap2 = pplt.Colormap(('maroon', 'light tan'), name='Heatwave')
 m = ax.contourf(data, cmap=cmap2)
 ax.colorbar(m, loc='b', ticks='none', label=cmap2.name)
@@ -230,14 +228,12 @@ cmap3 = pplt.Colormap(
     h=('red', 'red-720'), s=(80, 20), l=(20, 100), space='hpl', name='CubeHelix'
 )
 fig = pplt.figure(refwidth=2, span=False)
-ax = fig.subplot(121)
-ax.format(title='Sequential from channel values')
+ax = fig.subplot(121, title='Sequential from channel values')
 m = ax.contourf(data, cmap=cmap3)
 ax.colorbar(m, loc='b', ticks='none', label=cmap3.name)
 
 # Cyclic colormap from channel values
-ax = fig.subplot(122)
-ax.format(title='Cyclic from channel values')
+ax = fig.subplot(122, title='Cyclic from channel values')
 cmap4 = pplt.Colormap(
     h=(0, 360), c=50, l=70, space='hcl', cyclic=True, name='Spectrum'
 )

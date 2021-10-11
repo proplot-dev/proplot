@@ -133,13 +133,15 @@ for scale in (0, 1, 3):
 import proplot as pplt
 import numpy as np
 
-# Drawing from colormaps
+# Initial figure and random state
+state = np.random.RandomState(51423)
 fig = pplt.figure(refwidth=2.2, share=False)
-ax = fig.subplot(121)
+
+# Drawing from colormaps
 name = 'Deep'
 idxs = pplt.arange(0, 1, 0.2)
-state = np.random.RandomState(51423)
 state.shuffle(idxs)
+ax = fig.subplot(121, grid=True, title=f'Drawing from colormap {name!r}')
 for idx in idxs:
     data = (state.rand(20) - 0.4).cumsum()
     h = ax.plot(
@@ -147,13 +149,12 @@ for idx in idxs:
         label=f'idx {idx:.1f}', legend='l', legend_kw={'ncols': 1}
     )
 ax.colorbar(pplt.Colormap(name), loc='l', locator='none')
-ax.format(title=f'Drawing from colormap {name!r}', grid=True)
 
 # Drawing from color cycles
-ax = fig.subplot(122)
 name = 'Qual1'
 idxs = np.arange(6)
 state.shuffle(idxs)
+ax = fig.subplot(122, title=f'Drawing from color cycle {name!r}')
 for idx in idxs:
     data = (state.rand(20) - 0.4).cumsum()
     h = ax.plot(
@@ -161,7 +162,6 @@ for idx in idxs:
         label=f'idx {idx:.0f}', legend='r', legend_kw={'ncols': 1}
     )
 ax.colorbar(pplt.Colormap(name), loc='r', locator='none')
-ax.format(title=f'Drawing from color cycle {name!r}')
 fig.format(
     abc='A.', titleloc='l',
     suptitle='On-the-fly color selections',

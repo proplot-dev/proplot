@@ -65,54 +65,32 @@ fig = pplt.figure(share=False, refwidth=5, refaspect=(8, 1))
 fig.format(suptitle='Tick locators demo')
 
 # Step size for tick locations
-ax = fig.subplot(711)
-ax.format(
-    xlim=(0, 200), xminorlocator=10, xlocator=30,
-    title='MultipleLocator'
-)
+ax = fig.subplot(711, title='MultipleLocator')
+ax.format(xlim=(0, 200), xminorlocator=10, xlocator=30)
 
 # Specific list of locations
-ax = fig.subplot(712)
-ax.format(
-    xlim=(0, 10), xminorlocator=0.1,
-    xlocator=[0, 0.3, 0.8, 1.6, 4.4, 8, 8.8, 10],
-    title='FixedLocator',
-)
+ax = fig.subplot(712, title='FixedLocator')
+ax.format(xlim=(0, 10), xminorlocator=0.1, xlocator=[0, 0.3, 0.8, 1.6, 4.4, 8, 8.8])
 
 # Ticks at numpy.linspace(xmin, xmax, N)
-ax = fig.subplot(713)
-ax.format(
-    xlim=(0, 10), xlocator=('linear', 21),
-    title='LinearLocator',
-)
+ax = fig.subplot(713, title='LinearLocator')
+ax.format(xlim=(0, 10), xlocator=('linear', 21))
 
 # Logarithmic locator, used automatically for log scale plots
-ax = fig.subplot(714)
-ax.format(
-    xlim=(1, 100), xlocator='log', xminorlocator='logminor',
-    title='LogLocator',
-)
+ax = fig.subplot(714, title='LogLocator')
+ax.format(xlim=(1, 100), xlocator='log', xminorlocator='logminor')
 
 # Maximum number of ticks, but at "nice" locations
-ax = fig.subplot(715)
-ax.format(
-    xlim=(1, 7), xlocator=('maxn', 11),
-    title='MaxNLocator',
-)
+ax = fig.subplot(715, title='MaxNLocator')
+ax.format(xlim=(1, 7), xlocator=('maxn', 11))
 
 # Hide all ticks
-ax = fig.subplot(716)
-ax.format(
-    xlim=(-10, 10), xlocator='null',
-    title='NullLocator',
-)
+ax = fig.subplot(716, title='NullLocator')
+ax.format(xlim=(-10, 10), xlocator='null')
 
 # Tick locations that cleanly divide 60 minute/60 second intervals
-ax = fig.subplot(717)
-ax.format(
-    xlim=(0, 2), xlocator='dms', xformatter='dms',
-    title='Degree-Minute-Second Locator (requires cartopy)',
-)
+ax = fig.subplot(717, title='Degree-Minute-Second Locator (requires cartopy)')
+ax.format(xlim=(0, 2), xlocator='dms', xformatter='dms')
 
 pplt.rc.reset()
 
@@ -194,53 +172,40 @@ pplt.rc.update(
 fig = pplt.figure(refwidth=5, refaspect=(8, 1), share=False)
 
 # Scientific notation
-ax = fig.subplot(911)
-ax.format(xlim=(0, 1e20), xformatter='sci', title='SciFormatter')
+ax = fig.subplot(911, title='SciFormatter')
+ax.format(xlim=(0, 1e20), xformatter='sci')
 
 # N significant figures for ticks at specific values
-ax = fig.subplot(912)
+ax = fig.subplot(912, title='SigFigFormatter')
 ax.format(
     xlim=(0, 20), xlocator=(0.0034, 3.233, 9.2, 15.2344, 7.2343, 19.58),
-    xformatter=('sigfig', 2), title='SigFigFormatter',  # 2 significant digits
+    xformatter=('sigfig', 2),  # 2 significant digits
 )
 
 # Fraction formatters
-ax = fig.subplot(913)
-ax.format(
-    xlim=(0, 3 * np.pi), xlocator=np.pi / 4, xformatter='pi', title='FracFormatter',
-)
-ax = fig.subplot(914)
-ax.format(
-    xlim=(0, 2 * np.e), xlocator=np.e / 2, xticklabels='e', title='FracFormatter',
-)
+ax = fig.subplot(913, title='FracFormatter')
+ax.format(xlim=(0, 3 * np.pi), xlocator=np.pi / 4, xformatter='pi')
+ax = fig.subplot(914, title='FracFormatter')
+ax.format(xlim=(0, 2 * np.e), xlocator=np.e / 2, xticklabels='e')
 
 # Geographic formatters
-ax = fig.subplot(915)
-ax.format(
-    xlim=(-90, 90), xlocator=30, xformatter='deglat', title='Latitude Formatter'
-)
-ax = fig.subplot(916)
-ax.format(
-    xlim=(0, 360), xlocator=60, xformatter='deglon', title='Longitude Formatter'
-)
+ax = fig.subplot(915, title='Latitude Formatter')
+ax.format(xlim=(-90, 90), xlocator=30, xformatter='deglat')
+ax = fig.subplot(916, title='Longitude Formatter')
+ax.format(xlim=(0, 360), xlocator=60, xformatter='deglon')
 
 # User input labels
-ax = fig.subplot(917)
+ax = fig.subplot(917, title='FixedFormatter')
 ax.format(
     xlim=(0, 5), xlocator=np.arange(5),
-    xticklabels=['a', 'b', 'c', 'd', 'e'], title='FixedFormatter',
+    xticklabels=['a', 'b', 'c', 'd', 'e'],
 )
 
 # Custom style labels
-ax = fig.subplot(918)
-ax.format(
-    xlim=(0, 0.001), xlocator=0.0001, xformatter='%.E', title='FormatStrFormatter',
-)
-ax = fig.subplot(919)
-ax.format(
-    xlim=(0, 100), xtickminor=False, xlocator=20,
-    xformatter='{x:.1f}', title='StrMethodFormatter',
-)
+ax = fig.subplot(918, title='FormatStrFormatter')
+ax.format(xlim=(0, 0.001), xlocator=0.0001, xformatter='%.E')
+ax = fig.subplot(919, title='StrMethodFormatter')
+ax.format(xlim=(0, 100), xtickminor=False, xlocator=20, xformatter='{x:.1f}')
 fig.format(ylocator='null', suptitle='Tick formatters demo')
 pplt.rc.reset()
 
@@ -551,8 +516,7 @@ N, M = 50, 10
 data = state.rand(M) + (state.rand(N, M) - 0.48).cumsum(axis=0)
 altdata = 5 * (state.rand(N) - 0.45).cumsum(axis=0)
 fig = pplt.figure(share=False)
-ax = fig.subplot(121)
-ax.format(title='Alternate y twin x')
+ax = fig.subplot(121, title='Alternate y twin x')
 ax.line(data, color=c0, ls='--')
 ox = ax.alty(color=c2, label='alternate ylabel', linewidth=1)
 ox.line(altdata, color=c2)
@@ -560,8 +524,7 @@ ox.line(altdata, color=c2)
 # Alternate x axis
 data = state.rand(M) + (state.rand(N, M) - 0.48).cumsum(axis=0)
 altdata = 5 * (state.rand(N) - 0.45).cumsum(axis=0)
-ax = fig.subplot(122)
-ax.format(title='Alternate x twin y')
+ax = fig.subplot(122, title='Alternate x twin y')
 ax.linex(data, color=c0, ls='--')
 ox = ax.altx(color=c1, label='alternate xlabel', linewidth=1)
 ox.linex(altdata, color=c1)
@@ -600,8 +563,8 @@ pplt.rc.update({'grid.alpha': 0.4, 'meta.width': 1, 'grid.linewidth': 1})
 c1 = pplt.scale_luminance('cerulean', 0.5)
 c2 = pplt.scale_luminance('red', 0.5)
 fig = pplt.figure(refaspect=2.2, refwidth=3, share=False)
-axs = fig.subplots([[1, 1, 2, 2], [0, 3, 3, 0]])
-axs.format(
+axs = fig.subplots(
+    [[1, 1, 2, 2], [0, 3, 3, 0]],
     suptitle='Duplicate axes with simple transformations',
     ylocator=[], yformatter=[], xcolor=c1, gridcolor=c1,
 )
@@ -636,8 +599,10 @@ import proplot as pplt
 pplt.rc.update({'grid.alpha': 0.4, 'meta.width': 1, 'grid.linewidth': 1})
 c1 = pplt.scale_luminance('cerulean', 0.5)
 c2 = pplt.scale_luminance('red', 0.5)
-fig = pplt.figure(share=False, refaspect=0.4, refwidth=1.8)
-fig.format(suptitle='Duplicate axes with pressure and height')
+fig = pplt.figure(
+    share=False, refaspect=0.4, refwidth=1.8,
+    suptitle='Duplicate axes with pressure and height'
+)
 
 # Pressure as the linear scale, height on opposite axis (scale height 7km)
 ax = fig.subplot(121)
@@ -656,7 +621,7 @@ ax.format(
     grid=True, gridcolor=c2, ycolor=c2
 )
 ax.dualy(
-    'pressure', label='pressure (hPa)', locator=100, color=c1, gridcolor=c1, grid=True,
+    'pressure', label='pressure (hPa)', locator=100, color=c1, gridcolor=c1, grid=True
 )
 pplt.rc.reset()
 

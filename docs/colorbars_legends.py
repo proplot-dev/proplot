@@ -98,8 +98,11 @@ import proplot as pplt
 import numpy as np
 N = 10
 state = np.random.RandomState(51423)
-fig, axs = pplt.subplots(nrows=2, refwidth='55mm', panelpad='1em', share=False)
-fig.format(suptitle='Stacked colorbars demo')
+fig, axs = pplt.subplots(
+    nrows=2, share=False,
+    refwidth='55mm', panelpad='1em',
+    suptitle='Stacked colorbars demo'
+)
 
 # Repeat for both axes
 args1 = (0, 0.5, 1, 1, 'grays', 0.5)

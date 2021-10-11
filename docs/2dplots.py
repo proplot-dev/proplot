@@ -203,19 +203,17 @@ df.columns.name = 'variable (units)'
 
 # %%
 import proplot as pplt
-fig = pplt.figure(refwidth=2.5, share=False)
-fig.format(suptitle='Automatic subplot formatting')
+fig = pplt.figure(refwidth=2.5, share=False, suptitle='Automatic subplot formatting')
 
 # Plot DataArray
 cmap = pplt.Colormap('PuBu', left=0.05)
-ax = fig.subplot(121)
+ax = fig.subplot(121, yreverse=True)
 ax.contourf(da, cmap=cmap, colorbar='t', lw=0.7, ec='k')
-ax.format(yreverse=True)
 
 # Plot DataFrame
-ax = fig.subplot(122)
+ax = fig.subplot(122, yreverse=True)
 ax.contourf(df, cmap='YlOrRd', colorbar='t', lw=0.7, ec='k')
-ax.format(xtickminor=False, yreverse=True, yformatter='%b', ytickminor=False)
+ax.format(xtickminor=False, yformatter='%b', ytickminor=False)
 
 # %% [raw] raw_mimetype="text/restructuredtext"
 # .. _ug_apply_cmap:
@@ -383,21 +381,19 @@ fig = pplt.figure(refwidth=2.4, right=2)
 fig.format(suptitle='DiscreteNorm end-color standardization')
 
 # Cyclic colorbar with distinct end colors
-ax = fig.subplot(gs[0, 1:3])
+ax = fig.subplot(gs[0, 1:3], title='distinct "cyclic" end colors')
 ax.pcolormesh(
     data, levels=levels, cmap='phase', extend='neither',
     colorbar='b', colorbar_kw={'locator': 90}
 )
-ax.format(title='distinct "cyclic" end colors')
 
 # Colorbars with different extend values
 for i, extend in enumerate(('min', 'max', 'neither', 'both')):
-    ax = fig.subplot(gs[1, i])
+    ax = fig.subplot(gs[1, i], title=f'extend={extend!r}')
     ax.pcolormesh(
         data[:, :10], levels=levels, cmap='oxy',
         extend=extend, colorbar='b', colorbar_kw={'locator': 180}
     )
-    ax.format(title=f'extend={extend!r}')
 
 # %% [raw] raw_mimetype="text/restructuredtext" tags=[]
 # .. _ug_autonorm:
@@ -443,8 +439,10 @@ import numpy as np
 N = 20
 state = np.random.RandomState(51423)
 data = N * 2 + (state.rand(N, N) - 0.45).cumsum(axis=0).cumsum(axis=1) * 10
-fig, axs = pplt.subplots(nrows=2, ncols=2, refwidth=2)
-fig.format(suptitle='Auto normalization demo')
+fig, axs = pplt.subplots(
+    nrows=2, ncols=2, refwidth=2,
+    suptitle='Auto normalization demo'
+)
 
 # Auto diverging
 pplt.rc['cmap.sequential'] = 'lapaz_r'
