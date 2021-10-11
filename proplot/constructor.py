@@ -1391,19 +1391,17 @@ def Proj(name, basemap=None, **kwargs):
     .. _wintri: https://proj4.org/operations/projections/wintri.html
     """  # noqa: E501
     # Class instances
-    use_basemap = _not_none(basemap, rc['basemap'])
     is_crs = CRS is not object and isinstance(name, CRS)
     is_basemap = Basemap is not object and isinstance(name, Basemap)
-    include_axes = kwargs.pop('include_axes', None)
+    use_basemap = _not_none(basemap, rc['basemap'])
     if is_crs or is_basemap:
         proj = name
-        proj._proj_package = 'cartopy' if is_crs else 'basemap'
         if basemap is not None:
             kwargs['basemap'] = basemap
         if kwargs:
             warnings._warn_proplot(f'Ignoring Proj() keyword arg(s): {kwargs!r}.')
 
-    # Invalid
+    # Unknown
     elif not isinstance(name, str):
         raise ValueError(
             f'Unexpected projection {name!r}. Must be PROJ string name, '
@@ -1411,13 +1409,15 @@ def Proj(name, basemap=None, **kwargs):
         )
 
     # Basemap
+    # NOTE: Known issue that basemap sometimes produces backwards maps:
+    # https://stackoverflow.com/q/56299971/4970632
+    # NOTE: We set rsphere to fix non-conda installed basemap issue:
+    # https://github.com/matplotlib/basemap/issues/361
+    # NOTE: Adjust lon_0 tof fix issues with Robinson (and related?) projections
+    # https://stackoverflow.com/questions/56299971/ (also triggers 'no room for axes')
+    # NOTE: Unlike cartopy, basemap resolution is configured
+    # on initialization and controls *all* features.
     elif use_basemap:
-        # NOTE: Known issue that basemap sometimes produces backwards maps:
-        # https://stackoverflow.com/q/56299971/4970632
-        # NOTE: We set rsphere to fix non-conda installed basemap issue:
-        # https://github.com/matplotlib/basemap/issues/361
-        # NOTE: Unlike cartopy, basemap resolution is configured on
-        # initialization and controls *all* features.
         import mpl_toolkits.basemap as mbasemap
         if dependencies._version_mpl >= 3.3:
             raise RuntimeError(
@@ -1434,9 +1434,6 @@ def Proj(name, basemap=None, **kwargs):
         kwproj.update(kwargs)
         kwproj.setdefault('fix_aspect', True)
         if kwproj.get('lon_0', 0) > 0:
-            # Fix issues with Robinson (and related?) projections
-            # See: https://stackoverflow.com/questions/56299971/
-            # Get both this issue *and* 'no room for axes' issue
             kwproj['lon_0'] -= 360
         if name[:2] in ('np', 'sp'):
             kwproj.setdefault('round', True)
@@ -1456,17 +1453,33 @@ def Proj(name, basemap=None, **kwargs):
                 + '.'
             )
         kwproj.update({'resolution': reso, 'projection': name})
-        proj = mbasemap.Basemap(**kwproj)
-        proj._proj_package = 'basemap'
+        try:
+            proj = mbasemap.Basemap(**kwproj)  # will raise helpful warning
+        except ValueError as err:
+            msg = str(err)
+            msg = msg.replace('projection', 'basemap projection')
+            raise ValueError(msg) from None
 
     # Cartopy
-    elif name in PROJS:
-        import cartopy.crs  # noqa: F401
+    # NOTE: Error message matches basemap invalid projection message
+    else:
+        import cartopy.crs as ccrs  # noqa: F401
         kwproj = {
             PROJ_ALIASES_KW.get(key, key): value
             for key, value in kwargs.items()
         }
-        crs = PROJS.get(name, None)
+        if name in PROJS:
+            crs = PROJS[name]
+        else:
+            maxlen = max(map(len, PROJS))
+            raise ValueError(
+                f'{name!r} is an unknown cartopy projection class.\n'
+                'The known cartopy projection classes are:\n'
+                + '\n'.join(
+                    ' ' + key + ' ' * (maxlen - len(key) + 6) + crs.__name__
+                    for key, crs in PROJS.items()
+                )
+            )
         if name == 'geos':  # fix common mistake
             kwproj.pop('central_latitude', None)
         if 'boundinglat' in kwproj:
@@ -1475,21 +1488,6 @@ def Proj(name, basemap=None, **kwargs):
                 'for cartopy axes.'
             )
         proj = crs(**kwproj)
-        proj._proj_package = 'cartopy'
-
-    # Unknown
-    else:
-        options = tuple(PROJS)
-        if include_axes:
-            options += tuple(
-                proj.split('proplot_', 1)[1] for proj in mproj.get_projection_names()
-                if 'proplot_' in proj
-            )
-        raise ValueError(
-            f'Unknown projection {name!r}. Options are: '
-            + ', '.join(map(repr, options))
-            + '.'
-        )
 
     return proj
 

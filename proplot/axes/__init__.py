@@ -27,7 +27,9 @@ __all__ = [
 # Register projections with package prefix to avoid conflicts
 # NOTE: We integrate with cartopy and basemap rather than using matplotlib's
 # native projection system. Therefore axes names are not part of public API.
+CLASSES = {}  # track valid names
 for _cls in (CartesianAxes, PolarAxes, _BasemapAxes, _CartopyAxes, ThreeAxes):
     for _name in (_cls._name, *_cls._name_aliases):
         with context._state_context(_cls, name='proplot_' + _name):
             mproj.register_projection(_cls)
+            CLASSES[_name] = _cls
