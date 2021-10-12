@@ -2,6 +2,7 @@
 """
 Utilties related to legends and colorbars.
 """
+import matplotlib.artist as martist
 import numpy as np
 
 from . import ic  # noqa: F401
@@ -80,3 +81,17 @@ def _iter_iterables(*args):
             yield from _iter_iterables(*arg)
         elif arg is not None:
             yield arg
+
+
+class _InsetColorbar(martist.Artist):
+    """
+    Legend-like class for managing inset colorbars.
+    """
+    # TODO: Write this!
+
+
+class _CenteredLegend(martist.Artist):
+    """
+    Legend-like class for managing centered-row legends.
+    """
+    # TODO: Write this!
