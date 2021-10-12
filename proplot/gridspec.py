@@ -1359,20 +1359,22 @@ class SubplotGrid(MutableSequence, list):
         gridspec = None
         message = (
             'SubplotGrid can only be filled with proplot subplots '
-            'belonging to the same GridSpec. Instead got {!r}.'
+            'belonging to the same GridSpec. Instead got {}.'
         )
         items = np.atleast_1d(items)
         if self:
             gridspec = self.gridspec  # compare against existing gridspec
         for item in items.flat:
             if not isinstance(item, paxes.Axes):
-                raise ValueError(message.format(item))
+                raise ValueError(message.format(f'the object {item!r}'))
             item = item._get_topmost_axes()
             if not isinstance(item, maxes.SubplotBase):
-                raise ValueError(message.format(item))
+                raise ValueError(message.format(f'the axes {item!r}'))
             gs = item.get_subplotspec().get_gridspec()
-            if not isinstance(gs, GridSpec) or (gridspec and gs is not gridspec):
-                raise ValueError(message.format(gs))
+            if not isinstance(gs, GridSpec):
+                raise ValueError(message.format(f'the GridSpec {gs!r}'))
+            if gridspec and gs is not gridspec:
+                raise ValueError(message.format('at least two different GridSpecs'))
             gridspec = gs
         if not scalar:
             items = tuple(items.flat)
