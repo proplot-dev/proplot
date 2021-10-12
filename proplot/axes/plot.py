@@ -2278,7 +2278,7 @@ class PlotAxes(base.Axes):
     def _parse_levels(
         self, *args, N=None, levels=None, values=None, extend=None,
         positive=False, negative=False, nozero=False, norm=None, norm_kw=None,
-        vmin=None, vmax=None, skip_autolev=False, min_levels=None, **kwargs,
+        skip_autolev=False, min_levels=None, **kwargs,
     ):
         """
         Return levels resulting from a wide variety of keyword options.
