@@ -1542,28 +1542,24 @@ class Figure(mfigure.Figure):
         if skip_axes:  # avoid recursion
             return
         names = set()  # track used dictionaries
-        dicts = {
-            name: _pop_params(kwargs, signature)
-            for name, signature in paxes.Axes._format_signatures.items()
-        }
+        dicts = {k: _pop_params(kwargs, v) for k, v in paxes.Axes._format_signatures.items()}  # noqa: E501
         for ax in axs:
-            dict_ = {}
+            kw = {}
             for name in {None, ax._name}:
                 names.add(name)
-                dict_.update(dicts.get(name, {}))
-            ax.format(rc_kw=rc_kw, rc_mode=rc_mode, skip_figure=True, **dict_)
+                kw.update(dicts.get(name, {}))
+            ax.format(rc_kw=rc_kw, rc_mode=rc_mode, skip_figure=True, **kw)
 
-        # Warn unused keyword argument(s)
-        kwargs.update(
-            {
-                key: value
-                for name in dicts.keys() - names
-                for key, value in dicts[name].items()
-            }
-        )
-        if kwargs:
+        # Error or warn unused keyword argument(s)
+        # NOTE: Raise error rather than warning for consistency with axes-level commands
+        kw = {k: v for name in dicts.keys() - names for k, v in dicts[name].items()}
+        if kw:
             warnings._warn_proplot(
-                f'Ignoring unrecognized format keyword argument(s): {kwargs}'
+                f'Ignoring unused projection-specific format() keyword argument(s): {kw}'  # noqa: E501
+            )
+        if kwargs:
+            raise TypeError(
+                f'Unrecognized format() keyword argument(s): {kwargs}.'
             )
 
     @docstring._concatenate_inherited
