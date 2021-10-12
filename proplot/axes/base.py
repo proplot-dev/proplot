@@ -2603,7 +2603,7 @@ class Axes(maxes.Axes):
             pairs = [ipairs for ipairs in pairs if ipairs]
         return pairs, multi
 
-    def _parse_single_legend(self, pairs, ncol=None, order=None, **kwargs):
+    def _parse_ordinary_legend(self, pairs, ncol=None, order=None, **kwargs):
         """
         Draw an individual legend with support for changing legend-entries
         between column-major and row-major.
@@ -2621,7 +2621,7 @@ class Axes(maxes.Axes):
         args = tuple(zip(*pairs)) or ([], [])
         return mlegend.Legend(self, *args, ncol=ncol, **kwargs)
 
-    def _parse_multi_legend(
+    def _parse_centered_legend(
         self, pairs, *, fontsize,
         loc=None, title=None, frameon=None, kw_frame=None, **kwargs
     ):
@@ -2797,10 +2797,10 @@ class Axes(maxes.Axes):
         # Add the legend and update patch properties
         kwargs['loc'] = loc_legend
         if multi:
-            objs = lax._parse_multi_legend(pairs, kw_frame=kw_frame, **kwargs)
+            objs = lax._parse_centered_legend(pairs, kw_frame=kw_frame, **kwargs)
         else:
             kwargs.update({key: kw_frame.pop(key) for key in ('shadow', 'fancybox')})
-            objs = [lax._parse_single_legend(pairs, ncol=ncol, order=order, **kwargs)]
+            objs = [lax._parse_ordinary_legend(pairs, ncol=ncol, order=order, **kwargs)]
             objs[0].legendPatch.update(kw_frame)
         for obj in objs:
             if hasattr(lax, 'legend_') and lax.legend_ is None:
