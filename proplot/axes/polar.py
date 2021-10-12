@@ -119,7 +119,7 @@ class PolarAxes(shared._SharedAxes, plot.PlotAxes, mproj.PolarAxes):
         Other parameters
         ----------------
         %(axes.format)s
-        %(axes.rc)s
+        %(rc.init)s
 
         See also
         --------
@@ -232,7 +232,7 @@ class PolarAxes(shared._SharedAxes, plot.PlotAxes, mproj.PolarAxes):
         ----------------
         %(axes.format)s
         %(figure.format)s
-        %(axes.rc)s
+        %(rc.format)s
 
         See also
         --------
@@ -332,7 +332,8 @@ class PolarAxes(shared._SharedAxes, plot.PlotAxes, mproj.PolarAxes):
         # Parent format method
         super().format(rc_kw=rc_kw, rc_mode=rc_mode, **kwargs)
 
-    # Apply signature obfuscation after getting keys
-    # NOTE: This is needed for __init__
-    _format_signature_proj = inspect.signature(format)
-    format = docstring._obfuscate_kwargs(format)
+
+# Apply signature obfuscation after storing previous signature
+# NOTE: This is needed for __init__
+PolarAxes._format_signatures[PolarAxes._name] = inspect.signature(PolarAxes.format)
+PolarAxes.format = docstring._obfuscate_kwargs(PolarAxes.format)

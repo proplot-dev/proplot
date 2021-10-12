@@ -391,23 +391,26 @@ mathtext_fallback : bool or str, optional
     with the "¤" dummy character. For details see this `mathtext tutorial \
 <https://matplotlib.org/stable/tutorials/text/mathtext.html#custom-fonts>`__.
 """
+_rc_init_docstring = """
+    Remaining keyword arguments are passed to `matplotlib.axes.Axes`.
+"""
 _rc_format_docstring = """
 rc_mode : int, optional
     The context mode passed to `~proplot.config.Configurator.context`.
 rc_kw : dict-like, optional
     An alternative to passing extra keyword arguments. See below.
 **kwargs
-    Unknown keyword arguments are passed to `matplotlib.axes.Axes`. Other keyword
-    arguments that match the name of an `~proplot.config.rc` setting are passed to
-    `proplot.config.Configurator.context` and used to update the axes. If the setting
-    name has "dots" you can simply omit the dots. For example, ``abc='A.'`` modifies
-    the :rcraw:`abc` setting, ``titleloc='left'`` modifies the :rcraw:`title.loc`
-    setting, ``gridminor=True`` modifies the :rcraw:`gridminor` setting, and
-    ``gridbelow=True`` modifies the :rcraw:`grid.below` setting. Many of the keyword
-    arguments documented above are internally applied by retrieving settings passed
-    to `~proplot.config.Configurator.context`.
+    {}Keyword arguments that match the name of an `~proplot.config.rc` setting are
+    passed to `proplot.config.Configurator.context` and used to update the axes.
+    If the setting name has "dots" you can simply omit the dots. For example,
+    ``abc='A.'`` modifies the :rcraw:`abc` setting, ``titleloc='left'`` modifies the
+    :rcraw:`title.loc` setting, ``gridminor=True`` modifies the :rcraw:`gridminor`
+    setting, and ``gridbelow=True`` modifies the :rcraw:`grid.below` setting. Many
+    of the keyword arguments documented above are internally applied by retrieving
+    settings passed to `~proplot.config.Configurator.context`.
 """
-docstring._snippet_manager['axes.rc'] = _rc_format_docstring
+docstring._snippet_manager['rc.init'] = _rc_format_docstring.format(_rc_init_docstring.strip())  # noqa: E501
+docstring._snippet_manager['rc.format'] = _rc_format_docstring.format('')
 docstring._snippet_manager['axes.format'] = _axes_format_docstring
 docstring._snippet_manager['figure.format'] = _figure_format_docstring
 
@@ -678,7 +681,7 @@ class Axes(maxes.Axes):
 
         Other parameters
         ----------------
-        %(axes.rc)s
+        %(rc.init)s
 
         See also
         --------
@@ -691,18 +694,20 @@ class Axes(maxes.Axes):
         proplot.figure.Figure.subplot
         proplot.figure.Figure.add_subplot
         """
-        # Initialize parent after removing args
-        # NOTE: These are really "subplot" features so documented on add_subplot().
+        # Remove subplot-related args
+        # NOTE: These are documented on add_subplot()
         ss = kwargs.pop('_subplot_spec', None)  # see below
         number = kwargs.pop('number', None)
         autoshare = kwargs.pop('autoshare', None)
         autoshare = _not_none(autoshare, True)
+
+        # Remove format-related args and initialize
         rc_kw, rc_mode = _pop_rc(kwargs)
         kw_format = _pop_props(kwargs, 'patch')  # background properties
-        if 'zorder' in kw_format:  # special case: refers to entire axes
+        if 'zorder' in kw_format:  # special case: refers to the entire axes
             kwargs['zorder'] = kw_format.pop('zorder')
-        kw_format.update(_pop_params(kwargs, self._format_signature_proj))
-        kw_format.update(_pop_params(kwargs, self._format_signature_base))
+        for name in {None, self._name}:  # base method and class method (if it exists)
+            kw_format.update(_pop_params(kwargs, self._format_signatures.get(name)))
         super().__init__(*args, **kwargs)
 
         # Varous scalar properties
@@ -760,11 +765,11 @@ class Axes(maxes.Axes):
         # set_subplotspec. Tried to defer to setter but really messes up both format()
         # and _auto_share(). Instead use workaround: Have Figure.add_subplot pass
         # subplotspec as a hidden keyword arg. Non-subplots don't need this arg.
-        # See https://github.com/matplotlib/matplotlib/pull/18564
+        # See: https://github.com/matplotlib/matplotlib/pull/18564
         self._number = None
         if number:  # not None or False
-            self.number = number  # documented in add_subplot
-        if ss is not None:
+            self.number = number
+        if ss is not None:  # always passed from add_subplot
             self.set_subplotspec(ss)
         if autoshare:
             self._auto_share()
@@ -772,8 +777,6 @@ class Axes(maxes.Axes):
         # Default formatting
         # NOTE: This ignores user-input rc_mode. Mode '1' applies proplot
         # features which is necessary on first run. Default otherwise is mode '2'
-        if 'color' in rc_kw:
-            kw_format['color'] = rc_kw.pop('color')  # special case (argument clash)
         self.format(rc_kw=rc_kw, rc_mode=1, skip_figure=True, **kw_format)
 
     @staticmethod
@@ -1431,11 +1434,6 @@ class Axes(maxes.Axes):
         ----------
         %(axes.format)s
 
-        Other parameters
-        ----------------
-        %(figure.format)s
-        %(axes.rc)s
-
         Important
         ---------
         `abc`, `abcloc`, `titleloc`, `titleabove`, `titlepad`, and
@@ -1443,6 +1441,11 @@ class Axes(maxes.Axes):
         We explicitly document these arguments here because it is common to
         change them for specific axes. But many :ref:`other configuration
         settings <ug_format>` can be passed to ``format`` too.
+
+        Other parameters
+        ----------------
+        %(figure.format)s
+        %(rc.format)s
 
         See also
         --------
@@ -3042,8 +3045,8 @@ class Axes(maxes.Axes):
         else:
             raise ValueError(f'Invalid number {num!r}. Must be integer >=1.')
 
-    # Apply signature obfuscation after getting keys
-    # NOTE: This is needed for __init__
-    _format_signature_proj = None
-    _format_signature_base = inspect.signature(format)
-    format = docstring._obfuscate_kwargs(format)
+
+# Apply signature obfuscation after storing previous signature
+# NOTE: This is needed for __init__
+Axes._format_signatures = {None: inspect.signature(Axes.format)}
+Axes.format = docstring._obfuscate_kwargs(Axes.format)

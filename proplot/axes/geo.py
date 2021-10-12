@@ -425,7 +425,7 @@ class GeoAxes(plot.PlotAxes):
         Other parameters
         ----------------
         %(axes.format)s
-        %(axes.rc)s
+        %(rc.init)s
 
         Note
         ----
@@ -555,7 +555,7 @@ class GeoAxes(plot.PlotAxes):
         ----------------
         %(axes.format)s
         %(figure.format)s
-        %(axes.rc)s
+        %(rc.format)s
 
         See also
         --------
@@ -689,11 +689,6 @@ class GeoAxes(plot.PlotAxes):
         if not isinstance(map_projection, cls):
             raise ValueError(f'Projection must be a {cls} instance.')
         self._map_projection = map_projection
-
-    # Apply signature obfuscation after getting keys
-    # NOTE: This is needed for __init__
-    _format_signature_proj = inspect.signature(format)
-    format = docstring._obfuscate_kwargs(format)
 
 
 class _CartopyAxes(GeoAxes, _GeoAxes):
@@ -1416,3 +1411,9 @@ class _BasemapAxes(GeoAxes):
             axis.isDefault_majfmt = True
             axis.isDefault_majloc = True
             axis.isDefault_minloc = True
+
+
+# Apply signature obfuscation after storing previous signature
+GeoAxes._format_signatures[_CartopyAxes._name] = inspect.signature(GeoAxes.format)
+GeoAxes._format_signatures[_BasemapAxes._name] = inspect.signature(GeoAxes.format)
+GeoAxes.format = docstring._obfuscate_kwargs(GeoAxes.format)

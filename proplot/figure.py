@@ -1435,7 +1435,7 @@ class Figure(mfigure.Figure):
 
     @docstring._snippet_manager
     def format(
-        self, axs=None,
+        self, axs=None, *,
         figtitle=None, suptitle=None, suptitle_kw=None,
         llabels=None, leftlabels=None, leftlabels_kw=None,
         rlabels=None, rightlabels=None, rightlabels_kw=None,
@@ -1451,15 +1451,8 @@ class Figure(mfigure.Figure):
         Parameters
         ----------
         axs : sequence of `~proplot.axes.Axes`, optional
-            The axes to format.
+            The axes to format. Default is the numbered subplots.
         %(figure.format)s
-        **kwargs
-            Passed to the projection-specific ``format`` command for each axes.
-
-        Other parameters
-        ----------------
-        %(axes.format)s
-        %(axes.rc)s
 
         Important
         ---------
@@ -1468,6 +1461,14 @@ class Figure(mfigure.Figure):
         We explicitly document these arguments here because it is common to
         change them for specific figures. But many :ref:`other configuration
         settings <ug_format>` can be passed to ``format`` too.
+
+        Other parameters
+        ----------------
+        %(axes.format)s
+        %(cartesian.format)s
+        %(polar.format)s
+        %(geo.format)s
+        %(rc.format)s
 
         See also
         --------
@@ -1479,6 +1480,7 @@ class Figure(mfigure.Figure):
         proplot.config.Configurator.context
         """
         # Initiate context block
+        axs = axs or self._subplot_dict.values()
         skip_axes = kwargs.pop('skip_axes', False)  # internal keyword arg
         rc_kw, rc_mode = _pop_rc(kwargs)
         with rc.context(rc_kw, mode=rc_mode):
@@ -1539,9 +1541,30 @@ class Figure(mfigure.Figure):
         # Update the main axes
         if skip_axes:  # avoid recursion
             return
-        axs = axs or self._subplot_dict.values()
+        names = set()  # track used dictionaries
+        dicts = {
+            name: _pop_params(kwargs, signature)
+            for name, signature in paxes.Axes._format_signatures.items()
+        }
         for ax in axs:
-            ax.format(rc_kw=rc_kw, rc_mode=rc_mode, skip_figure=True, **kwargs)
+            dict_ = {}
+            for name in {None, ax._name}:
+                names.add(name)
+                dict_.update(dicts.get(name, {}))
+            ax.format(rc_kw=rc_kw, rc_mode=rc_mode, skip_figure=True, **dict_)
+
+        # Warn unused keyword argument(s)
+        kwargs.update(
+            {
+                key: value
+                for name in dicts.keys() - names
+                for key, value in dicts[name].items()
+            }
+        )
+        if kwargs:
+            warnings._warn_proplot(
+                f'Ignoring unrecognized format keyword argument(s): {kwargs}'
+            )
 
     @docstring._concatenate_inherited
     @docstring._snippet_manager

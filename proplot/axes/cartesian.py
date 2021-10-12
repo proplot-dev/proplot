@@ -320,7 +320,7 @@ class CartesianAxes(shared._SharedAxes, plot.PlotAxes):
         Other parameters
         ----------------
         %(axes.format)s
-        %(axes.rc)s
+        %(rc.init)s
 
         See also
         --------
@@ -945,7 +945,7 @@ class CartesianAxes(shared._SharedAxes, plot.PlotAxes):
         ----------------
         %(axes.format)s
         %(figure.format)s
-        %(axes.rc)s
+        %(rc.format)s
 
         See also
         --------
@@ -1347,7 +1347,8 @@ class CartesianAxes(shared._SharedAxes, plot.PlotAxes):
         self._update_rotation('x')
         return super().get_tightbbox(renderer, *args, **kwargs)
 
-    # Apply signature obfuscation after getting keys
-    # NOTE: This is needed for __init__, altx, and alty
-    _format_signature_proj = inspect.signature(format)
-    format = docstring._obfuscate_kwargs(format)
+
+# Apply signature obfuscation after storing previous signature
+# NOTE: This is needed for __init__, altx, and alty
+CartesianAxes._format_signatures[CartesianAxes._name] = inspect.signature(CartesianAxes.format)  # noqa: E501
+CartesianAxes.format = docstring._obfuscate_kwargs(CartesianAxes.format)

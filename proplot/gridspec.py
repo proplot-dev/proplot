@@ -1109,7 +1109,7 @@ class GridSpec(mgridspec.GridSpec):
     @property
     def figure(self):
         """
-        The `proplot.figure.Figure` instance uniquely associated with this `GridSpec`.
+        The `proplot.figure.Figure` uniquely associated with this `GridSpec`.
         On assignment the gridspec parameters and figure size are updated.
         """
         return self._figure
@@ -1383,7 +1383,7 @@ class SubplotGrid(MutableSequence, list):
         return items
 
     @docstring._snippet_manager
-    def format(self, *args, **kwargs):
+    def format(self, **kwargs):
         """
         Call the ``format`` command for every axes in the grid.
 
@@ -1397,7 +1397,10 @@ class SubplotGrid(MutableSequence, list):
         Other parameters
         ----------------
         %(figure.format)s
-        %(axes.rc)s
+        %(cartesian.format)s
+        %(polar.format)s
+        %(geo.format)s
+        %(rc.format)s
 
         See also
         --------
@@ -1408,14 +1411,21 @@ class SubplotGrid(MutableSequence, list):
         proplot.figure.Figure.format
         proplot.config.Configurator.context
         """
-        for ax in self:
-            ax.format(*args, **kwargs)
+        self.figure.format(axs=self, **kwargs)
+
+    @property
+    def figure(self):
+        """
+        The `proplot.figure.Figure` uniquely associated with this `SubplotGrid`.
+        This is used for the `SubplotGrid.format` command.
+        """
+        return self.gridspec.figure
 
     @property
     def gridspec(self):
         """
-        The `~proplot.gridspec.GridSpec` associated with the grid. This is used
-        to resolve 2D indexing. See `~SubplotGrid.__getitem__` for details.
+        The `~proplot.gridspec.GridSpec` uniquely associated with this `SubplotGrid`.
+        This is used to resolve 2D indexing. See `~SubplotGrid.__getitem__` for details.
         """
         # Return the gridspec associatd with the grid
         if not self:
