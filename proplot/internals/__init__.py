@@ -21,7 +21,7 @@ from . import (  # noqa: F401
     guides,
     process,
     rcsetup,
-    textmods,
+    texts,
     warnings
 )
 

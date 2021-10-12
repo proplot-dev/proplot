@@ -39,7 +39,7 @@ from ..internals import (
     docstring,
     guides,
     rcsetup,
-    textmods,
+    texts,
     warnings,
 )
 from ..utils import _fontsize_to_pt, edges, units
@@ -1268,7 +1268,7 @@ class Axes(maxes.Axes):
             loc = rc.find('title.loc', context=True)
             loc = self._title_loc = _translate_loc(loc or self._title_loc, 'text')
             if loc != old and old is not None:
-                textmods._transfer_text(self._title_dict[old], self._title_dict[loc])
+                texts._transfer_text(self._title_dict[old], self._title_dict[loc])
 
         # Update the title text. For outer panels, add text to the panel if
         # necesssary. For inner panels, use the border and bbox settings.
@@ -1708,7 +1708,7 @@ class Axes(maxes.Axes):
         pax._title_pad = self._title_pad
         pax._abc_title_pad = self._abc_title_pad
         for name in names:
-            textmods._transfer_text(self._title_dict[name], pax._title_dict[name])
+            texts._transfer_text(self._title_dict[name], pax._title_dict[name])
 
     def _auto_share(self):
         """
@@ -2976,7 +2976,7 @@ class Axes(maxes.Axes):
 
         # Update the text object using a monkey patch
         obj = func(*args, transform=transform, **kwargs)
-        obj.update = textmods._update_text.__get__(obj)
+        obj.update = texts._update_text.__get__(obj)
         obj.update(
             {
                 'border': border,

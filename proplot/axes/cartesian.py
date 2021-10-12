@@ -14,7 +14,7 @@ from .. import scale as pscale
 from .. import ticker as pticker
 from ..config import rc
 from ..internals import ic  # noqa: F401
-from ..internals import _not_none, _pop_rc, dependencies, docstring, textmods, warnings
+from ..internals import _not_none, _pop_rc, dependencies, docstring, texts, warnings
 from . import plot, shared
 
 __all__ = ['CartesianAxes']
@@ -368,7 +368,7 @@ class CartesianAxes(shared._SharedAxes, plot.PlotAxes):
         if self._sharex is not None and axis.get_visible():
             level = 3 if self._panel_sharex_group else self.figure._sharex
             if level > 0:
-                textmods._transfer_text(axis.label, self._sharex.xaxis.label)
+                texts._transfer_text(axis.label, self._sharex.xaxis.label)
                 axis.label.set_visible(False)
             if level > 2:
                 # WARNING: Cannot set NullFormatter because shared axes share the
@@ -379,7 +379,7 @@ class CartesianAxes(shared._SharedAxes, plot.PlotAxes):
         if self._sharey is not None and axis.get_visible():
             level = 3 if self._panel_sharey_group else self.figure._sharey
             if level > 0:
-                textmods._transfer_text(axis.label, self._sharey.yaxis.label)
+                texts._transfer_text(axis.label, self._sharey.yaxis.label)
                 axis.label.set_visible(False)
             if level > 2:
                 axis.set_tick_params(which='both', labelleft=False, labelright=False)
