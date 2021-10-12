@@ -36,8 +36,9 @@ Features
 
 * Permit passing arbitrary ``format`` arguments to multi-axes creation commands
   like `~proplot.ui.subplots` (:commit:`0b801442`).
-* Permit passing ``format`` arguments for different projections to the same
-  `proplot.gridspec.SubplotGrid.format`
+* Permit passing ``format`` arguments for different projections during the same
+  `proplot.gridspec.SubplotGrid.format` or `proplot.figure.Figure.format` call
+  (:commit:`f5e25598`). Invalid projection-specific keywords are ignored.
 * Add `[xy]labelsize`, `[xy]labelweight`, `[xy]ticklabelsize`, `[xy]ticklabelweight`
   keywords to `proplot.axes.CartesianAxes.format` (:commit:`975025df`).
 * Add `labelsize` and `labelweight` keywords to `proplot.axes.PolarAxes.format`,
