@@ -1219,8 +1219,9 @@ class CartesianAxes(shared._SharedAxes, plot.PlotAxes):
         """
         Optionally omit the leading x or y from "twin axes" methods.
         """
-        keys = tuple(k[1:] for k in self._format_signature_proj.parameters if k[0] == x)
-        kwargs = {(x + k if k in keys else k): v for k, v in kwargs.items()}
+        sig = self._format_signatures[self._name]
+        keys = tuple(key[1:] for key in sig.parameters if key[0] == x)
+        kwargs = {(x + key if key in keys else key): val for key, val in kwargs.items()}
         for axis in 'xy':  # standardize format() location aliases
             if axis + 'spineloc' in kwargs:
                 kwargs[axis + 'loc'] = kwargs.pop(axis + 'spineloc')
