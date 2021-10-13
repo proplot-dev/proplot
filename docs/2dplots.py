@@ -262,23 +262,23 @@ state = np.random.RandomState(51423)
 data = 11 ** (0.25 * np.cumsum(state.rand(N, N), axis=0))
 
 # Create figure
-pplt.rc['cmap.diverging'] = 'IceFire'
-pplt.rc['cmap.sequential'] = 'magma'
 gs = pplt.GridSpec(ncols=2, nrows=3)
 fig = pplt.figure(refwidth=2.3, span=False)
 
 # Different normalizers
+pplt.rc['cmap.sequential'] = 'magma'
 ax = fig.subplot(gs[0, 0], title='Default normalizer')
 ax.pcolormesh(data, colorbar='b')
 ax = fig.subplot(gs[0, 1], title='Logarithmic normalizer')
 ax.pcolormesh(data, norm='log', colorbar='b')
 
 # Continuous "diverging" colormaps
+pplt.rc['cmap.diverging'] = 'IceFire'
 data = np.log(data) - 4
 ax = fig.subplot(gs[1, 0], title='Default continuous colormap')
 ax.pcolormesh(
     data, colorbar='b',
-    diverging=True,  # use the default
+    diverging=True,  # use rc['cmap.diverging']
 )
 ax = fig.subplot(gs[1, 1], title='On-the-fly continuous colormap')
 ax.pcolormesh(
@@ -288,10 +288,12 @@ ax.pcolormesh(
 )
 
 # Discrete "qualitative" colormaps
+pplt.rc['cmap.qualitative'] = 'tableau'
 data = data + 4
 ax = fig.subplot(gs[2, 0], title='Preset discrete colormap')
 ax.pcolormesh(
-    data, colorbar='b', cmap='tableau',
+    data, colorbar='b',
+    qualitative=True,  # use rc['cmap.qualitative']
 )
 ax = fig.subplot(gs[2, 1], title='On-the-fly discrete colormap')
 ax.pcolormesh(
@@ -356,15 +358,15 @@ fig, axs = pplt.subplots([[1, 1, 2, 2], [0, 3, 3, 0]], ref=3, refwidth=2.3)
 axs.format(yformatter='none', suptitle='Discrete vs. smooth colormap levels')
 
 # Pcolor
-axs[0].pcolor(data, cmap='spectral_r', norm='div', colorbar='l')
-axs[0].set_title('Pcolor plot\nDiscreteNorm enabled (default)')
-axs[1].pcolor(data, discrete=False, cmap='spectral_r', norm='div', colorbar='r')
-axs[1].set_title('Pcolor plot\nDiscreteNorm disabled')
+axs[0].pcolor(data, cmap='oslo', norm='div', colorbar='l')
+axs[0].set_title('Pcolor plot\ndiscrete=True (default)')
+axs[1].pcolor(data, discrete=False, cmap='oslo', norm='div', colorbar='r')
+axs[1].set_title('Pcolor plot\ndiscrete=False')
 
 # Imshow
 data = 100 - data
-m = axs[2].imshow(data, cmap='thermal', colorbar='b')
-axs[2].format(title='Imshow plot\nDiscreteNorm disabled (default)', yformatter='auto')
+m = axs[2].imshow(data, cmap='viridis', colorbar='b')
+axs[2].format(title='Imshow plot\ndiscrete=False (default)', yformatter='auto')
 
 # %%
 import proplot as pplt
@@ -381,11 +383,14 @@ fig = pplt.figure(refwidth=2.4, right=2)
 fig.format(suptitle='DiscreteNorm end-color standardization')
 
 # Cyclic colorbar with distinct end colors
+pplt.rc['cmap.cyclic'] = 'twilight_s'
 ax = fig.subplot(gs[0, 1:3], title='distinct "cyclic" end colors')
 ax.pcolormesh(
-    data, levels=levels, cmap='phase', extend='neither',
-    colorbar='b', colorbar_kw={'locator': 90}
+    data, levels=levels, extend='neither',
+    colorbar='b', colorbar_kw={'locator': 90},
+    cyclic=True,  # use rc['cmap.cyclic']
 )
+pplt.rc.reset()
 
 # Colorbars with different extend values
 for i, extend in enumerate(('min', 'max', 'neither', 'both')):
