@@ -685,13 +685,12 @@ def Colormap(
 
     # Register the colormap
     if name is None:
-        name = cmap.name  # may have been modified by e.g. .shifted()
+        name = cmap.name  # may have been modified by e.g. reversed()
     else:
         cmap.name = name
     if not isinstance(name, str):
         raise ValueError('Colormap name must be a string.')
-    if name and name[0] != '_':
-        pcolors._cmap_database[name] = cmap
+    pcolors._cmap_database[name] = cmap
 
     # Save the colormap
     if save:

@@ -557,6 +557,7 @@ def show_cmaps(*args, **kwargs):
         cmaps = [
             cmap for cmap in pcolors._cmap_database.values()
             if isinstance(cmap, pcolors.ContinuousColormap)
+            and not (cmap.name or '_')[:1] == '_'
         ]
         ignore = None
 
@@ -617,6 +618,7 @@ def show_cycles(*args, **kwargs):
         cycles = [
             cmap for cmap in pcolors._cmap_database.values()
             if isinstance(cmap, pcolors.DiscreteColormap)
+            and not (cmap.name or '_')[:1] == '_'
         ]
         ignore = None
 
