@@ -1225,15 +1225,21 @@ class ContinuousColormap(mcolors.LinearSegmentedColormap, _Colormap):
         --------
         DiscreteColormap.save
         """
+        # NOTE We sanitize segmentdata before saving to json. Convert np.float to
+        # builtin float, np.array to list of lists, and callable to list of lists.
+        # We tried encoding func.__code__ with base64 and marshal instead, but when
+        # cmap.append() embeds functions as keyword arguments, this seems to make it
+        # *impossible* to load back up the function with FunctionType (error message:
+        # arg 5 (closure) must be tuple). Instead use this brute force workaround.
         filename = self._parse_path(path, ext='json', subfolder='cmaps')
         _, ext = os.path.splitext(filename)
-        if ext[1:] == 'json':
-            # Sanitize segmentdata values. Convert np.float to builtin float, np.array
-            # to list of lists, and callable to list of lists. We tried encoding
-            # func.__code__ with base64 and marshal instead, but when cmap.append()
-            # embeds functions as keyword arguments, this seems to make it *impossible*
-            # to load back up the function with FunctionType (error message: arg 5
-            # (closure) must be tuple). Instead use this brute force workaround.
+        if ext[1:] != 'json':
+            # Save lookup table colors
+            data = self._get_data(ext[1:], alpha=alpha)
+            with open(filename, 'w') as fh:
+                fh.write(data)
+        else:
+            # Save segment data itself
             data = {}
             for key, value in self._segmentdata.items():
                 if callable(value):
@@ -1250,11 +1256,6 @@ class ContinuousColormap(mcolors.LinearSegmentedColormap, _Colormap):
                 data[key] = getattr(self, '_' + key)
             with open(filename, 'w') as fh:
                 json.dump(data, fh, indent=4)
-        else:
-            # Save lookup table colors
-            data = self._get_data(ext[1:], alpha=alpha)
-            with open(filename, 'w') as fh:
-                fh.write(data)
         print(f'Saved colormap to {filename!r}.')
 
     def set_alpha(self, alpha, coords=None, ratios=None):
