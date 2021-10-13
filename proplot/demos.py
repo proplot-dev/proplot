@@ -84,16 +84,17 @@ CMAPS_TABLE = {
         'Phase',
     ),
     'Scientific colour maps sequential': (
-        'batlow', 'oleron',
+        'batlow', 'batlowK', 'batlowW', 'oleron',
         'devon', 'davos', 'oslo', 'lapaz', 'acton',
         'lajolla', 'bilbao', 'tokyo', 'turku', 'bamako', 'nuuk',
         'hawaii', 'buda', 'imola',
+        'oleron', 'bukavu', 'fes',
     ),
     'Scientific colour maps diverging': (
-        'roma', 'broc', 'cork', 'vik', 'berlin', 'lisbon', 'tofino',
+        'roma', 'broc', 'cork', 'vik', 'bam', 'lisbon', 'tofino', 'berlin', 'vanimo',
     ),
     'Scientific colour maps cyclic': (
-        'romaO', 'brocO', 'corkO', 'vikO',
+        'romaO', 'brocO', 'corkO', 'vikO', 'bamO',
     ),
     'ColorBrewer2.0 sequential': (
         'Purples', 'Blues', 'Greens', 'Oranges', 'Reds',
