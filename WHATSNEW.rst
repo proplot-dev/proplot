@@ -34,6 +34,8 @@ Version 0.9.4 (2021-XX-XX)
 Features
 --------
 
+* Update packaged `Scientific Colour maps <https://www.fabiocrameri.ch/colourmaps/>`__
+  to version 7.0 (:commit:`c172a74b`).
 * Permit passing arbitrary ``format`` arguments to multi-axes creation commands
   like `~proplot.ui.subplots` (:commit:`0b801442`).
 * Permit passing ``format`` arguments for different projections during the same
