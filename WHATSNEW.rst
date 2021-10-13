@@ -53,10 +53,10 @@ Features
 Bug fixes
 ---------
 
-* Fix regression where `vmin` and `vmax` are again ignored when making plots
+* Fix issue where `vmin` and `vmax` are again ignored when making plots
   with discrete levels (:issue:`276`).
-* Fix issue where passing `fontsize` to `~proplot.axes.Axes.format` fails to update
-  fontsize-relative title and a-b-c label sizes (:commit:`64406726`).
+* Fix issue where passing `fontsize` to `~proplot.axes.Axes.format` fails to
+  update fontsize-relative title and a-b-c label sizes (:commit:`64406726`).
 * Fix issue where `xbounds`, `ybounds`, and `fixticks` fail due to
   errors in tick restriction algorithm (:commit:`a2396afe`).
 * Fix issue where `autodiverging` is disabled even when known diverging colormaps
