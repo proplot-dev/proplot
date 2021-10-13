@@ -22,7 +22,7 @@ See the :ref:`author page <authors>` for a list of contributors, and see
 the :ref:`contribution guide <contributions>` if you are interested in
 submitting your own changes.
 
-Version 1.0.0 (2022-##-##)
+Version 1.0.0 (2022-XX-XX)
 ==========================
 
 This will be published when more comprehensive testing is completed
@@ -34,13 +34,14 @@ Version 0.9.4 (2021-XX-XX)
 Features
 --------
 
-* Update packaged `Scientific Colour maps <https://www.fabiocrameri.ch/colourmaps/>`__
-  to version 7.0 (:commit:`c172a74b`).
 * Permit passing arbitrary ``format`` arguments to multi-axes creation commands
   like `~proplot.ui.subplots` (:commit:`0b801442`).
 * Permit passing ``format`` arguments for different projections during the same
   `proplot.gridspec.SubplotGrid.format` or `proplot.figure.Figure.format` call
   (:commit:`f5e25598`). Invalid projection-specific keywords are ignored.
+* Update `Scientific Colour maps <https://www.fabiocrameri.ch/colourmaps/>`__
+  to version 7.0 (adds ``'bam'``, ``'bamO'``, ``'batlowK'``, ``'batlowW'``,
+  ``'bukavu'``, ``'fes'``, and ``'vanimo'``) (:commit:`c172a74b`).
 * Add `[xy]labelsize`, `[xy]labelweight`, `[xy]ticklabelsize`, `[xy]ticklabelweight`
   keywords to `proplot.axes.CartesianAxes.format` (:commit:`975025df`).
 * Add `labelsize` and `labelweight` keywords to `proplot.axes.PolarAxes.format`,
@@ -76,6 +77,8 @@ Internals
 
 * Add unit tests with image comparisons powered by
   `pytest-mpl <https://pypi.org/project/pytest-mpl/>`__.
+* Improve website colormap and cycle table rendering time by rasterizing colorbar
+  data and add `rasterize` as optional keyword arg (:commit:`1a875fc2`).
 * Improve default `~proplot.colors.ContinuousColormap.reversed` and
   `~proplot.colors.ContinuousColormap.shifted` colormap names (:commit:`a4218e09`).
 
@@ -462,8 +465,8 @@ Features
 Bug fixes
 ---------
 
-* Fix regression where ``np.std`` and ``np.percentile`` no longer
-  ignore NaN values (:issue:`257`, :commit:`d1906fce`).
+* Fix regression where dimension reduction with e.g. `barstds` or `barptiles`
+  no longer ignores NaN values (:issue:`257`, :commit:`d1906fce`).
 * Fix regression where ``legend()`` cannot be called without
   the input handles (:issue:`188`, :commit:`fdd53a6c`).
 * Fix issue where edge colors of area plots with ``negpos=True``
@@ -683,6 +686,8 @@ Features
 * Add `robust` keyword argument and :rc:`cmap.robust` setting to ignore
   outliers when selecting auto colormap ranges (:issue:`6382cf91`). It can take the
   value ``True``, a percentile range, or a 2-tuple percentile interval.
+* Add :rc:`colorbar.rasterize` setting to control whether default
+  colorbar solids are rasterized (:commit:`a50d5264`).
 * Allow omitting the colormap name when instantiating colormap classes or using
   class methods like ``from_list`` (:commit:`ade787f9`). This is more intuitive.
 * Improve matplotlib-proplot colormap translation by converting
