@@ -84,7 +84,7 @@ CMAPS_TABLE = {
         'Phase',
     ),
     'Scientific colour maps sequential': (
-        'batlow', 'batlowK', 'batlowW', 'oleron',
+        'batlow', 'batlowK', 'batlowW',
         'devon', 'davos', 'oslo', 'lapaz', 'acton',
         'lajolla', 'bilbao', 'tokyo', 'turku', 'bamako', 'nuuk',
         'hawaii', 'buda', 'imola',
