@@ -688,6 +688,21 @@ class _Colormap(object):
             )
         return data
 
+    def _make_name(self, suffix=None):
+        """
+        Generate a default colormap name. Do not append more than one
+        leading underscore or more than one identical suffix.
+        """
+        name = self.name
+        name = name or ''
+        if name[:1] != '_':
+            name = '_' + name
+        suffix = suffix or 'copy'
+        suffix = '_' + suffix
+        if name[-len(suffix):] != suffix:
+            name = name + suffix
+        return name
+
     def _parse_path(self, path, ext=None, subfolder=None):
         """
         Parse the user input path.
@@ -873,14 +888,6 @@ class _Colormap(object):
         else:
             data = [(x, color) for x, color in zip(x, data)]
             return ContinuousColormap.from_list(name, data)
-
-    @property
-    def _copy_name(self):
-        # The name used when making copies
-        name = self.name or ''
-        if name and name[0] != '_':
-            name = '_' + name
-        return name + '_copy'
 
 
 class ContinuousColormap(mcolors.LinearSegmentedColormap, _Colormap):
@@ -1130,11 +1137,9 @@ class ContinuousColormap(mcolors.LinearSegmentedColormap, _Colormap):
 
         # Decompose cut into two truncations followed by concatenation
         if 0.5 - offset < left or 0.5 + offset > right:
-            raise ValueError(
-                f'Invalid combination cut={cut} for left={left} and right={right}.'
-            )
+            raise ValueError(f'Invalid cut={cut} for left={left} and right={right}.')
         if name is None:
-            name = self._copy_name
+            name = self._make_name()
         cmap_left = self.truncate(left, 0.5 - offset)
         cmap_right = self.truncate(0.5 + offset, right)
 
@@ -1184,14 +1189,14 @@ class ContinuousColormap(mcolors.LinearSegmentedColormap, _Colormap):
         }
 
         # Reverse gammas
+        if name is None:
+            name = self._make_name(suffix='r')
         for key in ('gamma1', 'gamma2'):
             if key in kwargs:
                 continue
             gamma = getattr(self, '_' + key, None)
             if gamma is not None and np.iterable(gamma):
                 kwargs[key] = gamma[::-1]
-        if name is None:
-            name = '_' + self.name + '_r'
 
         cmap = self.copy(name, segmentdata, **kwargs)
         cmap._rgba_under, cmap._rgba_over = cmap._rgba_over, cmap._rgba_under
@@ -1294,8 +1299,7 @@ class ContinuousColormap(mcolors.LinearSegmentedColormap, _Colormap):
         Parameters
         ----------
         shift : float, optional
-            The number of degrees to shift, out of 360 degrees.
-            The default is ``180``.
+            The number of degrees to shift, out of 360 degrees. Default is ``180``.
         name : str, optional
             The new colormap name. Default is ``'_name_s'``.
 
@@ -1308,24 +1312,23 @@ class ContinuousColormap(mcolors.LinearSegmentedColormap, _Colormap):
         --------
         DiscreteColormap.shifted
         """
-        shift = ((shift or 0) / 360) % 1
+        shift = shift or 0
+        shift %= 360
+        shift /= 360
         if shift == 0:
             return self
         if name is None:
-            name = '_' + self.name + '_s'
+            name = self._make_name(suffix='s')
         if not self._cyclic:
             warnings._warn_proplot(
-                f'Shifting non-cyclic colormap {self.name!r}. Use cmap.set_cyclic(True)'
-                ' or Colormap(..., cyclic=True) to suppress this warning.'
+                f'Shifting non-cyclic colormap {self.name!r}. To suppress this '
+                'warning use cmap.set_cyclic(True) or Colormap(..., cyclic=True).'
             )
             self._cyclic = True
-
-        # Decompose shift into two truncations followed by concatenation
+        ratios = (1 - shift, shift)
         cmap_left = self.truncate(shift, 1)
         cmap_right = self.truncate(0, shift)
-        return cmap_left.append(
-            cmap_right, ratios=(1 - shift, shift), name=name, **kwargs
-        )
+        return cmap_left.append(cmap_right, ratios=ratios, name=name, **kwargs)
 
     def truncate(self, left=None, right=None, name=None, **kwargs):
         """
@@ -1358,7 +1361,7 @@ class ContinuousColormap(mcolors.LinearSegmentedColormap, _Colormap):
         if left == 0 and right == 1:
             return self
         if name is None:
-            name = self._copy_name
+            name = self._make_name()
 
         # Resample the segmentdata arrays
         segmentdata = {}
@@ -1441,7 +1444,7 @@ class ContinuousColormap(mcolors.LinearSegmentedColormap, _Colormap):
         PerceptualColormap.copy
         """
         if name is None:
-            name = self._copy_name
+            name = self._make_name()
         if segmentdata is None:
             segmentdata = self._segmentdata.copy()
         if gamma is None:
@@ -1489,7 +1492,7 @@ class ContinuousColormap(mcolors.LinearSegmentedColormap, _Colormap):
         samples = np.asarray(samples)
         colors = self(samples)
         if name is None:
-            name = self._copy_name
+            name = self._make_name()
         return DiscreteColormap(colors, name=name, **kwargs)
 
     @classmethod
@@ -1732,7 +1735,7 @@ class DiscreteColormap(mcolors.ListedColormap, _Colormap):
         matplotlib.colors.ListedColormap.reversed
         """
         if name is None:
-            name = '_' + self.name + '_r'
+            name = self._make_name(suffix='r')
         colors = self.colors[::-1]
         cmap = self.copy(colors, name, **kwargs)
         cmap._rgba_under, cmap._rgba_over = cmap._rgba_over, cmap._rgba_under
@@ -1745,8 +1748,8 @@ class DiscreteColormap(mcolors.ListedColormap, _Colormap):
         Parameters
         ----------
         shift : float, optional
-            The number of places to shift, between ``-self.N`` and ``self.N``.
-            The default is ``1``.
+            The number of places to shift, between ``-len(cmap.colors)``
+            and ``len(cmap.colors)``. Default is ``1``.
         name : str, optional
             The new colormap name. Default is ``'_name_s'``.
 
@@ -1757,7 +1760,7 @@ class DiscreteColormap(mcolors.ListedColormap, _Colormap):
         if not shift:
             return self
         if name is None:
-            name = '_' + self.name + '_s'
+            name = self._make_name(suffix='s')
         shift = shift % len(self.colors)
         colors = list(self.colors)
         colors = colors[shift:] + colors[:shift]
@@ -1787,7 +1790,7 @@ class DiscreteColormap(mcolors.ListedColormap, _Colormap):
         if left is None and right is None:
             return self
         if name is None:
-            name = self._copy_name
+            name = self._make_name()
         colors = self.colors[left:right]
         return self.copy(colors, name, len(colors))
 
@@ -1810,7 +1813,7 @@ class DiscreteColormap(mcolors.ListedColormap, _Colormap):
         PerceptualColormap.copy
         """
         if name is None:
-            name = self._copy_name
+            name = self._make_name()
         if colors is None:
             colors = list(self.colors)  # copy
         if N is None:
@@ -2005,7 +2008,7 @@ class PerceptualColormap(ContinuousColormap):
         ContinuousColormap.copy
         """
         if name is None:
-            name = self._copy_name
+            name = self._make_name()
         if segmentdata is None:
             segmentdata = self._segmentdata.copy()
         if space is None:
@@ -2054,7 +2057,7 @@ class PerceptualColormap(ContinuousColormap):
         if not self._isinit:
             self._init()
         if name is None:
-            name = self._copy_name
+            name = self._make_name()
         return ContinuousColormap.from_list(name, self._lut[:-3, :], **kwargs)
 
     @classmethod
@@ -2598,8 +2601,8 @@ class DivergingNorm(mcolors.Normalize):
         Parameters
         ----------
         vcenter : float, optional
-            The data value corresponding to the central position of the
-            colormap. The default is ``0``.
+            The data value corresponding to the central position
+            of the colormap. Default is ``0``.
         vmin, vmax : float, optional
             The minimum and maximum data values.
         fair : bool, optional
