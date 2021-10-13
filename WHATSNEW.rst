@@ -55,7 +55,11 @@ Features
 Bug fixes
 ---------
 
-* Fix issue where `vmin` and `vmax` are again ignored when making plots
+* Fix issue where colormaps made with `~proplot.constructor.Colormap` with unspecified
+  `name` cannot be assigned as `~proplot.config.rc` defaults (:commit:`0e93b7fa`).
+* Fix issue where registered colormaps with trailing ``_s`` or ``_r`` cannot be
+  retrieved due to automatic reversing/shifting feature (:commit:`345680c9`).
+* Fix issue where `vmin` and `vmax` are ignored when making plots
   with discrete levels (:issue:`276`).
 * Fix issue where passing `fontsize` to `~proplot.axes.Axes.format` fails to
   update fontsize-relative title and a-b-c label sizes (:commit:`64406726`).
@@ -72,6 +76,8 @@ Internals
 
 * Add unit tests with image comparisons powered by
   `pytest-mpl <https://pypi.org/project/pytest-mpl/>`__.
+* Improve default `~proplot.colors.ContinuousColormap.reversed` and
+  `~proplot.colors.ContinuousColormap.shifted` colormap names (:commit:`a4218e09`).
 
 Version 0.9.3 (2021-10-09)
 ==========================
