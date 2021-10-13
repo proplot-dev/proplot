@@ -85,7 +85,7 @@
 
 # %%
 import proplot as pplt
-fig, axs = pplt.show_cmaps()
+fig, axs = pplt.show_cmaps(rasterize=True)
 
 
 # %% [raw] raw_mimetype="text/restructuredtext"

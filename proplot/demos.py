@@ -174,21 +174,18 @@ CYCLES_TABLE = {
 # Docstring snippets
 _colorbar_docstring = """
 length : unit-spec, optional
-    The length of the colorbars.
+    The length of each colorbar.
     %(units.in)s
 width : float or str, optional
-    The width of the colorbars.
+    The width of each colorbar.
     %(units.in)s
+rasterize : bool, optional
+    Whether to rasterize the colorbar solids. This increases rendering time and
+    decreases file sizes for vector graphics. Default is :rc:`colorbar.rasterize`.
 """
-docstring._snippet_manager['demos.colors'] = ', '.join(
-    f'``{cat!r}``' for cat in COLORS_TABLE
-)
-docstring._snippet_manager['demos.cmaps'] = ', '.join(
-    f'``{cat!r}``' for cat in CMAPS_TABLE
-)
-docstring._snippet_manager['demos.cycles'] = ', '.join(
-    f'``{cat!r}``' for cat in CYCLES_TABLE
-)
+docstring._snippet_manager['demos.cmaps'] = ', '.join(f'``{s!r}``' for s in CMAPS_TABLE)
+docstring._snippet_manager['demos.cycles'] = ', '.join(f'``{s!r}``' for s in CYCLES_TABLE)  # noqa: E501
+docstring._snippet_manager['demos.colors'] = ', '.join(f'``{s!r}``' for s in COLORS_TABLE)  # noqa: E501
 docstring._snippet_manager['demos.colorbar'] = _colorbar_docstring
 
 
@@ -417,7 +414,7 @@ def show_colorspaces(*, luminance=None, saturation=None, hue=None, refwidth=2):
 @warnings._rename_kwargs('0.8', categories='include')
 def _draw_bars(
     cmaps, *, source, unknown='User', include=None, ignore=None,
-    length=4.0, width=0.2, N=None
+    length=4.0, width=0.2, N=None, rasterize=None,
 ):
     """
     Draw colorbars for "colormaps" and "color cycles". This is called by
@@ -487,8 +484,8 @@ def _draw_bars(
             label = re.sub(r'\A_*', '', label)
             label = re.sub(r'(_copy)*\Z', '', label)
             ax.colorbar(
-                cmap, loc='fill',
-                orientation='horizontal', locator='null', linewidth=0
+                cmap, loc='fill', orientation='horizontal',
+                locator='null', linewidth=0, rasterize=rasterize,
             )
             ax.text(
                 0 - (rc['axes.labelpad'] / 72) / length, 0.45, label,
