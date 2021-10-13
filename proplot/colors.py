@@ -3012,13 +3012,12 @@ class ColormapDatabase(MutableMapping, dict):
             test = self._regex_suffix.sub('', key)
         else:
             test = None
-        found = dict.__contains__(self, test)
-        if not found and test in CMAPS_REMOVED:
+        if not self._has_item(test) and test in CMAPS_REMOVED:
             version = CMAPS_REMOVED[test]
             raise ValueError(
                 f'Proplot colormap {key!r} was removed in version {version}.'
             )
-        if not found and test in CMAPS_RENAMED:
+        if not self._has_item(test) and test in CMAPS_RENAMED:
             test_new, version = CMAPS_RENAMED[test]
             warnings._warn_proplot(
                 f'Colormap {test!r} was renamed in version {version} and will be '
@@ -3031,34 +3030,44 @@ class ColormapDatabase(MutableMapping, dict):
         """
         Return the sanitized colormap name. Used for lookups and assignments.
         """
+        # Sanitize key
         if not isinstance(key, str):
             raise KeyError(f'Invalid key {key!r}. Key must be a string.')
         key = key.lower()
         key = self._regex_grays.sub(r'greys\2', key)
+        # Mirror diverging
         reverse = key[-2:] == '_r'
         if reverse:
             key = key[:-2]
-        if mirror and not dict.__contains__(self, key):  # avoid recursion here
+        if mirror and not self._has_item(key):  # avoid recursion here
             key_mirror = CMAPS_DIVERGING.get(key, None)
-            if key_mirror and dict.__contains__(self, key_mirror):
+            if key_mirror and self._has_item(key_mirror):
                 reverse = not reverse
                 key = key_mirror
         if reverse:
             key = key + '_r'
         return key
 
+    def _has_item(self, key):
+        """
+        Redirect to unsanitized `dict.__contains__`.
+        """
+        return dict.__contains__(self, key)
+
     def _get_item(self, key):
         """
         Get the colormap with flexible input keys.
         """
+        # Sanitize key
         key = self._translate_deprecated(key)
         key = self._translate_key(key, mirror=True)
-        shift = key[-2:] == '_s'
+        shift = key[-2:] == '_s' and not self._has_item(key)
         if shift:
             key = key[:-2]
-        reverse = key[-2:] == '_r'
+        reverse = key[-2:] == '_r' and not self._has_item(key)
         if reverse:
             key = key[:-2]
+        # Retrieve colormap
         try:
             value = dict.__getitem__(self, key)  # may raise keyerror
         except KeyError:
@@ -3067,6 +3076,7 @@ class ColormapDatabase(MutableMapping, dict):
                 + ', '.join(map(repr, self))
                 + '.'
             )
+        # Modify colormap
         if reverse:
             value = value.reversed()
         if shift:
