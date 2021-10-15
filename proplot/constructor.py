@@ -1492,7 +1492,7 @@ def Proj(name, basemap=None, **kwargs):
             )
             if include_axes:
                 from . import axes as paxes  # avoid circular imports
-                message = message.replace('projection.', 'projection or axes subclass.')
+                message = message.replace('class.', 'class or axes subclass.')
                 message += '\nThe known axes subclasses are:\n' + paxes._cls_table
             raise ValueError(message) from None
         if name == 'geos':  # fix common mistake
