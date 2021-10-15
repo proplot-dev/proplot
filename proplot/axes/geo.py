@@ -1024,9 +1024,9 @@ class _CartopyAxes(GeoAxes, _GeoAxes):
         Update major gridlines.
         """
         # Update gridline locations and style
-        if self._gridlines_major is None:
-            self._gridlines_major = self._init_gridlines()
         gl = self._gridlines_major
+        if gl is None:
+            gl = self._gridlines_major = self._init_gridlines()
         self._update_gridlines(
             gl, which='major', longrid=longrid, latgrid=latgrid, nsteps=nsteps,
         )
@@ -1075,9 +1075,9 @@ class _CartopyAxes(GeoAxes, _GeoAxes):
         """
         Update minor gridlines.
         """
-        if self._gridlines_minor is None:
-            self._gridlines_minor = self._init_gridlines()
         gl = self._gridlines_minor
+        if gl is None:
+            gl = self._gridlines_minor = self._init_gridlines()
         self._update_gridlines(
             gl, which='minor', longrid=longrid, latgrid=latgrid, nsteps=nsteps,
         )
@@ -1144,8 +1144,10 @@ class _CartopyAxes(GeoAxes, _GeoAxes):
         if isinstance(crs, ccrs.PlateCarree):
             self._set_view_intervals(extent)
             with rc.context(mode=2):  # do not reset gridline properties!
-                self._update_gridlines(self._gridlines_major, which='major')
-                self._update_gridlines(self._gridlines_minor, which='minor')
+                if self._gridlines_major is not None:
+                    self._update_gridlines(self._gridlines_major, which='major')
+                if self._gridlines_minor is not None:
+                    self._update_gridlines(self._gridlines_minor, which='minor')
             if dependencies._version_cartopy < 0.18:
                 clipped_path = self.outline_patch.orig_path.clip_to_bbox(self.viewLim)
                 self.outline_patch._path = clipped_path
