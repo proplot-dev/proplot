@@ -39,6 +39,9 @@ Features
 * Permit passing ``format`` arguments for different projections during the same
   `proplot.gridspec.SubplotGrid.format` or `proplot.figure.Figure.format` call
   (:commit:`f5e25598`). Invalid projection-specific keywords are ignored.
+* Improve confusing behavior by making ``[loninline|latinline|inlinelabels]=True``
+  passed to `~proplot.axes.GeoAxes.format` imply ``[lonlabels|latlabels|labels]=True``
+  unless specified otherwise (:commit:`ed372d64`).
 * Update `Scientific Colour maps <https://www.fabiocrameri.ch/colourmaps/>`__
   to version 7.0 (adds ``'bam'``, ``'bamO'``, ``'batlowK'``, ``'batlowW'``,
   ``'bukavu'``, ``'fes'``, and ``'vanimo'``) (:commit:`c172a74b`).
