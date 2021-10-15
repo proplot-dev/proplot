@@ -88,6 +88,7 @@ latmax : float, optional
     Default is ``80``.
 labels : bool, optional
     Sets `lonlabels` and `latlabels` to ``True``. Default is :rc:`grid.labels`.
+    To draw labels by default use e.g. ``pplt.rc['grid.labels'] = True``.
 lonlabels, latlabels : optional
     Whether to label longitudes and latitudes, and on which sides
     of the map. There are four different options:
@@ -124,12 +125,13 @@ lonformatter_kw, latformatter_kw : dict-like, optional
     Keyword arguments passed to the `matplotlib.ticker.Formatter` class.
 loninline, latinline, inlinelabels : bool, optional
     *For cartopy axes only.*
-    Whether to draw inline longitude and latitude gridline labels.
-    Default is :rc:`grid.inlinelabels`.
+    Whether to draw inline longitude and latitude gridline labels. Default is
+    :rc:`grid.inlinelabels`. Setting these to ``True`` also sets the default
+    values for `lonlabels`, `latlabels`, and `labels` to ``True`` (respectively).
 rotatelabels : bool, optional
     *For cartopy axes only.*
-    Whether to rotate longitude and latitude gridline labels.
-    Default is :rc:`grid.rotatelabels`.
+    Whether to rotate longitude and latitude gridline
+    labels. Default is :rc:`grid.rotatelabels`.
 labelpad : unit-spec, optional
     *For cartopy axes only.*
     The padding between the map boundary and longitude and
@@ -588,12 +590,12 @@ class GeoAxes(plot.PlotAxes):
         with rc.context(rc_kw, mode=rc_mode):
             # Label toggles
             labels = _not_none(labels, rc.find('grid.labels', context=True))
-            lonlabels = _not_none(lonlabels, labels)
-            latlabels = _not_none(latlabels, labels)
+            lonlabels = _not_none(lonlabels, labels, loninline, inlinelabels)
+            latlabels = _not_none(latlabels, labels, latinline, inlinelabels)
             lonarray = self._to_label_array(lonlabels, lon=True)
             latarray = self._to_label_array(latlabels, lon=False)
 
-            # Update 'maximum latitude'
+            # Update max latitude
             latmax = _not_none(latmax, rc.find('grid.latmax', context=True))
             if latmax is not None:
                 self._lataxis.set_latmax(latmax)
@@ -1037,11 +1039,11 @@ class _CartopyAxes(GeoAxes, _GeoAxes):
         if labelpad is not None:
             gl.xpadding = gl.ypadding = labelpad
         if loninline is not None:
-            gl.x_inline = loninline
+            gl.x_inline = bool(loninline)
         if latinline is not None:
-            gl.y_inline = latinline
+            gl.y_inline = bool(latinline)
         if rotatelabels is not None:
-            gl.rotate_labels = rotatelabels  # ignored in cartopy <0.18
+            gl.rotate_labels = bool(rotatelabels)  # ignored in cartopy <0.18
 
         # Gridline label formatters
         lonaxis = self._lonaxis
