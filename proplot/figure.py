@@ -789,10 +789,10 @@ class Figure(mfigure.Figure):
             and constructor.Basemap is object
         ):
             raise ValueError(
-                f'Invalid projection name {proj!r}. If you are trying to create a '
+                f'Invalid projection name {proj!r}. If you are trying to generate a '
                 'GeoAxes with a cartopy.crs.Projection or mpl_toolkits.basemap.Basemap '
-                'projection then cartopy or basemap must be installed. Otherwise the '
-                f'known axes subclasses are:\n{paxes._cls_table}'
+                'then cartopy or basemap must be installed. Otherwise the known axes '
+                f'subclasses are:\n{paxes._cls_table}'
             )
         # Search geographic projections
         # NOTE: Also raises errors due to unexpected projection type
