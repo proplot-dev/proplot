@@ -406,20 +406,20 @@ class GeoAxes(plot.PlotAxes):
         *args
             Passed to `matplotlib.axes.Axes`.
         autoextent : bool, optional
-            *For cartopy axes only*. Whether to automatically adjust map bounds based
-            on plotted content or enforce a global map extent (or a map bounded at the
-            equator for polar projections). The extent can subsequently by adjusted
-            with the `~GeoAxes.format` keywords `lonlim`, `latlim`, and `boundinglat`,
-            or with `~cartopy.mpl.geoaxes.GeoAxes.set_extent`.
+            *For cartopy axes only*. Whether to automatically adjust map bounds
+            based on plotted content or enforce a global map extent (or a map bounded
+            at the equator for polar projections). The extent can subsequently by
+            adjusted with the `~GeoAxes.format` keywords `lonlim`, `latlim`, and
+            `boundinglat`, or with `~cartopy.mpl.geoaxes.GeoAxes.set_extent`.
             Default is :rc:`cartopy.autoextent`.
         circular : bool, optional
             *For cartopy axes only*. Whether to bound polar projections with circles
             rather than squares. Note that outer gridline labels cannot be added to
             circularly bounded polar projections. Default is :rc:`cartopy.circular`.
-        map_projection : `~mpl_toolkits.basemap.Basemap` or `~cartopy.crs.Projection`
-            The cartopy or basemap projection instance. This is passed automatically
-            when calling axes-creation commands
-            like `~proplot.figure.Figure.add_subplot`.
+        map_projection : `~cartopy.crs.Projection` or `~mpl_toolkits.basemap.Basemap`
+            The cartopy or basemap projection instance. This is
+            passed automatically when calling axes-creation
+            commands like `~proplot.figure.Figure.add_subplot`.
         %(geo.format)s
 
         Other parameters

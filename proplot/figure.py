@@ -789,14 +789,15 @@ class Figure(mfigure.Figure):
             and constructor.Basemap is object
         ):
             raise ValueError(
-                f'Invalid projection name {proj!r}. Valid axes subclasses are '
-                + ', '.join(map(repr, paxes.CLASSES)) + '. If you are trying to '
-                + 'create a geographic axes then cartopy or basemap must be installed.'
+                f'Invalid projection name {proj!r}. If you are trying to create a '
+                'GeoAxes with a cartopy.crs.Projection or mpl_toolkits.basemap.Basemap '
+                'projection then cartopy or basemap must be installed. Otherwise the '
+                f'known axes subclasses are:\n{paxes._cls_table}'
             )
         # Search geographic projections
         # NOTE: Also raises errors due to unexpected projection type
         if name is None:
-            proj = constructor.Proj(proj, basemap=basemap, **proj_kw)
+            proj = constructor.Proj(proj, basemap=basemap, include_axes=True, **proj_kw)
             name = proj._proj_package
             kwargs['map_projection'] = proj
 

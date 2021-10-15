@@ -293,6 +293,13 @@ else:
             + ', '.join(map(repr, PROJS_MISSING))
             + ' . Please consider updating cartopy.'
         )
+    PROJS_TABLE = (
+        'The known cartopy projection classes are:\n'
+        + '\n'.join(
+            ' ' + key + ' ' * (max(map(len, PROJS)) - len(key) + 10) + cls.__name__
+            for key, cls in PROJS.items()
+        )
+    )
 
 # Geographic feature properties
 FEATURES_CARTOPY = {  # positional arguments passed to NaturalEarthFeature
@@ -1393,6 +1400,7 @@ def Proj(name, basemap=None, **kwargs):
     basemap = _not_none(basemap, rc['basemap'])
     is_crs = Projection is not object and isinstance(name, Projection)
     is_basemap = Basemap is not object and isinstance(name, Basemap)
+    include_axes = kwargs.pop('include_axes', False)  # for error message
     if is_crs or is_basemap:
         proj = name
         package = 'cartopy' if is_crs else 'basemap'
@@ -1429,18 +1437,18 @@ def Proj(name, basemap=None, **kwargs):
         if 'latlim' in kwargs:
             kwargs['llcrnrlat'], kwargs['urcrnrlat'] = kwargs.pop('latlim')
         name = PROJ_ALIASES.get(name, name)
-        kwproj = PROJ_DEFAULTS.get(name, {}).copy()
-        kwproj.update(kwargs)
-        kwproj.setdefault('fix_aspect', True)
-        if kwproj.get('lon_0', 0) > 0:
-            kwproj['lon_0'] -= 360
+        proj_kw = PROJ_DEFAULTS.get(name, {}).copy()
+        proj_kw.update(kwargs)
+        proj_kw.setdefault('fix_aspect', True)
+        if proj_kw.get('lon_0', 0) > 0:
+            proj_kw['lon_0'] -= 360
         if name[:2] in ('np', 'sp'):
-            kwproj.setdefault('round', True)
+            proj_kw.setdefault('round', True)
         if name == 'geos':
-            kwproj.setdefault('rsphere', (6378137.00, 6356752.3142))
+            proj_kw.setdefault('rsphere', (6378137.00, 6356752.3142))
         reso = _not_none(
-            reso=kwproj.pop('reso', None),
-            resolution=kwproj.pop('resolution', None),
+            reso=proj_kw.pop('reso', None),
+            resolution=proj_kw.pop('resolution', None),
             default=rc['reso']
         )
         if reso in RESOS_BASEMAP:
@@ -1451,43 +1459,45 @@ def Proj(name, basemap=None, **kwargs):
                 + ', '.join(map(repr, RESOS_BASEMAP))
                 + '.'
             )
-        kwproj.update({'resolution': reso, 'projection': name})
+        proj_kw.update({'resolution': reso, 'projection': name})
         try:
-            proj = mbasemap.Basemap(**kwproj)  # will raise helpful warning
+            proj = mbasemap.Basemap(**proj_kw)  # will raise helpful warning
         except ValueError as err:
-            msg = str(err)
-            msg = msg.replace('projection', 'basemap projection')
-            raise ValueError(msg) from None
+            message = str(err)
+            message = message.strip()
+            message = message.replace('projection', 'basemap projection')
+            message = message.replace('supported', 'known')
+            if include_axes:
+                from . import axes as paxes  # avoid circular imports
+                message = message.replace('projection.', 'projection or axes subclass.')
+                message += '\nThe known axes subclasses are:\n' + paxes._cls_table
+            raise ValueError(message) from None
 
     # Cartopy
     # NOTE: Error message matches basemap invalid projection message
     else:
         import cartopy.crs as ccrs  # noqa: F401
         package = 'cartopy'
-        kwproj = {
-            PROJ_ALIASES_KW.get(key, key): value
-            for key, value in kwargs.items()
-        }
-        if name in PROJS:
+        proj_kw = {PROJ_ALIASES_KW.get(key, key): value for key, value in kwargs.items()}  # noqa: E501
+        if 'boundinglat' in proj_kw:
+            raise ValueError('"boundinglat" must be passed to the ax.format() command for cartopy axes.')  # noqa: E501
+        try:
             crs = PROJS[name]
-        else:
-            maxlen = max(map(len, PROJS))
-            raise ValueError(
-                f'{name!r} is an unknown cartopy projection class.\n'
-                'The known cartopy projection classes are:\n'
-                + '\n'.join(
-                    ' ' + key + ' ' * (maxlen - len(key) + 6) + crs.__name__
-                    for key, crs in PROJS.items()
-                )
+        except KeyError:
+            message = f'{name!r} is an unknown cartopy projection class.\n'
+            message += 'The known cartopy projection classes are:\n'
+            message += '\n'.join(
+                ' ' + key + ' ' * (max(map(len, PROJS)) - len(key) + 10) + cls.__name__
+                for key, cls in PROJS.items()
             )
+            if include_axes:
+                from . import axes as paxes  # avoid circular imports
+                message = message.replace('projection.', 'projection or axes subclass.')
+                message += '\nThe known axes subclasses are:\n' + paxes._cls_table
+            raise ValueError(message) from None
         if name == 'geos':  # fix common mistake
-            kwproj.pop('central_latitude', None)
-        if 'boundinglat' in kwproj:
-            raise ValueError(
-                '"boundinglat" must be passed to the ax.format() command '
-                'for cartopy axes.'
-            )
-        proj = crs(**kwproj)
+            proj_kw.pop('central_latitude', None)
+        proj = crs(**proj_kw)
 
     proj._proj_package = package
     return proj
