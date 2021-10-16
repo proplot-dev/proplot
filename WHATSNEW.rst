@@ -28,7 +28,18 @@ Version 1.0.0 (2022-XX-XX)
 This will be published when more comprehensive testing is completed
 and stability is improved.
 
-Version 0.9.4 (2021-XX-XX)
+Version 0.10.0 (2021-XX-XX)
+==========================
+
+Internals
+---------
+
+* Use dedicated classes for inset colorbars and
+  centered-row legends.
+* Add unit tests with image comparisons powered by
+  `pytest-mpl <https://pypi.org/project/pytest-mpl/>`__.
+
+Version 0.9.4 (2021-10-16)
 ==========================
 
 Features
@@ -59,6 +70,9 @@ Features
 Bug fixes
 ---------
 
+* Fix issue where arguments can only be passed to `~proplot.axes.CartesianAxes.altx`
+  and `~proplot.axes.CartesianAxes.alty`, but not `~proplot.axes.CartesianAxes.twinx`
+  and `~proplot.axes.CartesianAxes.twiny` (:commit:`223b55a6`).
 * Fix issue where `xbounds`, `ybounds`, and `fixticks` fail due to
   errors in tick restriction algorithm (:commit:`a2396afe`).
 * Fix issue where passing `fontsize` to `~proplot.axes.Axes.format` fails to
@@ -71,17 +85,14 @@ Bug fixes
   are passed to plotting commands (:commit:`2eca2198`).
 * Fix issue where colormaps made with `~proplot.constructor.Colormap` with unspecified
   `name` cannot be assigned as `~proplot.config.rc` defaults (:commit:`0e93b7fa`).
-* Fix issue where registered colormaps with trailing ``_s`` or ``_r`` cannot be
+* Fix issue where registered colormaps with trailing ``_r`` or ``_s`` cannot be
   retrieved due to automatic reversing/shifting feature (:commit:`345680c9`).
-* Fix issue where arguments can only be passed to `~proplot.axes.CartesianAxes.altx`
-  and `~proplot.axes.CartesianAxes.alty`, but not `~proplot.axes.CartesianAxes.twinx`
-  and `~proplot.axes.CartesianAxes.twiny` (:commit:`223b55a6`).
 
 Internals
 ---------
 
-* Add unit tests with image comparisons powered by
-  `pytest-mpl <https://pypi.org/project/pytest-mpl/>`__.
+* Populate docs with examples of passing ``format`` arguments to figure and axes
+  instantiation commands (e.g. ``pplt.figure``, ``fig.subplot``) (:commit:`803a889f`).
 * Improve website colormap and cycle table rendering time by rasterizing colorbar
   data and add `rasterize` as optional keyword arg (:commit:`1a875fc2`).
 * Improve default `~proplot.colors.ContinuousColormap.reversed` and
