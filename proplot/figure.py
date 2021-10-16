@@ -1542,26 +1542,27 @@ class Figure(mfigure.Figure):
         # Update the main axes
         if skip_axes:  # avoid recursion
             return
-        names = set()  # track used dictionaries
-        dicts = {
-            name: _pop_params(kwargs, sig)
-            for name, sig in paxes.Axes._format_signatures.items()
+        kws = {
+            cls: _pop_params(kwargs, sig)
+            for cls, sig in paxes.Axes._format_signatures.items()
         }
+        classes = set()  # track used dictionaries
         for ax in axs:
-            dict_ = {}
-            for name in {None, ax._name}:
-                names.add(name)
-                dict_.update(dicts.get(name, {}))
-            ax.format(rc_kw=rc_kw, rc_mode=rc_mode, skip_figure=True, **dict_, **kwargs)
+            kw = {
+                key: value for cls, kw in kws.items()
+                for key, value in kw.items()
+                if isinstance(ax, cls) and not classes.add(cls)
+            }
+            ax.format(rc_kw=rc_kw, rc_mode=rc_mode, skip_figure=True, **kw, **kwargs)
 
         # Warn unused keyword argument(s)
-        other = {
-            key: value for name in dicts.keys() - names
-            for key, value in dicts[name].items()
+        kw = {
+            key: value for name in kws.keys() - classes
+            for key, value in kws[name].items()
         }
-        if other:
+        if kw:
             warnings._warn_proplot(
-                f'Ignoring unused projection-specific format() keyword argument(s): {other}'  # noqa: E501
+                f'Ignoring unused projection-specific format() keyword argument(s): {kw}'  # noqa: E501
             )
 
     @docstring._concatenate_inherited

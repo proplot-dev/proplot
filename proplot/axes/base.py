@@ -706,8 +706,8 @@ class Axes(maxes.Axes):
         kw_format = _pop_props(kwargs, 'patch')  # background properties
         if 'zorder' in kw_format:  # special case: refers to the entire axes
             kwargs['zorder'] = kw_format.pop('zorder')
-        for name in {None, self._name}:  # base method and class method (if it exists)
-            kw_format.update(_pop_params(kwargs, self._format_signatures.get(name)))
+        for cls in {Axes, type(self)}:
+            kw_format.update(_pop_params(kwargs, self._format_signatures.get(cls)))
         super().__init__(*args, **kwargs)
 
         # Varous scalar properties
@@ -3048,5 +3048,5 @@ class Axes(maxes.Axes):
 
 # Apply signature obfuscation after storing previous signature
 # NOTE: This is needed for __init__
-Axes._format_signatures = {None: inspect.signature(Axes.format)}
+Axes._format_signatures = {Axes: inspect.signature(Axes.format)}
 Axes.format = docstring._obfuscate_kwargs(Axes.format)

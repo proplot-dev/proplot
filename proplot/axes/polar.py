@@ -335,5 +335,5 @@ class PolarAxes(shared._SharedAxes, plot.PlotAxes, mproj.PolarAxes):
 
 # Apply signature obfuscation after storing previous signature
 # NOTE: This is needed for __init__
-PolarAxes._format_signatures[PolarAxes._name] = inspect.signature(PolarAxes.format)
+PolarAxes._format_signatures[PolarAxes] = inspect.signature(PolarAxes.format)
 PolarAxes.format = docstring._obfuscate_kwargs(PolarAxes.format)

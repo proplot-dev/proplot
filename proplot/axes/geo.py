@@ -1418,6 +1418,5 @@ class _BasemapAxes(GeoAxes):
 
 
 # Apply signature obfuscation after storing previous signature
-GeoAxes._format_signatures[_CartopyAxes._name] = inspect.signature(GeoAxes.format)
-GeoAxes._format_signatures[_BasemapAxes._name] = inspect.signature(GeoAxes.format)
+GeoAxes._format_signatures[GeoAxes] = inspect.signature(GeoAxes.format)
 GeoAxes.format = docstring._obfuscate_kwargs(GeoAxes.format)
