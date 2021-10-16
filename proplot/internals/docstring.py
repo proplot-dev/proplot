@@ -30,6 +30,20 @@ from matplotlib import rcParams as rc_matplotlib
 from . import ic  # noqa: F401
 
 
+def _obfuscate_kwargs(func):
+    """
+    Obfuscate keyword args.
+    """
+    return _obfuscate_signature(func, lambda **kwargs: None)
+
+
+def _obfuscate_params(func):
+    """
+    Obfuscate all parameters.
+    """
+    return _obfuscate_signature(func, lambda *args, **kwargs: None)
+
+
 def _obfuscate_signature(func, dummy):
     """
     Obfuscate a misleading or incomplete call signature.
@@ -43,20 +57,6 @@ def _obfuscate_signature(func, dummy):
     sig_repl = inspect.signature(dummy)
     func.__signature__ = sig.replace(parameters=tuple(sig_repl.parameters.values()))
     return func
-
-
-def _obfuscate_kwargs(func):
-    """
-    Obfuscate keyword args.
-    """
-    return _obfuscate_signature(func, lambda **kwargs: None)
-
-
-def _obfuscate_params(func):
-    """
-    Obfuscate all parameters.
-    """
-    return _obfuscate_signature(func, lambda *args, **kwargs: None)
 
 
 def _concatenate_inherited(func, prepend_summary=False):

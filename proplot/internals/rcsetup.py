@@ -1870,11 +1870,11 @@ if dependencies._version_mpl >= 3.4:
 # translate deprecated keys in Configurator -- leave that to the RcParams dicts.
 _rc_removed = {  # {key: (alternative, version)} dictionary
     'rgbcycle': ('', '0.6'),  # no alternative, we no longer offer this feature
-    'geogrid.latmax': ('Please use ax.format(latmax=N) instead.', '0.6'),
-    'geogrid.latstep': ('Please use ax.format(latlines=N) instead.', '0.6'),
-    'geogrid.lonstep': ('Please use ax.format(lonlines=N) instead.', '0.6'),
-    'gridminor.latstep': ('Please use ax.format(latminorlines=N) instead.', '0.6'),
-    'gridminor.lonstep': ('Please use ax.format(lonminorlines=N) instead.', '0.6'),
+    'geogrid.latmax': ('Please use e.g. ax.format(latmax=N) instead.', '0.6'),
+    'geogrid.latstep': ('Please use e.g. ax.format(latlines=N) instead.', '0.6'),
+    'geogrid.lonstep': ('Please use e.g. ax.format(lonlines=N) instead.', '0.6'),
+    'gridminor.latstep': ('Please use e.g. ax.format(latminorlines=N) instead.', '0.6'),
+    'gridminor.lonstep': ('Please use e.g. ax.format(lonminorlines=N) instead.', '0.6'),
 }
 _rc_renamed = {  # {old_key: (new_key, version)} dictionary
     'abc.format': ('abc', '0.5'),
