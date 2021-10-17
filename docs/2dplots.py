@@ -115,7 +115,7 @@ axs[0].fill_between(
 )
 for i, ax in enumerate(axs):
     inbounds = i == 1
-    title = f'Manual limits inbounds={inbounds}'
+    title = f'Restricted lims inbounds={inbounds}'
     title += ' (default)' if inbounds else ''
     ax.format(
         xlim=(None if i == 0 else xlim),
@@ -146,9 +146,9 @@ fig.format(
 #
 # These features restore some of the convenience you get with the builtin
 # `pandas`_ and `xarray`_ plotting functions. They are also *optional* --
-# installation of pandas and xarray are not required to use proplot. All of these
-# features can be disabled by setting :rcraw:`autoformat` to ``False`` or by
-# passing ``autoformat=False`` to any plotting command.
+# installation of pandas and xarray are not required to use proplot. The
+# automatic labels can be disabled by setting :rcraw:`autoformat` to ``False``
+# or by passing ``autoformat=False`` to any plotting command.
 #
 # .. note::
 #
@@ -267,7 +267,7 @@ fig = pplt.figure(refwidth=2.3, span=False)
 
 # Different normalizers
 pplt.rc['cmap.sequential'] = 'magma'
-ax = fig.subplot(gs[0, 0], title='Default normalizer')
+ax = fig.subplot(gs[0, 0], title='Linear normalizer')
 ax.pcolormesh(data, colorbar='b')
 ax = fig.subplot(gs[0, 1], title='Logarithmic normalizer')
 ax.pcolormesh(data, norm='log', colorbar='b')
@@ -275,7 +275,7 @@ ax.pcolormesh(data, norm='log', colorbar='b')
 # Continuous "diverging" colormaps
 pplt.rc['cmap.diverging'] = 'IceFire'
 data = np.log(data) - 4
-ax = fig.subplot(gs[1, 0], title='Default continuous colormap')
+ax = fig.subplot(gs[1, 0], title='Preset continuous colormap')
 ax.pcolormesh(
     data, colorbar='b',
     diverging=True,  # use rc['cmap.diverging']

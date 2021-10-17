@@ -317,7 +317,7 @@ ax.format(xloc='bottom', xlabel='original axis')
 ax.twiny(xloc=('axes', 1.1), xlabel='offset twin')
 ax.twiny(xloc=('axes', -0.25), xlabel='offset twin')
 ax.format(ytickloc='both', yticklabelloc='both')
-ax.format(ylabel='tick both, label right', ylabelloc='right')
+ax.format(ylabel='tickloc both labelloc right', ylabelloc='right')
 
 # Other locations locations
 ax = fig.subplot(122, title='Zero-centered spines', titlepad='1em')

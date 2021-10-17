@@ -111,7 +111,7 @@ axs[0].axvspan(
 )
 for i, ax in enumerate(axs):
     inbounds = i == 1
-    title = f'Manual xlim inbounds={inbounds}'
+    title = f'Restricted xlim inbounds={inbounds}'
     title += ' (default)' if inbounds else ''
     ax.format(
         xmax=(None if i == 0 else xmax),
@@ -142,9 +142,9 @@ fig.format(
 #
 # These features restore some of the convenience you get with the builtin
 # `pandas`_ and `xarray`_ plotting functions. They are also *optional* --
-# installation of pandas and xarray are not required to use proplot. All of these
-# features can be disabled by setting :rcraw:`autoformat` to ``False`` or by
-# passing ``autoformat=False`` to any plotting command.
+# installation of pandas and xarray are not required to use proplot. The
+# automatic labels can be disabled by setting :rcraw:`autoformat` to ``False``
+# or by passing ``autoformat=False`` to any plotting command.
 #
 # .. note::
 #
