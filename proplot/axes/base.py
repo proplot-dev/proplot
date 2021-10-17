@@ -760,11 +760,11 @@ class Axes(maxes.Axes):
         d['center'] = self.title
         d['right'] = self._right_title
         d['upper left'] = self.text(0, 0, '', va='top', ha='left', **kw)
-        d['upper center'] = self.text(0, 0, '', va='top', ha='center', **kw)
-        d['upper right'] = self.text(0, 0, '', va='top', ha='right', **kw)
+        d['upper center'] = self.text(0, 0.5, '', va='top', ha='center', **kw)
+        d['upper right'] = self.text(0, 1, '', va='top', ha='right', **kw)
         d['lower left'] = self.text(0, 0, '', va='bottom', ha='left', **kw)
-        d['lower center'] = self.text(0, 0, '', va='bottom', ha='center', **kw)
-        d['lower right'] = self.text(0, 0, '', va='bottom', ha='right', **kw)
+        d['lower center'] = self.text(0, 0.5, '', va='bottom', ha='center', **kw)
+        d['lower right'] = self.text(0, 1, '', va='bottom', ha='right', **kw)
 
         # Subplot-specific settings
         # NOTE: Default number for any axes is None (i.e., no a-b-c labels allowed)

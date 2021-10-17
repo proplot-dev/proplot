@@ -1283,7 +1283,7 @@ class SubplotGrid(MutableSequence, list):
 
         Returns
         -------
-        axs : `~proplot.axes.Axes` or `SubplotGrid`
+        axs : proplot.axes.Axes or SubplotGrid
             The axes. If the index included slices then
             another `SubplotGrid` is returned.
 
@@ -1291,9 +1291,9 @@ class SubplotGrid(MutableSequence, list):
         -------
         >>> import proplot as pplt
         >>> fig, axs = pplt.subplots(nrows=3, ncols=3)
-        >>> axs[3]  # the subplots in the second row, first column
-        >>> axs[1, 2]  # the subplots in the second row, third column
-        >>> axs[:, 0]  # a grid of subplots in the first column
+        >>> axs[5]  # the Axes in the second row, third column
+        >>> axs[1, 2]  # the Axes in the second row, third column
+        >>> axs[:, 0]  # a SubplotGrid containing the Axes in the first column
         """
         if isinstance(key, tuple) and len(key) == 1:
             key = key[0]
@@ -1448,6 +1448,9 @@ class SubplotGrid(MutableSequence, list):
 
 
 def _add_grid_command(src, name):
+    """
+    Add a `SubplotGrid` method that iterates through axes methods.
+    """
     # Create the method
     def _grid_command(self, *args, **kwargs):
         objs = []

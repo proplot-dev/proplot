@@ -987,7 +987,7 @@ class ContinuousColormap(mcolors.LinearSegmentedColormap, _Colormap):
 
         Returns
         -------
-        `ContinuousColormap`
+        ContinuousColormap
             The colormap.
 
         See also
@@ -1117,7 +1117,7 @@ class ContinuousColormap(mcolors.LinearSegmentedColormap, _Colormap):
 
         Returns
         -------
-        `ContinuousColormap`
+        ContinuousColormap
             The colormap.
 
         See also
@@ -1536,7 +1536,7 @@ class ContinuousColormap(mcolors.LinearSegmentedColormap, _Colormap):
 
         Returns
         -------
-        `ContinuousColormap`
+        ContinuousColormap
             The colormap.
 
         See also
@@ -2094,7 +2094,7 @@ class PerceptualColormap(ContinuousColormap):
 
         Returns
         -------
-        `PerceptualColormap`
+        PerceptualColormap
             The colormap.
 
         See also
@@ -2163,7 +2163,7 @@ class PerceptualColormap(ContinuousColormap):
 
         Returns
         -------
-        `PerceptualColormap`
+        PerceptualColormap
             The colormap.
 
         See also
@@ -2209,7 +2209,7 @@ class PerceptualColormap(ContinuousColormap):
 
         Returns
         -------
-        `PerceptualColormap`
+        PerceptualColormap
             The colormap.
 
         See also

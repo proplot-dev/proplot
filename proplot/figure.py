@@ -247,7 +247,7 @@ Other parameters
 
 Returns
 -------
-axs : `SubplotGrid`
+axs : SubplotGrid
     The axes instances stored in a `SubplotGrid`.
 
 See also
@@ -1025,7 +1025,7 @@ class Figure(mfigure.Figure):
         # 'super' labels and replace the actual labels with spaces so they still impact
         # the tight bounding box and thus allocate space for the spanning label.
         x, y = 'xy' if side in ('bottom', 'top') else 'yx'
-        labs = getattr(self, '_sup' + x + 'label_dict')  # dict of spanning labels
+        labs = getattr(self, f'_sup{x}label_dict')  # dict of spanning labels
         setpos = getattr(mtext.Text, 'set_' + y)
         axislist = [getattr(ax, x + 'axis') for ax in axs]
 

@@ -525,7 +525,7 @@ def Colormap(
 
     Returns
     -------
-    `~matplotlib.colors.Colormap`
+    matplotlib.colors.Colormap
         A `~proplot.colors.ContinuousColormap` or
         `~proplot.colors.DiscreteColormap` instance.
 
@@ -534,8 +534,8 @@ def Colormap(
     matplotlib.colors.Colormap
     matplotlib.colors.LinearSegmentedColormap
     matplotlib.colors.ListedColormap
-    Norm
-    Cycle
+    proplot.constructor.Norm
+    proplot.constructor.Cycle
     proplot.utils.get_colors
     """
     # Helper function
@@ -758,9 +758,10 @@ markeredgecolor, markerfacecolor : object or sequence of object, optional
         Lists of `~matplotlib.lines.Line2D` properties that can be added to the
         `~cycler.Cycler` instance. If the input was already a `~cycler.Cycler`,
         these are added or appended to the existing cycle keys. If the lists have
-        unequal length, they are repeated to their least common multiple (note
-        that matplotlib throws an error in this case). For more info on cyclers see
-        `~matplotlib.axes.Axes.set_prop_cycle`. Also see the `line style reference \
+        unequal length, they are repeated to their least common multiple (unlike
+        `~cycler.cycler`, which throws an error in this case). For more info
+        on cyclers see `~matplotlib.axes.Axes.set_prop_cycle`. Also see
+        the `line style reference \
 <https://matplotlib.org/2.2.5/gallery/lines_bars_and_markers/line_styles_reference.html>`__,
         the `marker reference \
 <https://matplotlib.org/stable/gallery/lines_bars_and_markers/marker_reference.html>`__,
@@ -776,15 +777,17 @@ markeredgecolors, markerfacecolors
 
     Returns
     -------
-    `~cycler.Cycler`
-        A cycler instance that can be passed to
-        `~matplotlib.axes.Axes.set_prop_cycle`.
+    cycler.Cycler
+        A `~cycler.Cycler` instance that can be passed
+        to `~matplotlib.axes.Axes.set_prop_cycle`.
 
     See also
     --------
+    cycler.cycler
     cycler.Cycler
-    Colormap
-    Norm
+    matplotlib.axes.Axes.set_prop_cycle
+    proplot.constructor.Colormap
+    proplot.constructor.Norm
     proplot.utils.get_colors
     """
     # Parse keyword arguments that rotate through other properties
@@ -883,14 +886,14 @@ def Norm(norm, *args, **kwargs):
 
     Returns
     -------
-    `~matplotlib.colors.Normalize`
+    matplotlib.colors.Normalize
         A `~matplotlib.colors.Normalize` instance.
 
     See also
     --------
     matplotlib.colors.Normalize
     proplot.colors.DiscreteNorm
-    Colormap
+    proplot.constructor.Colormap
     """
     if np.iterable(norm) and not isinstance(norm, str):
         norm, args = norm[0], (*norm[1:], *args)
@@ -975,7 +978,7 @@ def Locator(locator, *args, **kwargs):
 
     Returns
     -------
-    `~matplotlib.ticker.Locator`
+    matplotlib.ticker.Locator
         A `~matplotlib.ticker.Locator` instance.
 
     See also
@@ -985,7 +988,7 @@ def Locator(locator, *args, **kwargs):
     proplot.axes.PolarAxes.format
     proplot.axes.GeoAxes.format
     proplot.axes.Axes.colorbar
-    Formatter
+    proplot.constructor.Formatter
     """  # noqa: E501
     if np.iterable(locator) and not isinstance(locator, str) and not all(
         isinstance(num, Number) for num in locator
@@ -1040,12 +1043,12 @@ def Formatter(formatter, *args, date=False, index=False, **kwargs):
         * If a string containing ``{x}`` or ``{x:...}``, ticks will be
           formatted by calling ``string.format(x=number)``. Returns
           a `~matplotlib.ticker.StrMethodFormatter`.
-        * If a string containing ``'%'`` and `date` is ``False``, ticks will be
-          formatted using the C-style ``string % number`` method. See
+        * If a string containing ``'%'`` and `date` is ``False``, ticks
+          will be formatted using the C-style ``string % number`` method. See
           `this page <https://docs.python.org/3/library/stdtypes.html#printf-style-string-formatting>`__
           for a review. Returns a `~matplotlib.ticker.FormatStrFormatter`.
-        * If a string containing ``'%'`` and `date` is ``True``, *datetime*
-          `string % number`` formatting is used. See
+        * If a string containing ``'%'`` and `date` is ``True``, ticks
+          will be formatted using `~datetime.datetime.strfrtime`. See
           `this page <https://docs.python.org/3/library/datetime.html#strftime-and-strptime-format-codes>`__
           for a review. Returns a `~matplotlib.dates.DateFormatter`.
 
@@ -1097,6 +1100,7 @@ def Formatter(formatter, *args, date=False, index=False, **kwargs):
         ``'dmslat'``            `~proplot.ticker.LatitudeFormatter`             Latitude labels with degree/minute/second support
         ======================  ==============================================  =================================================================
 
+
     date : bool, optional
         Toggles the behavior when `formatter` contains a ``'%'`` sign
         (see above).
@@ -1111,7 +1115,7 @@ def Formatter(formatter, *args, date=False, index=False, **kwargs):
 
     Returns
     -------
-    `~matplotlib.ticker.Formatter`
+    matplotlib.ticker.Formatter
         A `~matplotlib.ticker.Formatter` instance.
 
     See also
@@ -1121,7 +1125,7 @@ def Formatter(formatter, *args, date=False, index=False, **kwargs):
     proplot.axes.PolarAxes.format
     proplot.axes.GeoAxes.format
     proplot.axes.Axes.colorbar
-    Locator
+    proplot.constructor.Locator
     """  # noqa: E501
     if np.iterable(formatter) and not isinstance(formatter, str) and not all(
         isinstance(item, str) for item in formatter
@@ -1206,12 +1210,13 @@ def Scale(scale, *args, **kwargs):
 
     Returns
     -------
-    `~matplotlib.scale.ScaleBase`
-        The scale instance.
+    matplotlib.scale.ScaleBase
+        A `~matplotlib.scale.ScaleBase` instance.
 
     See also
     --------
     matplotlib.scale.ScaleBase
+    proplot.scale.LinearScale
     proplot.axes.CartesianAxes.format
     proplot.axes.CartesianAxes.dualx
     proplot.axes.CartesianAxes.dualy
@@ -1341,8 +1346,8 @@ def Proj(name, basemap=None, **kwargs):
 
     Returns
     -------
-    proj : `~mpl_toolkits.basemap.Basemap` or `~cartopy.crs.Projection`
-        The projection instance.
+    proj : mpl_toolkits.basemap.Basemap or cartopy.crs.Projection
+        A `~mpl_toolkits.basemap.Basemap` or `~cartopy.crs.Projection` instance.
 
     See also
     --------
