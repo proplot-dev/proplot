@@ -1219,7 +1219,7 @@ class CartesianAxes(shared._SharedAxes, plot.PlotAxes):
         """
         Optionally omit the leading x or y from "twin axes" methods.
         """
-        sig = self._format_signatures[type(self)]
+        sig = self._format_signatures[CartesianAxes]
         keys = tuple(key[1:] for key in sig.parameters if key[0] == x)
         kwargs = {(x + key if key in keys else key): val for key, val in kwargs.items()}
         for axis in 'xy':  # standardize format() location aliases

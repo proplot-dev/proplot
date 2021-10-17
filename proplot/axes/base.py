@@ -706,8 +706,9 @@ class Axes(maxes.Axes):
         kw_format = _pop_props(kwargs, 'patch')  # background properties
         if 'zorder' in kw_format:  # special case: refers to the entire axes
             kwargs['zorder'] = kw_format.pop('zorder')
-        for cls in {Axes, type(self)}:
-            kw_format.update(_pop_params(kwargs, self._format_signatures.get(cls)))
+        for cls, sig in self._format_signatures.items():
+            if isinstance(self, cls):
+                kw_format.update(_pop_params(kwargs, sig))
         super().__init__(*args, **kwargs)
 
         # Varous scalar properties

@@ -185,8 +185,8 @@ def subplots(*args, **kwargs):
     # Format keywords
     rc_kw, rc_mode = _pop_rc(kwargs)
     kwformat = _pop_params(kwargs, pfigure.Figure._format_signature)
-    for name, signature in paxes.Axes._format_signatures.items():
-        kwformat.update(_pop_params(kwargs, signature))
+    for sig in paxes.Axes._format_signatures.values():
+        kwformat.update(_pop_params(kwargs, sig))
     # Initialize
     fig = figure(rc_kw=rc_kw, **kwargs)
     axs = fig.add_subplots(*args, **kwsubs)
