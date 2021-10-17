@@ -658,8 +658,14 @@ class Axes(maxes.Axes):
         if ax.number:
             params['number'] = ax.number
         name = type(self).__name__
+        if self._inset_parent:
+            name = re.sub('Axes(Subplot)?', 'AxesInset', name)
+            params['bounds'] = tuple(np.round(self._inset_bounds, 2))
+        if self._altx_parent or self._alty_parent:
+            name = re.sub('Axes(Subplot)?', 'AxesTwin', name)
+            params['axis'] = 'x' if self._altx_parent else 'y'
         if self._panel_side:
-            name = name.replace('Subplot', 'Panel')  # e.g. CartesianAxesPanel
+            name = re.sub('Axes(Subplot)?', 'AxesPanel', name)
             params['side'] = self._panel_side
         if self._name in ('cartopy', 'basemap'):
             name = name.replace('_' + self._name.title(), 'Geo')
@@ -725,6 +731,7 @@ class Axes(maxes.Axes):
         self._altx_parent = None  # for cartesian axes only
         self._alty_parent = None
         self._inset_parent = None
+        self._inset_bounds = None  # for introspection ony
         self._inset_zoom = False
         self._inset_zoom_artists = None
         self._panel_hidden = False  # True when "filled" with cbar/legend
@@ -1598,6 +1605,7 @@ class Axes(maxes.Axes):
         ax = cls(self.figure, bb.bounds, zorder=zorder, label=label, **kwargs)
         ax.set_axes_locator(locator)
         ax._inset_parent = self
+        ax._inset_bounds = bounds
         self.add_child_axes(ax)
 
         # Add zoom indicator (NOTE: requires matplotlib >= 3.0)
