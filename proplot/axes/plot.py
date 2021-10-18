@@ -2530,8 +2530,8 @@ class PlotAxes(base.Axes):
 
         # Disable autodiverging when unknown colormap is passed. This avoids
         # awkwardly combining 'DivergingNorm' with sequential colormaps.
-        # NOTE: Let people use diverging=False with diverging cmaps because
-        # some use them (wrongly IMO but nbd) for increased color contrast.
+        # NOTE: Let people use diverging=False with diverging cmaps because some
+        # use them (wrongly IMO but to each their own) for increased color contrast.
         autodiverging = rc['cmap.autodiverging']
         if cmap is not None:
             name = getattr(cmap, 'name', cmap)
@@ -2541,15 +2541,14 @@ class PlotAxes(base.Axes):
             if not any(name in opts for opts in pcolors.CMAPS_DIVERGING.items()):
                 autodiverging = False  # avoid auto-truncation of sequential colormaps
 
-        # Build qualitative colormap using 'colors'
-        # NOTE: Try to match number of level centers with number of colors here
+        # Create user-input colormap
         # WARNING: Previously 'colors' set the edgecolors. To avoid all-black
         # colormap make sure to ignore 'colors' if 'cmap' was also passed.
-        # WARNING: Previously tried setting number of levels to len(colors) but
-        # this would make single-level contour plots and _parse_autolev is designed
-        # to only give approximate level count so failed anyway. Users should pass
-        # their own levels to avoid truncation/cycling in these very special cases.
-        if cmap is not None and colors is not None:
+        # WARNING: Previously tried setting number of levels to len(colors), but this
+        # makes single-level single-color contour plots, and since _parse_autolev is
+        # only generates approximate level counts, the idea failed anyway. Users should
+        # pass their own levels to avoid truncation/cycling in these very special cases.
+        if cmap is not None:
             warnings._warn_proplot(
                 f'You specifed both cmap={cmap!r} and the qualitative-colormap '
                 f"colors={colors!r}. Ignoring 'colors'. If you meant to specify the "
@@ -2561,9 +2560,6 @@ class PlotAxes(base.Axes):
                 colors = [colors]  # RGB[A] tuple possibly
             cmap = colors = np.atleast_1d(colors)
             cmap_kw['listmode'] = 'discrete'
-
-        # Create the user-input colormap
-        # Also force options in special cases
         if plot_lines:
             cmap_kw['default_luminance'] = constructor.DEFAULT_CYCLE_LUMINANCE
         if cmap is not None:
@@ -2591,35 +2587,34 @@ class PlotAxes(base.Axes):
                 )
             discrete = True
         keys = ('levels', 'values', 'locator', 'negative', 'positive', 'symmetric')
-        if discrete is None and any(key in kwargs for key in keys):
-            discrete = True  # override
-        else:
+        if any(key in kwargs for key in keys):  # override
+            discrete = _not_none(discrete, True)
+        else:  # use global boolean rc['cmap.discrete'] or command-specific default
             discrete = _not_none(discrete, rc['cmap.discrete'], default_discrete)
 
         # Determine the appropriate 'vmin', 'vmax', and/or 'levels'
         # NOTE: Unlike xarray, but like matplotlib, vmin and vmax only approximately
         # determine level range. Levels are selected with Locator.tick_values().
         levels = None  # unused
+        default_diverging = None
         if not discrete and not skip_autolev:
             vmin, vmax, kwargs = self._parse_vlim(
                 *args, vmin=vmin, vmax=vmax, **kwargs
             )
+            if autodiverging and vmin is not None and vmax is not None:
+                if abs(np.sign(vmax) - np.sign(vmin)) == 2:
+                    default_diverging = True
         if discrete:
             levels, kwargs = self._parse_levels(
-                *args,
-                vmin=vmin, vmax=vmax, norm=norm, norm_kw=norm_kw, extend=extend,
+                *args, vmin=vmin, vmax=vmax, norm=norm, norm_kw=norm_kw, extend=extend,
                 min_levels=min_levels, skip_autolev=skip_autolev, **kwargs
             )
-        if autodiverging:
-            default_diverging = None
-            if levels is not None:
+            if autodiverging and levels is not None:
                 _, counts = np.unique(np.sign(levels), return_counts=True)
                 if counts[counts > 1].size > 1:
                     default_diverging = True
-            elif vmin is not None and vmax is not None:
-                if abs(np.sign(vmax) - np.sign(vmin)) == 2:
-                    default_diverging = True
-            diverging = _not_none(diverging, default_diverging)
+        if all(_ is None for _ in (diverging, sequential, cyclic, qualitative)):
+            diverging = default_diverging
 
         # Create the continuous normalizer. Only use SegmentedNorm if necessary
         # NOTE: DiscreteNorm does not currently support vmin and vmax different from
