@@ -2584,10 +2584,11 @@ class PlotAxes(base.Axes):
                     'Discrete colormaps require discrete=True. Ignoring discrete=False.'
                 )
             discrete = True
-        if plot_contours and discrete is not None and not discrete:
-            warnings._warn_proplot(
-                'Contoured plots require discrete=True. Ignoring discrete=False.'
-            )
+        if plot_contours:
+            if discrete is not None and not discrete:
+                warnings._warn_proplot(
+                    'Contoured plots require discrete=True. Ignoring discrete=False.'
+                )
             discrete = True
         keys = ('levels', 'values', 'locator', 'negative', 'positive', 'symmetric')
         if discrete is None and any(key in kwargs for key in keys):
