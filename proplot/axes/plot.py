@@ -2634,7 +2634,7 @@ class PlotAxes(base.Axes):
             pass
         elif np.iterable(levels):  # add levels as keyword
             norm_kw['levels'] = levels
-        else:  # ignore input value
+        elif 'levels' not in norm_kw:  # ignore input value
             norm = None
         if diverging:
             norm = _not_none(norm, 'div')
