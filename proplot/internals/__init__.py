@@ -340,14 +340,14 @@ def _pop_props(input, *categories, prefix=None, ignore=None, skip=None):
     return output
 
 
-def _pop_rc(src):
+def _pop_rc(src, *, ignore_conflicts=True):
     """
     Pop the rc setting names and mode for a `~Configurator.context` block.
     """
     # NOTE: Must ignore deprected or conflicting rc params
     # NOTE: rc_mode == 2 applies only the updated params. A power user
     # could use ax.format(rc_mode=0) to re-apply all the current settings
-    ignore_params = (
+    conflict_params = (
         'alpha',
         'color',
         'facecolor',
@@ -368,7 +368,7 @@ def _pop_rc(src):
     mode = _not_none(mode, 2)  # only apply updated params by default
     for key, value in tuple(src.items()):
         name = rcsetup._rc_nodots.get(key, None)
-        if name in ignore_params:
+        if ignore_conflicts and name in conflict_params:
             name = None  # former renamed settings
         if name is not None:
             kw[name] = src.pop(key)
