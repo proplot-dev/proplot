@@ -2617,23 +2617,25 @@ class PlotAxes(base.Axes):
             diverging = _not_none(diverging, default_diverging)
 
         # Create the continuous normalizer. Only use SegmentedNorm if necessary
+        # NOTE: DiscreteNorm does not currently support vmin and vmax different from
+        # level list minimum and maximum.
         # NOTE: We create normalizer here only because auto level generation depends
         # on the normalizer class (e.g. LogNorm). We don't have to worry about vmin
         # and vmax because they get applied to normalizer inside DiscreteNorm.
-        if levels is not None and len(levels) > 0:
-            if len(levels) == 1:  # edge case, use central colormap color
-                vmin = _not_none(vmin, levels[0] - 1)
-                vmax = _not_none(vmax, levels[0] + 1)
-            else:
-                vmin, vmax = np.min(levels), np.max(levels)
-                diffs = np.diff(levels)
-                if not np.allclose(diffs[0], diffs):
-                    norm = _not_none(norm, 'segmented')
-        if norm in ('segments', 'segmented'):
-            if np.iterable(levels):
-                norm_kw['levels'] = levels  # apply levels
-            else:
-                norm = None  # same result but much faster
+        if levels is None:
+            pass
+        elif len(levels) == 1:  # use central colormap color
+            vmin, vmax = levels[0] - 1, levels[0] + 1
+        elif len(levels) > 1:  # use minimum and maximum
+            vmin, vmax = np.min(levels), np.max(levels)
+            if not np.allclose(levels[1] - levels[0], np.diff(levels)):
+                norm = _not_none(norm, 'segmented')
+        if norm not in ('segments', 'segmented'):
+            pass
+        elif np.iterable(levels):  # add levels as keyword
+            norm_kw['levels'] = levels
+        else:  # ignore input value
+            norm = None
         if diverging:
             norm = _not_none(norm, 'div')
         else:
