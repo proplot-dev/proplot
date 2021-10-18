@@ -2498,7 +2498,6 @@ class PlotAxes(base.Axes):
         self, *args,
         cmap=None, cmap_kw=None, c=None, color=None, colors=None, default_cmap=None,
         norm=None, norm_kw=None, extend=None, vmin=None, vmax=None,
-        sequential=None, diverging=None, qualitative=None, cyclic=None,
         discrete=None, default_discrete=True, skip_autolev=False,
         plot_lines=False, plot_contours=False, min_levels=None, **kwargs
     ):
@@ -2509,16 +2508,22 @@ class PlotAxes(base.Axes):
         ----------
         c, color, colors : sequence of color-spec, optional
             Build a `DiscreteColormap` from the input color(s).
-        sequential, diverging, qualitative, cyclic : bool, optional
-            Toggle various colormap types.
+        cmap, cmap_kw : optional
+            Colormap specs.
+        norm, norm_kw : optional
+            Normalize specs.
+        extend : optional
+            The colormap extend setting.
+        vmin, vmax : flaot, optional
+            The normalization range.
         plot_lines : bool, optional
-            Whether these are lines. In that case the default maximum
-            luminance for monochromatic colormaps will be 90 instead of 100.
+            Whether these are lines. If so the default monorhcomarit luminance is 90.
         plot_contours : bool, optional
-            Whether these are contours. Determines whether 'discrete'
-            is requied and return keyword args.
+            Whether these are contours. If so then discrete is required.
         min_levels : int, optional
-            The minimum number of valid levels. This is 1 for line contour plots.
+            The minimum number of valid levels. 1 for line contour plots 2 otherwise.
+        sequential, diverging, cyclic, qualitative : bool, optional
+            Toggle various colormap types.
         """
         # Parse keyword args
         cmap_kw = cmap_kw or {}
@@ -2527,6 +2532,15 @@ class PlotAxes(base.Axes):
         vmax = _not_none(vmax=vmax, norm_kw_vmax=norm_kw.pop('vmax', None))
         extend = _not_none(extend, 'neither')
         colors = _not_none(c=c, color=color, colors=colors)  # in case untranslated
+        modes = {key: kwargs.pop(key, None) for key in ('sequential', 'diverging', 'cyclic', 'qualitative')}  # noqa: E501
+        trues = {key: b for key, b in modes.items() if b}
+        if len(trues) > 1:  # noqa: E501
+            warnings._warn_proplot(
+                f'Conflicting colormap arguments: {trues!r}. Using the first one.'
+            )
+            for key in tuple(trues)[1:]:
+                del trues[key]
+                modes[key] = None
 
         # Disable autodiverging when unknown colormap is passed. This avoids
         # awkwardly combining 'DivergingNorm' with sequential colormaps.
@@ -2568,13 +2582,13 @@ class PlotAxes(base.Axes):
         # Force default options in special cases
         # NOTE: Delay application of 'sequential', 'diverging', 'cyclic', 'qualitative'
         # until after level generation so 'diverging' can be automatically applied.
-        if cyclic or getattr(cmap, '_cyclic', None):
+        if 'cyclic' in trues or getattr(cmap, '_cyclic', None):
             if extend is not None and extend != 'neither':
                 warnings._warn_proplot(
                     f"Cyclic colormaps require extend='neither'. Ignoring extend={extend!r}"  # noqa: E501
                 )
             extend = 'neither'
-        if qualitative or isinstance(cmap, pcolors.DiscreteColormap):
+        if 'qualitative' in trues or isinstance(cmap, pcolors.DiscreteColormap):
             if discrete is not None and not discrete:  # noqa: E501
                 warnings._warn_proplot(
                     'Discrete colormaps require discrete=True. Ignoring discrete=False.'
@@ -2596,14 +2610,14 @@ class PlotAxes(base.Axes):
         # NOTE: Unlike xarray, but like matplotlib, vmin and vmax only approximately
         # determine level range. Levels are selected with Locator.tick_values().
         levels = None  # unused
-        default_diverging = None
+        isdiverging = False
         if not discrete and not skip_autolev:
             vmin, vmax, kwargs = self._parse_vlim(
                 *args, vmin=vmin, vmax=vmax, **kwargs
             )
             if autodiverging and vmin is not None and vmax is not None:
                 if abs(np.sign(vmax) - np.sign(vmin)) == 2:
-                    default_diverging = True
+                    isdiverging = True
         if discrete:
             levels, kwargs = self._parse_levels(
                 *args, vmin=vmin, vmax=vmax, norm=norm, norm_kw=norm_kw, extend=extend,
@@ -2612,9 +2626,9 @@ class PlotAxes(base.Axes):
             if autodiverging and levels is not None:
                 _, counts = np.unique(np.sign(levels), return_counts=True)
                 if counts[counts > 1].size > 1:
-                    default_diverging = True
-        if all(_ is None for _ in (diverging, sequential, cyclic, qualitative)):
-            diverging = default_diverging
+                    isdiverging = True
+        if not trues and isdiverging:
+            trues['diverging'] = True
 
         # Create the continuous normalizer. Only use SegmentedNorm if necessary
         # NOTE: DiscreteNorm does not currently support vmin and vmax different from
@@ -2622,44 +2636,34 @@ class PlotAxes(base.Axes):
         # NOTE: We create normalizer here only because auto level generation depends
         # on the normalizer class (e.g. LogNorm). We don't have to worry about vmin
         # and vmax because they get applied to normalizer inside DiscreteNorm.
-        if levels is None:
-            pass
-        elif len(levels) == 1:  # use central colormap color
-            vmin, vmax = levels[0] - 1, levels[0] + 1
-        elif len(levels) > 1:  # use minimum and maximum
-            vmin, vmax = np.min(levels), np.max(levels)
-            if not np.allclose(levels[1] - levels[0], np.diff(levels)):
-                norm = _not_none(norm, 'segmented')
-        if norm not in ('segments', 'segmented'):
-            pass
-        elif np.iterable(levels):  # add levels as keyword
-            norm_kw['levels'] = levels
-        elif 'levels' not in norm_kw:  # ignore input value
-            norm = None
-        if diverging:
-            norm = _not_none(norm, 'div')
-        else:
-            norm = _not_none(norm, 'linear')
+        if norm in ('segments', 'segmented'):
+            if np.iterable(levels):  # add levels as keyword
+                norm_kw['levels'] = levels
+            elif 'levels' not in norm_kw:  # ignore input value
+                norm = None
+        if levels is not None:
+            if len(levels) == 1:  # use central colormap color
+                vmin, vmax = levels[0] - 1, levels[0] + 1
+            elif len(levels) > 1:  # use minimum and maximum
+                vmin, vmax = np.min(levels), np.max(levels)
+                if not np.allclose(levels[1] - levels[0], np.diff(levels)):
+                    norm = _not_none(norm, 'segmented')
+        norm = _not_none(norm, 'div' if 'diverging' in trues else 'linear')
         if isinstance(norm, mcolors.Normalize):
             norm.vmin, norm.vmax = vmin, vmax
         else:
             norm = constructor.Norm(norm, vmin=vmin, vmax=vmax, **norm_kw)
-        if autodiverging and isinstance(norm, pcolors.DivergingNorm):
-            diverging = _not_none(diverging, True)
+        if not trues and autodiverging and isinstance(norm, pcolors.DivergingNorm):
+            trues['diverging'] = True  # can only happen if skip_autolev=True
 
         # Create the final colormap
         if cmap is None:
             if default_cmap is not None:  # used internally
                 cmap = default_cmap
-            elif qualitative:
-                cmap = rc['cmap.qualitative']
-            elif cyclic:
-                cmap = rc['cmap.cyclic']
-            elif diverging:
-                cmap = rc['cmap.diverging']
-            elif sequential:
-                cmap = rc['cmap.sequential']
-            cmap = _not_none(cmap, rc['image.cmap'])
+            elif trues:
+                cmap = rc['cmap.' + tuple(trues)[0]]
+            else:
+                cmap = rc['image.cmap']
             cmap = constructor.Colormap(cmap, **cmap_kw)
 
         # Create the discrete normalizer
