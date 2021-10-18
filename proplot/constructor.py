@@ -896,7 +896,7 @@ def Norm(norm, *args, **kwargs):
     proplot.constructor.Colormap
     """
     if np.iterable(norm) and not isinstance(norm, str):
-        norm, args = norm[0], (*norm[1:], *args)
+        norm, *args = *norm, *args
     if isinstance(norm, mcolors.Normalize):
         return norm
     if not isinstance(norm, str):
@@ -993,7 +993,7 @@ def Locator(locator, *args, **kwargs):
     if np.iterable(locator) and not isinstance(locator, str) and not all(
         isinstance(num, Number) for num in locator
     ):
-        locator, args = locator[0], (*locator[1:], *args)
+        locator, *args = *locator, *args
     if isinstance(locator, mticker.Locator):
         return locator
     if isinstance(locator, str):
@@ -1130,7 +1130,7 @@ def Formatter(formatter, *args, date=False, index=False, **kwargs):
     if np.iterable(formatter) and not isinstance(formatter, str) and not all(
         isinstance(item, str) for item in formatter
     ):
-        formatter, args = formatter[0], (*formatter[1:], *args)
+        formatter, *args = *formatter, *args
     if isinstance(formatter, mticker.Formatter):
         return formatter
     if isinstance(formatter, str):
@@ -1226,7 +1226,7 @@ def Scale(scale, *args, **kwargs):
     # ScaleBase classes as arguments... but constructor functions cannot
     # do anything but return the class instance upon receiving one.
     if np.iterable(scale) and not isinstance(scale, str):
-        scale, args = scale[0], (*scale[1:], *args)
+        scale, *args = *scale, *args
     if isinstance(scale, mscale.ScaleBase):
         return scale
     if not isinstance(scale, str):
