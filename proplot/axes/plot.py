@@ -2574,11 +2574,11 @@ class PlotAxes(base.Axes):
                 f"Cyclic colormaps require extend='neither'. Ignoring extend={extend!r}"
             )
             extend = 'neither'
-        qualitative = _not_none(qualitative, isinstance(cmap, pcolors.DiscreteColormap))
-        if qualitative and discrete is not None and not discrete:
-            warnings._warn_proplot(
-                'Qualitative colormaps require discrete=True. Ignoring discrete=False.'
-            )
+        if qualitative or isinstance(cmap, pcolors.DiscreteColormap):
+            if discrete is not None and not discrete:  # noqa: E501
+                warnings._warn_proplot(
+                    'Discrete colormaps require discrete=True. Ignoring discrete=False.'
+                )
             discrete = True
         if plot_contours and discrete is not None and not discrete:
             warnings._warn_proplot(
