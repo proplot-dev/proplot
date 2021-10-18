@@ -2568,11 +2568,15 @@ class PlotAxes(base.Axes):
             cmap_kw['default_luminance'] = constructor.DEFAULT_CYCLE_LUMINANCE
         if cmap is not None:
             cmap = constructor.Colormap(cmap, **cmap_kw)  # for testing only
-        cyclic = _not_none(cyclic, getattr(cmap, '_cyclic', None))
-        if cyclic and extend != 'neither':
-            warnings._warn_proplot(
-                f"Cyclic colormaps require extend='neither'. Ignoring extend={extend!r}"
-            )
+
+        # Force default options in special cases
+        # NOTE: Delay application of 'sequential', 'diverging', 'cyclic', 'qualitative'
+        # until after level generation so 'diverging' can be automatically applied.
+        if cyclic or getattr(cmap, '_cyclic', None):
+            if extend is not None and extend != 'neither':
+                warnings._warn_proplot(
+                    f"Cyclic colormaps require extend='neither'. Ignoring extend={extend!r}"  # noqa: E501
+                )
             extend = 'neither'
         if qualitative or isinstance(cmap, pcolors.DiscreteColormap):
             if discrete is not None and not discrete:  # noqa: E501
