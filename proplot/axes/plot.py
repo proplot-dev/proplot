@@ -2533,12 +2533,13 @@ class PlotAxes(base.Axes):
         # NOTE: Let people use diverging=False with diverging cmaps because
         # some use them (wrongly IMO but nbd) for increased color contrast.
         autodiverging = rc['cmap.autodiverging']
-        name = getattr(cmap, 'name', cmap)
-        if not isinstance(name, str):
-            name = pcolors.DEFAULT_NAME
-        name = re.sub(r'\A_*(.*?)(?:_r|_s|_copy)*\Z', r'\1', name.lower())
-        if not any(name in opts for opts in pcolors.CMAPS_DIVERGING.items()):
-            autodiverging = False  # avoid auto-truncation of sequential colormaps
+        if cmap is not None:
+            name = getattr(cmap, 'name', cmap)
+            if not isinstance(name, str):
+                name = pcolors.DEFAULT_NAME
+            name = re.sub(r'\A_*(.*?)(?:_r|_s|_copy)*\Z', r'\1', name.lower())
+            if not any(name in opts for opts in pcolors.CMAPS_DIVERGING.items()):
+                autodiverging = False  # avoid auto-truncation of sequential colormaps
 
         # Build qualitative colormap using 'colors'
         # NOTE: Try to match number of level centers with number of colors here
