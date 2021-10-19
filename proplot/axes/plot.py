@@ -2090,8 +2090,8 @@ class PlotAxes(base.Axes):
 
     def _parse_vlim(
         self, *args,
-        vmin=None, vmax=None, to_centers=False,
-        robust=None, inbounds=None, **kwargs,
+        vmin=None, vmax=None, robust=None, inbounds=None,
+        negative=None, positive=None, symmetric=None, to_centers=False, **kwargs
     ):
         """
         Return a suitable vmin and vmax based on the input data.
@@ -2135,8 +2135,8 @@ class PlotAxes(base.Axes):
             raise ValueError(f'Unexpected robust={robust!r}. Must be bool, float, or 2-tuple.')  # noqa: E501
 
         # Get sample data
-        # NOTE: Critical to use _to_duck_array here because some commands
-        # are unstandardized.
+        # NOTE: Critical to use _to_numpy_array here because some
+        # commands are unstandardized.
         # NOTE: Try to get reasonable *count* levels for hexbin/hist2d, but in general
         # have no way to select nice ones a priori (why we disable discretenorm).
         # NOTE: Currently we only ever use this function with *single* array input
@@ -2164,6 +2164,38 @@ class PlotAxes(base.Axes):
             vmin = min(vmins, default=0)
         if automax:
             vmax = max(vmaxs, default=1)
+
+        # Apply modifications
+        # NOTE: This used to be applied in _parse_levels
+        if negative:
+            if automax:
+                vmax = 0
+            else:
+                warnings._warn_proplot(
+                    f'Incompatible arguments vmax={vmax!r} and negative=True. '
+                    'Ignoring the latter.'
+                )
+        if positive:
+            if automin:
+                vmin = 0
+            else:
+                warnings._warn_proplot(
+                    f'Incompatible arguments vmin={vmin!r} and positive=True. '
+                    'Ignoring the latter.'
+                )
+        if symmetric:
+            if automin and not automax:
+                vmin = -vmax
+            elif automax and not automin:
+                vmax = -vmin
+            elif automin and automax:
+                vmin, vmax = -np.max(np.abs((vmin, vmax))), np.max(np.abs((vmin, vmax)))
+            else:
+                warnings._warn_proplot(
+                    f'Incompatible arguments vmin={vmin!r}, vmax={vmax!r}, and '
+                    'symmetric=True. Ignoring the latter.'
+                )
+
         return vmin, vmax, kwargs
 
     def _parse_autolev(
@@ -2236,7 +2268,9 @@ class PlotAxes(base.Axes):
         nlevs = levels
         automin = vmin is None
         automax = vmax is None
-        vmin, vmax, kwargs = self._parse_vlim(*args, vmin=vmin, vmax=vmax, **kwargs)
+        vmin, vmax, kwargs = self._parse_vlim(
+            *args, vmin=vmin, vmax=vmax, symmetric=symmetric, **kwargs
+        )
         try:
             levels = locator.tick_values(vmin, vmax)
         except RuntimeError:  # too-many-ticks error
@@ -2385,13 +2419,16 @@ class PlotAxes(base.Axes):
                 warnings._warn_proplot(f'Ignoring unused keyword arg(s): {pop}')
         elif not skip_autolev:
             levels, kwargs = self._parse_autolev(
-                *args, levels=levels, norm=norm, norm_kw=norm_kw, extend=extend, **kwargs  # noqa: E501
+                *args, levels=levels, norm=norm, norm_kw=norm_kw, extend=extend,
+                negative=negative, positive=positive, **kwargs
             )
         ticks = values if np.iterable(values) else levels
         if ticks is not None and np.iterable(ticks):
             guides._guide_kw_to_arg('colorbar', kwargs, locator=ticks)
 
         # Filter the level boundaries
+        # NOTE: This should have no effect if levels were generated automatically.
+        # However want to apply these to manual-input levels as well.
         if levels is not None and np.iterable(levels):
             if nozero:
                 levels = levels[levels != 0]
