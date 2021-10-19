@@ -2673,11 +2673,6 @@ class PlotAxes(base.Axes):
         # NOTE: We create normalizer here only because auto level generation depends
         # on the normalizer class (e.g. LogNorm). We don't have to worry about vmin
         # and vmax because they get applied to normalizer inside DiscreteNorm.
-        if norm in ('segments', 'segmented'):
-            if np.iterable(levels):  # add levels as keyword
-                norm_kw['levels'] = levels
-            elif 'levels' not in norm_kw:  # ignore input value
-                norm = None
         if levels is not None:
             if len(levels) == 1:  # use central colormap color
                 vmin, vmax = levels[0] - 1, levels[0] + 1
@@ -2685,6 +2680,11 @@ class PlotAxes(base.Axes):
                 vmin, vmax = np.min(levels), np.max(levels)
                 if not np.allclose(levels[1] - levels[0], np.diff(levels)):
                     norm = _not_none(norm, 'segmented')
+        if norm in ('segments', 'segmented'):
+            if np.iterable(levels):  # add levels as keyword
+                norm_kw['levels'] = levels
+            elif 'levels' not in norm_kw:  # ignore input value
+                norm = None
         norm = _not_none(norm, 'div' if 'diverging' in trues else 'linear')
         if isinstance(norm, mcolors.Normalize):
             norm.vmin, norm.vmax = vmin, vmax
