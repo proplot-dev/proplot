@@ -279,7 +279,7 @@ data = np.cumsum(state.rand(N, N), axis=1) - 6
 
 # Continuous "diverging" colormap
 fig = pplt.figure(refwidth=2.3, spanx=False)
-ax = fig.subplot(121, title="Diverging with 'cmap'", xlabel='xlabel')
+ax = fig.subplot(121, title="Diverging colormap with 'cmap'", xlabel='xlabel')
 ax.contourf(
     data,
     norm='div',
@@ -289,7 +289,7 @@ ax.contourf(
 )
 
 # Discrete "qualitative" colormap
-ax = fig.subplot(122, title="Qualitative with 'colors'")
+ax = fig.subplot(122, title="Qualitative colormap with 'colors'")
 ax.contourf(
     data,
     levels=pplt.arange(-6, 9, 3),
@@ -331,17 +331,17 @@ gs = pplt.GridSpec(ncols=2)
 fig = pplt.figure(refwidth=2.3, span=False, suptitle='Normalizer types')
 
 # Different normalizers
-ax = fig.subplot(gs[0], cmap='magma', title='Default linear normalizer')
-ax.pcolormesh(data, colorbar='b')
-ax = fig.subplot(gs[1], cmap='magma', title="Logarithmic normalizer with norm='log'")
-ax.pcolormesh(data, norm='log', colorbar='b')
+ax = fig.subplot(gs[0], title='Default linear normalizer')
+ax.pcolormesh(data, cmap='magma', colorbar='b')
+ax = fig.subplot(gs[1], title="Logarithmic normalizer with norm='log'")
+ax.pcolormesh(data, cmap='magma', norm='log', colorbar='b')
 
 
 # %% [raw] raw_mimetype="text/restructuredtext"
 # .. _ug_norm:
 #
-# Continuous normalizers
-# ----------------------
+# Special normalizers
+# -------------------
 #
 # Proplot includes two new "continuous" normalizers. `~proplot.colors.SegmentedNorm`
 # provides even color gradations with respect to *index* for an arbitrary
@@ -417,8 +417,8 @@ for data, mode, fair in zip(
 # %% [raw] raw_mimetype="text/restructuredtext"
 # .. _ug_discrete:
 #
-# Discrete normalizers
-# --------------------
+# Discrete levels
+# ---------------
 #
 # By default, proplot uses `~proplot.colors.DiscreteNorm` to "discretize"
 # the possible colormap colors for contour and pseudocolor plotting commands,
