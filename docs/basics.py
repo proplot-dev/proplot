@@ -270,8 +270,8 @@ fig.colorbar(m, loc='b', label='label')
 # still work, ``format`` is usually more succinct -- it only needs to be called once.
 # You can also pass arbitrary ``format`` arguments to axes-creation commands
 # like `~proplot.figure.Figure.subplots`, `~proplot.figure.Figure.add_subplot`,
-# `~proplot.axes.Axes.inset_axes`, `~proplot.axes.Axes.panel_axes`,
-# and `~proplot.axes.Axes.twinx` or `~proplot.axes.Axes.twiny`. The keyword
+# `~proplot.axes.Axes.inset_axes`, `~proplot.axes.Axes.panel_axes`, and
+# `~proplot.axes.CartesianAxes.altx` or `~proplot.axes..Axes.alty`. The keyword
 # arguments accepted by ``format`` fall into the following groups:
 #
 # * Figure settings. These are related to row labels, column labels, and
@@ -295,10 +295,9 @@ fig.colorbar(m, loc='b', label='label')
 #   and :ref:`this section <ug_polar>` for details.
 #
 # * Geographic axes settings (valid only for `~proplot.axes.GeoAxes`).
-#   These are related to meridional and parallel grid lines, bounds, and labels,
-#   along with basic geographic features -- for example,
-#   ``ax.format(latlim=(0, 90))`` changes the meridional bounds.
-#   See `proplot.axes.GeoAxes.format`
+#   These are related to map bounds, meridian and parallel lines and labels,
+#   and geographic features -- for example, ``ax.format(latlim=(0, 90))``
+#   changes the meridional bounds. See `proplot.axes.GeoAxes.format`
 #   and :ref:`this section <ug_geoformat>` for details.
 #
 # * `~proplot.config.rc` settings. Any keyword matching the name

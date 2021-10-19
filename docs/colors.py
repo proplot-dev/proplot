@@ -120,14 +120,15 @@ for scale in (0, 1, 3):
 # ---------------------
 #
 # If you want to draw an individual color from a colormap or a color cycle,
-# use ``color=(cmap, coord)`` or ``color=(cycle, index)`` with any command
-# that accepts the `color` keyword. The ``coord`` should be between ``0`` and
-# ``1``, while the ``index`` is the index on the list of cycle colors. This
-# feature is powered by the `~proplot.colors.ColorDatabase` class. This is
-# useful if you spot a nice color in one of the available colormaps or color
-# cycles and want to use it for some arbitrary plot element. Use the
-# `~proplot.utils.to_rgb` or `~proplot.utils.to_rgba` functions to retrieve
-# the RGB or RGBA channel values.
+# use ``key=(cmap, coord)`` or ``key=(cycle, index)`` with any keyword `key`
+# that accepts color specifications (e.g., `color`, `edgecolor`, or `facecolor`).
+# The ``coord`` should be a float between ``0`` and ``1``, denoting the coordinate
+# within a smooth colormap, while the ``index`` should be the integer index
+# on the discrete colormap color list. This feature is powered by the
+# `~proplot.colors.ColorDatabase` class. This is useful if you spot a
+# nice color in one of the available colormaps or color cycles and want
+# to use it for some arbitrary plot element. Use the `~proplot.utils.to_rgb` or
+# `~proplot.utils.to_rgba` functions to retrieve the RGB or RGBA channel values.
 
 # %%
 import proplot as pplt

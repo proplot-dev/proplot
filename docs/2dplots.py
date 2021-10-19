@@ -259,8 +259,8 @@ pplt.rc['cmap.qualitative'] = 'flatui'
 fig = pplt.figure(refwidth=2.2, span=False, suptitle='Colormap types')
 axs = fig.subplots(ncols=2, nrows=2)
 axs.format(xformatter='none', yformatter='none')
-axs[0].pcolor(data, sequential=True, colorbar='l')
-axs[1].pcolor(data - 5, diverging=True, colorbar='r')
+axs[0].pcolor(data, sequential=True, colorbar='l', extend='max')
+axs[1].pcolor(data - 5, diverging=True, colorbar='r', extend='both')
 axs[2].pcolor(data % 8, cyclic=True, colorbar='l')
 axs[3].pcolor(data, levels=pplt.arange(0, 12, 2), qualitative=True, colorbar='r')
 types = ('sequential', 'diverging', 'cyclic', 'qualitative')
@@ -433,7 +433,7 @@ for data, mode, fair in zip(
 #
 # #. All colormaps always span the *entire color range*,
 #    independent of the `extend` setting.
-# #. Cyclic colormaps always have *discrete color levels*
+# #. Cyclic colormaps always have *distinct color levels*
 #    on either end of the colorbar.
 #
 # To explicitly toggle discrete levels on or off, change :rcraw:`cmap.discrete`

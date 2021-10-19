@@ -31,21 +31,23 @@ and stability is improved.
 Version 0.9.5 (2021-XX-XX)
 ==========================
 
+Style changes
+-------------
+
+* Switch default :rcraw:`cmap.diverging` from ``'NegPos'`` to the more
+  popular and contrasty colormap ``'RdBu_r'`` (:commit:`b0b8557f`).
+* Switch default :rcraw:`cmap.qualitative` from ``'flatui'`` to ``'colorblind10'``,
+  consistent with the default color cycle ``'colorblind'`` (:commit:`b0b8557f`).
+
 Features
 --------
 
-* Switch default :rcraw:`cmap.diverging` from ``'NegPos'`` to the more
-  contrasty and commonly-used ``'RdBu_r'`` (:commit:`b0b8557f`).
-* Switch default :rcraw:`cmap.qualitative` from ``'flatui'`` to ``'colorblind10'``,
-  consistent with the default color cycle ``'colorblind'`` (:commit:`b0b8557f`).
-* Apply ``positive=True``, ``negative=True``, and ``symmetric=True`` even when
-  ``discrete=False`` by modifying `vmin` and `vmax` (:commit:`fbca1063`).
-* Improve ``positive=True``, ``negative=True``, and ``symmetric=True`` behavior
-  when ``discrete=True`` by modifying `vmin` and `vmax` rather than filtering
-  level lists (:commit:`fbca1063`). This fixes issues where too few levels are made.
+* Apply ``positive=True``, ``negative=True``, and ``symmetric=True`` by modifying `vmin`
+  and `vmax` rather than levels (:commit:`fbca1063`). This permits using these keywords
+  even when ``discrete=False`` and fixes too-few-levels issues when ``discrete=True``.
 * Improve default string representation of axes generated with
   `~proplot.axes.CartesianAxes.altx`, `~proplot.axes.CartesianAxes.alty`,
-  or `~proplot.axes.CartesianAxes.inset_axes` (:commit:`a570fca7`).
+  or `~proplot.axes.Axes.inset_axes` (:commit:`a570fca7`).
 
 Bug fixes
 ---------
@@ -69,8 +71,8 @@ Bug fixes
 * Fix issue where `~proplot.colors.SegmentedNorm` cannot be specified with
   ``norm='segmented'`` and ``norm_kw={'levels': level}`` when `discrete`
   is also disabled (:commit:`a4f6e838`).
-* Fix issue where more than one of mutually exclusive `sequential`, `diverging`,
-  `cyclic`, and `qualitative` settings can be set to ``True`` and others
+* Fix issue where more than one of mutually-exclusive `sequential`, `diverging`,
+  `cyclic`, and `qualitative` keywords can be set to ``True`` and others
   are silently ignored without warning (:commit:`f14aa263`).
 
 Version 0.9.4 (2021-10-16)
