@@ -2579,42 +2579,35 @@ class PlotAxes(base.Axes):
                 del trues[key]
                 modes[key] = None
 
-        # Disable autodiverging when unknown colormap is passed. This avoids
-        # awkwardly combining 'DivergingNorm' with sequential colormaps.
+        # Create user-input colormap and potentially disable autodiverging
         # NOTE: Let people use diverging=False with diverging cmaps because some
         # use them (wrongly IMO but to each their own) for increased color contrast.
-        autodiverging = rc['cmap.autodiverging']
-        if cmap is not None:
-            name = getattr(cmap, 'name', cmap)
-            if not isinstance(name, str):
-                name = pcolors.DEFAULT_NAME
-            name = re.sub(r'\A_*(.*?)(?:_r|_s|_copy)*\Z', r'\1', name.lower())
-            if not any(name in opts for opts in pcolors.CMAPS_DIVERGING.items()):
-                autodiverging = False  # avoid auto-truncation of sequential colormaps
-
-        # Create user-input colormap
         # WARNING: Previously 'colors' set the edgecolors. To avoid all-black
         # colormap make sure to ignore 'colors' if 'cmap' was also passed.
         # WARNING: Previously tried setting number of levels to len(colors), but this
         # makes single-level single-color contour plots, and since _parse_autolev is
         # only generates approximate level counts, the idea failed anyway. Users should
         # pass their own levels to avoid truncation/cycling in these very special cases.
-        if cmap is not None and colors is not None:
-            warnings._warn_proplot(
-                f'You specified both cmap={cmap!s} and the qualitative-colormap '
-                f"colors={colors!r}. Ignoring 'colors'. If you meant to specify the "
-                f'edge color please use ec={colors!r} or edgecolor={colors!r} instead.'
-            )
-            colors = None
+        autodiverging = rc['cmap.autodiverging']
         if colors is not None:
-            if mcolors.is_color_like(colors):
-                colors = [colors]  # RGB[A] tuple possibly
-            cmap = colors = np.atleast_1d(colors)
-            cmap_kw['listmode'] = 'discrete'
-        if plot_lines:
-            cmap_kw['default_luminance'] = constructor.DEFAULT_CYCLE_LUMINANCE
+            if cmap is not None:
+                warnings._warn_proplot(
+                    f'you specified both cmap={cmap!s} and the qualitative-colormap '
+                    f"colors={colors!r}. Ignoring 'colors'. If you meant to specify "
+                    f'the edge color please use e.g. edgecolor={colors!r} instead.'
+                )
+            else:
+                if mcolors.is_color_like(colors):
+                    colors = [colors]  # RGB[A] tuple possibly
+                cmap = colors = np.atleast_1d(colors)
+                cmap_kw['listmode'] = 'discrete'
         if cmap is not None:
-            cmap = constructor.Colormap(cmap, **cmap_kw)  # for testing only
+            if plot_lines:
+                cmap_kw['default_luminance'] = constructor.DEFAULT_CYCLE_LUMINANCE
+            cmap = constructor.Colormap(cmap, **cmap_kw)
+            name = re.sub(r'\A_*(.*?)(?:_r|_s|_copy)*\Z', r'\1', cmap.name.lower())
+            if not any(name in opts for opts in pcolors.CMAPS_DIVERGING.items()):
+                autodiverging = False  # avoid auto-truncation of sequential colormaps
 
         # Force default options in special cases
         # NOTE: Delay application of 'sequential', 'diverging', 'cyclic', 'qualitative'
