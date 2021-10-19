@@ -2628,7 +2628,7 @@ class PlotAxes(base.Axes):
         if 'qualitative' in trues or isinstance(cmap, pcolors.DiscreteColormap):
             if discrete is not None and not discrete:  # noqa: E501
                 warnings._warn_proplot(
-                    'Discrete colormaps require discrete=True. Ignoring discrete=False.'
+                    'Qualitative colormaps require discrete=True. Ignoring discrete=False.'  # noqa: E501
                 )
             discrete = True
         if plot_contours:
