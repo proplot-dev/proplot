@@ -330,10 +330,10 @@ vmin, vmax : float, optional
     If `discrete` is ``False`` these are the absolute limits, and if `discrete`
     is ``True`` these are the approximate limits used to automatically determine
     `levels` or `values` lists at "nice" intervals. If `levels` or `values` were
-    already passed as lists, the default `vmin` and `vmax` are the minimum and
-    maximum of the lists. If `robust` was passed, the default `vmin` and `vmax`
-    are some percentile range of the data values. Otherwise, the default `vmin`
-    and `vmax` are the minimum and maximum of the data values.
+    already passed as lists, these are ignored, and `vmin` and `vmax` are set to
+    the minimum and maximum of the lists. If `robust` was passed, the default `vmin`
+    and `vmax` are some percentile range of the data values. Otherwise, the default
+    `vmin` and `vmax` are the minimum and maximum of the data values.
 """
 _manual_levels_docstring = """
 N
@@ -369,14 +369,14 @@ locator : locator-spec, optional
 locator_kw : dict-like, optional
     Keyword arguments passed to `matplotlib.ticker.Locator` class.
 symmetric : bool, optional
-    If ``True``, automatically generated levels are symmetric about zero.
-    Default is always ``False``.
+    If ``True``, the normalization range or discrete colormap levels are
+    symmetric about zero. Default is always ``False``.
 positive : bool, optional
-    If ``True``, automatically generated levels are positive with a minimum at zero.
-    Default is always ``False``.
+    If ``True``, the normalization range or discrete colormap levels are
+    positive with a minimum at zero. Default is always ``False``.
 negative : bool, optional
-    If ``True``, automatically generated levels are negative with a maximum at zero.
-    Default is always ``False``.
+    If ``True``, the normaliation range or discrete colormap levels are
+    negative with a minimum at zero. Default is always ``False``.
 nozero : bool, optional
     If ``True``, ``0`` is removed from the level list. This is mainly useful for
     single-color `~matplotlib.axes.Axes.contour` plots.
@@ -938,8 +938,8 @@ Parameters
 Other parameters
 ----------------
 %(plot.cmap_norm)s
-%(plot.levels_manual)s
 %(plot.vmin_vmax)s
+%(plot.levels_manual)s
 %(plot.levels_auto)s
 %(plot.labels_2d)s
 %(plot.guide)s
@@ -1002,8 +1002,8 @@ Parameters
 Other parameters
 ----------------
 %(plot.cmap_norm)s
-%(plot.levels_manual)s
 %(plot.vmin_vmax)s
+%(plot.levels_manual)s
 %(plot.levels_auto)s
 %(artist.collection_contour)s{edgefix}
 %(plot.labels_2d)s
@@ -1046,8 +1046,8 @@ Parameters
 Other parameters
 ----------------
 %(plot.cmap_norm)s
-%(plot.levels_manual)s
 %(plot.vmin_vmax)s
+%(plot.levels_manual)s
 %(plot.levels_auto)s
 %(artist.collection_pcolor)s
 %(axes.edgefix)s
@@ -1112,8 +1112,8 @@ z : array-like
 Other parameters
 ----------------
 %(plot.cmap_norm)s
-%(plot.levels_manual)s
 %(plot.vmin_vmax)s
+%(plot.levels_manual)s
 %(plot.levels_auto)s
 %(plot.guide)s
 **kwargs
@@ -1152,8 +1152,8 @@ c, color, colors : array-like or color-spec, optional
 Other parameters
 ----------------
 %(plot.cmap_norm)s
-%(plot.levels_manual)s
 %(plot.vmin_vmax)s
+%(plot.levels_manual)s
 %(plot.levels_auto)s
 **kwargs
     Passed to `matplotlib.axes.Axes.{command}`
