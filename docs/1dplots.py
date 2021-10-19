@@ -39,7 +39,7 @@
 # Standardized arguments
 # ----------------------
 #
-# Input arguments passed to 1D plot commands are now uniformly
+# Data arguments passed to 1D plot commands are now uniformly
 # standardized. For each command, you can optionally omit the dependent
 # variable coordinates, in which case they are inferred from the data
 # (see :ref:`xarray and pandas integration <ug_1dintegration>`), or pass
@@ -60,7 +60,7 @@
 #    you wish to restrict the view within a large dataset. To disable
 #    this feature, pass ``inbounds=False`` to the plotting command or set
 #    :rcraw:`axes.inbounds` to ``False`` (see also the :rcraw:`cmap.inbounds`
-#    setting and the :ref:`user guide <ug_apply_cmap>`).
+#    setting and the :ref:`user guide <ug_2dstd>`).
 
 # %%
 import proplot as pplt
@@ -212,8 +212,8 @@ ax.plot(df, cycle=cycle, lw=3, legend='t', legend_kw={'frame': False})
 # %% [raw] raw_mimetype="text/restructuredtext"
 # .. _ug_apply_cycle:
 #
-# Property cycles
-# ---------------
+# Changing the property cycle
+# ---------------------------
 #
 # It is often useful to create on-the-fly `property cycles
 # <https://matplotlib.org/stable/tutorials/intermediate/color_cycle.html#sphx-glr-tutorials-intermediate-color-cycle-py>`__

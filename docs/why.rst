@@ -202,8 +202,10 @@ Links
   see :ref:`this page <ug_scales>`.
 * For more on datetime locators and formatters,
   see :ref:`this page <ug_datetime>`.
-* For more on colormaps and normalizers,
+* For more on colormaps,
   see :ref:`this page <ug_apply_cmap>`.
+* For more on normalizers,
+  see :ref:`this page <ug_apply_norm>`.
 * For more on color cycles, see
   :ref:`this page <ug_apply_cycle>`.
 
