@@ -50,10 +50,14 @@ Features
 Bug fixes
 ---------
 
-* Fix issue where :rcraw:`cmap.autodiverging` application fails when colormap
+* Fix issue where "auto-diverging" application fails when colormap
   is not explicitly specified (:commit:`9ce6c61c`).
+* Fix issue where "auto-diverging" application is not disabled when
+  qualitative colormaps are specified with `colors` (:commit:`44322db2`).
 * Fix issue where ``sequential=True``, ``cyclic=True``, or ``qualitative=True``
-  are ignored when :rcraw:`cmap.autodiverging` is applied (:commit:`cb4910fa`).
+  are ignored when "auto-diverging" is applied (:commit:`cb4910fa`).
+* Fix issues where version 7.0 cyclic/diverging "scientific colour maps" are
+  not internally recognized as cyclic/diverging (:commit:`df11445a`).
 * Fix issue where :rcraw:`cmap.discrete` set to ``False`` is used even
   for contour plots rather than ignored (:commit:`a527cc52`).
 * Fix issue where "cyclic" colormaps are allowed to have `extend` other
@@ -956,7 +960,7 @@ Deprecated
 
 * Rename SciVisColor colormaps from ``Blue1``, ``Blue2``, etc. to plurals ``Blues1``,
   ``Blues2``, etc. to avoid name conflict with open-color colors (:commit:`8be0473f`).
-  Requesting the old names (case-sensitive) redirects to the new names
+* Requesting the old names (case-sensitive) redirects to the new names
   (:commit:`3f0794d0`). This permits making monochromatic open-color maps with e.g.
   ``plot.Colormap('blue9')`` and feels more consistent with ColorBrewer convention of
   using plurals like ``Blues``, ``Reds``, etc.
