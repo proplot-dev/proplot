@@ -2562,9 +2562,9 @@ class PlotAxes(base.Axes):
         # makes single-level single-color contour plots, and since _parse_autolev is
         # only generates approximate level counts, the idea failed anyway. Users should
         # pass their own levels to avoid truncation/cycling in these very special cases.
-        if cmap is not None:
+        if cmap is not None and colors is not None:
             warnings._warn_proplot(
-                f'You specifed both cmap={cmap!r} and the qualitative-colormap '
+                f'You specified both cmap={cmap!s} and the qualitative-colormap '
                 f"colors={colors!r}. Ignoring 'colors'. If you meant to specify the "
                 f'edge color please use ec={colors!r} or edgecolor={colors!r} instead.'
             )
