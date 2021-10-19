@@ -230,10 +230,11 @@ ax.format(xtickminor=False, yformatter='%b', ytickminor=False)
 # You can also create on-the-fly "qualitative" `~proplot.colors.DiscreteColormap`\ s
 # by passing lists of colors to the keyword `c`, `color`, or `colors`.
 #
-# To apply the default sequential, diverging, cyclic, or qualitative colormap to
-# a plot, pass ``sequential=True``, ``diverging=True``, ``cyclic=True``, or
-# ``qualitative=True`` to any plotting command. The default colormaps of each
-# type are :rc:`cmap.sequential`, :rc:`cmap.diverging`, :rc:`cmap.cyclic`, and
+# To apply the default :ref:`sequential, diverging, cyclic <ug_cmaps_included>`,
+# or :ref:`qualitative <ug_cycles_included>` colormap, pass ``sequential=True``,
+# ``diverging=True``, ``cyclic=True``, or ``qualitative=True`` to any plotting
+# command. The default colormaps of each type are specified with the proplot
+# settings :rc:`cmap.sequential`, :rc:`cmap.diverging`, :rc:`cmap.cyclic`, and
 # :rc:`cmap.qualitative`. Unless otherwise specified, the sequential colormap
 # is used with the default (linear) normalizer when data is strictly positive
 # or negative, and the diverging colormap is used when the data limits or
@@ -251,7 +252,7 @@ data = np.cumsum(state.rand(N, N), axis=0)
 # Custom defaults of each type
 pplt.rc['cmap.sequential'] = 'PuBuGn'
 pplt.rc['cmap.diverging'] = 'PiYG'
-pplt.rc['cmap.cyclic'] = 'corkO'
+pplt.rc['cmap.cyclic'] = 'bamO'
 pplt.rc['cmap.qualitative'] = 'flatui'
 
 # Make plots. Note the default behavior is sequential=True or diverging=True
@@ -303,19 +304,19 @@ fig.format(xlabel='xlabel', ylabel='ylabel', suptitle='On-the-fly colormaps')
 #
 # Changing the normalizer
 # -----------------------
-
-# In matplotlib, data values are translated into
-# colormap colors using so-called `colormap "normalizers"
-# <https://matplotlib.org/stable/tutorials/colors/colormapnorms.html>`__.
-# A normalizer can be selected from its "registered" name using the
+#
+# Matplotlib `colormap "normalizers"
+# <https://matplotlib.org/stable/tutorials/colors/colormapnorms.html>`__
+# translate raw data values into normalized colormap indices. In proplot,
+# you can select the normalizer from its "registered" name using the
 # `~proplot.constructor.Norm` :ref:`constructor function <why_constructor>`. You
 # can also build a normalizer on-the-fly using the `norm` and `norm_kw` keywords,
-# again available with most `~proplot.axes.PlotAxes` 2D plot commands.
+# available with most `~proplot.axes.PlotAxes` 2D plot commands.
 # If you want to work with the normalizer classes directly, they are available in
 # the top-level namespace (e.g., ``norm=pplt.LogNorm(...)`` is allowed). To
 # explicitly set the normalization range, you can pass the usual `vmin` and `vmax`
-# keywords to the plotting command. See the :ref:`next section <ug_discrete>` for
-# more details on colormap normalization.
+# keywords to the plotting command. See :ref:`below <ug_discrete>` for more
+# details on colormap normalization in proplot.
 
 # %%
 import proplot as pplt
@@ -343,15 +344,15 @@ ax.pcolormesh(data, cmap='magma', norm='log', colorbar='b')
 # Special normalizers
 # -------------------
 #
-# Proplot includes two new "continuous" normalizers. `~proplot.colors.SegmentedNorm`
-# provides even color gradations with respect to *index* for an arbitrary
-# monotonically increasing or decreasing list of levels. This is automatically
-# applied if you pass unevenly spaced `levels` to a plotting command, or it can be
-# manually applied using e.g. ``norm='segmented'``. This can be useful for datasets
-# with unusual statistical distributions or spanning a wide range of magnitudes.
+# Proplot includes two new :ref:`"continuous" normalizers <ug_norm>`.
+# `~proplot.colors.SegmentedNorm` provides even color gradations with respect to
+# index for an arbitrary monotonically increasing or decreasing list of levels. This is
+# automatically applied if you pass unevenly spaced `levels` to a plotting command, or
+# it can be manually applied using e.g. ``norm='segmented'``. This can be useful for
+# datasets with unusual statistical distributions or spanning many orders of magnitudes.
 #
-# The `~proplot.colors.DivergingNorm` normalizer ensures the colormap midpoint lies
-# on some *central* data value (usually 0), even if `vmin`, `vmax`, or `levels`
+# The `~proplot.colors.DivergingNorm` normalizer ensures that colormap midpoints lie
+# on some central data value (usually ``0``), even if `vmin`, `vmax`, or `levels`
 # are asymmetric with respect to the central value. This is automatically applied
 # if your data contains negative and positive values (see :ref:`below <ug_autonorm>`),
 # or it can be manually applied using e.g. ``diverging=True`` or ``norm='diverging'``.
@@ -365,7 +366,7 @@ ax.pcolormesh(data, cmap='magma', norm='log', colorbar='b')
 #   should be used with care, as it may lead you to misinterpret your data.
 #
 # The below examples demonstrate how these normalizers
-# affect the interpretation of colormap plots.
+# affect the interpretation of different datasets.
 
 # %%
 import proplot as pplt
@@ -421,18 +422,17 @@ for data, mode, fair in zip(
 # ---------------
 #
 # By default, proplot uses `~proplot.colors.DiscreteNorm` to "discretize"
-# the possible colormap colors for contour and pseudocolor plotting commands,
-# including `~proplot.axes.PlotAxes.contourf` and `~proplot.axes.PlotAxes.pcolor`.
+# the possible colormap colors for contour and pseudocolor plotting commands
+# (e.g., `~proplot.axes.PlotAxes.contourf`, `~proplot.axes.PlotAxes.pcolor`).
 # This is analogous to `matplotlib.colors.BoundaryNorm`, except
 # `~proplot.colors.DiscreteNorm` can be paired with arbitrary
-# continuous normalizers like `~matplotlib.colors.LogNorm`,
-# `~proplot.colors.DivergingNorm`, or `~proplot.colors.SegmentedNorm`.
+# continuous normalizers specified by `norm` (see :ref:`above <ug_norm>`).
 # Discrete color levels can help readers discern exact numeric values and
 # tend to reveal qualitative structure in the data. `~proplot.colors.DiscreteNorm`
 # also repairs the colormap end-colors by ensuring the following conditions are met:
 #
-# #. All colormaps always span the *entire color range*,
-#    independent of the `extend` setting.
+# #. All colormaps always span the *entire color range*
+#    regardless of the `extend` parameter.
 # #. Cyclic colormaps always have *distinct color levels*
 #    on either end of the colorbar.
 #
@@ -445,13 +445,13 @@ for data, mode, fair in zip(
 # keywords (or to the `N` keyword) to automatically generate approximately that many
 # level edges or centers at "nice" intervals. The algorithm used to generate levels
 # is similar to matplotlib's algorithm for selecting contour levels. The default
-# number of levels is controlled by :rcraw:`cmap.levels`, and the algorithm is
-# constrained by the keywords `vmin`, `vmax`, `locator`, and `locator_kw` -- for
+# number of levels is controlled by :rcraw:`cmap.levels`, and the level selection
+# is constrainted by the keywords `vmin`, `vmax`, `locator`, and `locator_kw` -- for
 # example, ``vmin=100`` ensures the minimum level is greater than or equal to ``100``,
-# and ``locator=5`` ensures a level step size of 5 (see the :ref:`axis locators
-# <ug_locators>` section for details). You can also use the keywords `positive`,
-# `negative`, and `symmetric` to ensure that your levels are strictly positive,
-# strictly negative, or symmetric about zero, or use the `nozero` keyword to remove
+# and ``locator=5`` ensures a level step size of 5 (see :ref:`this section
+# <ug_locators>` for more on locators). You can also use the keywords `negative`,
+# `positive`, or `symmetric` to ensure that your levels are strictly negative,
+# positive, or symmetric about zero, or use the `nozero` keyword to remove
 # the zero level (useful for single-color `~proplot.axes.PlotAxes.contour` plots).
 
 # %%
@@ -529,12 +529,11 @@ for i, extend in enumerate(('min', 'max', 'neither', 'both')):
 #
 # Additionally, `similar to xarray
 # <http://xarray.pydata.org/en/stable/user-guide/plotting.html#colormaps>`__,
-# proplot can automatically detect "diverging" datasets. That is, the
-# `~proplot.axes.PlotAxes` 2D plot commands will by default apply the diverging colormap
-# :rc:`cmap.diverging` (rather than the default colormap :rc:`cmap.sequential`) and
-# the diverging normalizer `~proplot.colors.DivergingNorm` (rather than the
-# linear normalizer `~matplotlib.colors.Normalize` -- see :ref:`above <ug_norm>`)
-# if the following conditions are met:
+# proplot can automatically detect "diverging" datasets. By default, the
+# `~proplot.axes.PlotAxes` 2D plot commands will apply the diverging colormap
+# :rc:`cmap.diverging` (rather than :rc:`cmap.sequential`) and the diverging
+# normalizer `~proplot.colors.DivergingNorm` (rather than `~matplotlib.colors.Normalize`
+# -- see :ref:`above <ug_norm>`) if the following conditions are met:
 #
 # #. If discrete levels are enabled (see :ref:`above <ug_discrete>`) and the
 #    level list includes at least 2 negative and 2 positive values.

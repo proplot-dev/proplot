@@ -223,8 +223,8 @@ fig.save('~/example4.png')
 # `two different interfaces <https://matplotlib.org/stable/api/index.html>`__:
 # an object-oriented interface and a MATLAB-style `~matplotlib.pyplot` interface
 # (which uses the object-oriented interface internally). Plotting with proplot is just
-# like plotting with matplotlib's *object-oriented* interface. Proplot builds upon
-# the `proplot.axes.Axes` class with an intermediate `proplot.axes.PlotAxes` subclass.
+# like plotting with matplotlib's *object-oriented* interface. The added plotting
+# features are implemented with an intermediate `proplot.axes.PlotAxes` subclass.
 # This subclass adds several new plotting commands and adds new features to existing
 # commands. These additions do not change the usage or syntax of existing commands,
 # which means a shallow learning curve for the average matplotlib user.
@@ -275,12 +275,12 @@ fig.colorbar(m, loc='b', label='label')
 # arguments accepted by ``format`` fall into the following groups:
 #
 # * Figure settings. These are related to row labels, column labels, and
-#   figure "super" titles -- for example, ``fig.format(suptitle='Super title')``
-#   changes the "super" title. See e.g. `proplot.figure.Figure.format` for details.
+#   figure "super" titles -- for example, ``fig.format(suptitle='Super title')``.
+#   See `proplot.figure.Figure.format` for details.
 #
 # * General axes settings. These are related to background patches,
 #   a-b-c labels, and axes titles -- for example, ``ax.format(title='Title')``
-#   changes the axes title. See e.g. `proplot.axes.Axes.format` for details.
+#   See `proplot.axes.Axes.format` for details.
 #
 # * Cartesian axes settings (valid only for `~proplot.axes.CartesianAxes`).
 #   These are related to *x* and *y* axis ticks, spines, bounds, and labels --
@@ -363,8 +363,7 @@ axs.format(
 # * `~proplot.gridspec.SubplotGrid` permits array-like 2D indexing, e.g.
 #   ``axs[1, 0]``. Indexing the `~proplot.gridspec.SubplotGrid` is similar
 #   to indexing a `~proplot.gridspec.GridSpec`. The result is a
-#   `~proplot.gridspec.SubplotGrid` of subplots that occupy the indexed
-#   `~proplot.gridspec.GridSpec` slot(s).
+#   `~proplot.gridspec.SubplotGrid` of subplots that occupy the indexed slot(s).
 # * `~proplot.gridspec.SubplotGrid` permits list-like 1D indexing, e.g. ``axs[0]``.
 #   The default order can be switched from row-major to column-major by passing
 #   ``order='F'`` to `~proplot.ui.subplots`.
@@ -376,10 +375,13 @@ axs.format(
 # `~proplot.figure.Figure.add_subplot`, a `~proplot.gridspec.SubplotGrid` containing
 # the numbered subplots is available via the `proplot.figure.Figure.subplotgrid`
 # property. `~proplot.gridspec.SubplotGrid` is especially useful because it lets you
-# call ``format``, ``colorbar``, ``legend``, ``panel``, ``inset``, and the various
-# twin axis commands simultaneously for all subplots in the grid. In the below
-# example, we use `proplot.gridspec.SubplotGrid.format` on the grid returned
-# by `~proplot.ui.subplots` to format several subplots all at once.
+# call e.g. `~proplot.gridspec.SubplotGrid.format`,
+# `~proplot.gridspec.SubplotGrid.panel_axes`,
+# `~proplot.gridspec.SubplotGrid.inset_axes`,
+# `~proplot.gridspec.SubplotGrid.altx`,
+# and `~proplot.gridspec.SubplotGrid.alty` for all subplots in the grid at once.
+# In the below example, we use `proplot.gridspec.SubplotGrid.format` on the grid
+# returned by `~proplot.ui.subplots` to format different groups of subplots.
 
 # %%
 import proplot as pplt

@@ -297,10 +297,10 @@ pplt.rc.reset()
 # `~matplotlib.spines.Spine.set_position` value, e.g. ``'zero'`` or
 # ``('axes', 1.5)``. The top or right spine is used when the coordinate is
 # more than halfway across the axes. This is often convenient when passing
-# e.g. `loc` or `spineloc` to :ref:`"alternate" axes commands <ug_alt>`.
-# These keywords provide the functionality of matplotlib's
-# `~matplotlib.axis.YAxis.tick_left`, `~matplotlib.axis.YAxis.tick_right`,
-# `~matplotlib.axis.XAxis.tick_top`, and `~matplotlib.axis.XAxis.tick_bottom`,
+# e.g. `loc` to :ref:`"alternate" axes commands <ug_alt>`. These keywords
+# provide the functionality of matplotlib's `~matplotlib.axis.YAxis.tick_left`,
+# `~matplotlib.axis.YAxis.tick_right`, `~matplotlib.axis.XAxis.tick_top`, and
+# `~matplotlib.axis.XAxis.tick_bottom`, and `~matplotlib.spines.Spine.set_position`,
 # but with additional flexibility.
 
 # %%
