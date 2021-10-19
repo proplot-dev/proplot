@@ -2627,8 +2627,8 @@ class PlotAxes(base.Axes):
                 _, counts = np.unique(np.sign(levels), return_counts=True)
                 if counts[counts > 1].size > 1:
                     isdiverging = True
-        if not trues and isdiverging:
-            trues['diverging'] = True
+        if not trues and isdiverging and modes['diverging'] is None:
+            trues['diverging'] = modes['diverging'] = True
 
         # Create the continuous normalizer. Only use SegmentedNorm if necessary
         # NOTE: DiscreteNorm does not currently support vmin and vmax different from
@@ -2653,8 +2653,9 @@ class PlotAxes(base.Axes):
             norm.vmin, norm.vmax = vmin, vmax
         else:
             norm = constructor.Norm(norm, vmin=vmin, vmax=vmax, **norm_kw)
-        if not trues and autodiverging and isinstance(norm, pcolors.DivergingNorm):
-            trues['diverging'] = True  # can only happen if skip_autolev=True
+        isdiverging = autodiverging and isinstance(norm, pcolors.DivergingNorm)
+        if not trues and isdiverging and modes['diverging'] is None:
+            trues['diverging'] = modes['diverging'] = True
 
         # Create the final colormap
         if cmap is None:
