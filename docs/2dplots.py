@@ -267,20 +267,21 @@ fig = pplt.figure(refwidth=2.3, span=False)
 
 # Different normalizers
 pplt.rc['cmap.sequential'] = 'magma'
-ax = fig.subplot(gs[0, 0], title='Linear normalizer')
+ax = fig.subplot(gs[0, 0], title='Default linear normalizer')
 ax.pcolormesh(data, colorbar='b')
-ax = fig.subplot(gs[0, 1], title='Logarithmic normalizer')
+ax = fig.subplot(gs[0, 1], title="Logarithmic normalizer with norm='log'")
 ax.pcolormesh(data, norm='log', colorbar='b')
 
 # Continuous "diverging" colormaps
 pplt.rc['cmap.diverging'] = 'IceFire'
 data = np.log(data) - 4
-ax = fig.subplot(gs[1, 0], title='Preset continuous colormap')
+ax = fig.subplot(gs[1, 0], title='Preset colormap with diverging=True')
 ax.pcolormesh(
     data, colorbar='b',
-    diverging=True,  # use rc['cmap.diverging']
+    diverging=True,
+    # use rc['cmap.diverging']
 )
-ax = fig.subplot(gs[1, 1], title='On-the-fly continuous colormap')
+ax = fig.subplot(gs[1, 1], title='On-the-fly diverging colormap')
 ax.pcolormesh(
     data, colorbar='b',
     cmap=('cobalt', 'white', 'violet red'),
@@ -290,12 +291,12 @@ ax.pcolormesh(
 # Discrete "qualitative" colormaps
 pplt.rc['cmap.qualitative'] = 'tableau'
 data = data + 4
-ax = fig.subplot(gs[2, 0], title='Preset discrete colormap')
+ax = fig.subplot(gs[2, 0], title='Preset colormap with qualitative=True')
 ax.pcolormesh(
     data, colorbar='b',
     qualitative=True,  # use rc['cmap.qualitative']
 )
-ax = fig.subplot(gs[2, 1], title='On-the-fly discrete colormap')
+ax = fig.subplot(gs[2, 1], title='On-the-fly qualitative colormap')
 ax.pcolormesh(
     data, colorbar='b', colors=['red5', 'blue5', 'yellow5', 'gray5']
 )
@@ -383,14 +384,12 @@ fig = pplt.figure(refwidth=2.4, right=2)
 fig.format(suptitle='DiscreteNorm end-color standardization')
 
 # Cyclic colorbar with distinct end colors
-pplt.rc['cmap.cyclic'] = 'twilight_s'
 ax = fig.subplot(gs[0, 1:3], title='distinct "cyclic" end colors')
 ax.pcolormesh(
     data, levels=levels, extend='neither',
     colorbar='b', colorbar_kw={'locator': 90},
     cyclic=True,  # use rc['cmap.cyclic']
 )
-pplt.rc.reset()
 
 # Colorbars with different extend values
 for i, extend in enumerate(('min', 'max', 'neither', 'both')):
