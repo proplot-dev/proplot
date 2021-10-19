@@ -696,7 +696,7 @@ def Colormap(
     else:
         cmap.name = name
     if not isinstance(name, str):
-        raise ValueError('Colormap name must be a string.')
+        raise ValueError('The colormap name must be a string.')
     pcolors._cmap_database[name] = cmap
 
     # Save the colormap

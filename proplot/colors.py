@@ -2371,26 +2371,28 @@ class DiscreteNorm(mcolors.BoundaryNorm):
         --------
         proplot.constructor.Norm
         """
-        # Validate input arguments
+        # Parse input arguments
         # NOTE: This must be a subclass BoundaryNorm, so ColorbarBase will
         # detect it... even though we completely override it.
+        if step is None:
+            step = 1.0
+        if unique is None:
+            unique = 'neither'
         if not norm:
             norm = mcolors.Normalize()
         elif isinstance(norm, mcolors.BoundaryNorm):
             raise ValueError('Normalizer cannot be instance of BoundaryNorm.')
         elif not isinstance(norm, mcolors.Normalize):
             raise ValueError('Normalizer must be instance of Normalize.')
-        if unique is None:
-            unique = 'neither'
-        uniques = ('both', 'min', 'max', 'neither')
+        uniques = ('min', 'max', 'both', 'neither')
         if unique not in uniques:
             raise ValueError(
-                f'Unknown unique option {unique!r}. Options are: '
+                f'Unknown unique setting {unique!r}. Options are: '
                 + ', '.join(map(repr, uniques))
                 + '.'
             )
 
-        # Ensure monotonicaly increasing levels and add built-in attributes
+        # Process level boundaries and centers
         # NOTE: Currently there are no normalizers that reverse direction
         # of levels. Tried that with SegmentedNorm but colorbar ticks fail.
         # Instead user-reversed levels will always get passed here just as
@@ -2401,8 +2403,11 @@ class DiscreteNorm(mcolors.BoundaryNorm):
         vmin = norm.vmin = np.min(levels)
         vmax = norm.vmax = np.max(levels)
         vcenter = getattr(norm, 'vcenter', None)
+        mids = np.zeros((levels.size + 1,))
+        mids[1:-1] = 0.5 * (levels[1:] + levels[:-1])
+        mids[0], mids[-1] = mids[1], mids[-2]
 
-        # Get color coordinates for each bin, plus two extra for out-of-bounds
+        # Adjust color coordinate for each bin
         # For same out-of-bounds colors, looks like [0 - eps, 0, ..., 1, 1 + eps]
         # For unique out-of-bounds colors, looks like [0 - eps, X, ..., 1 - X, 1 + eps]
         # NOTE: Critical that we scale the bin centers in "physical space" and *then*
@@ -2411,11 +2416,6 @@ class DiscreteNorm(mcolors.BoundaryNorm):
         # minimum 0 maximum 1, would mess up color distribution. However this is still
         # not perfect... get asymmetric color intensity either side of central point.
         # So we add special handling for diverging norms below to improve symmetry.
-        mids = np.zeros((levels.size + 1,))
-        mids[1:-1] = 0.5 * (levels[1:] + levels[:-1])
-        mids[0], mids[-1] = mids[1], mids[-2]
-        if step is None:
-            step = 1.0
         if unique in ('min', 'both'):
             mids[0] += step * (mids[1] - mids[2])
         if unique in ('max', 'both'):
@@ -2423,14 +2423,12 @@ class DiscreteNorm(mcolors.BoundaryNorm):
         if vcenter is None:
             mids = _interpolate_basic(mids, np.min(mids), np.max(mids), vmin, vmax)
         else:
-            mids = mids.copy()
-            ipts = (np.min(mids), vcenter, vmin, vcenter)
-            mids[mids < vcenter] = _interpolate_basic(mids[mids < vcenter], *ipts)
-            ipts = (vcenter, np.max(mids), vcenter, vmax)
-            mids[mids >= vcenter] = _interpolate_basic(mids[mids >= vcenter], *ipts)
-        dest = norm(mids)
-        dest[0] -= 1e-10  # dest guaranteed to be numpy.float64
-        dest[-1] += 1e-10
+            mids[mids < vcenter] = _interpolate_basic(
+                mids[mids < vcenter], np.min(mids), vcenter, vmin, vcenter
+            )
+            mids[mids >= vcenter] = _interpolate_basic(
+                mids[mids >= vcenter], vcenter, np.max(mids), vcenter, vmax
+            )
 
         # Attributes
         # NOTE: If clip is True, we clip values to the centers of the end bins
@@ -2439,6 +2437,9 @@ class DiscreteNorm(mcolors.BoundaryNorm):
         # NOTE: With unique='min' the minimimum in-bounds and out-of-bounds
         # colors are the same so clip=True will have no effect. Same goes
         # for unique='max' with maximum colors.
+        dest = norm(mids)
+        dest[0] -= 1e-10  # dest guaranteed to be numpy.float64
+        dest[-1] += 1e-10
         self._descending = descending
         self._bmin = np.min(mids)
         self._bmax = np.max(mids)
