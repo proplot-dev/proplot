@@ -28,16 +28,46 @@ Version 1.0.0 (2022-XX-XX)
 This will be published when more comprehensive testing is completed
 and stability is improved.
 
-Version 0.10.0 (2021-XX-XX)
+Version 0.9.5 (2021-XX-XX)
 ==========================
 
-Internals
+Features
+--------
+
+* Switch default :rcraw:`cmap.diverging` from ``'NegPos'`` to the more
+  contrasty and commonly-used ``'RdBu_r'`` (:commit:`b0b8557f`).
+* Switch default :rcraw:`cmap.qualitative` from ``'flatui'`` to ``'colorblind10'``,
+  consistent with the default color cycle ``'colorblind'`` (:commit:`b0b8557f`).
+* Apply ``positive=True``, ``negative=True``, and ``symmetric=True`` even when
+  ``discrete=False`` by modifying `vmin` and `vmax` (:commit:`fbca1063`).
+* Improve ``positive=True``, ``negative=True``, and ``symmetric=True`` behavior
+  when ``discrete=True`` by modifying `vmin` and `vmax` rather than filtering
+  level lists (:commit:`fbca1063`). This fixes issues where too few levels are made.
+* Improve default string representation of axes generated with
+  `~proplot.axes.CartesianAxes.altx`, `~proplot.axes.CartesianAxes.alty`,
+  or `~proplot.axes.CartesianAxes.inset_axes` (:commit:`a570fca7`).
+
+Bug fixes
 ---------
 
-* Use dedicated classes for inset colorbars and
-  centered-row legends.
-* Add unit tests with image comparisons powered by
-  `pytest-mpl <https://pypi.org/project/pytest-mpl/>`__.
+* Fix issue where :rcraw:`cmap.autodiverging` application fails when colormap
+  is not explicitly specified (:commit:`9ce6c61c`).
+* Fix issue where ``sequential=True``, ``cyclic=True``, or ``qualitative=True``
+  are ignored when :rcraw:`cmap.autodiverging` is applied (:commit:`cb4910fa`).
+* Fix issue where :rcraw:`cmap.discrete` set to ``False`` is used even
+  for contour plots rather than ignored (:commit:`a527cc52`).
+* Fix issue where "cyclic" colormaps are allowed to have `extend` other
+  than ``'neither'`` when specified with ``cyclic=True`` rather than
+  passing a cyclic `cmap` (:commit:`e91d9bf3`).
+* Fix issue where "qualitative" colormaps are allowed to have `discrete`
+  set to ``False`` when specified with ``qualitative=True`` rather than
+  passing a discrete `cmap` (:commit:`789f224b`).
+* Fix issue where `~proplot.colors.SegmentedNorm` cannot be specified with
+  ``norm='segmented'`` and ``norm_kw={'levels': level}`` when `discrete`
+  is also disabled (:commit:`a4f6e838`).
+* Fix issue where more than one of mutually exclusive `sequential`, `diverging`,
+  `cyclic`, and `qualitative` settings can be set to ``True`` and others
+  are silently ignored without warning (:commit:`f14aa263`).
 
 Version 0.9.4 (2021-10-16)
 ==========================
@@ -50,9 +80,6 @@ Features
 * Permit passing ``format`` arguments for different projections during the same
   `proplot.gridspec.SubplotGrid.format` or `proplot.figure.Figure.format` call
   (:commit:`f5e25598`). Invalid projection-specific keywords are ignored.
-* Improve confusing behavior by making ``[loninline|latinline|inlinelabels]=True``
-  passed to `~proplot.axes.GeoAxes.format` imply ``[lonlabels|latlabels|labels]=True``
-  unless specified otherwise (:commit:`ed372d64`).
 * Update `Scientific Colour maps <https://www.fabiocrameri.ch/colourmaps/>`__
   to version 7.0 (adds ``'bam'``, ``'bamO'``, ``'batlowK'``, ``'batlowW'``,
   ``'bukavu'``, ``'fes'``, and ``'vanimo'``) (:commit:`c172a74b`).
@@ -66,6 +93,11 @@ Features
 * Automatically use the top/right spine rather than the bottom/left spine when setting
   `xspineloc` or `yspineloc` to the position ``('axes', coord)`` or ``('data', coord)``
   when ``coord`` is more than halfway across the axis (:commit:`a2396afe`).
+* Passing ``[loninline|latinline|inlinelabels]=True`` to `~proplot.axes.GeoAxes.format`
+  now implies ``[lonlabels|latlabels|labels]=True`` unless specified otherwise
+  (:commit:`ed372d64`). This fixes annoying redundancy when calling ``format``.
+* Improve default `~proplot.colors.ContinuousColormap.reversed` and
+  `~proplot.colors.ContinuousColormap.shifted` colormap names (:commit:`a4218e09`).
 
 Bug fixes
 ---------
@@ -88,15 +120,13 @@ Bug fixes
 * Fix issue where registered colormaps with trailing ``_r`` or ``_s`` cannot be
   retrieved due to automatic reversing/shifting feature (:commit:`345680c9`).
 
-Internals
----------
+Documentation
+-------------
 
 * Populate docs with examples of passing ``format`` arguments to figure and axes
   instantiation commands (e.g. ``pplt.figure``, ``fig.subplot``) (:commit:`803a889f`).
 * Improve website colormap and cycle table rendering time by rasterizing colorbar
   data and add `rasterize` as optional keyword arg (:commit:`1a875fc2`).
-* Improve default `~proplot.colors.ContinuousColormap.reversed` and
-  `~proplot.colors.ContinuousColormap.shifted` colormap names (:commit:`a4218e09`).
 
 Version 0.9.3 (2021-10-09)
 ==========================
@@ -1867,8 +1897,8 @@ Version 0.2.5 (2019-12-07)
 Features
 --------
 
-* Much better `~proplot.axistools.CutoffScale` algorithm, permit arbitrary
-  cutoffs (:pr:`83`).
+* Improve `~proplot.axistools.CutoffScale` algorithm,
+  permit arbitrary cutoffs (:pr:`83`).
 
 Version 0.2.4 (2019-12-07)
 ==========================
@@ -1878,7 +1908,8 @@ Deprecated
 
 * Rename `ColorCacheDict` to `~proplot.styletools.ColorDict`
   (:commit:`aee7d1be`).
-* Rename `colors` to `~proplot.styletools.Colors` (:commit:`aee7d1be`)
+* Rename lower-case `colors` to `~proplot.styletools.Colors`
+  (:commit:`aee7d1be`)
 * Remove `fonts_system` and `fonts_proplot`, rename `colordict` to
   `~proplot.styletools.colors`, make top-level variables more robust
   (:commit:`861583f8`).
@@ -1886,12 +1917,12 @@ Deprecated
 Documentation
 -------------
 
-* Params table for `~proplot.styletools.show_fonts` (:commit:`861583f8`).
+* Add params table for `~proplot.styletools.show_fonts` (:commit:`861583f8`).
 
 Internals
 ---------
 
-* Improvements to `~proplot.styletools.register_colors`.
+* Improve `~proplot.styletools.register_colors` internals.
 
 Version 0.2.3 (2019-12-05)
 ==========================
