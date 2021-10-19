@@ -61,8 +61,16 @@ REGEX_ADJUST = re.compile(r'\A(light|dark|medium|pale|charcoal)?\s*(gr[ea]y[0-9]
 
 # Colormap constants
 CMAPS_CYCLIC = tuple(  # cyclic colormaps loaded from rgb files
-    key.lower()
-    for key in ('Phase', 'MonoCycle', 'romaO', 'brocO', 'corkO', 'vikO', 'twilight')
+    key.lower() for key in (
+        'MonoCycle',
+        'twilight',
+        'Phase',
+        'romaO',
+        'brocO',
+        'corkO',
+        'vikO',
+        'bamO',
+    )
 )
 CMAPS_DIVERGING = {  # mirrored dictionary mapping for reversed names
     key.lower(): value.lower()
@@ -94,9 +102,11 @@ for _cmap_diverging in (  # remaining diverging cmaps (see PlotAxes._parse_cmap)
     'broc',
     'cork',
     'vik',
-    'berlin',
+    'bam',
     'lisbon',
     'tofino',
+    'berlin',
+    'vanimo',
 ):
     CMAPS_DIVERGING[_cmap_diverging.lower()] = _cmap_diverging.lower()
 CMAPS_REMOVED = {
