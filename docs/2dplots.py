@@ -221,24 +221,26 @@ ax.format(xtickminor=False, yformatter='%b', ytickminor=False)
 # Changing the colormap
 # ---------------------
 #
-# It is often useful to create `~proplot.colors.ContinuousColormap`\ s
-# on-the-fly, without explicitly calling the `~proplot.constructor.Colormap`
+# It is often useful to create custom colormaps on-the-fly,
+# without explicitly calling the `~proplot.constructor.Colormap`
 # :ref:`constructor function <why_constructor>`. You can do so using the `cmap`
 # and `cmap_kw` keywords, available with most `~proplot.axes.PlotAxes` 2D plot
 # commands. For example, to create and apply a monochromatic colormap, you can use
-# ``cmap='color_name'`` (see the :ref:`colormaps section <ug_cmaps>` for more info).
+# ``cmap='color_name'`` (see the :ref:`colormaps section <ug_cmaps_new>` for more info).
 # You can also create on-the-fly "qualitative" `~proplot.colors.DiscreteColormap`\ s
 # by passing lists of colors to the keyword `c`, `color`, or `colors`.
 #
-# To apply the default :ref:`sequential, diverging, cyclic <ug_cmaps_included>`,
-# or :ref:`qualitative <ug_cycles_included>` colormap, pass ``sequential=True``,
+# Proplot defines :ref:`global defaults <ug_rc>` for four different colormap
+# types: :ref:`sequential <ug_cmaps_included>` (setting :rcraw:`cmap.sequential`),
+# :ref:`diverging <ug_cmaps_included>` (setting :rcraw:`cmap.diverging`),
+# :ref:`cyclic <ug_cmaps_included>` (setting :rcraw:`cmap.cyclic`),
+# and :ref:`qualitative <ug_cycles_included>` (setting :rcraw:`cmap.qualitative`).
+# To use the default colormap for a given type, pass ``sequential=True``,
 # ``diverging=True``, ``cyclic=True``, or ``qualitative=True`` to any plotting
-# command. The default colormaps of each type are specified with the proplot
-# settings :rc:`cmap.sequential`, :rc:`cmap.diverging`, :rc:`cmap.cyclic`, and
-# :rc:`cmap.qualitative`. Unless otherwise specified, the sequential colormap
-# is used with the default (linear) normalizer when data is strictly positive
-# or negative, and the diverging colormap is used when the data limits or
-# colormap levels cross zero (see :ref:`below <ug_autonorm>`).
+# command. If the colormap type is not explicitly specified, `sequential` is
+# used with the default linear normalizer when data is strictly positive
+# or negative, and `diverging` is used with the :ref:`diverging normalizer <ug_norm>`
+# when the data limits or colormap levels cross zero (see :ref:`below <ug_autonorm>`).
 
 # %%
 import proplot as pplt

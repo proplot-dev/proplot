@@ -215,10 +215,10 @@ ax.plot(df, cycle=cycle, lw=3, legend='t', legend_kw={'frame': False})
 # Changing the property cycle
 # ---------------------------
 #
-# It is often useful to create on-the-fly `property cycles
+# It is often useful to create custom `property cycles
 # <https://matplotlib.org/stable/tutorials/intermediate/color_cycle.html#sphx-glr-tutorials-intermediate-color-cycle-py>`__
-# and use different property cycles for different plot elements. You can create and
-# apply property cycles on-the-fly using the `cycle` and `cycle_kw` keywords, available
+# on-the-fly and use different property cycles for different plot elements.
+# You can do so using the `cycle` and `cycle_kw` keywords, available
 # with most `~proplot.axes.PlotAxes` 1D plot commands. `cycle` and `cycle_kw` are
 # passed to the `~proplot.constructor.Cycle` :ref:`constructor function
 # <why_constructor>`, and the resulting property cycle is used for the plot. You
