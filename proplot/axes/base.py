@@ -2081,7 +2081,8 @@ class Axes(maxes.Axes):
         return locator, formatter, minorlocator, kwargs
 
     def _parse_colorbar_mappable(
-        self, mappable, values=None, *, norm=None, norm_kw=None, **kwargs
+        self, mappable, values=None, *,
+        norm=None, norm_kw=None, vmin=None, vmax=None, **kwargs
     ):
         """
         Generate a mappable from flexible non-mappable input. Useful in bridging
@@ -2169,7 +2170,9 @@ class Axes(maxes.Axes):
         # NOTE: Set default rotation if 'values' were string labels
         norm_kw = norm_kw or {}
         norm = norm or 'linear'
-        norm = constructor.Norm(norm, **norm_kw)
+        vmin = _not_none(vmin=vmin, norm_kw_vmin=norm_kw.pop('vmin', None), default=0)
+        vmax = _not_none(vmax=vmax, norm_kw_vmax=norm_kw.pop('vmax', None), default=1)
+        norm = constructor.Norm(norm, vmin=vmin, vmax=vmax, **norm_kw)
         formatter = None
         if locator is not None:
             if any(isinstance(value, str) for value in locator):
