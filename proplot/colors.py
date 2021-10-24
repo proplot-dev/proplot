@@ -2408,10 +2408,9 @@ class DiscreteNorm(mcolors.BoundaryNorm):
         # Instead user-reversed levels will always get passed here just as
         # they are passed to SegmentedNorm inside plot.py
         levels, descending = _sanitize_levels(levels)
-        bins, _ = _sanitize_levels(norm(levels))
-        bins = norm(levels)
         vmin = norm.vmin = np.min(levels)
         vmax = norm.vmax = np.max(levels)
+        bins, _ = _sanitize_levels(norm(levels))
         vcenter = getattr(norm, 'vcenter', None)
         mids = np.zeros((levels.size + 1,))
         mids[1:-1] = 0.5 * (levels[1:] + levels[:-1])
