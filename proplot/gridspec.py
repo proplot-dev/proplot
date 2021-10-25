@@ -1129,6 +1129,8 @@ class GridSpec(mgridspec.GridSpec):
         # and determine physical grid spacing.
         self._update_params(**kwargs)
         fig = self.figure
+        if fig is None:
+            return
         for ax in fig.axes:
             if not isinstance(ax, maxes.SubplotBase):
                 continue
