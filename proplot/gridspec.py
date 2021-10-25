@@ -1000,6 +1000,8 @@ class GridSpec(mgridspec.GridSpec):
         --------
         GridSpec.update
         """
+        # WARNING: For some reason copy.copy() fails. Updating e.g. wpanels
+        # and hpanels on the copy also updates this object. No idea why.
         nrows, ncols = self.get_subplot_geometry()
         gs = GridSpec(nrows, ncols)
         hidxs = self._get_subplot_indices('h')
@@ -1014,6 +1016,13 @@ class GridSpec(mgridspec.GridSpec):
         gs._wspace = [self._wspace[i] for i in widxs]
         gs._hspace_default = [self._hspace_default[i] for i in hidxs]
         gs._wspace_default = [self._wspace_default[i] for i in widxs]
+        for key in (
+            'left', 'right', 'bottom', 'top', 'labelspace', 'titlespace',
+            'xtickspace', 'ytickspace', 'xticklabelspace', 'yticklabelspace',
+            'outerpad', 'innerpad', 'panelpad', 'hequal', 'wequal',
+        ):
+            value = getattr(self, '_' + key)
+            setattr(gs, '_' + key, value)
         return gs
 
     def get_geometry(self):
