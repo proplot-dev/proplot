@@ -229,14 +229,18 @@ class GridSpec(mgridspec.GridSpec):
         proplot.figure.Figure.add_subplots
         matplotlib.gridspec.GridSpec
 
-        Note
-        ----
+        Important
+        ---------
         Adding axes panels, axes or figure colorbars, and axes or figure legends
-        quietly augments the gridspec geometry by inserting "panel slots". However
+        quietly augments the gridspec geometry by inserting "panel slots". However,
         subsequently indexing the gridspec with ``gs[num]`` or ``gs[row, col]`` will
         ignore the "panel slots". This permits adding new subplots by passing
         ``gs[num]`` or ``gs[row, col]`` to `~proplot.figure.Figure.add_subplot`
-        even in the presence of panels. See `~GridSpec.__getitem__` for details.
+        even in the presence of panels (see `~GridSpec.__getitem__` for details).
+        This also means that each `GridSpec` is `~proplot.figure.Figure`-specific,
+        i.e. it can only be used once (if you are working with `GridSpec` instances
+        manually and want the same geometry for multiple figures, you must create
+        a copy with `GridSpec.copy` before working on the subsequent figure).
         """
         # Gridspec properties
         self._nrows = nrows
@@ -990,11 +994,19 @@ class GridSpec(mgridspec.GridSpec):
         _assign_vector('hratios', hratios, space=False)
         _assign_vector('wratios', wratios, space=False)
 
-    def copy(self):
+    @docstring._snippet_manager
+    def copy(self, **kwargs):
         """
-        Return a copy of the `GridSpec` with rows and columns allocated
-        for "panel" subplots removed. This can be useful when drawing
-        multiple `~proplot.figure.Figure`\\ s with the same geometry.
+        Return a copy of the `GridSpec` with the `~proplot.figure.Figure`-specific
+        "panel slots" removed. This can be useful if you want to draw multiple
+        figures with the same geometry. Properties are inherited from this
+        `GridSpec` by default but can be changed by passing keyword arguments.
+
+        Parameters
+        ----------
+        %(gridspec.shared)s
+        %(gridspec.vector)s
+        %(gridspec.tight)s
 
         See also
         --------
@@ -1023,6 +1035,7 @@ class GridSpec(mgridspec.GridSpec):
         ):
             value = getattr(self, '_' + key)
             setattr(gs, '_' + key, value)
+        gs.update(**kwargs)
         return gs
 
     def get_geometry(self):
