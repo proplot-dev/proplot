@@ -1241,6 +1241,7 @@ class Figure(mfigure.Figure):
         # NOTE: Must assign unique label to each subplot or else subsequent calls
         # to add_subplot() in mpl < 3.4 may return an already-drawn subplot in the
         # wrong location due to gridspec override. Is against OO package design.
+        self.gridspec = gs  # trigger layout adjustment
         if number is None:
             number = 1 + max(self._subplot_dict, default=0)
         if number:  # must be added for a-b-c labels
@@ -1250,7 +1251,6 @@ class Figure(mfigure.Figure):
         ax = super().add_subplot(ss, _subplot_spec=ss, **kwargs)
         if number:
             self._subplot_dict[number] = ax
-        self.gridspec = gs  # trigger layout adjustment
 
         return ax
 

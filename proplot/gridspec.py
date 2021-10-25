@@ -1080,7 +1080,7 @@ class GridSpec(mgridspec.GridSpec):
         if not self.figure:
             raise RuntimeError('Figure must be assigned to gridspec.')
         if figure is not self.figure:
-            raise RuntimeError('Cannot get positiona with non-gridspec figure.')
+            raise RuntimeError(f'Input figure {figure} does not match gridspec figure {self.figure}.')  # noqa: E501
         fig = _not_none(figure, self.figure)
         figwidth, figheight = fig.get_size_inches()
         spacewidth, spaceheight = self.spacewidth, self.spaceheight
