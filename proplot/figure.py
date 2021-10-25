@@ -175,16 +175,18 @@ docstring._snippet_manager['figure.figure'] = _figure_docstring
 
 # Multiple subplots
 _subplots_params_docstring = """
-array : array-like of int, optional
-    A 2D array specifying complex grid of subplots. Think of this as a "picture"
-    of your figure. For example, the array ``[[1, 1], [2, 3]]`` creates one
-    long subplot in the top row, two smaller subplots in the bottom row.
+array : `proplot.gridspec.GridSpec` or array-like of int, optional
+    If a `~proplot.gridspec.GridSpec`, one subplot is drawn for each unique
+    `~proplot.gridspec.GridSpec` slot. If a 2D array of integers, one subplot
+    is drawn for each unique integer in the array. Think of this array as a
+    "picture" of the subplot grid -- for example, the array ``[[1, 1], [2, 3]]``
+    creates one long subplot in the top row, two smaller subplots in the bottom row.
     Integers must range from 1 to the number of plots, and ``0`` indicates an
-    empty space. For example, ``[[1, 1, 1], [2, 0, 3]]`` creates one long subplot
+    empty space -- for example, ``[[1, 1, 1], [2, 0, 3]]`` creates one long subplot
     in the top row with two subplots in the bottom row separated by a space.
-ncols, nrows : int, optional
-    The number of columns, rows in the subplot grid. Ignored if `array` was
-    passed. Use these arguments for simpler subplot grids.
+nrows, ncols : int, optional
+    The number of rows and columns in the subplot grid. Default is ``1`` for both.
+    Ignored if `array` was passed. Use these arguments for simple subplot grids.
 order : {'C', 'F'}, optional
     Whether subplots are numbered in column-major (``'C'``) or row-major (``'F'``)
     order. Analogous to `numpy.array` ordering. This controls the order that
@@ -1261,9 +1263,8 @@ class Figure(mfigure.Figure):
 
     @docstring._snippet_manager
     def add_subplots(
-        self, array=None, *, ncols=1, nrows=1, order='C',
-        proj=None, projection=None, proj_kw=None, projection_kw=None, basemap=None,
-        **kwargs
+        self, array=None, *, nrows=1, ncols=1, order='C', proj=None, projection=None,
+        proj_kw=None, projection_kw=None, basemap=None, **kwargs
     ):
         """
         %(figure.subplots)s
@@ -1302,37 +1303,33 @@ class Figure(mfigure.Figure):
                 )
             return output
 
-        # Warning messages
-        for key in ('gridspec_kw', 'subplot_kw'):
-            kw = kwargs.pop(key, None)
-            if not kw:
-                continue
-            warnings._warn_proplot(
-                f'{key!r} is not necessary in proplot. Pass the '
-                'parameters as keyword arguments instead.'
-            )
-            kwargs.update(kw or {})
-
-        # Build subplot array
+        # Build the gridspec and the subplot array
+        gs = None
         if order not in ('C', 'F'):  # better error message
             raise ValueError(f"Invalid order={order!r}. Options are 'C' or 'F'.")
+        if isinstance(array, mgridspec.GridSpec):  # may raise error down the line
+            gs, array = array, None
+            nrows, ncols = gs.nrows, gs.ncols
         if array is None:
-            array = np.arange(1, nrows * ncols + 1)[..., None]
+            naxs = nrows * ncols
+            array = np.arange(1, naxs + 1)[..., None]
             array = array.reshape((nrows, ncols), order=order)
-        array = np.atleast_1d(array)
-        array[array == None] = 0  # None or 0 both valid placeholders  # noqa: E711
-        array = array.astype(np.int)
-        if array.ndim == 1:  # interpret as single row or column
-            array = array[None, :] if order == 'C' else array[:, None]
-        elif array.ndim != 2:
-            raise ValueError(f'Expected 1D or 2D array of integers. Got {array}.')
-        nums = np.unique(array[array != 0])
-        naxs = len(nums)
-        if any(num < 0 or not isinstance(num, Integral) for num in nums.flat):
-            raise ValueError(f'Expected array of positive integers. Got {array}.')
-        nrows, ncols = array.shape
+        else:
+            array = np.atleast_1d(array)
+            array[array == None] = 0  # None or 0 both valid placeholders  # noqa: E711
+            array = array.astype(np.int)
+            if array.ndim == 1:  # interpret as single row or column
+                array = array[None, :] if order == 'C' else array[:, None]
+            elif array.ndim != 2:
+                raise ValueError(f'Expected 1D or 2D array of integers. Got {array}.')
+            nums = np.unique(array[array != 0])
+            naxs = len(nums)
+            if any(num < 0 or not isinstance(num, Integral) for num in nums.flat):
+                raise ValueError(f'Expected array of positive integers. Got {array}.')
+            nrows, ncols = array.shape
 
-        # Get projection arguments used to initialize the axes
+        # Parse input format, gridspec, and projection arguments
+        # NOTE: Permit figure format keywords for e.g. 'collabels' (more intuitive)
         proj = _not_none(projection=projection, proj=proj)
         proj = _axes_dict(naxs, proj, kw=False, default='cartesian')
         proj_kw = _not_none(projection_kw=projection_kw, proj_kw=proj_kw) or {}
@@ -1342,13 +1339,24 @@ class Figure(mfigure.Figure):
             num: {'proj': proj[num], 'proj_kw': proj_kw[num], 'basemap': basemap[num]}
             for num in proj
         }
-
-        # Create gridspec and add subplots with subplotspecs
-        # NOTE: The gridspec is added to the figure when we pass the subplotspec
-        # NOTE: Permit figure format keywords for e.g. 'collabels'
+        for key in ('gridspec_kw', 'subplot_kw'):
+            kw = kwargs.pop(key, None)
+            if not kw:
+                continue
+            warnings._warn_proplot(
+                f'{key!r} is not necessary in proplot. Pass the '
+                'parameters as keyword arguments instead.'
+            )
+            kwargs.update(kw or {})
         figure_kw = _pop_params(kwargs, self._format_signature)
         gridspec_kw = _pop_params(kwargs, pgridspec.GridSpec._update_params)
-        gs = pgridspec.GridSpec(nrows, ncols, **gridspec_kw)
+
+        # Create or update the gridspec and add subplots with subplotspecs
+        # NOTE: The gridspec is added to the figure when we pass the subplotspec
+        if gs is None:
+            gs = pgridspec.GridSpec(nrows, ncols, **gridspec_kw)
+        else:
+            gs.update(**gridspec_kw)
         axs = naxs * [None]  # list of axes
         axids = [np.where(array == i) for i in np.sort(np.unique(array)) if i > 0]
         axcols = np.array([[x.min(), x.max()] for _, x in axids])
@@ -1361,7 +1369,7 @@ class Figure(mfigure.Figure):
             kw = {**kwargs, **axes_kw[num], 'number': num}
             axs[idx] = self.add_subplot(ss, **kw)
 
-        self.format(**figure_kw)
+        self.format(skip_axes=True, **figure_kw)
         return pgridspec.SubplotGrid(axs)
 
     @docstring._snippet_manager
