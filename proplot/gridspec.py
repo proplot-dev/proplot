@@ -1121,6 +1121,11 @@ class GridSpec(mgridspec.GridSpec):
         from .figure import Figure
         if not isinstance(fig, Figure):
             raise ValueError('Figure must be a proplot figure.')
+        if self._figure and self._figure is not fig:
+            raise ValueError(
+                'Cannot use the same gridspec for multiple figures. '
+                'Please use gridspec.copy() to make a copy.'
+            )
         self._figure = fig
         self._update_params(**fig._gridspec_params)
         fig._gridspec_params.clear()
