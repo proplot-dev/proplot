@@ -102,7 +102,7 @@ def _disable_method(attr):
     Disable the inherited method.
     """
     def _dummy_method(*args):
-        raise AttributeError(f'Method {attr}() is disabled on proplot gridspecs.')
+        raise RuntimeError(f'Method {attr}() is disabled on proplot gridspecs.')
     _dummy_method.__name__ = attr
     return _dummy_method
 
@@ -300,9 +300,47 @@ class GridSpec(mgridspec.GridSpec):
         colorbars, and legends are ignored. For example, given a gridspec with 3
         subplot rows, 3 subplot columns, and 3 "bottom" panel rows, calling
         ``gs[1, 1]`` returns a `~matplotlib.gridspec.SubplotSpec` corresponding to
-        the second *subplot* row and column rather than a *panel* row or column.
+        the second subplot row and column rather than the "bottom" panel slot.
         """
-        return self._get_subplot_spec(key, includepanels=False)
+        return self._make_subplot_spec(key, includepanels=False)
+
+    def _make_subplot_spec(self, key, includepanels=False):
+        """
+        Generate a subplotspec either ignoring panels or including panels.
+        """
+        # Convert the indices into endpoint-inclusive (start, stop)
+        def _normalize_index(key, size, axis=None):  # noqa: E306
+            if isinstance(key, slice):
+                start, stop, _ = key.indices(size)
+                if stop > start:
+                    return start, stop - 1
+            else:
+                if key < 0:
+                    key += size
+                if 0 <= key < size:
+                    return key, key  # endpoing inclusive
+            extra = 'for gridspec' if axis is None else f'along axis {axis}'
+            raise IndexError(f'Invalid index {key} {extra} with size {size}.')
+
+        # Normalize the indices
+        if includepanels:
+            nrows, ncols = self.get_geometry()
+        else:
+            nrows, ncols = self.get_subplot_geometry()
+        if not isinstance(key, tuple):  # usage gridspec[1,2]
+            num1, num2 = _normalize_index(key, nrows * ncols)
+        elif len(key) == 2:
+            k1, k2 = key
+            num1 = _normalize_index(k1, nrows, axis=0)
+            num2 = _normalize_index(k2, ncols, axis=1)
+            num1, num2 = np.ravel_multi_index((num1, num2), (nrows, ncols))
+        else:
+            raise ValueError(f'Invalid index {key!r}.')
+
+        # Return the subplotspec
+        if not includepanels:
+            num1, num2 = self._convert_subplot_to_full(num1, num2)
+        return _SubplotSpec(self, num1, num2)
 
     def _convert_full_to_subplot(self, *args, which=None):
         """
@@ -332,7 +370,7 @@ class GridSpec(mgridspec.GridSpec):
                 raise ValueError(f'Invalid gridspec index {arg}.')
         return nums[0] if len(nums) == 1 else nums
 
-    def _get_current_space(self, key):
+    def _get_active_space(self, key):
         """
         Get the currently active space accounting for both default
         values and explicit user-specified values.
@@ -407,6 +445,16 @@ class GridSpec(mgridspec.GridSpec):
             raise ValueError(f'Invalid space key {key!r}.')
         return pad + space / 72
 
+    def _get_subplot_indices(self, which=None, space=False):
+        """
+        Get the indices associated with "subplot" gridspec slots or spaces.
+        """
+        panels = self._get_panel_list(which)
+        length = len(panels) - 1 if space else len(panels)
+        idxs = self._get_panel_indices(which, space=space)
+        idxs = [i for i in range(length) if i not in idxs]
+        return idxs
+
     def _get_panel_list(self, which=None):
         """
         Get the panel list for the rows, columns, or flattened array.
@@ -439,117 +487,70 @@ class GridSpec(mgridspec.GridSpec):
             ]
         return idxs
 
-    def _get_subplot_indices(self, which=None, space=False):
-        """
-        Get the indices associated with "subplot" gridspec slots or spaces.
-        """
-        panels = self._get_panel_list(which)
-        length = len(panels) - 1 if space else len(panels)
-        idxs = self._get_panel_indices(which=which, space=space)
-        idxs = [i for i in range(length) if i not in idxs]
-        return idxs
-
-    def _get_subplot_spec(self, key, includepanels=False):
-        """
-        Generate a subplotspec either ignoring panels or including panels.
-        """
-        # Convert the indices into endpoint-inclusive (start, stop)
-        def _normalize_index(key, size, axis=None):  # noqa: E306
-            if isinstance(key, slice):
-                start, stop, _ = key.indices(size)
-                if stop > start:
-                    return start, stop - 1
-            else:
-                if key < 0:
-                    key += size
-                if 0 <= key < size:
-                    return key, key  # endpoing inclusive
-            extra = 'for gridspec' if axis is None else f'along axis {axis}'
-            raise IndexError(f'Invalid index {key} {extra} with size {size}.')
-
-        # Normalize the indices
-        if includepanels:
-            nrows, ncols = self.get_geometry()
-        else:
-            nrows, ncols = self.get_subplot_geometry()
-        if not isinstance(key, tuple):  # usage gridspec[1,2]
-            num1, num2 = _normalize_index(key, nrows * ncols)
-        elif len(key) == 2:
-            k1, k2 = key
-            num1 = _normalize_index(k1, nrows, axis=0)
-            num2 = _normalize_index(k2, ncols, axis=1)
-            num1, num2 = np.ravel_multi_index((num1, num2), (nrows, ncols))
-        else:
-            raise ValueError(f'Invalid index {key!r}.')
-
-        # Return the subplotspec
-        if not includepanels:
-            num1, num2 = self._convert_subplot_to_full(num1, num2)
-        return _SubplotSpec(self, num1, num2)
-
-    def _parse_axes_panel(self, side, ax):
-        """
-        Return the indices associated with a new axes panel on the specified side.
-        """
-        # Get gridspec and subplotspec indices
-        ss = ax.get_subplotspec()
-        offset = len(ax._panel_dict[side]) + 1
-        row1, row2, col1, col2 = ss._get_rows_columns()
-        if side in ('left', 'right'):
-            iratio = col1 - offset if side == 'left' else col2 + offset
-            start, stop = row1, row2 + 1
-        else:
-            iratio = row1 - offset if side == 'top' else row2 + offset
-            start, stop = col1, col2 + 1
-
-        # Return subplotspec indices
-        return iratio, slice(start, stop)
-
-    def _parse_figure_panel(self, side, span):
+    def _parse_panel_arg(self, side, arg):
         """
         Return the indices associated with a new figure panel on the specified side.
         Try to find room in the current mosaic of figure panels.
         """
-        # Parse the input span
-        # NOTE: Here the '_fpanels' array always retains the original gridspec
-        # size before panels were drawn.
+        # Add a subplot panel. Index depends on the side
+        # NOTE: This always "stacks" new panels on old panels
+        if isinstance(arg, maxes.SubplotBase) and isinstance(arg, paxes.Axes):
+            slot = side[0]
+            ss = arg.get_subplotspec()
+            offset = len(arg._panel_dict[side]) + 1
+            row1, row2, col1, col2 = ss._get_rows_columns()
+            if side in ('left', 'right'):
+                iratio = col1 - offset if side == 'left' else col2 + offset
+                start, stop = row1, row2
+            else:
+                iratio = row1 - offset if side == 'top' else row2 + offset
+                start, stop = col1, col2
+
+        # Add a figure panel. Index depends on the side and the input 'span'
         # NOTE: Here the 'span' indices start at '1' by analogy with add_subplot()
         # integers and with main subplot numbers. Also *ignores panel slots*.
-        array = self._fpanels[side]
-        nacross = self._ncols if side in ('left', 'right') else self._nrows
-        npanels, nalong = array.shape
-        span = _not_none(span, (1, nalong))
-        span = np.atleast_1d(span)
-        if span.size not in (1, 2):
-            raise ValueError(f'Invalid span={span!r}. Must be scalar or 2-tuple of coordinates.')  # noqa: E501
-        if any(s < 1 or s > nalong for s in span):
-            raise ValueError(f'Invalid span={span!r}. Coordinates must satisfy 1 <= c <= {nalong}.')  # noqa: E501
+        # NOTE: This only "stacks" panels if requested slots are filled. Slots are
+        # tracked with figure panel array (a boolean mask where each row corresponds
+        # to a panel, moving toward the outside, and True indicates a slot is filled).
+        elif (
+            isinstance(arg, Integral)
+            or np.iterable(arg) and all(isinstance(_, Integral) for _ in arg)
+        ):
+            slot = 'f'
+            array = self._fpanels[side]
+            nacross = self._ncols if side in ('left', 'right') else self._nrows
+            npanels, nalong = array.shape
+            arg = _not_none(arg, (1, nalong))
+            arg = np.atleast_1d(arg)
+            if arg.size not in (1, 2):
+                raise ValueError(f'Invalid span={arg!r}. Must be scalar or 2-tuple of coordinates.')  # noqa: E501
+            if any(s < 1 or s > nalong for s in arg):
+                raise ValueError(f'Invalid span={arg!r}. Coordinates must satisfy 1 <= c <= {nalong}.')  # noqa: E501
+            start, stop = arg[0] - 1, arg[-1]  # non-inclusive starting at zero
+            iratio = -1 if side in ('left', 'top') else nacross  # default values
+            for i in range(npanels):  # possibly use existing panel slot
+                if any(array[i, start:stop]):  # filled
+                    continue
+                array[i, start:stop] = True
+                if side in ('left', 'top'):  # descending moves us closer to 0
+                    iratio = npanels - 1 - i  # index in ratios array
+                else:  # descending array moves us closer to nacross - 1
+                    iratio = nacross - (npanels - i)  # index in ratios array
+                break
+            if iratio == -1 or iratio == nacross:  # no slots so we must add to array
+                iarray = np.zeros((1, nalong), dtype=bool)
+                iarray[0, start:stop] = True
+                array = np.concatenate((array, iarray), axis=0)
+                self._fpanels[side] = array  # replace array
+            which = 'h' if side in ('left', 'right') else 'w'
+            start, stop = self._convert_subplot_to_full(start, stop - 1, which=which)
 
-        # Modify the array
-        # NOTE: The array is array of booleans, where each row corresponds to a figure
-        # panel, moving toward the outside, and True indicates the slot is filled.
-        start, stop = span[0] - 1, span[-1]  # non-inclusive starting at zero
-        iratio = -1 if side in ('left', 'top') else nacross  # default values
-        for i in range(npanels):
-            if any(array[i, start:stop]):  # filled
-                continue
-            array[i, start:stop] = True
-            if side in ('left', 'top'):  # descending moves us closer to 0
-                iratio = npanels - 1 - i  # index in ratios array
-            else:  # descending array moves us closer to nacross - 1
-                iratio = nacross - (npanels - i)  # index in ratios array
-            break
-        if iratio == -1 or iratio == nacross:  # no slots found so we must add to array
-            iarray = np.zeros((1, nalong), dtype=bool)
-            iarray[0, start:stop] = True
-            array = np.concatenate((array, iarray), axis=0)
-            self._fpanels[side] = array  # update array
+        else:
+            raise ValueError(f'Invalid panel argument {arg!r}.')
 
         # Return subplotspec indices
         # NOTE: Convert using the lengthwise indices
-        which = 'h' if side in ('left', 'right') else 'w'
-        start, stop = self._convert_subplot_to_full(start, stop - 1, which=which)
-        return iratio, slice(start, stop + 1)
+        return slot, iratio, slice(start, stop + 1)
 
     def _insert_panel(
         self, side, arg, *,
@@ -560,6 +561,7 @@ class GridSpec(mgridspec.GridSpec):
         and the `arg` is either an axes instance or the figure row-column span.
         Subsequently indexing the gridspec will ignore the slots occupied by panels.
         """
+        # Parse input arguments and get the SubplotSpec index
         fig = self.figure
         if fig is None:
             raise RuntimeError('Figure must be assigned to gridspec.')
@@ -577,20 +579,12 @@ class GridSpec(mgridspec.GridSpec):
             ratios = self._hratios
             spaces = self._hspace
             spaces_default = self._hspace_default
-
-        # Get the subplotspec index for the panel
-        if isinstance(arg, maxes.SubplotBase):
-            slot_type = side[0]
-            idx, span = self._parse_axes_panel(side, arg)
-        else:
-            slot_type = 'f'
-            idx, span = self._parse_figure_panel(side, arg)
+        slot, idx, span = self._parse_panel_arg(side, arg)
         idx_off = 1 * bool(side in ('top', 'left'))
         idx_space = idx - 1 * bool(side in ('bottom', 'right'))
 
         # Get user-input properties and default properties
-        # NOTE: For panels there are no sharing 'levels' just boolean toggle. Also
-        # note this gives totally wrong space for 'right' and 'top' colorbars with
+        # NOTE: This gives totally wrong space for 'right' and 'top' colorbars with
         # tick locations on the outside but that's ok... otherwise would have to
         # modify existing space which is overkill. People should use tight layout
         pad = units(pad, 'em', 'in')
@@ -599,7 +593,7 @@ class GridSpec(mgridspec.GridSpec):
         share = False if filled else _not_none(share, True)
         pad_default = (
             self._panelpad
-            if slot_type != 'f'
+            if slot != 'f'
             or side in ('left', 'top') and panels[0] == 'f'
             or side in ('right', 'bottom') and panels[-1] == 'f'
             else self._innerpad
@@ -619,9 +613,8 @@ class GridSpec(mgridspec.GridSpec):
         )
 
         # Adjust space, ratio, and panel indicator arrays
-        ncols = self.ncols
         newrow = newcol = None
-        slot_exists = idx not in (-1, len(panels)) and panels[idx] == slot_type
+        slot_exists = idx not in (-1, len(panels)) and panels[idx] == slot
         if slot_exists:
             # Slot already exists
             # Overwrite width, pad, or space only if they were provided by the user
@@ -633,7 +626,8 @@ class GridSpec(mgridspec.GridSpec):
             if space is not None:
                 spaces[idx_space] = space
         else:
-            # Modify basic geometry
+            # Modify the underlying geometry
+            # NOTE: This is hidden from users manually working with GridSpecs
             idx += idx_off
             idx_space += idx_off
             if side in ('left', 'right'):
@@ -642,52 +636,22 @@ class GridSpec(mgridspec.GridSpec):
             else:
                 newrow = idx
                 self._nrows += 1
-            panels.insert(idx, slot_type)
+            panels.insert(idx, slot)
             ratios.insert(idx, _not_none(width, width_default))
             pads.insert(idx_space, _not_none(pad, pad_default))
             spaces.insert(idx_space, space)
             spaces_default.insert(idx_space, space_default)
 
-        # Update the SubplotSpec occuped by the axes
-        inserts = (newrow, newrow, newcol, newcol)
-        for ax in fig._iter_axes(hidden=True, children=True):
-            # Get old index
-            # NOTE: Endpoints are inclusive, not exclusive!
-            if not isinstance(ax, maxes.SubplotBase):
-                continue
-            gs = ax.get_subplotspec().get_gridspec()
-            ss = ax.get_subplotspec().get_topmost_subplotspec()
-            # Get a new subplotspec
-            coords = list(ss._get_rows_columns(ncols))
-            for i in range(4):
-                if inserts[i] is not None and coords[i] >= inserts[i]:
-                    coords[i] += 1
-            row1, row2, col1, col2 = coords
-            key1 = slice(row1, row2 + 1)
-            key2 = slice(col1, col2 + 1)
-            ss_new = self._get_subplot_spec((key1, key2), includepanels=True)
-            # Apply new subplotspec
-            # NOTE: We should only have one possible level of GridSpecFromSubplotSpec
-            # nesting -- from making side colorbars with length less than 1.
-            if ss is ax.get_subplotspec():
-                ax.set_subplotspec(ss_new)
-            elif ss is getattr(gs, '_subplot_spec', None):
-                gs._subplot_spec = ss_new
-            else:
-                raise RuntimeError('Unexpected GridSpecFromSubplotSpec nesting.')
-            ax._reposition_subplot()
-
-        # Update the figure size and layout
+        # Update the figure and axes and return a SubplotSpec
+        # NOTE: For figure panels indices are determined by user-input spans.
+        self._update_specs(newrow, newcol)
         figsize = self._calc_figsize()
         if figsize is not None:
             fig.set_size_inches(figsize, internal=True, forward=False)
         else:
             self.update()
-
-        # Return a subplotspec
-        # NOTE: For figure panels indices are determined by user-input spans.
         key = (span, idx) if side in ('left', 'right') else (idx, span)
-        ss = self._get_subplot_spec(key, includepanels=True)  # bypass panel obfuscation
+        ss = self._make_subplot_spec(key, includepanels=True)  # bypass obfuscation
         return ss, share
 
     def _calc_figsize(self):
@@ -917,6 +881,40 @@ class GridSpec(mgridspec.GridSpec):
         else:
             self.update()
 
+    def _update_specs(self, newrow=None, newcol=None):
+        """
+        Update the axes subplot specs by inserting rows and columns as specified.
+        """
+        fig = self.figure
+        ncols = self._ncols - int(newcol is not None)  # previous columns
+        inserts = (newrow, newrow, newcol, newcol)
+        for ax in fig._iter_axes(hidden=True, children=True):
+            # Get old index
+            # NOTE: Endpoints are inclusive, not exclusive!
+            if not isinstance(ax, maxes.SubplotBase):
+                continue
+            gs = ax.get_subplotspec().get_gridspec()
+            ss = ax.get_subplotspec().get_topmost_subplotspec()
+            # Get a new subplotspec
+            coords = list(ss._get_rows_columns(ncols))
+            for i in range(4):
+                if inserts[i] is not None and coords[i] >= inserts[i]:
+                    coords[i] += 1
+            row1, row2, col1, col2 = coords
+            key1 = slice(row1, row2 + 1)
+            key2 = slice(col1, col2 + 1)
+            ss_new = self._make_subplot_spec((key1, key2), includepanels=True)
+            # Apply new subplotspec
+            # NOTE: We should only have one possible level of GridSpecFromSubplotSpec
+            # nesting -- from making side colorbars with length less than 1.
+            if ss is ax.get_subplotspec():
+                ax.set_subplotspec(ss_new)
+            elif ss is getattr(gs, '_subplot_spec', None):
+                gs._subplot_spec = ss_new
+            else:
+                raise RuntimeError('Unexpected GridSpecFromSubplotSpec nesting.')
+            ax._reposition_subplot()
+
     def _update_params(
         self, *,
         left=None, bottom=None, right=None, top=None,
@@ -1066,18 +1064,15 @@ class GridSpec(mgridspec.GridSpec):
         spacewidth, spaceheight = self.spacewidth, self.spaceheight
         panelwidth, panelheight = self.panelwidth, self.panelheight
         hratios, wratios = self.hratios, self.wratios
-        hidxs = self._get_subplot_indices('h')
-        widxs = self._get_subplot_indices('w')
-        hsubplot = np.array([hratios[i] for i in hidxs])
-        wsubplot = np.array([wratios[i] for i in widxs])
+        hidxs, widxs = self._get_subplot_indices('h'), self._get_subplot_indices('w')
 
         # Scale the subplot slot ratios and keep the panel slots fixed
-        hsubplot = (figheight - panelheight - spaceheight) * hsubplot / sum(hsubplot)
-        wsubplot = (figwidth - panelwidth - spacewidth) * wsubplot / sum(wsubplot)
-        hratios, hidxs = self.hratios, self._get_subplot_indices('h')
+        hsubplot = np.array([hratios[i] for i in hidxs])
+        wsubplot = np.array([wratios[i] for i in widxs])
+        hsubplot = (figheight - panelheight - spaceheight) * hsubplot / np.sum(hsubplot)
+        wsubplot = (figwidth - panelwidth - spacewidth) * wsubplot / np.sum(wsubplot)
         for idx, ratio in zip(hidxs, hsubplot):
             hratios[idx] = ratio  # modify the main subplot ratios
-        wratios, widxs = self.wratios, self._get_subplot_indices('w')
         for idx, ratio in zip(widxs, wsubplot):
             wratios[idx] = ratio
 
@@ -1179,12 +1174,12 @@ class GridSpec(mgridspec.GridSpec):
     # obfuscation makes this confusing. For example gs.update(wspace=gs.wspace) in
     # presence of panels would yield error. For now the only supported introspection
     # is the __repr__. Probably no big deal... introspection not critical here.
-    left = property(functools.partial(_get_current_space, key='left'), doc='')
-    bottom = property(functools.partial(_get_current_space, key='bottom'), doc='')
-    right = property(functools.partial(_get_current_space, key='right'), doc='')
-    top = property(functools.partial(_get_current_space, key='top'), doc='')
-    hspace = property(functools.partial(_get_current_space, key='hspace'), doc='')
-    wspace = property(functools.partial(_get_current_space, key='wspace'), doc='')
+    left = property(functools.partial(_get_active_space, key='left'), doc='')
+    bottom = property(functools.partial(_get_active_space, key='bottom'), doc='')
+    right = property(functools.partial(_get_active_space, key='right'), doc='')
+    top = property(functools.partial(_get_active_space, key='top'), doc='')
+    hspace = property(functools.partial(_get_active_space, key='hspace'), doc='')
+    wspace = property(functools.partial(_get_active_space, key='wspace'), doc='')
     # Additional properties added for consistency
     nrows = property(lambda self: self._nrows, doc='')  # in case missing
     ncols = property(lambda self: self._ncols, doc='')  # ...
@@ -1195,18 +1190,10 @@ class GridSpec(mgridspec.GridSpec):
     # Hidden helper properties used to calculate figure size and subplot positions
     spaceheight = property(lambda self: self.bottom + self.top + sum(self.hspace))
     spacewidth = property(lambda self: self.left + self.right + sum(self.wspace))
-    panelheight = property(
-        lambda self: sum(r for i, r in enumerate(self.hratios) if self._hpanels[i])
-    )
-    panelwidth = property(
-        lambda self: sum(r for i, r in enumerate(self.wratios) if self._wpanels[i])
-    )
-    subplotheight = property(
-        lambda self: sum(r for i, r in enumerate(self.hratios) if not self._hpanels[i])
-    )
-    subplotwidth = property(
-        lambda self: sum(r for i, r in enumerate(self.wratios) if not self._wpanels[i])
-    )
+    panelheight = property(lambda self: sum(r for i, r in enumerate(self.hratios) if self._hpanels[i]))  # noqa: E501
+    panelwidth = property(lambda self: sum(r for i, r in enumerate(self.wratios) if self._wpanels[i]))  # noqa: E501
+    subplotheight = property(lambda self: sum(r for i, r in enumerate(self.hratios) if not self._hpanels[i]))  # noqa: E501
+    subplotwidth = property(lambda self: sum(r for i, r in enumerate(self.wratios) if not self._wpanels[i]))  # noqa: E501
 
 
 class SubplotGrid(MutableSequence, list):
@@ -1345,7 +1332,7 @@ class SubplotGrid(MutableSequence, list):
             objs = []
             if self:
                 gs = self.gridspec
-                ss_key = gs._get_subplot_spec(key)  # obfuscates panels
+                ss_key = gs._make_subplot_spec(key)  # obfuscates panels
                 row1_key, col1_key = divmod(ss_key.num1, gs.ncols)
                 row2_key, col2_key = divmod(ss_key.num2, gs.ncols)
             for ax in self:
