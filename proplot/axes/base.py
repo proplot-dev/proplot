@@ -2100,6 +2100,9 @@ class Axes(maxes.Axes):
 
         # Return the scalar mappable
         if isinstance(mappable, mcm.ScalarMappable):
+            for key, val in (('values', values), ('norm', norm), ('vmin', vmin), ('vmax', vmax)):  # noqa: E501
+                if val is not None:
+                    warnings._warn_proplot(f'Input colorbar() argument is already a ScalarMappable. Ignoring {key}={val!r}.')  # noqa: E501
             return mappable, kwargs
 
         # For container objects, we just assume color is the same for every item.
@@ -2113,17 +2116,15 @@ class Axes(maxes.Axes):
 
         # A colormap instance
         if isinstance(mappable, mcolors.Colormap) or isinstance(mappable, str):
-            # NOTE: 'Values' makes no sense if this is just a colormap. Just
-            # use unique color for every segmentdata / colors color.
             cmap = constructor.Colormap(mappable)
-            locator = None
+            if values is None and isinstance(cmap, pcolors.DiscreteColormap):
+                values = [None] * cmap.N  # sometimes use discrete norm
 
         # List of colors
         elif np.iterable(mappable) and all(map(mcolors.is_color_like, mappable)):
             cmap = pcolors.DiscreteColormap(list(mappable), '_no_name')
             if values is None:
-                values = [None] * len(mappable)
-            locator = [_not_none(value, i) for i, value in enumerate(values)]
+                values = [None] * len(mappable)  # always use discrete norm
 
         # List of artists
         # NOTE: Do not check for isinstance(Artist) in case it is an mpl collection
@@ -2145,37 +2146,41 @@ class Axes(maxes.Axes):
             cmap = pcolors.DiscreteColormap(colors, '_no_name')
             if values is None:
                 values = [None] * len(mappable)
-            locator = []
-            for i, (obj, value) in enumerate(zip(mappable, values)):
-                if value is None:
-                    value = obj.get_label()
-                    if value and value[0] == '_':
-                        value = None
-                    try:
-                        value = float(value)  # could be float(None)
-                    except (TypeError, ValueError):
-                        pass
-                if value is None:
-                    value = i
-                locator.append(value)
+            else:
+                values = list(values)
+            for i, (obj, val) in enumerate(zip(mappable, values)):
+                if val is not None:
+                    continue
+                val = obj.get_label()
+                if val and val[0] == '_':
+                    continue
+                values[i] = val
 
         else:
             raise ValueError(
-                'Input mappable must be a matplotlib artist, '
-                'list of objects, list of colors, or colormap. '
-                f'Got {mappable!r}.'
+                'Input colorbar() argument must be a scalar mappable, colormap name or '
+                f'object, list of colors, or list of artists. Instead got {mappable!r}.'
             )
 
-        # Get locator, formatter, and norm for result
-        # NOTE: Set default rotation if 'values' were string labels
+        # Generate continuous normalizer, and possibly discrete normalizer. Update
+        # outgoing locator and formatter if user does not override.
         norm_kw = norm_kw or {}
         norm = norm or 'linear'
         vmin = _not_none(vmin=vmin, norm_kw_vmin=norm_kw.pop('vmin', None), default=0)
         vmax = _not_none(vmax=vmax, norm_kw_vmax=norm_kw.pop('vmax', None), default=1)
         norm = constructor.Norm(norm, vmin=vmin, vmax=vmax, **norm_kw)
-        formatter = None
-        if locator is not None:
-            if any(isinstance(value, str) for value in locator):
+        locator = formatter = None
+        if values is not None:
+            locator = []
+            for i, val in enumerate(values):
+                try:
+                    val = float(val)
+                except (TypeError, ValueError):
+                    pass
+                if val is None:
+                    val = i
+                locator.append(val)
+            if any(isinstance(value, str) for value in values):
                 locator, formatter = np.arange(len(locator)), list(map(str, locator))
             if len(locator) == 1:
                 levels = [locator[0] - 1, locator[0] + 1]
