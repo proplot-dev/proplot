@@ -992,6 +992,32 @@ class GridSpec(mgridspec.GridSpec):
         _assign_vector('hratios', hratios, space=False)
         _assign_vector('wratios', wratios, space=False)
 
+    def copy(self):
+        """
+        Return a copy of the `GridSpec` with rows and columns allocated
+        for "panel" subplots removed. This can be useful when drawing
+        multiple `~proplot.figure.Figure`\\ s with the same geometry.
+
+        See also
+        --------
+        GridSpec.update
+        """
+        nrows, ncols = self.get_subplot_geometry()
+        gs = GridSpec(nrows, ncols)
+        hidxs = self._get_subplot_indices('h')
+        widxs = self._get_subplot_indices('w')
+        gs._hratios = [self._hratios[i] for i in hidxs]
+        gs._wratios = [self._wratios[i] for i in widxs]
+        hidxs = self._get_subplot_indices('h', space=True)
+        widxs = self._get_subplot_indices('w', space=True)
+        gs._hpad = [self._hpad[i] for i in hidxs]
+        gs._wpad = [self._wpad[i] for i in widxs]
+        gs._hspace = [self._hspace[i] for i in hidxs]
+        gs._wspace = [self._wspace[i] for i in widxs]
+        gs._hspace_default = [self._hspace_default[i] for i in hidxs]
+        gs._wspace_default = [self._wspace_default[i] for i in widxs]
+        return gs
+
     def get_geometry(self):
         """
         Return the total number of rows and columns in the grid.
