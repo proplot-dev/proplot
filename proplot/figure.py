@@ -175,11 +175,11 @@ docstring._snippet_manager['figure.figure'] = _figure_docstring
 
 # Multiple subplots
 _subplots_params_docstring = """
-array : `proplot.gridspec.GridSpec` or array-like of int, optional
-    If a `~proplot.gridspec.GridSpec`, one subplot is drawn for each unique
-    `~proplot.gridspec.GridSpec` slot. If a 2D array of integers, one subplot
-    is drawn for each unique integer in the array. Think of this array as a
-    "picture" of the subplot grid -- for example, the array ``[[1, 1], [2, 3]]``
+*args : `proplot.gridspec.GridSpec` or array-like of int, optional
+    The subplot grid specifier. If a `~proplot.gridspec.GridSpec`, one subplot is
+    drawn for each unique `~proplot.gridspec.GridSpec` slot. If a 2D array of integers,
+    one subplot is drawn for each unique integer in the array. Think of this array as
+    a "picture" of the subplot grid -- for example, the array ``[[1, 1], [2, 3]]``
     creates one long subplot in the top row, two smaller subplots in the bottom row.
     Integers must range from 1 to the number of plots, and ``0`` indicates an
     empty space -- for example, ``[[1, 1, 1], [2, 0, 3]]`` creates one long subplot
@@ -1263,7 +1263,7 @@ class Figure(mfigure.Figure):
 
     @docstring._snippet_manager
     def add_subplots(
-        self, array=None, *, nrows=1, ncols=1, order='C', proj=None, projection=None,
+        self, *args, nrows=1, ncols=1, order='C', proj=None, projection=None,
         proj_kw=None, projection_kw=None, basemap=None, **kwargs
     ):
         """
@@ -1304,12 +1304,18 @@ class Figure(mfigure.Figure):
             return output
 
         # Build the gridspec and the subplot array
-        gs = None
+        arg = kwargs.pop('array', None)  # deprecated
+        if arg is not None:
+            args = (arg, *args)
+        if len(args) > 1:
+            raise TypeError(f'Figure.add_subplots() expected 0 or 1 positional arguments. Got {len(args)}.')  # noqa: E501
         if order not in ('C', 'F'):  # better error message
             raise ValueError(f"Invalid order={order!r}. Options are 'C' or 'F'.")
-        if isinstance(array, mgridspec.GridSpec):  # may raise error down the line
-            gs, array = array, None
-            nrows, ncols = gs.nrows, gs.ncols
+        arg = args[0] if args else None
+        if isinstance(arg, mgridspec.GridSpec):  # may raise error down the line
+            gs, nrows, ncols, array = arg, arg.nrows, arg.ncols, None
+        else:
+            gs, array = None, arg
         if array is None:
             naxs = nrows * ncols
             array = np.arange(1, naxs + 1)[..., None]

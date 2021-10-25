@@ -180,7 +180,7 @@ def subplots(*args, **kwargs):
     _parse_figsize(kwargs)
     kwsubs = _pop_params(kwargs, pfigure.Figure.add_subplots)
     kwsubs.update(_pop_params(kwargs, pgridspec.GridSpec._update_params))
-    for key in ('subplot_kw', 'gridspec_kw'):
+    for key in ('array', 'subplot_kw', 'gridspec_kw'):  # deprecated args
         kwsubs[key] = kwargs.pop(key, None)
     # Format keywords
     rc_kw, rc_mode = _pop_rc(kwargs)
