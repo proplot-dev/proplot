@@ -188,6 +188,7 @@ def subplots(*args, **kwargs):
     for sig in paxes.Axes._format_signatures.values():
         kwformat.update(_pop_params(kwargs, sig))
     # Initialize
+    kwargs['aspect'] = kwformat.pop('aspect', None)  # keyword conflict
     fig = figure(rc_kw=rc_kw, **kwargs)
     axs = fig.add_subplots(*args, **kwsubs)
     axs.format(rc_kw=rc_kw, **kwformat)
