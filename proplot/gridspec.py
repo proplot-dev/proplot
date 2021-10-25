@@ -834,6 +834,8 @@ class GridSpec(mgridspec.GridSpec):
             ratio = 1
         elif isinstance(ratio, str):
             raise RuntimeError(f'Unknown aspect ratio mode {ratio!r}.')
+        else:
+            ratio = 1 / ratio
 
         # Compare to current aspect
         xscale, yscale = ax.get_xscale(), ax.get_yscale()
