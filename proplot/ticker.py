@@ -31,12 +31,12 @@ __all__ = [
     'SciFormatter',
     'SigFigFormatter',
     'SimpleFormatter',
-    'DegreeFormatter',
-    'LongitudeFormatter',
-    'LatitudeFormatter',
     'DegreeLocator',
+    'DegreeFormatter',
     'LongitudeLocator',
+    'LongitudeFormatter',
     'LatitudeLocator',
+    'LatitudeFormatter',
 ]
 
 REGEX_ZERO = re.compile('\\A[-\N{MINUS SIGN}]?0(.0*)?\\Z')
@@ -90,185 +90,6 @@ dms : bool, optional
     ticks with minutes and seconds instead of decimals. Default is ``False``.
 """
 docstring._snippet_manager['ticker.dms'] = _dms_docstring
-
-
-class DegreeLocator(mticker.MaxNLocator):
-    """
-    A locator for longitude and latitude gridlines. Adapted from cartopy.
-    """
-    # NOTE: Locator implementation is weird AF. __init__ just calls set_params with all
-    # keyword args and fills in missing params with default_params class attribute.
-    # Unknown params result in warning instead of error.
-    default_params = mticker.MaxNLocator.default_params.copy()
-    default_params.update(nbins=8, dms=False)
-
-    @docstring._snippet_manager
-    def __init__(self, *args, **kwargs):
-        """
-        %(ticker.dms)s
-        """
-        super().__init__(*args, **kwargs)
-
-    def set_params(self, **kwargs):
-        if 'dms' in kwargs:
-            self._dms = kwargs.pop('dms')
-        super().set_params(**kwargs)
-
-    def _guess_steps(self, vmin, vmax):
-        dv = abs(vmax - vmin)
-        if dv > 180:
-            dv -= 180
-        if dv > 50:
-            steps = np.array([1, 2, 3, 6, 10])
-        elif not self._dms or dv > 3.0:
-            steps = np.array([1, 1.5, 2, 2.5, 3, 5, 10])
-        else:
-            steps = np.array([1, 10 / 6.0, 15 / 6.0, 20 / 6.0, 30 / 6.0, 10])
-        self.set_params(steps=np.array(steps))
-
-    def _raw_ticks(self, vmin, vmax):
-        self._guess_steps(vmin, vmax)
-        return super()._raw_ticks(vmin, vmax)
-
-    def bin_boundaries(self, vmin, vmax):  # matplotlib <2.2.0
-        return self._raw_ticks(vmin, vmax)  # may call Latitude/LongitudeLocator copies
-
-
-class LongitudeLocator(DegreeLocator):
-    """
-    A locator for longitude gridlines. Adapted from cartopy.
-    """
-    @docstring._snippet_manager
-    def __init__(self, *args, **kwargs):
-        """
-        %(ticker.dms)s
-        """
-        super().__init__(*args, **kwargs)
-
-    def tick_values(self, vmin, vmax):
-        # NOTE: Proplot ensures vmin, vmax are always the *actual* longitude range
-        # accounting for central longitude position.
-        ticks = super().tick_values(vmin, vmax)
-        if np.isclose(ticks[0] + 360, ticks[-1]):
-            eps = 1e-10
-            if ticks[-1] % 360 > 0:
-                # Make sure the label appears on *right*, not on
-                # top of the leftmost label.
-                ticks[-1] -= eps
-            else:
-                # Formatter formats label as 1e-10... so there is simply no way to
-                # put label on right. Just shift this location off the map edge so
-                # parallels still extend all the way to the edge, but label disappears.
-                ticks[-1] += eps
-        return ticks
-
-
-class LatitudeLocator(DegreeLocator):
-    """
-    A locator for latitude gridlines. Adapted from cartopy.
-    """
-    @docstring._snippet_manager
-    def __init__(self, *args, **kwargs):
-        """
-        %(ticker.dms)s
-        """
-        super().__init__(*args, **kwargs)
-
-    def tick_values(self, vmin, vmax):
-        vmin = max(vmin, -90)
-        vmax = min(vmax, 90)
-        return super().tick_values(vmin, vmax)
-
-    def _guess_steps(self, vmin, vmax):
-        vmin = max(vmin, -90)
-        vmax = min(vmax, 90)
-        super()._guess_steps(vmin, vmax)
-
-    def _raw_ticks(self, vmin, vmax):
-        ticks = super()._raw_ticks(vmin, vmax)
-        return [t for t in ticks if -90 <= t <= 90]
-
-
-class _CartopyFormatter(object):
-    """
-    Mixin class that fixes cartopy formatters.
-    """
-    # NOTE: Cartopy formatters pre 0.18 required axis, and *always* translated
-    # input values from map projection coordinates to Plate Carrée coordinates.
-    # After 0.18 you can avoid this behavior by not setting axis but really
-    # dislike that inconsistency. Solution is temporarily change projection.
-    def __init__(self, *args, **kwargs):
-        import cartopy  # noqa: F401 (ensure available)
-        super().__init__(*args, **kwargs)
-
-    def __call__(self, value, pos=None):
-        ctx = context._empty_context()
-        if self.axis is not None:
-            ctx = context._state_context(self.axis.axes, projection=ccrs.PlateCarree())
-        with ctx:
-            return super().__call__(value, pos)
-
-
-class LongitudeFormatter(_CartopyFormatter, LongitudeFormatter):
-    """
-    A formatter for longitude gridlines.
-    Adapted from `cartopy.mpl.ticker.LongitudeFormatter`.
-    """
-    @docstring._snippet_manager
-    def __init__(self, *args, **kwargs):
-        """
-        %(ticker.dms)s
-        """
-        super().__init__(*args, **kwargs)
-
-
-class LatitudeFormatter(_CartopyFormatter, LatitudeFormatter):
-    """
-    A formatter for latitude gridlines.
-    Adapted from `cartopy.mpl.ticker.LatitudeFormatter`.
-    """
-    @docstring._snippet_manager
-    def __init__(self, *args, **kwargs):
-        """
-        %(ticker.dms)s
-        """
-        super().__init__(*args, **kwargs)
-
-
-class DegreeFormatter(_CartopyFormatter, _PlateCarreeFormatter):
-    """
-    A formatter for longitude and latitude gridlines. Adapted from cartopy.
-    """
-    @docstring._snippet_manager
-    def __init__(self, *args, **kwargs):
-        """
-        %(ticker.dms)s
-        """
-        super().__init__(*args, **kwargs)
-
-    def _apply_transform(self, value, *args, **kwargs):  # noqa: U100
-        return value
-
-    def _hemisphere(self, value, *args, **kwargs):  # noqa: U100
-        return ''
-
-
-class IndexFormatter(mticker.Formatter):
-    """
-    A duplicate of `~matplotlib.ticker.IndexFormatter`.
-    """
-    # NOTE: This was deprecated in matplotlib 3.3. For details check out
-    # https://github.com/matplotlib/matplotlib/issues/16631 and bring some popcorn.
-    def __init__(self, labels):
-        self.labels = labels
-        self.n = len(labels)
-
-    def __call__(self, x, pos=None):  # noqa: U100
-        i = int(round(x))
-        if i < 0 or i >= self.n:
-            return ''
-        else:
-            return self.labels[i]
 
 
 def _default_precision_zerotrim(precision=None, zerotrim=None):
@@ -500,6 +321,70 @@ class AutoFormatter(mticker.ScalarFormatter):
         return (x - base) % modulus + base
 
 
+class FracFormatter(mticker.Formatter):
+    r"""
+    Format numbers as fractions or multiples of some value.
+    This is powered by the builtin `~fractions.Fraction` class
+    and the `~fractions.Fraction.limit_denominator` method.
+    """
+    def __init__(self, symbol='', number=1):
+        r"""
+        Parameters
+        ----------
+        symbol : str
+            The symbol, e.g. ``r'$\pi$'``. Default is ``''``.
+        number : float
+            The value, e.g. `numpy.pi`. Default is ``1``.
+        """
+        self._symbol = symbol
+        self._number = number
+        super().__init__()
+
+    @docstring._snippet_manager
+    def __call__(self, x, pos=None):  # noqa: U100
+        """
+        %(ticker.call)s
+        """
+        frac = Fraction(x / self._number).limit_denominator()
+        symbol = self._symbol
+        if x == 0:
+            string = '0'
+        elif frac.denominator == 1:  # denominator is one
+            if frac.numerator == 1 and symbol:
+                string = f'{symbol:s}'
+            elif frac.numerator == -1 and symbol:
+                string = f'-{symbol:s}'
+            else:
+                string = f'{frac.numerator:d}{symbol:s}'
+        else:
+            if frac.numerator == 1 and symbol:  # numerator is +/-1
+                string = f'{symbol:s}/{frac.denominator:d}'
+            elif frac.numerator == -1 and symbol:
+                string = f'-{symbol:s}/{frac.denominator:d}'
+            else:  # and again make sure we use unicode minus!
+                string = f'{frac.numerator:d}{symbol:s}/{frac.denominator:d}'
+        string = AutoFormatter._minus_format(string)
+        return string
+
+
+class IndexFormatter(mticker.Formatter):
+    """
+    A duplicate of `~matplotlib.ticker.IndexFormatter`.
+    """
+    # NOTE: This was deprecated in matplotlib 3.3. For details check out
+    # https://github.com/matplotlib/matplotlib/issues/16631 and bring some popcorn.
+    def __init__(self, labels):
+        self.labels = labels
+        self.n = len(labels)
+
+    def __call__(self, x, pos=None):  # noqa: U100
+        i = int(round(x))
+        if i < 0 or i >= self.n:
+            return ''
+        else:
+            return self.labels[i]
+
+
 class SciFormatter(mticker.Formatter):
     """
     Format numbers with scientific notation.
@@ -651,47 +536,162 @@ class SimpleFormatter(mticker.Formatter):
         return string
 
 
-class FracFormatter(mticker.Formatter):
-    r"""
-    Format numbers as fractions or multiples of some value.
-    This is powered by the builtin `~fractions.Fraction` class
-    and the `~fractions.Fraction.limit_denominator` method.
+class _CartopyFormatter(object):
     """
-    def __init__(self, symbol='', number=1):
-        r"""
-        Parameters
-        ----------
-        symbol : str
-            The symbol, e.g. ``r'$\pi$'``. Default is ``''``.
-        number : float
-            The value, e.g. `numpy.pi`. Default is ``1``.
+    Mixin class that fixes cartopy formatters.
+    """
+    # NOTE: Cartopy formatters pre 0.18 required axis, and *always* translated
+    # input values from map projection coordinates to Plate Carrée coordinates.
+    # After 0.18 you can avoid this behavior by not setting axis but really
+    # dislike that inconsistency. Solution is temporarily change projection.
+    def __init__(self, *args, **kwargs):
+        import cartopy  # noqa: F401 (ensure available)
+        super().__init__(*args, **kwargs)
+
+    def __call__(self, value, pos=None):
+        ctx = context._empty_context()
+        if self.axis is not None:
+            ctx = context._state_context(self.axis.axes, projection=ccrs.PlateCarree())
+        with ctx:
+            return super().__call__(value, pos)
+
+
+class DegreeFormatter(_CartopyFormatter, _PlateCarreeFormatter):
+    """
+    A formatter for longitude and latitude gridlines. Adapted from cartopy.
+    """
+    @docstring._snippet_manager
+    def __init__(self, *args, **kwargs):
         """
-        self._symbol = symbol
-        self._number = number
-        super().__init__()
+        %(ticker.dms)s
+        """
+        super().__init__(*args, **kwargs)
+
+    def _apply_transform(self, value, *args, **kwargs):  # noqa: U100
+        return value
+
+    def _hemisphere(self, value, *args, **kwargs):  # noqa: U100
+        return ''
+
+
+class DegreeLocator(mticker.MaxNLocator):
+    """
+    A locator for longitude and latitude gridlines. Adapted from cartopy.
+    """
+    # NOTE: Locator implementation is weird AF. __init__ just calls set_params with all
+    # keyword args and fills in missing params with default_params class attribute.
+    # Unknown params result in warning instead of error.
+    default_params = mticker.MaxNLocator.default_params.copy()
+    default_params.update(nbins=8, dms=False)
 
     @docstring._snippet_manager
-    def __call__(self, x, pos=None):  # noqa: U100
+    def __init__(self, *args, **kwargs):
         """
-        %(ticker.call)s
+        %(ticker.dms)s
         """
-        frac = Fraction(x / self._number).limit_denominator()
-        symbol = self._symbol
-        if x == 0:
-            string = '0'
-        elif frac.denominator == 1:  # denominator is one
-            if frac.numerator == 1 and symbol:
-                string = f'{symbol:s}'
-            elif frac.numerator == -1 and symbol:
-                string = f'-{symbol:s}'
-            else:
-                string = f'{frac.numerator:d}{symbol:s}'
+        super().__init__(*args, **kwargs)
+
+    def set_params(self, **kwargs):
+        if 'dms' in kwargs:
+            self._dms = kwargs.pop('dms')
+        super().set_params(**kwargs)
+
+    def _guess_steps(self, vmin, vmax):
+        dv = abs(vmax - vmin)
+        if dv > 180:
+            dv -= 180
+        if dv > 50:
+            steps = np.array([1, 2, 3, 6, 10])
+        elif not self._dms or dv > 3.0:
+            steps = np.array([1, 1.5, 2, 2.5, 3, 5, 10])
         else:
-            if frac.numerator == 1 and symbol:  # numerator is +/-1
-                string = f'{symbol:s}/{frac.denominator:d}'
-            elif frac.numerator == -1 and symbol:
-                string = f'-{symbol:s}/{frac.denominator:d}'
-            else:  # and again make sure we use unicode minus!
-                string = f'{frac.numerator:d}{symbol:s}/{frac.denominator:d}'
-        string = AutoFormatter._minus_format(string)
-        return string
+            steps = np.array([1, 10 / 6.0, 15 / 6.0, 20 / 6.0, 30 / 6.0, 10])
+        self.set_params(steps=np.array(steps))
+
+    def _raw_ticks(self, vmin, vmax):
+        self._guess_steps(vmin, vmax)
+        return super()._raw_ticks(vmin, vmax)
+
+    def bin_boundaries(self, vmin, vmax):  # matplotlib <2.2.0
+        return self._raw_ticks(vmin, vmax)  # may call Latitude/LongitudeLocator copies
+
+
+class LongitudeLocator(DegreeLocator):
+    """
+    A locator for longitude gridlines. Adapted from cartopy.
+    """
+    @docstring._snippet_manager
+    def __init__(self, *args, **kwargs):
+        """
+        %(ticker.dms)s
+        """
+        super().__init__(*args, **kwargs)
+
+    def tick_values(self, vmin, vmax):
+        # NOTE: Proplot ensures vmin, vmax are always the *actual* longitude range
+        # accounting for central longitude position.
+        ticks = super().tick_values(vmin, vmax)
+        if np.isclose(ticks[0] + 360, ticks[-1]):
+            eps = 1e-10
+            if ticks[-1] % 360 > 0:
+                # Make sure the label appears on *right*, not on
+                # top of the leftmost label.
+                ticks[-1] -= eps
+            else:
+                # Formatter formats label as 1e-10... so there is simply no way to
+                # put label on right. Just shift this location off the map edge so
+                # parallels still extend all the way to the edge, but label disappears.
+                ticks[-1] += eps
+        return ticks
+
+
+class LatitudeLocator(DegreeLocator):
+    """
+    A locator for latitude gridlines. Adapted from cartopy.
+    """
+    @docstring._snippet_manager
+    def __init__(self, *args, **kwargs):
+        """
+        %(ticker.dms)s
+        """
+        super().__init__(*args, **kwargs)
+
+    def tick_values(self, vmin, vmax):
+        vmin = max(vmin, -90)
+        vmax = min(vmax, 90)
+        return super().tick_values(vmin, vmax)
+
+    def _guess_steps(self, vmin, vmax):
+        vmin = max(vmin, -90)
+        vmax = min(vmax, 90)
+        super()._guess_steps(vmin, vmax)
+
+    def _raw_ticks(self, vmin, vmax):
+        ticks = super()._raw_ticks(vmin, vmax)
+        return [t for t in ticks if -90 <= t <= 90]
+
+
+class LongitudeFormatter(_CartopyFormatter, LongitudeFormatter):
+    """
+    A formatter for longitude gridlines.
+    Adapted from `cartopy.mpl.ticker.LongitudeFormatter`.
+    """
+    @docstring._snippet_manager
+    def __init__(self, *args, **kwargs):
+        """
+        %(ticker.dms)s
+        """
+        super().__init__(*args, **kwargs)
+
+
+class LatitudeFormatter(_CartopyFormatter, LatitudeFormatter):
+    """
+    A formatter for latitude gridlines.
+    Adapted from `cartopy.mpl.ticker.LatitudeFormatter`.
+    """
+    @docstring._snippet_manager
+    def __init__(self, *args, **kwargs):
+        """
+        %(ticker.dms)s
+        """
+        super().__init__(*args, **kwargs)
