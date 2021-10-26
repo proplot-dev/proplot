@@ -121,23 +121,24 @@ queue : bool, optional
     This is used to "update" the same {name} with successive ``ax.{name}(...)``
     calls. If ``False`` (the default) and `loc` is the same as an existing
     *inset* {name}, the old {name} is removed. If ``False`` and `loc` is an
-    *outer* {name}, the {name}s are stacked.
+    *outer* {name}, the {name}s are "stacked".
 space : unit-spec, optional
     For outer {name}s only. The fixed space between the {name} and the subplot
     edge. %(units.em)s
-    When the tight layout algorithm is active for the figure, this is adjusted
-    automatically using `pad`. Otherwise, a suitable default is selected.
+    When the :ref:`tight layout algorithm <ug_tight>` is active for the figure,
+    `space` is computed automatically (see `pad`). Otherwise, `space` is set to
+    a suitable default.
 pad : unit-spec, optional
-    For outer {name}s, this is the tight layout padding between the {name} and
-    the subplot. Default is :rc:`subplots.panelpad`. For inset {name}s, this is the
-    fixed space between the axes edge and the {name}. Default is :rc:`{default}`.
+    For outer {name}s, this is the :ref:`tight layout padding <ug_tight>`
+    between the {name} and the subplot. Default is :rc:`subplots.panelpad`.
+    For inset {name}s, this is the fixed space between the axes
+    edge and the {name}. Default is :rc:`{default}`.
     %(units.em)s
-align : {{'center', 'top', 't', 'bottom', 'b', 'left', 'l', 'right', 'r'}}, optional
-    For outer {name}s only. How to align the {name} against the
-    subplot edge. Default is ``'center'``. The values ``'top'``
-    and ``'bottom'`` are valid for left and right {name}s and
-    ``'left'`` and ``'right'`` are valid for top and bottom
-    {name}s. The default is always ``'center'``.
+align : {{'center', 'top', 'bottom', 'left', 'right', 't', 'b', 'l', 'r'}}, optional
+    For outer {name}s only. How to align the {name} against the subplot edge.
+    The values ``'top'`` and ``'bottom'`` are valid for left and right {name}s
+    and ``'left'`` and ``'right'`` are valid for top and bottom {name}s.
+    The default is always ``'center'``.
 """
 docstring._snippet_manager['axes.legend_space'] = _space_docstring.format(
     name='legend', default='legend.borderaxespad'
@@ -265,14 +266,15 @@ width : unit-spec, optional
 space : unit-spec, optional
     The fixed space between the panel and the subplot edge.
     %(units.em)s
-    When the tight layout algorithm is active for the figure, this is adjusted
-    automatically using `pad`. Otherwise, a suitable default is selected.
+    When the :ref:`tight layout algorithm <ug_tight>` is active for the figure,
+    `space` is computed automatically (see `pad`). Otherwise, `space` is set to
+    a suitable default.
 pad : unit-spec, optional
-    The tight layout padding between the panel and the subplot.
+    The :ref:`tight layout padding <ug_tight>` between the panel and the subplot.
     %(units.em)s
 share : bool, optional
     Whether to enable axis sharing between the *x* and *y* axes of the
-    main subplot and the panel long axes for each panel in the stack.
+    main subplot and the panel long axes for each panel in the "stack".
     Sharing between the panel short axis and other panel short axes
     is determined by figure-wide `sharex` and `sharey` settings.
 
@@ -345,7 +347,7 @@ ltitle, ctitle, rtitle, ultitle, uctitle, urtitle, lltitle, lctitle, lrtitle \
 : str, optional
     Shorthands for the below keywords.
 lefttitle, centertitle, righttitle, upperlefttitle, uppercentertitle, upperrighttitle, \
-lowerlefttitle, lowercentertitle, lowerrighttitle : str, optoinal
+lowerlefttitle, lowercentertitle, lowerrighttitle : str, optional
     Additional titles in specific positions. This works as an alternative
     to the ``ax.format(title='Title', titleloc=loc)`` workflow and permits
     adding more than one title-like label for a single axes.
@@ -417,44 +419,53 @@ docstring._snippet_manager['figure.format'] = _figure_format_docstring
 
 # Colorbar docstrings
 _colorbar_args_docstring = """
-mappable : mappable, sequence of artist, sequence of color-spec, or colormap-spec
+mappable : mappable, colormap-spec, sequence of color-spec, \
+or sequence of `~matplotlib.artist.Artist`
     There are four options here:
 
-    1. A mappable object. Basically, any object with a ``get_cmap`` method,
-       like the objects returned by `~matplotlib.axes.Axes.contourf` and
-       `~matplotlib.axes.Axes.pcolormesh`.
-    2. A sequence of matplotlib artists. Any object with a ``get_color`` method
-       will do, like `~matplotlib.lines.Line2D` instances. A colormap will
-       be generated from the colors of these objects, and colorbar levels
-       will be selected using `values`.  If `values` is ``None``, we try
-       to infer them by converting the handle labels returned by
-       `~matplotlib.artist.Artist.get_label` to `float`. Otherwise, it is
-       set to ``np.linspace(0, 1, len(mappable))``.
-    3. A sequence of hex strings, color string names, or RGB tuples. A colormap
-       will be generated from these colors, and colorbar levels will be
-       selected using `values`. If `values` is ``None``, it is set to
-       ``np.linspace(0, 1, len(mappable))``.
-    4. A `~matplotlib.colors.Colormap` instance. In this case, a colorbar
-       will be drawn using this colormap and with levels determined by
-       `values`. If `values` is ``None``, it is set to
-       ``np.linspace(0, 1, cmap.N)``.
+    1. A `~matplotlib.cm.ScalarMappable` (e.g., an object returned by
+       `~proplot.axes.PlotAxes.contourf` or `~proplot.axes.PlotAxes.pcolormesh`).
+    2. A `~matplotlib.colors.Colormap` or registered colormap name used to build a
+       `~matplotlib.cm.ScalarMappable` on-the-fly. The colorbar range and ticks depend
+       on the arguments `values`, `vmin`, `vmax`, and `norm`. The default for a
+       `~proplot.colors.ContinuousColormap` is ``vmin=0`` and ``vmax=1`` (note that
+       passing `values` will "discretize" the colormap). The default for a
+       `~proplot.colors.DiscreteColormap` is ``values=np.arange(0, cmap.N)``.
+    3. A sequence of hex strings, color names, or RGB[A] tuples. A
+       `~proplot.colors.DiscreteColormap` will be generated from these colors and
+       used to build a `~matplotlib.cm.ScalarMappable` on-the-fly. The colorbar
+       range and ticks depend on the arguments `values`, `norm`, and
+       `norm_kw`. The default is ``values=np.arange(0, len(mappable))``.
+    4. A sequence of `matplotlib.artist.Artist` instances (e.g., a list of
+       `~matplotlib.lines.Line2D` instances returned by `~proplot.axes.PlotAxes.plot`).
+       A colormap will be generated from the colors of these objects (where the
+       color is determined by ``get_color``, if available, or ``get_facecolor``).
+       The colorbar range and ticks depend on the arguments `values`, `norm`, and
+       `norm_kw`. The default is to infer colorbar ticks and tick labels
+       by calling `~matplotlib.artist.Artist.get_label` on each artist.
 
 values : sequence of float or str, optional
-    Ignored if `mappable` is a mappable object. This maps each color or
-    plot handle in the `mappable` list to numeric values, from which a
-    colormap and normalizer are constructed. These can also be strings,
-    in which case the list indices are used for tick locations and the
-    strings are applied as tick labels.
+    Ignored if `mappable` is a `~matplotlib.cm.ScalarMappable`. This maps the colormap
+    colors to numeric values using `~proplot.colors.DiscreteNorm`. If the colormap is
+    a `~proplot.colors.ContinuousColormap` then its colors will be "discretized".
+    These These can also be strings, in which case the list indices are used for
+    tick locations and the strings are applied as tick labels.
 """
 _colorbar_kwargs_docstring = """
 orientation : {None, 'horizontal', 'vertical'}, optional
     The colorbar orientation. By default this depends on the "side" of the subplot
     or figure where the colorbar is drawn. Inset colorbars are always horizontal.
 norm : norm-spec, optional
-    Ignored if `values` is ``None``. The normalizer for converting `values`
-    to colormap colors. Passed to `~proplot.constructor.Norm`.
+    Ignored if `mappable` is a `~matplotlib.cm.ScalarMappable`. This is the continuous
+    normalizer used to scale the `~proplot.colors.ContinuousColormap` (or passed
+    to `~proplot.colors.DiscreteNorm` if `values` was passed). Passed to the
+    `~proplot.constructor.Norm` constructor function.
 norm_kw : dict-like, optional
-    The normalizer settings. Passed to `~proplot.constructor.Norm`.
+    Ignored if `mappable` is a `~matplotlib.cm.ScalarMappable`. These are the
+    normalizer keyword arguments. Passed to `~proplot.constructor.Norm`.
+vmin, vmax : float, optional
+    Ignored if `mappable` is a `~matplotlib.cm.ScalarMappable`. These are the minimum
+    and maximum colorbar values. Passed to `~proplot.constructor.Norm`.
 label, title : str, optional
     The colorbar label. The `title` keyword is also accepted for
     consistency with `~matplotlib.axes.Axes.legend`.
@@ -560,23 +571,24 @@ docstring._snippet_manager['axes.colorbar_kwargs'] = _colorbar_kwargs_docstring
 # Legend docstrings
 _legend_args_docstring = """
 handles : list of artist, optional
-    List of matplotlib artists, or a list of lists of artist instances (see
-    the `center` keyword). If ``None``, artists with valid labels are retrieved
-    automatically. If the object is a `~matplotlib.contour.ContourSet`, the
-    ``legend_elements`` method is used to pair the collection or contour set label
-    with the central artist in the list (generally giving the central colormap
-    color if the object is controlled with a colormap).
+    List of matplotlib artists, or a list of lists of artist instances (see the `center`
+    keyword). If not passed, artists with valid labels (applied by passing `label` or
+    `labels` to a plotting command or calling `~matplotlib.artist.Artist.set_label`)
+    are retrieved automatically. If the object is a `~matplotlib.contour.ContourSet`,
+    `~matplotlib.contour.ContourSet.legend_elements` is used to select the central
+    artist in the list (generally useful for single-color contour plots). Note that
+    proplot's `~proplot.axes.PlotAxes.contour` and `~proplot.axes.PlotAxes.contourf`
+    accept a legend `label` keyword argument.
 labels : list of str, optional
     A matching list of string labels or ``None`` placeholders, or a matching list of
     lists (see the `center` keyword). Wherever ``None`` appears in the list (or
     if no labels were passed at all), labels are retrieved by calling
     `~matplotlib.artist.Artist.get_label` on each `~matplotlib.artist.Artist` in the
-    handle list. If a handle consists of a tuple group of artists, labels are
-    inferred from the artists in the tuple. If there are multiple unique labels in
-    the tuple group of artists, the tuple group is expanded into unique legend
-    entries. Otherwise, the tuple group elements are drawn on top of eachother.
-    For details on matplotlib's legend handlers, including tuple groups, see
-    the matplotlib `legend guide \
+    handle list. If a handle consists of a tuple group of artists, labels are inferred
+    from the artists in the tuple (if there are multiple unique labels in the tuple
+    group of artists, the tuple group is expanded into unique legend entries --
+    otherwise, the tuple group elements are drawn on top of eachother). For details
+    on matplotlib legend handlers and tuple groups, see the matplotlib `legend guide \
 <https://matplotlib.org/stable/tutorials/intermediate/legend_guide.html>`__.
 """
 _legend_kwargs_docstring = """
@@ -591,7 +603,7 @@ order : {'C', 'F'}, optional
     (``'F'``) order. Analagous to `numpy.array` ordering. Default is ``'F'``.
 center : bool, optional
     Whether to center each legend row individually. If ``True``, we draw
-    successive single-row legends stacked on top of each other. If ``None``,
+    successive single-row legends "stacked" on top of each other. If ``None``,
     we infer this setting from `handles`. By default, `center` is set to ``True``
     if `handles` is a list of lists (each sublist is used as a row in the legend).
 alphabetize : bool, optional
@@ -941,7 +953,7 @@ class Axes(maxes.Axes):
         Retrieve the axis label properties.
         """
         # Get the rc settings
-        # NOTE: This permits passing arbitrary additoinal args to set_[xy]label()
+        # NOTE: This permits passing arbitrary additional args to set_[xy]label()
         kw = rc.fill(
             {
                 'color': 'axes.labelcolor',
@@ -2433,7 +2445,7 @@ class Axes(maxes.Axes):
                         handles.append(handle)
         return handles
 
-    def _parse_handle_groups(self, handles, labels=None):
+    def _parse_legend_group(self, handles, labels=None):
         """
         Parse possibly tuple-grouped input handles.
         """
@@ -2564,7 +2576,7 @@ class Axes(maxes.Axes):
             ihandles, ilabels = to_list(ihandles), to_list(ilabels)
             if ihandles is None:
                 ihandles = self._get_legend_handles(handler_map)
-            ihandles, ilabels = self._parse_handle_groups(ihandles, ilabels)
+            ihandles, ilabels = self._parse_legend_group(ihandles, ilabels)
             ipairs = list(zip(ihandles, ilabels))
             if alphabetize:
                 ipairs = sorted(ipairs, key=lambda pair: pair[1])
@@ -2585,10 +2597,10 @@ class Axes(maxes.Axes):
             pairs = [ipairs for ipairs in pairs if ipairs]
         return pairs, multi
 
-    def _parse_ordinary_legend(self, pairs, ncol=None, order=None, **kwargs):
+    def _parse_aligned_legend(self, pairs, ncol=None, order=None, **kwargs):
         """
-        Draw an individual legend with support for changing legend-entries
-        between column-major and row-major.
+        Draw an individual legend with aligned columns. Includes support
+        for switching legend-entries between column-major and row-major.
         """
         # Optionally change the order
         npairs = len(pairs)
@@ -2782,7 +2794,7 @@ class Axes(maxes.Axes):
             objs = lax._parse_centered_legend(pairs, kw_frame=kw_frame, **kwargs)
         else:
             kwargs.update({key: kw_frame.pop(key) for key in ('shadow', 'fancybox')})
-            objs = [lax._parse_ordinary_legend(pairs, ncol=ncol, order=order, **kwargs)]
+            objs = [lax._parse_aligned_legend(pairs, ncol=ncol, order=order, **kwargs)]
             objs[0].legendPatch.update(kw_frame)
         for obj in objs:
             if hasattr(lax, 'legend_') and lax.legend_ is None:
@@ -2854,8 +2866,9 @@ class Axes(maxes.Axes):
             ==================  =======================================
 
         width : unit-spec, optional
-            For outer legends only. The space allocated for the legend box. This
-            does nothing if the tight layout algorithm is active for the figure.
+            For outer legends only. The space allocated for the legend
+            box. This does nothing if the :ref:`tight layout algorithm
+            <ug_tight>` is active for the figure.
             %(units.in)s
         %(axes.legend_space)s
 

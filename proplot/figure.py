@@ -121,11 +121,12 @@ alignx, aligny, align : bool or {0, 1}, optional
 %(gridspec.shared)s
 %(gridspec.scalar)s
 tight : bool, optional
-    Whether to have `~Figure.auto_layout` include tight layout adjustments.
-    Default is :rc:`subplots.tight`. If you manually specified a spacing in
-    the call to `~proplot.ui.subplots`, it will be used to override the tight
-    layout spacing. For example, with ``left=1``, the left margin is set to
-    1 em-width, while the remaining margin widths are calculated automatically.
+    Whether automatic calls to `~Figure.auto_layout` should include
+    :ref:`tight layout adjustments <ug_tight>`. Default is :rc:`subplots.tight`.
+    If you manually specified a spacing in the call to `~proplot.ui.subplots`,
+    it will be used to override the tight layout spacing. For example, with
+    ``left=1``, the left margin is set to 1 em-width, while the remaining
+    margin widths are calculated automatically.
 %(gridspec.tight)s
 journal : str, optional
     String corresponding to an academic journal standard used to control the figure
@@ -354,12 +355,13 @@ loc : str, optional
 space : float or str, optional
     The fixed space between the {name} and the subplot grid edge.
     %(units.em)s
-    When the tight layout algorithm is active for the figure, this is adjusted
-    automatically using `pad`. Otherwise, a suitable default is selected.
+    When the :ref:`tight layout algorithm <ug_tight>` is active for the figure,
+    `space` is computed automatically (see `pad`). Otherwise, `space` is set to
+    a suitable default.
 pad : float or str, optional
-    The tight layout padding between the {name} and the subplot grid.
-    Default is :rc:`subplots.innerpad` for the first {name} and
-    :rc:`subplots.panelpad` for subsequently stacked {name}s.
+    The :ref:`tight layout padding <ug_tight>` between the {name} and the
+    subplot grid. Default is :rc:`subplots.innerpad` for the first {name}
+    and :rc:`subplots.panelpad` for subsequently "stacked" {name}s.
     %(units.em)s
 row, rows
     Aliases for `span` for {name}s on the left or right side.
@@ -1664,7 +1666,7 @@ class Figure(mfigure.Figure):
         %(figure.legend_space)s
         width : unit-spec, optional
             The space allocated for the legend box. This does nothing if
-            the tight layout algorithm is active for the figure.
+            the :ref:`tight layout algorithm <ug_tight>` is active for the figure.
             %(units.in)s
 
         Other parameters
