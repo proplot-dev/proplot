@@ -181,7 +181,8 @@ def subplots(*args, **kwargs):
     kwsubs = _pop_params(kwargs, pfigure.Figure.add_subplots)
     kwsubs.update(_pop_params(kwargs, pgridspec.GridSpec._update_params))
     for key in ('array', 'subplot_kw', 'gridspec_kw'):  # deprecated args
-        kwsubs[key] = kwargs.pop(key, None)
+        if key in kwargs:
+            kwsubs[key] = kwargs.pop(key)
     # Format keywords
     rc_kw, rc_mode = _pop_rc(kwargs)
     kwformat = _pop_params(kwargs, pfigure.Figure._format_signature)
