@@ -477,7 +477,7 @@ class GridSpec(mgridspec.GridSpec):
 
     def _get_panel_indices(self, which=None, space=False):
         """
-        Get the indices associated with "panel" gridspec slots or spaces.
+        Get the indices associated with panel slots or spaces.
         """
         panels = self._get_panel_list(which)
         if not space:
@@ -563,7 +563,6 @@ class GridSpec(mgridspec.GridSpec):
         """
         Insert a panel slot into the existing gridspec. The `side` is the panel side
         and the `arg` is either an axes instance or the figure row-column span.
-        Subsequently indexing the gridspec will ignore the slots occupied by panels.
         """
         # Parse input arguments and get the SubplotSpec index
         fig = self.figure
@@ -661,7 +660,7 @@ class GridSpec(mgridspec.GridSpec):
     def _calc_figsize(self):
         """
         Return an updated auto layout figure size accounting for
-        gridspec and figure parameters
+        the gridspec and figure parameters.
         """
         fig = self.figure
         if fig is None:  # drawing before subplots are added?
@@ -1041,13 +1040,24 @@ class GridSpec(mgridspec.GridSpec):
     def get_geometry(self):
         """
         Return the total number of rows and columns in the grid.
+
+        See also
+        --------
+        GridSpec.get_subplot_geometry
+        GridSpec.get_panel_geometry
+        GridSpec.get_grid_positions
         """
         return self.nrows, self.ncols
 
     def get_subplot_geometry(self):
         """
-        Return the number of rows and columns allocated for "main" subplots
+        Return the number of rows and columns allocated for subplots
         and available with ``gridspec[...]`` indexing.
+
+        See also
+        --------
+        GridSpec.get_geometry
+        GridSpec.get_panel_geometry
         """
         nrows, ncols = self.get_geometry()
         nrows_panels, ncols_panels = self.get_panel_geometry()
@@ -1055,8 +1065,13 @@ class GridSpec(mgridspec.GridSpec):
 
     def get_panel_geometry(self):
         """
-        Return the number of rows and columns allocated for "panel" subplots
+        Return the number of rows and columns allocated for panels
         and *not* available with ``gridspec[...]`` indexing.
+
+        See also
+        --------
+        GridSpec.get_geometry
+        GridSpec.get_subplot_geometry
         """
         nrows = sum(map(bool, self._hpanels))
         ncols = sum(map(bool, self._wpanels))
@@ -1073,6 +1088,10 @@ class GridSpec(mgridspec.GridSpec):
         inches when the `GridSpec` is instantiated. This means that subsequent changes
         to :rcraw:`font.size` will have no effect on the spaces. This is consistent
         with :rcraw:`font.size` having no effect on already-instantiated figures.
+
+        See also
+        --------
+        GridSpec.get_geometry
         """
         # Grab the figure size
         if not self.figure:
@@ -1136,6 +1155,10 @@ class GridSpec(mgridspec.GridSpec):
         %(gridspec.shared)s
         %(gridspec.vector)s
         %(gridspec.tight)s
+
+        See also
+        --------
+        GridSpec.copy
         """
         # Apply positions to all axes
         # NOTE: This uses the current figure size to fix panel widths
@@ -1158,6 +1181,11 @@ class GridSpec(mgridspec.GridSpec):
         """
         The `proplot.figure.Figure` uniquely associated with this `GridSpec`.
         On assignment the gridspec parameters and figure size are updated.
+
+        See also
+        --------
+        proplot.gridspec.SubplotGrid.figure
+        proplot.figure.Figure.gridspec
         """
         return self._figure
 
@@ -1431,7 +1459,8 @@ class SubplotGrid(MutableSequence, list):
     @docstring._snippet_manager
     def format(self, **kwargs):
         """
-        Call the ``format`` command for every axes in the grid.
+        Call the ``format`` command for the `~SubplotGrid.figure`
+        and every axes in the grid.
 
         Parameters
         ----------
@@ -1463,7 +1492,13 @@ class SubplotGrid(MutableSequence, list):
     def figure(self):
         """
         The `proplot.figure.Figure` uniquely associated with this `SubplotGrid`.
-        This is used for the `SubplotGrid.format` command.
+        This is used with the `SubplotGrid.format` command.
+
+        See also
+        --------
+        proplot.gridspec.GridSpec.figure
+        proplot.gridspec.SubplotGrid.gridspec
+        proplot.figure.Figure.subplotgrid
         """
         return self.gridspec.figure
 
@@ -1472,6 +1507,12 @@ class SubplotGrid(MutableSequence, list):
         """
         The `~proplot.gridspec.GridSpec` uniquely associated with this `SubplotGrid`.
         This is used to resolve 2D indexing. See `~SubplotGrid.__getitem__` for details.
+
+        See also
+        --------
+        proplot.figure.Figure.gridspec
+        proplot.gridspec.SubplotGrid.figure
+        proplot.gridspec.SubplotGrid.shape
         """
         # Return the gridspec associatd with the grid
         if not self:
@@ -1485,6 +1526,10 @@ class SubplotGrid(MutableSequence, list):
         """
         The shape of the `~proplot.gridspec.GridSpec` associated with the grid.
         See `~SubplotGrid.__getitem__` for details.
+
+        See also
+        --------
+        proplot.gridspec.SubplotGrid.gridspec
         """
         # NOTE: Considered deprecating this but on second thought since this is
         # a 2D array-like object it should definitely have a shape attribute.

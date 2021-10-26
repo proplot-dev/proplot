@@ -1841,6 +1841,12 @@ class Figure(mfigure.Figure):
         """
         The single `~proplot.gridspec.GridSpec` instance used for all
         subplots in the figure.
+
+        See also
+        --------
+        proplot.figure.Figure.subplotgrid
+        proplot.gridspec.GridSpec.figure
+        ptoplot.gridspec.SubplotGrid.gridspec
         """
         return self._gridspec
 
@@ -1856,6 +1862,11 @@ class Figure(mfigure.Figure):
         """
         A `~proplot.gridspec.SubplotGrid` containing the numbered subplots in
         the figure. The subplots are ordered by increasing subplot number.
+
+        See also
+        --------
+        proplot.figure.Figure.gridspec
+        ptoplot.gridspec.SubplotGrid.figure
         """
         return pgridspec.SubplotGrid(
             [ax for num, ax in sorted(self._subplot_dict.items())]
