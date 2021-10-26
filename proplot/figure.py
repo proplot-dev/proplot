@@ -1303,7 +1303,8 @@ class Figure(mfigure.Figure):
                 )
             return output
 
-        # Build the gridspec and the subplot array
+        # Build the subplot array
+        # NOTE: Currently this may ignore user-input nrows/ncols without warning
         arg = kwargs.pop('array', None)  # deprecated
         if arg is not None:
             args = (arg, *args)
@@ -1311,31 +1312,28 @@ class Figure(mfigure.Figure):
             raise TypeError(f'Figure.add_subplots() expected 0 or 1 positional arguments. Got {len(args)}.')  # noqa: E501
         if order not in ('C', 'F'):  # better error message
             raise ValueError(f"Invalid order={order!r}. Options are 'C' or 'F'.")
+        gs = None
         arg = args[0] if args else None
-        if isinstance(arg, mgridspec.GridSpec):  # may raise error down the line
-            gs, nrows, ncols, array = arg, arg.nrows, arg.ncols, None
-        else:
-            gs, array = None, arg
-        if array is None:
-            naxs = nrows * ncols
-            array = np.arange(1, naxs + 1)[..., None]
+        if arg is None or isinstance(arg, mgridspec.GridSpec):
+            if arg is not None:
+                gs, nrows, ncols = arg, arg.nrows, arg.ncols
+            array = np.arange(1, nrows * ncols + 1)[..., None]
             array = array.reshape((nrows, ncols), order=order)
         else:
-            array = np.atleast_1d(array)
+            array = np.atleast_1d(arg)
             array[array == None] = 0  # None or 0 both valid placeholders  # noqa: E711
             array = array.astype(np.int)
             if array.ndim == 1:  # interpret as single row or column
                 array = array[None, :] if order == 'C' else array[:, None]
             elif array.ndim != 2:
                 raise ValueError(f'Expected 1D or 2D array of integers. Got {array}.')
-            nums = np.unique(array[array != 0])
-            naxs = len(nums)
-            if any(num < 0 or not isinstance(num, Integral) for num in nums.flat):
-                raise ValueError(f'Expected array of positive integers. Got {array}.')
-            nrows, ncols = array.shape
 
         # Parse input format, gridspec, and projection arguments
         # NOTE: Permit figure format keywords for e.g. 'collabels' (more intuitive)
+        nums = np.unique(array[array != 0])
+        naxs = len(nums)
+        if any(num < 0 or not isinstance(num, Integral) for num in nums.flat):
+            raise ValueError(f'Expected array of positive integers. Got {array}.')
         proj = _not_none(projection=projection, proj=proj)
         proj = _axes_dict(naxs, proj, kw=False, default='cartesian')
         proj_kw = _not_none(projection_kw=projection_kw, proj_kw=proj_kw) or {}
@@ -1360,7 +1358,7 @@ class Figure(mfigure.Figure):
         # Create or update the gridspec and add subplots with subplotspecs
         # NOTE: The gridspec is added to the figure when we pass the subplotspec
         if gs is None:
-            gs = pgridspec.GridSpec(nrows, ncols, **gridspec_kw)
+            gs = pgridspec.GridSpec(*array.shape, **gridspec_kw)
         else:
             gs.update(**gridspec_kw)
         axs = naxs * [None]  # list of axes
