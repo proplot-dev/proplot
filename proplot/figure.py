@@ -1305,13 +1305,16 @@ class Figure(mfigure.Figure):
 
         # Build the subplot array
         # NOTE: Currently this may ignore user-input nrows/ncols without warning
-        arg = kwargs.pop('array', None)  # deprecated
-        if arg is not None:
-            args = (arg, *args)
         if len(args) > 1:
             raise TypeError(f'Figure.add_subplots() expected 0 or 1 positional arguments. Got {len(args)}.')  # noqa: E501
         if order not in ('C', 'F'):  # better error message
             raise ValueError(f"Invalid order={order!r}. Options are 'C' or 'F'.")
+        if 'array' in kwargs:
+            args = (kwargs.pop('array'),)
+            warnings._warn_proplot(
+                "Passing 'array' as a keyword argument was deprecated in v0.10. "
+                'Please pass as a positional argument.'
+            )
         gs = None
         arg = args[0] if args else None
         if arg is None or isinstance(arg, mgridspec.GridSpec):
