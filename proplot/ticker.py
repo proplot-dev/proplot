@@ -6,6 +6,7 @@ import locale
 import re
 from fractions import Fraction
 
+import matplotlib.axis as maxis
 import matplotlib.ticker as mticker
 import numpy as np
 
@@ -26,6 +27,7 @@ except ModuleNotFoundError:
 # on website. Just represents a matplotlib replacement. However *do* keep
 # it public so people can access it from module like all other classes.
 __all__ = [
+    'DiscreteLocator',
     'AutoFormatter',
     'FracFormatter',
     'SciFormatter',
@@ -102,9 +104,65 @@ def _default_precision_zerotrim(precision=None, zerotrim=None):
     return precision, zerotrim
 
 
+class DiscreteLocator(mticker.FixedLocator):
+    """
+    A flexible fixed tick locator suitable for discretized colorbars.
+    Adds ticks to some subset of the location list depending on the available
+    space determined from `~matplotlib.axis.Axis.get_tick_space`. Zero will
+    always be ticked if it appears in the location list. The subsetting
+    can be overridden by specifying the `nbins` keyword.
+    """
+    @docstring._snippet_manager
+    def __init__(self, locs, *, nbins=None, min_n_ticks=2, minor=False):
+        """
+        Parameters
+        ----------
+        locs : array-like
+            The tick location list.
+        nbins : int, optional
+            Maximum number of ticks to subsample.
+        min_n_ticks : int, optional
+            Subsample at least this many ticks.
+        minor : bool, optional
+            Whether this is for minor ticks or not.
+        """
+        self._minor = bool(minor)  # needed to scale tick space
+        self._min_n_ticks = int(min_n_ticks)  # compare to MaxNLocator
+        super().__init__(locs, nbins=nbins)
+
+    def tick_values(self, vmin, vmax):  # noqa: U100
+        # NOTE: It is critical that minor tick interval evenly divides major tick
+        # interval. Otherwise get misaligned major and minor tick steps.
+        # NOTE: For discrete colorbars we virtually always want to subsample the level
+        # list. For example _parse_autolev will interpolate to even points in log-space
+        # between powers of 10 if the powers don't give us enough levels. Therefore
+        # x/y axis-style unevenly spaced log minor ticks would be confusing/ugly.
+        locs = self.locs
+        if self.axis is None:
+            return locs
+        nbins = self.nbins
+        if nbins is None:
+            nbins = self.axis.get_tick_space()
+            nbins = max((1, self._min_n_ticks - 1, nbins))
+        offset = np.argmin(np.abs(locs))
+        step = max(1, int(np.ceil(len(locs) / nbins)))
+        if self._minor:  # tick every half font size
+            if isinstance(self.axis, maxis.XAxis):
+                fact = 6  # unscale heuristic of 3 em-widths
+            elif isinstance(self.axis, maxis.YAxis):
+                fact = 4  # unscale 2 em-width scaling
+            else:
+                fact = 2  # fall back to just half em-width
+            for i in range(fact, 0, -1):
+                if step % i == 0:
+                    step = step // i
+                    break
+        return locs[offset % step::step]  # even multiples from zero or zero-close
+
+
 class AutoFormatter(mticker.ScalarFormatter):
     """
-    The new default tick label formatter.
+    The default proplot tick label formatter.
     """
     @docstring._snippet_manager
     def __init__(

@@ -86,6 +86,8 @@ LOCATORS = {
     'linear': mticker.LinearLocator,
     'multiple': mticker.MultipleLocator,
     'fixed': mticker.FixedLocator,
+    'discrete': pticker.DiscreteLocator,
+    'discreteminor': partial(pticker.DiscreteLocator, minor=True),
     'index': mticker.IndexLocator,
     'symlog': mticker.SymmetricalLogLocator,
     'logit': mticker.LogitLocator,
@@ -912,7 +914,7 @@ def Norm(norm, *args, **kwargs):
     return NORMS[norm](*args, **kwargs)
 
 
-def Locator(locator, *args, **kwargs):
+def Locator(locator, *args, index=False, discrete=False, **kwargs):
     """
     Return a `~matplotlib.ticker.Locator` instance.
 
@@ -924,7 +926,9 @@ def Locator(locator, *args, **kwargs):
         * If a `~matplotlib.ticker.Locator` instance already, the input
           argument is simply returned.
         * If a sequence of numbers, these points are ticked. Returns a
-          `~matplotlib.ticker.FixedLocator`.
+          `~matplotlib.ticker.FixedLocator` by default, a
+          `~matplotlib.ticker.IndexLocator` if `index` is ``True``, or
+          a `~proplot.ticker.DiscreteLocator` if `discrete` is ``True``.
         * If number, this specifies the *step size* between tick locations.
           Returns a `~matplotlib.ticker.MultipleLocator`.
 
@@ -945,6 +949,8 @@ def Locator(locator, *args, **kwargs):
         ``'minor'``              `~matplotlib.ticker.AutoMinorLocator`         Minor ticks at sensible locations
         ``'date'``               `~matplotlib.dates.AutoDateLocator`           Default tick locations for datetime axes
         ``'fixed'``              `~matplotlib.ticker.FixedLocator`             Ticks at these exact locations
+        ``'discrete'``           `~proplot.ticker.DiscreteLocator`             Major ticks restricted to these locations but subsampled depending on the axis length
+        ``'discreteminor'``      `~proplot.ticker.DiscreteLocator`             Minor ticks restricted to these locations but subsampled depending on the axis length
         ``'index'``              `~matplotlib.ticker.IndexLocator`             Ticks on the non-negative integers
         ``'linear'``             `~matplotlib.ticker.LinearLocator`            Exactly ``N`` ticks encompassing axis limits, spaced as ``numpy.linspace(lo, hi, N)``
         ``'log'``                `~matplotlib.ticker.LogLocator`               For log-scale axes
@@ -955,7 +961,7 @@ def Locator(locator, *args, **kwargs):
         ``'multiple'``           `~matplotlib.ticker.MultipleLocator`          Ticks every ``N`` step away from zero
         ``'symlog'``             `~matplotlib.ticker.SymmetricalLogLocator`    For symlog-scale axes
         ``'symlogminor'``        `~matplotlib.ticker.SymmetricalLogLocator`    For symlog-scale axes on the 1st through 9th multiples of each power of the base
-        ``'theta'``              `~matplotlib.projections.polar.ThetaLocator`  Like the base locator but default locations are every `numpy.pi`/8 radians
+        ``'theta'``              `~matplotlib.projections.polar.ThetaLocator`  Like the base locator but default locations are every `numpy.pi` / 8 radians
         ``'year'``               `~matplotlib.dates.YearLocator`               Ticks every ``N`` years
         ``'month'``              `~matplotlib.dates.MonthLocator`              Ticks every ``N`` months
         ``'weekday'``            `~matplotlib.dates.WeekdayLocator`            Ticks every ``N`` weekdays
@@ -1018,7 +1024,12 @@ def Locator(locator, *args, **kwargs):
     elif isinstance(locator, Number):  # scalar variable
         locator = mticker.MultipleLocator(locator, *args, **kwargs)
     elif np.iterable(locator):
-        locator = mticker.FixedLocator(np.sort(locator), *args, **kwargs)
+        if index:
+            locator = mticker.IndexLocator(locator, *args, **kwargs)
+        elif discrete:
+            locator = pticker.DiscreteLocator(locator, *args, **kwargs)
+        else:
+            locator = mticker.FixedLocator(locator, *args, **kwargs)
     else:
         raise ValueError(f'Invalid locator {locator!r}.')
     return locator
@@ -1036,7 +1047,7 @@ def Formatter(formatter, *args, date=False, index=False, **kwargs):
         * If a `~matplotlib.ticker.Formatter` instance already, the input
           argument is simply returned.
         * If sequence of strings, the ticks are labeled with these strings. Returns
-          a `~matplotlib.ticker.FixedFormatter` if `index` is ``False`` or an
+          a `~matplotlib.ticker.FixedFormatter` by default or an
           `~matplotlib.ticker.IndexFormatter` if `index` is ``True``.
         * If a function, the labels will be generated using this function.
           Returns a `~matplotlib.ticker.FuncFormatter`.

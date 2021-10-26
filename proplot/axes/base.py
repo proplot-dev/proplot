@@ -482,19 +482,17 @@ extendrect : bool, optional
     (i.e. extensions are drawn as triangles).
 locator, ticks : locator-spec, optional
     Used to determine the colorbar tick positions. Passed to the
-    `~proplot.constructor.Locator` constructor function.
+    `~proplot.constructor.Locator` constructor function. By default
+    `~matplotlib.ticker.AutoLocator` is used for continuous color levels
+    and `~proplot.ticker.DiscreteLocator` is used for discrete color levels.
 locator_kw : dict-like, optional
     Keyword arguments passed to `matplotlib.ticker.Locator` class.
 minorlocator, minorticks
-    As with `locator`, `ticks` but for the minor ticks.
+    As with `locator`, `ticks` but for the minor ticks. By default
+    `~matplotlib.ticker.AutoMinorLocator` is used for continuous color levels
+    and `~proplot.ticker.DiscreteLocator` is used for discrete color levels.
 minorlocator_kw
     As with `locator_kw`, but for the minor ticks.
-maxn : int, optional
-    The maximum number of `~proplot.colors.DiscreteNorm` levels that should be assigned
-    major ticks. Ignored if `locator` was passed. Default depends on the colorbar and
-    tick label size. The name `maxn` was inspired by `~matplotlib.ticker.MaxNLocator`.
-maxn_minor
-    As with `maxn` but for minor ticks. Ignored if `minorlocator` was passed.
 format, formatter, ticklabels : formatter-spec, optional
     The tick label format. Passed to the `~proplot.constructor.Formatter`
     constructor function.
@@ -2017,70 +2015,7 @@ class Axes(maxes.Axes):
         kwargs.setdefault('maxn', 5)  # passed to _parse_colorbar_ticks
         return ax, kwargs
 
-    def _parse_colorbar_ticks(
-        self, ticks=None, locator=None, locator_kw=None,
-        format=None, formatter=None, ticklabels=None, formatter_kw=None,
-        minorticks=None, minorlocator=None, minorlocator_kw=None,
-        maxn=None, maxn_minor=None, tickminor=None, fontsize=None, **kwargs,
-    ):
-        """
-        Get the default locator for colorbar ticks.
-        """
-        # Parse flexible input args
-        # NOTE: Capture 'format' for consistency with matplotlib keywords
-        ticks = locator = _not_none(ticks=ticks, locator=locator)
-        formatter = _not_none(ticklabels=ticklabels, formatter=formatter, format=format)
-        minorlocator = _not_none(minorticks=minorticks, minorlocator=minorlocator)
-        locator_kw = locator_kw or {}
-        formatter_kw = formatter_kw or {}
-        minorlocator_kw = minorlocator_kw or {}
-
-        # Subsample level locations
-        # NOTE: This is improvement on matplotlib which always ticks every level
-        # boundary when BoundaryNorm or subclass (i.e. DiscreteNorm) is passed.
-        # NOTE: We virtually always want to subsample the level list. For example
-        # for LogNorm _parse_autolev will interpolate to even points in log-space
-        # between powers of 10 if the powers don't give us enough levels. Therefore
-        # x/y axis-style unevenly spaced log minor ticks would be confusing/ugly.
-        def _subsample_levels(maxn, scale, size):
-            maxn = _not_none(maxn, int(length / (scale * size / 72)))
-            diff = abs(ticks[1] - ticks[0])
-            step = 1 + len(ticks) // max(1, maxn)
-            idx, = np.where(np.isclose(np.array(ticks) % (step * diff), 0.0))
-            if idx.size:
-                locs = ticks[idx[0] % step::step]  # even multiples from zero
-            else:
-                locs = ticks[::step]  # unknown offset
-            return locs
-
-        # Determine colorbar ticks
-        # NOTE: Do not necessarily want minor tick locations at logminor for LogNorm!
-        # In _auto_discrete_norm we sometimes select evenly spaced levels in log-space
-        # *between* powers of 10, so logminor ticks would be misaligned with levels.
-        if np.iterable(locator) and not isinstance(locator, str) and len(locator) > 1:
-            # These are usually ticks passed by _parse_levels but may also be user
-            # input lists. Users can use pplt.Locator(ticks) to avoid subsampling.
-            width, height = self._get_size_inches()
-            if kwargs.get('orientation', None) == 'vertical':
-                length, scale, axis = height, 1.0, 'y'
-            else:
-                length, scale, axis = width, 2.5, 'x'
-            fontsize = _not_none(fontsize, rc[axis + 'tick.labelsize'])
-            fontsize = _fontsize_to_pt(fontsize)
-            locator = _subsample_levels(maxn, scale, fontsize)
-            if tickminor and minorlocator is None:
-                minorlocator = _subsample_levels(maxn_minor, 0.5, fontsize)
-
-        # Return tickers
-        if locator is not None:
-            locator = constructor.Locator(locator, **locator_kw)
-        if minorlocator is not None:
-            minorlocator = constructor.Locator(minorlocator, **minorlocator_kw)
-        formatter = _not_none(formatter, 'auto')
-        formatter = constructor.Formatter(formatter, **formatter_kw)
-        return locator, formatter, minorlocator, kwargs
-
-    def _parse_colorbar_mappable(
+    def _parse_colorbar_arg(
         self, mappable, values=None, *,
         norm=None, norm_kw=None, vmin=None, vmax=None, **kwargs
     ):
@@ -2089,22 +2024,6 @@ class Axes(maxes.Axes):
         the gap between legends and colorbars (e.g., creating colorbars from line
         objects whose data values span a natural colormap range).
         """
-        # Special case where auto colorbar is generated from 1D methods, a list is
-        # always passed, but some 1D methods (scatter) do have colormaps.
-        if (
-            np.iterable(mappable)
-            and len(mappable) == 1
-            and isinstance(mappable[0], mcm.ScalarMappable)
-        ):
-            mappable = mappable[0]
-
-        # Return the scalar mappable
-        if isinstance(mappable, mcm.ScalarMappable):
-            for key, val in (('values', values), ('norm', norm), ('vmin', vmin), ('vmax', vmax)):  # noqa: E501
-                if val is not None:
-                    warnings._warn_proplot(f'Input colorbar() argument is already a ScalarMappable. Ignoring {key}={val!r}.')  # noqa: E501
-            return mappable, kwargs
-
         # For container objects, we just assume color is the same for every item.
         # Works for ErrorbarContainer, StemContainer, BarContainer.
         if (
@@ -2158,8 +2077,8 @@ class Axes(maxes.Axes):
 
         else:
             raise ValueError(
-                'Input colorbar() argument must be a scalar mappable, colormap name or '
-                f'object, list of colors, or list of artists. Instead got {mappable!r}.'
+                'Input colorbar() argument must be a scalar mappable, colormap name '
+                f'or object, list of colors, or list of artists. Got {mappable!r}.'
             )
 
         # Generate continuous normalizer, and possibly discrete normalizer. Update
@@ -2186,13 +2105,13 @@ class Axes(maxes.Axes):
                 levels = [locator[0] - 1, locator[0] + 1]
             else:
                 levels = edges(locator)
-            norm, cmap, _ = self._parse_discrete(levels, norm, cmap)
+            from . import PlotAxes  # in case this is e.g. ThreeAxes
+            norm, cmap, _ = PlotAxes._parse_discrete(self, levels, norm, cmap)
 
         # Return ad hoc ScalarMappable and update locator and formatter
         # NOTE: If value list doesn't match this may cycle over colors.
         mappable = mcm.ScalarMappable(norm, cmap)
-        guides._fill_guide_kw(kwargs, locator=locator, formatter=formatter)
-        return mappable, kwargs
+        return mappable, locator, formatter, kwargs
 
     def _draw_colorbar(
         self, mappable, values=None, *,
@@ -2200,6 +2119,9 @@ class Axes(maxes.Axes):
         label=None, title=None, reverse=False,
         rotation=None, grid=None, edges=None, drawedges=None,
         extend=None, extendsize=None, extendfrac=None,
+        ticks=None, locator=None, locator_kw=None,
+        format=None, formatter=None, ticklabels=None, formatter_kw=None,
+        minorticks=None, minorlocator=None, minorlocator_kw=None,
         tickminor=None, ticklen=None, ticklenratio=None,
         tickdir=None, tickdirection=None, tickwidth=None, tickwidthratio=None,
         ticklabelsize=None, ticklabelweight=None, ticklabelcolor=None,
@@ -2219,53 +2141,36 @@ class Axes(maxes.Axes):
         # using a Normalize (for example) to determine colors between the levels
         # (see: https://stackoverflow.com/q/42723538/4970632). Workaround makes
         # sure locators are in vmin/vmax range exclusively; cannot match values.
-        label = _not_none(title=title, label=label)
-        tickdir = _not_none(tickdir=tickdir, tickdirection=tickdirection)
-        linewidth = _not_none(lw=lw, linewidth=linewidth)
-        labelloc = _not_none(labelloc=labelloc, labellocation=labellocation)
         grid = _not_none(grid=grid, edges=edges, drawedges=drawedges, default=rc['colorbar.grid'])  # noqa: E501
-        color = _not_none(c=c, color=color, default=rc['axes.edgecolor'])
         align = _translate_loc(align, 'panel', default='center', c='center', center='center')  # noqa: E501
+        label = _not_none(title=title, label=label)
+        labelloc = _not_none(labelloc=labelloc, labellocation=labellocation)
+        locator = _not_none(ticks=ticks, locator=locator)
+        formatter = _not_none(ticklabels=ticklabels, formatter=formatter, format=format)
+        minorlocator = _not_none(minorticks=minorticks, minorlocator=minorlocator)
+        color = _not_none(c=c, color=color, default=rc['axes.edgecolor'])
+        linewidth = _not_none(lw=lw, linewidth=linewidth)
         ticklen = units(_not_none(ticklen, rc['tick.len']), 'pt')
+        tickdir = _not_none(tickdir=tickdir, tickdirection=tickdirection)
         tickwidth = units(_not_none(tickwidth, linewidth, rc['tick.width']), 'pt')
         linewidth = units(_not_none(linewidth, default=rc['axes.linewidth']), 'pt')
         ticklenratio = _not_none(ticklenratio, rc['tick.lenratio'])
         tickwidthratio = _not_none(tickwidthratio, rc['tick.widthratio'])
         rasterize = _not_none(rasterize, rc['colorbar.rasterize'])
-
-        # Generate an axes panel
-        # NOTE: The inset axes function needs 'label' to know how to pad the box
-        # TODO: Use seperate keywords for frame properties vs. colorbar edge properties?
-        if loc in ('left', 'right', 'top', 'bottom'):
-            width = kwargs.pop('width', None)
-            self = self.panel_axes(loc, width=width, space=space, pad=pad, filled=True)
-            loc = 'fill'
-        if loc == 'fill':
-            kwargs.pop('width', None)
-            kwargs['align'] = align
-            extendsize = _not_none(extendsize, rc['colorbar.extend'])
-            cax, kwargs = self._parse_outer_colorbar(**kwargs)
-        else:
-            kwargs['label'] = label  # for frame calculations
-            extendsize = _not_none(extendsize, rc['colorbar.insetextend'])
-            cax, kwargs = self._parse_inset_colorbar(loc=loc, pad=pad, **kwargs)
-
-        # Parse the mappable and get the locator or formatter. Try to get them from
-        # values or artist labels rather than random points if possible.
-        # WARNING: Matplotlib >= 3.4 seems to have issue with assigning no ticks
-        # to colorbar. Tried to fix with below block but doesn't seem to help.
-        mappable, kwargs = cax._parse_colorbar_mappable(
-            mappable, values, **kwargs
-        )
-        locator, formatter, minorlocator, kwargs = cax._parse_colorbar_ticks(
-            tickminor=tickminor, fontsize=ticklabelsize, **kwargs,
-        )
-        if isinstance(locator, mticker.NullLocator):
-            locator = []  # passed as 'ticks'
-        if isinstance(minorlocator, mticker.NullLocator):
-            minorlocator, tickminor = None, False
-
-        # Parse text property keyword args
+        locator_kw = locator_kw or {}
+        formatter_kw = formatter_kw or {}
+        minorlocator_kw = minorlocator_kw or {}
+        for b, kw in enumerate((locator_kw, minorlocator_kw)):
+            key = 'maxn_minor' if b else 'maxn'
+            name = 'minorlocator' if b else 'locator'
+            nbins = kwargs.pop('maxn_minor' if b else 'maxn', None)
+            if nbins is not None:
+                kw['nbins'] = nbins
+                warnings._warn_proplot(
+                    f'The colorbar() keyword {key!r} was deprecated in v0.10. To '
+                    "achieve the same effect, you can pass 'nbins' to the new default "
+                    f"locator DiscreteLocator using {name}_kw={{'nbins': {nbins}}}."
+                )
         kw_label = {}
         for key, value in (
             ('size', labelsize),
@@ -2284,7 +2189,64 @@ class Axes(maxes.Axes):
             if value is not None:
                 kw_ticklabels[key] = value
 
-        # Parse extend triangle keyword args
+        # Generate an axes panel
+        # NOTE: The inset axes function needs 'label' to know how to pad the box
+        # TODO: Use seperate keywords for frame properties vs. colorbar edge properties?
+        if loc in ('left', 'right', 'top', 'bottom'):
+            width = kwargs.pop('width', None)
+            self = self.panel_axes(loc, width=width, space=space, pad=pad, filled=True)
+            loc = 'fill'
+        if loc == 'fill':
+            kwargs.pop('width', None)
+            kwargs['align'] = align
+            extendsize = _not_none(extendsize, rc['colorbar.extend'])
+            cax, kwargs = self._parse_outer_colorbar(**kwargs)
+        else:
+            kwargs['label'] = label  # for frame calculations
+            extendsize = _not_none(extendsize, rc['colorbar.insetextend'])
+            cax, kwargs = self._parse_inset_colorbar(loc=loc, pad=pad, **kwargs)
+
+        # Parse the colorbar mappable
+        # NOTE: Account for special case where auto colorbar is generated from 1D
+        # methods that construct an 'artist list' (i.e. colormap scatter object)
+        if np.iterable(mappable) and len(mappable) == 1 and isinstance(mappable[0], mcm.ScalarMappable):  # noqa: E501
+            mappable = mappable[0]
+        if isinstance(mappable, mcm.ScalarMappable):
+            pop = _pop_params(kwargs, cax._parse_colorbar_arg, ignore_internal=True)
+            locator_default = formatter_default = None
+            if pop:
+                warnings._warn_proplot(f'Input is already a ScalarMappable. Ignoring unused keyword arg(s): {pop}')  # noqa: E501
+        else:
+            mappable, locator_default, formatter_default, kwargs = (
+                cax._parse_colorbar_arg(mappable, values, **kwargs)
+            )
+
+        # Parse colorbar keyword arguments
+        # NOTE: We use DiscreteLocator as the default.
+        # WARNING: Matplotlib >= 3.4 seems to have issue with assigning no ticks
+        # to colorbar. Tried to fix with below block but doesn't seem to help.
+        name = 'y' if kwargs.get('orientation') == 'vertical' else 'x'
+        axis = cax.yaxis if kwargs.get('orientation') == 'vertical' else cax.xaxis
+        locator = _not_none(locator, locator_default, None)
+        tickminor = _not_none(tickminor, rc[name + 'tick.minor.visible'])
+        if tickminor and minorlocator is None and np.iterable(locator) and not isinstance(locator, str):  # noqa: E501
+            minorlocator = locator
+            minorlocator_kw['minor'] = True
+        formatter = _not_none(formatter, formatter_default, 'auto')
+        formatter = constructor.Formatter(formatter, **formatter_kw)
+        if locator is not None:
+            locator_kw.setdefault('discrete', True)
+            locator = constructor.Locator(locator, **locator_kw)
+        if minorlocator is not None:
+            minorlocator_kw.setdefault('discrete', True)
+            minorlocator = constructor.Locator(minorlocator, **minorlocator_kw)
+        for ticker in (locator, formatter, minorlocator):
+            if ticker is not None:
+                ticker.set_axis(axis)
+        if isinstance(locator, mticker.NullLocator):
+            locator = []  # passed as 'ticks'
+        if isinstance(minorlocator, mticker.NullLocator):
+            minorlocator, tickminor = None, False  # attempted fix
         if extendsize is not None and extendfrac is not None:
             warnings._warn_proplot(
                 f'You cannot specify both an absolute extendsize={extendsize!r} '
@@ -2292,9 +2254,8 @@ class Axes(maxes.Axes):
             )
             extendfrac = None
         if extendfrac is None:
-            orientation = kwargs.get('orientation', 'horizontal')  # should be there
             width, height = cax._get_size_inches()
-            scale = height if orientation == 'vertical' else width
+            scale = height if kwargs.get('orientation') == 'vertical' else width
             extendsize = units(extendsize, 'em', 'in')
             extendfrac = extendsize / max(scale - 2 * extendsize, units(1, 'em', 'in'))
 
@@ -2318,10 +2279,12 @@ class Axes(maxes.Axes):
             kwargs['extend'] = extend
         obj = self.figure.colorbar(mappable, **kwargs)
 
-        # Label and tick label settings
-        # WARNING: Must use colorbar set_label to set text, calling set_text on
-        # the axis will do nothing!
-        axis = cax.yaxis if orientation == 'vertical' else cax.xaxis
+        # Update tickers, labels, and tick labels
+        # WARNING: Must use colorbar set_label to set text, calling
+        # set_text on the axis will do nothing!
+        # WARNING: Colorbar _ticker() internally makes dummy axis and updates view
+        # limits. Here we apply actual axis rather than dummy, otherwise default nbins
+        # of DiscreteLocator will not work, however does this have side effects?
         if label is not None:
             obj.set_label(label)
         if labelloc is not None:
@@ -2335,7 +2298,7 @@ class Axes(maxes.Axes):
 
         # The minor locator
         # NOTE: Colorbar._use_auto_colorbar_locator() is never True because we use
-        # the custom DiscreteNorm normalizer. Colorbar._ticks() always called.
+        # the custom DiscreteNorm normalizer. Colorbar._ticker() always called.
         if minorlocator is None:
             if tickminor:
                 obj.minorticks_on()
@@ -2350,7 +2313,6 @@ class Axes(maxes.Axes):
         else:
             # Set the minor ticks just like matplotlib internally sets the
             # major ticks. Private API is the only way!
-            minorlocator.set_axis(axis)
             ticks, *_ = obj._ticker(minorlocator, mticker.NullFormatter())
             axis.set_ticks(ticks, minor=True)
             axis.set_ticklabels([], minor=True)
