@@ -28,6 +28,51 @@ Version 1.0.0 (2022-XX-XX)
 This will be published when more comprehensive testing is completed
 and stability is improved.
 
+Version 0.10.0 (2021-XX-XX)
+===========================
+
+Deprecated
+----------
+
+* Deprecate passing `array` to `~proplot.figure.Figure.add_subplots` as a
+  keyword argument rather than positional argument (:commit:`3d64a449`).
+* Deprecate `maxn` and `maxn_minor` keywords passed to `~proplot.axes.Axes.colorbar`
+  (:commit:`b94a9b1e`).
+
+Features
+--------
+
+* Add `~proplot.gridspec.GridSpec.copy` method to re-use the same gridspec geometry for
+  multiple figures (:commit:`8dc7fe3e`, :commit:`be410341`, :commit:`a82a512c`).
+* Permit passing `~proplot.gridspec.Gridspec` to `~proplot.figure.Figure.add_subplots`
+  to quickly draw a subplot inside each gridspec slot (:commit:`a9ad7429`).
+* Use custom locator `proplot.ticker.DiscreteLocator` for major/minor discrete colorbar
+  ticks to auto-select subset of levels depending on axis length (:commit:`b94a9b1e`).
+* Register `proplot.ticker.DiscreteLocator` as ``'discrete'`` and add keywords `index`
+  and `discrete` to the constructor `~proplot.constructor.Locator` (:commit:`b94a9b1e`).
+* Permit passing `vmin` and `vmax` to `proplot.axes.Axes.colorbar`, as quick
+  alternative to using `norm_kw` (:commit:`eb9565bd`).
+* Permit discretizing continuous colormaps passed to `~proplot.axes.Axes.colorbar` using
+  `values`, instead of ignoring `values` when colormaps are passed (:commit:`503af4be`).
+* Align the default ticks with the colormap levels when passing discrete colormaps
+  to `~proplot.axes.Axes.colorbar` (:commit:`503af4be`).
+* Emit warning when both a scalar mappable `vmin`, `vmax`, `norm`, or `values`
+  are passed to `~proplot.axes.Axes.colorbar` (:commit:`503af4be`).
+
+Bug fixes
+---------
+
+* Fix issue where silently-deprecated `aspect` parameter passed to
+  `proplot.ui.subplots` is not translated to `refaspect` (:commit:`2406a2ae`).
+* Fix issue where `proplot.gridspec.GridSpec.figure` is allowed to change -- instead
+  raise error that recommends `~proplot.gridspec.GridSpec.copy` (:commit:`d8898f5f`).
+* Fix issue where `proplot.gridspec.GridSpec.update` cannot be called
+  on gridspecs without companion `~proplot.figure.Figure`\ s (:commit:`e69fd041`).
+* Fix issue where manual data aspect ratio passed with `~proplot.axes.Axes.format`
+  or `~matplotlib.axes.Axes.set_aspect` is inverted (:commit:`7cda3b23`).
+* Fix issue where continuous normalizer `vmin` and `vmax` are not set to min and
+  max of `levels` when passed to `~proplot.colors.DiscreteNorm` (:commit:`e9ed16c1`).
+
 Version 0.9.5 (2021-10-19)
 ==========================
 
