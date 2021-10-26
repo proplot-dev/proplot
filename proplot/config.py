@@ -585,7 +585,7 @@ def register_colors(*args, user=None, default=False, space=None, margin=None, **
 @docstring._snippet_manager
 def register_fonts(*args, user=True, default=False):
     """
-    Register font names.
+    Register font families. This is called on import.
 
     Parameters
     ----------
@@ -719,7 +719,8 @@ class Configurator(MutableMapping, dict):
 
     def __getitem__(self, key):
         """
-        Return an `rc_matplotlib` or `rc_proplot` setting.
+        Return an `rc_matplotlib` or `rc_proplot` setting using dictionary notation
+        (e.g., ``value = pplt.rc[name]``).
         """
         key = self._validate_key(key)  # might issue proplot removed/renamed error
         try:
@@ -730,7 +731,8 @@ class Configurator(MutableMapping, dict):
 
     def __setitem__(self, key, value):
         """
-        Modify an `rc_matplotlib` or `rc_proplot` setting.
+        Modify an `rc_matplotlib` or `rc_proplot` setting using dictionary notation
+        (e.g., ``pplt.rc[name] = value``).
         """
         kw_proplot, kw_matplotlib = self._get_params(key, value)
         rc_proplot.update(kw_proplot)
@@ -738,7 +740,8 @@ class Configurator(MutableMapping, dict):
 
     def __getattr__(self, attr):
         """
-        Return an `rc_matplotlib` or `rc_proplot` setting.
+        Return an `rc_matplotlib` or `rc_proplot` setting using "dot" notation
+        (e.g., ``value = pplt.rc.name``).
         """
         if attr[:1] == '_':
             return super().__getattribute__(attr)  # raise built-in error
@@ -747,7 +750,8 @@ class Configurator(MutableMapping, dict):
 
     def __setattr__(self, attr, value):
         """
-        Modify an `rc_matplotlib` or `rc_proplot` setting.
+        Modify an `rc_matplotlib` or `rc_proplot` setting using "dot" notation
+        (e.g., ``pplt.rc.name = value``).
         """
         if attr[:1] == '_':
             super().__setattr__(attr, value)
@@ -1127,16 +1131,20 @@ class Configurator(MutableMapping, dict):
 
             The options are as follows:
 
-            0. Matplotlib's `rc_matplotlib` settings and proplots `rc_proplot`
-               settings are all returned, whether or not `~Configurator.context`
-               has changed them.
-            1. Unchanged `rc_matplotlib` settings return ``None`` but `rc_proplot`
-               settings are returned whether or not `~Configurator.context` has
-               changed them. This is used in the `~proplot.axes.Axes.__init__` call
-               to `~proplot.axes.Axes.format`. When a lookup returns ``None``,
-               `~proplot.axes.Axes.format` does not apply it.
-            2. All unchanged settings return ``None``. This is used during
-               user calls to `~proplot.axes.Axes.format`.
+            * ``mode=0``: Matplotlib's `rc_matplotlib` settings
+              and proplot's `rc_proplot` settings are all returned,
+              whether they are local to the "with as" block.
+            * ``mode=1``: Matplotlib's `rc_matplotlib` settings are only
+              returned if they are local to the "with as" block. For example,
+              if :rcraw:`axes.titlesize` was passed to `~Configurator.context`,
+              then ``pplt.rc.find('axes.titlesize', context=True)`` will return
+              this value, but ``pplt.rc.find('axes.titleweight', context=True)``
+              will return ``None``. This is used internally when
+              `~proplot.axes.Axes.format` is called during axes instantiation.
+            * ``mode=2``: Matplotlib's `rc_matplotlib` settings and proplot's
+              `rc_proplot` settings are only returned if they are local to the
+              "with as" block. This is used internally when
+              `~proplot.axes.Axes.format` is manually called by users.
 
         Note
         ----
@@ -1280,7 +1288,7 @@ class Configurator(MutableMapping, dict):
             settings are prepended with ``'category.'``. For example,
             ``rc.update('axes', labelsize=20, titlesize=20)`` changes the
             :rcraw:`axes.labelsize` and :rcraw:`axes.titlesize` settings.
-        **kwargs, optional
+        **kwargs
             `rc` keys and values passed as keyword arguments.
             If the name has dots, simply omit them.
 
@@ -1441,8 +1449,8 @@ class Configurator(MutableMapping, dict):
             The path. The default file name is ``proplotrc`` and the default
             directory is the current directory.
         user : bool, optional
-            If ``True`` (the default), the settings you changed since importing
-            proplot are shown uncommented at the very top of the file.
+            If ``True`` (the default), the settings that have `~Configurator.changed`
+            from the proplot defaults are shown uncommented at the top of the file.
         backup : bool, optional
             If the file already exists and this is set to ``True``, it is moved
             to a backup file with the suffix ``.bak``.
@@ -1456,6 +1464,7 @@ class Configurator(MutableMapping, dict):
         See also
         --------
         Configurator.load
+        Configurator.changed
         """
         path = os.path.expanduser(path or '.')
         if os.path.isdir(path):  # includes ''
@@ -1478,7 +1487,11 @@ class Configurator(MutableMapping, dict):
     @property
     def changed(self):
         """
-        A dictionary of settings that have been changed from the proplot defaults.
+        A dictionary of settings that have changed from the proplot defaults.
+
+        See also
+        --------
+        Configurator.save
         """
         # Carefully detect changed settings
         rcdict = {}

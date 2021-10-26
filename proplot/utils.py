@@ -300,7 +300,7 @@ def shift_hue(color, shift=0, space='hcl'):
     Parameters
     ----------
     %(utils.color)s
-    shift : float, optoinal
+    shift : float, optional
         The HCL hue channel is offset by this value.
     %(utils.space)s
 
@@ -333,7 +333,7 @@ def scale_saturation(color, scale=1, space='hcl'):
     Parameters
     ----------
     %(utils.color)s
-    scale : float, optoinal
+    scale : float, optional
         The HCL saturation channel is multiplied by this value.
     %(utils.space)s
 
@@ -365,7 +365,7 @@ def scale_luminance(color, scale=1, space='hcl'):
     Parameters
     ----------
     %(utils.color)s
-    scale : float, optoinal
+    scale : float, optional
         The luminance channel is multiplied by this value.
     %(utils.space)s
 
