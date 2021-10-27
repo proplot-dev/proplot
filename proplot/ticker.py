@@ -104,48 +104,98 @@ def _default_precision_zerotrim(precision=None, zerotrim=None):
     return precision, zerotrim
 
 
-class DiscreteLocator(mticker.FixedLocator):
+class DiscreteLocator(mticker.Locator):
     """
-    A flexible fixed tick locator suitable for discretized colorbars.
-    Adds ticks to some subset of the location list depending on the available
-    space determined from `~matplotlib.axis.Axis.get_tick_space`. Zero will
-    always be ticked if it appears in the location list. The subsetting
-    can be overridden by specifying the `nbins` keyword.
+    A tick locator suitable for discretized colorbars. Adds ticks to some
+    subset of the location list depending on the available space determined from
+    `~matplotlib.axis.Axis.get_tick_space`. Zero will always be used if it appears
+    in the location list, and step sizes along the location list are restricted
+    to "nice" intervals by default.
     """
+    default_params = {
+        'steps': np.array([1, 2, 3, 4, 5, 6, 8, 10]),
+        'nbins': None,
+        'minor': False,
+        'min_n_ticks': 2
+    }
+
     @docstring._snippet_manager
-    def __init__(self, locs, *, nbins=None, min_n_ticks=2, minor=False):
+    def __init__(self, locs, **kwargs):
         """
         Parameters
         ----------
         locs : array-like
             The tick location list.
+        steps : array-like of int, optional
+            Valid integer index steps when selecting from the tick list. Must fall
+            between 1 and 10. Default is ``[1, 2, 3, 4, 5, 6, 8, 10]``. Powers of
+            10 of these step sizes are also allowed.
         nbins : int, optional
-            Maximum number of ticks to subsample.
-        min_n_ticks : int, optional
-            Subsample at least this many ticks.
+            Maximum number of ticks to select. By default this depends on
+            the axis length and the tick label font size.
         minor : bool, optional
-            Whether this is for minor ticks or not.
+            Whether this is for minor ticks. Default is ``False``. Setting to ``True``
+            will select more ticks from the list. The index step will always divide
+            the index step for an equivalent `DiscreteLocator` with ``minor=False``.
+        min_n_ticks : int, optional
+            The minimum number of ticks to select. Default is ``1``.
         """
-        self._minor = bool(minor)  # needed to scale tick space
-        self._min_n_ticks = int(min_n_ticks)  # compare to MaxNLocator
-        super().__init__(locs, nbins=nbins)
+        self._locs = locs
+        self._nbins = None
+        self.set_params(**{**self.default_params, **kwargs})
+
+    def __call__(self):
+        """
+        Return the locations of the ticks.
+        """
+        return self.tick_values(None, None)
+
+    def set_params(self, steps=None, nbins=None, minor=None, min_n_ticks=None):
+        """
+        Set the parameters for this locator. See `DiscreteLocator` for details.
+        """
+        if steps is not None:
+            steps = np.unique(np.asarray(steps, dtype=np.int))  # also sorts, makes 1D
+            if np.any(steps < 1) or np.any(steps > 10):
+                raise ValueError('Steps must fall between one and ten (inclusive).')
+            if steps[0] != 1:
+                steps = np.concatenate([[1], steps])
+            if steps[-1] != 10:
+                steps = np.concatenate([steps, [10]])
+            self._steps = steps
+        if nbins is not None:
+            self._nbins = nbins
+        if minor is not None:
+            self._minor = bool(minor)  # needed to scale tick space
+        if min_n_ticks is not None:
+            self._min_n_ticks = int(min_n_ticks)  # compare to MaxNLocator
 
     def tick_values(self, vmin, vmax):  # noqa: U100
+        """
+        Return the locations of the ticks.
+        """
         # NOTE: It is critical that minor tick interval evenly divides major tick
         # interval. Otherwise get misaligned major and minor tick steps.
+        # NOTE: We select from a subset of possible steps to avoid awkward intervals
+        # like '7' or '13' that eliminate minor ticks and (because tick locs usually
+        # have "nice" step sizes) tend to create awkward jumps.
         # NOTE: For discrete colorbars we virtually always want to subsample the level
         # list. For example _parse_autolev will interpolate to even points in log-space
         # between powers of 10 if the powers don't give us enough levels. Therefore
         # x/y axis-style unevenly spaced log minor ticks would be confusing/ugly.
-        locs = self.locs
+        locs = self._locs
         if self.axis is None:
             return locs
-        nbins = self.nbins
+        nbins = self._nbins
+        steps = self._steps
         if nbins is None:
             nbins = self.axis.get_tick_space()
             nbins = max((1, self._min_n_ticks - 1, nbins))
         offset = np.argmin(np.abs(locs))
         step = max(1, int(np.ceil(len(locs) / nbins)))
+        fact = 10 ** max(0, -AutoFormatter._decimal_place(step))  # e.g. 2 for 100
+        idx = min(len(steps) - 1, np.searchsorted(steps, step / fact))
+        step = int(np.round(steps[idx] * fact))
         if self._minor:  # tick every half font size
             if isinstance(self.axis, maxis.XAxis):
                 fact = 6  # unscale heuristic of 3 em-widths
