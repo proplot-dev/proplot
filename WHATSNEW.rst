@@ -48,6 +48,8 @@ Features
   to quickly draw a subplot inside each gridspec slot (:commit:`a9ad7429`).
 * Use custom locator `proplot.ticker.DiscreteLocator` for major/minor discrete colorbar
   ticks to auto-select subset of levels depending on axis length (:commit:`b94a9b1e`).
+* Auto update major/minor discrete colorbar ticks whenever associated axes is drawn
+  to appropriately filter locations (:commit:`92bb937e`, :commit:`302c239e`).
 * Register `proplot.ticker.DiscreteLocator` as ``'discrete'`` and add keywords `index`
   and `discrete` to the constructor `~proplot.constructor.Locator` (:commit:`b94a9b1e`).
 * Permit passing `vmin` and `vmax` to `proplot.axes.Axes.colorbar`, as quick
