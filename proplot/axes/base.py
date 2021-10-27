@@ -740,6 +740,7 @@ class Axes(maxes.Axes):
         self._title_pad_current = None
         self._altx_parent = None  # for cartesian axes only
         self._alty_parent = None
+        self._colorbar_fill = None
         self._inset_parent = None
         self._inset_bounds = None  # for introspection ony
         self._inset_zoom = False
@@ -1563,6 +1564,8 @@ class Axes(maxes.Axes):
         # to run them before aligning labels. So these are harmless no-ops.
         self._draw_guides()
         self._apply_title_above()
+        if self._colorbar_fill and not getattr(self._colorbar_fill, '_use_auto_colorbar_locator', lambda: True)():  # noqa: E501
+            self._colorbar_fill.update_ticks()  # ticks are not updated otherwise!
         if self._inset_parent is not None and self._inset_zoom:
             self.indicate_inset_zoom()
         super().draw(renderer, *args, **kwargs)
@@ -2289,7 +2292,7 @@ class Axes(maxes.Axes):
             mappable.extend = extend  # required in mpl >= 3.3, else optional
         else:
             kwargs['extend'] = extend
-        obj = self.figure.colorbar(mappable, **kwargs)
+        obj = cax._colorbar_fill = self.figure.colorbar(mappable, **kwargs)
 
         # Update tickers, labels, and tick labels
         # WARNING: Must use colorbar set_label to set text, calling
