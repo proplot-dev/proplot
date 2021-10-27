@@ -3,6 +3,9 @@
 Utilties related to legends and colorbars.
 """
 import matplotlib.artist as martist
+import matplotlib.colorbar as mcolorbar
+import matplotlib.legend as mlegend  # noqa: F401
+import matplotlib.ticker as mticker
 import numpy as np
 
 from . import ic  # noqa: F401
@@ -81,6 +84,25 @@ def _iter_iterables(*args):
             yield from _iter_iterables(*arg)
         elif arg is not None:
             yield arg
+
+
+def _update_ticks(self, manual_only=False):
+    """
+    Refined colorbar tick updater without subclassing.
+    """
+    # WARNING: Important to guard against colorbar private API changes here
+    if getattr(self, '_use_auto_colorbar_locator', lambda: True)():
+        if manual_only:
+            pass  # update not necessary
+        else:
+            mcolorbar.Colorbar.update_ticks(self)  # here AutoMinorLocator auto updates
+    else:
+        long_axis = self.ax.yaxis if self.orientation == 'vertical' else self.ax.xaxis
+        mcolorbar.Colorbar.update_ticks(self)  # update necessary
+        if getattr(self, 'minorlocator', None) is not None and hasattr(self, '_ticker'):
+            ticks, *_ = self._ticker(self.minorlocator, mticker.NullFormatter())
+            long_axis.set_ticks(ticks, minor=True)
+            long_axis.set_ticklabels([], minor=True)
 
 
 class _InsetColorbar(martist.Artist):

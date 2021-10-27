@@ -1564,8 +1564,8 @@ class Axes(maxes.Axes):
         # to run them before aligning labels. So these are harmless no-ops.
         self._draw_guides()
         self._apply_title_above()
-        if self._colorbar_fill and not getattr(self._colorbar_fill, '_use_auto_colorbar_locator', lambda: True)():  # noqa: E501
-            self._colorbar_fill.update_ticks()  # ticks are not updated otherwise!
+        if self._colorbar_fill:
+            self._colorbar_fill.update_ticks(manual_only=True)  # only update if needed!
         if self._inset_parent is not None and self._inset_zoom:
             self.indicate_inset_zoom()
         super().draw(renderer, *args, **kwargs)
@@ -2293,13 +2293,14 @@ class Axes(maxes.Axes):
         else:
             kwargs['extend'] = extend
         obj = cax._colorbar_fill = self.figure.colorbar(mappable, **kwargs)
+        obj.update_ticks = guides._update_ticks.__get__(obj)  # updates minor ticks
 
         # Update tickers, labels, and tick labels
         # WARNING: Must use colorbar set_label to set text, calling
         # set_text on the axis will do nothing!
         # WARNING: Colorbar _ticker() internally makes dummy axis and updates view
         # limits. Here we apply actual axis rather than dummy, otherwise default nbins
-        # of DiscreteLocator will not work, however does this have side effects?
+        # of DiscreteLocator will not work. Not sure if this has side effects...
         if label is not None:
             obj.set_label(label)
         if labelloc is not None:
@@ -2312,25 +2313,22 @@ class Axes(maxes.Axes):
         axis.set_tick_params(which='minor', length=ticklen * ticklenratio, width=tickwidth * tickwidthratio)  # noqa: E501
 
         # The minor locator
-        # NOTE: Colorbar._use_auto_colorbar_locator() is never True because we use
-        # the custom DiscreteNorm normalizer. Colorbar._ticker() always called.
+        # NOTE: Integrating custom minor locators with matplotlib's colorbar _ticker()
+        # override is not normally possible. So we use guides._update_ticks().
         if minorlocator is None:
             if tickminor:
                 obj.minorticks_on()
             else:
                 obj.minorticks_off()
-        elif not hasattr(obj, '_ticker'):
-            warnings._warn_proplot(
-                'Matplotlib colorbar API has changed. Cannot use '
-                f'custom minor tick locator {minorlocator!r}.'
-            )
-            obj.minorticks_on()  # at least turn them on
         else:
-            # Set the minor ticks just like matplotlib internally sets the
-            # major ticks. Private API is the only way!
-            ticks, *_ = obj._ticker(minorlocator, mticker.NullFormatter())
-            axis.set_ticks(ticks, minor=True)
-            axis.set_ticklabels([], minor=True)
+            if hasattr(obj, '_ticker'):
+                obj.minorlocator = minorlocator  # auto-updated during draw()
+            else:
+                warnings._warn_proplot(
+                    'Matplotlib colorbar API has changed. Cannot use '
+                    f'custom minor tick locator {minorlocator!r}.'
+                )
+                obj.minorticks_on()  # at least turn them on
 
         # Invert the axis if norm is a descending DiscreteNorm
         norm = mappable.norm
