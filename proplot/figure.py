@@ -671,7 +671,7 @@ class Figure(mfigure.Figure):
             rc_matplotlib['figure.constrained_layout.use'] = False  # this is rcParams
         except KeyError:
             pass
-        self._autospace = _not_none(tight, rc['subplots.tight'])
+        self._tight_active = _not_none(tight, rc['subplots.tight'])
 
         # Translate share settings
         translate = {'labels': 1, 'labs': 1, 'limits': 2, 'lims': 2, 'all': 4}
@@ -1419,7 +1419,7 @@ class Figure(mfigure.Figure):
         if aspect is None:
             aspect = True
         if tight is None:
-            tight = self._autospace
+            tight = self._tight_active
         if resize is False:  # fix the size
             self._figwidth, self._figheight = self.get_size_inches()
             self._refwidth = self._refheight = None  # critical!
@@ -1871,6 +1871,23 @@ class Figure(mfigure.Figure):
         return pgridspec.SubplotGrid(
             [ax for num, ax in sorted(self._subplot_dict.items())]
         )
+
+    @property
+    def tight(self):
+        """
+        Whether the :ref:`tight layout algorithm <ug_tight>` is active for the
+        figure. This value is passed to `~proplot.figure.Figure.auto_layout`
+        every time the figure is drawn. Can be changed e.g. ``fig.tight = False``.
+
+        See also
+        --------
+        proplot.figure.Figure.auto_layout
+        """
+        return self._tight_active
+
+    @tight.setter
+    def tight(self, b):
+        self._tight_active = bool(b)
 
     # Apply signature obfuscation after getting keys
     # NOTE: This is needed for axes and figure instantiation.
