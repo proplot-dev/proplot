@@ -68,8 +68,11 @@ refnum : int, optional
     subplot created in the figure.
 refaspect : float or 2-tuple of float, optional
     The reference subplot aspect ratio. If scalar, this indicates the width
-    divided by height. If 2-tuple, indicates the (width, height). Ignored if both
-    `figwidth` *and* `figheight` or both `refwidth` *and* `refheight` were passed.
+    divided by height. If 2-tuple, this indicates the (width, height). Ignored
+    if both `figwidth` *and* `figheight` or both `refwidth` *and* `refheight` were
+    passed. The default value is ``1`` or the "data aspect ratio" if the latter
+    is explicitly fixed (as with `~proplot.axes.PlotAxes.imshow` plots and
+    `~proplot.axes.Axes.GeoAxes` projections; see `~matplotlib.axes.Axes.set_aspect`).
 refwidth, refheight : unit-spec, optional
     The width, height of the reference subplot. Default is :rc:`subplots.refwidth`.
     %(units.in)s
