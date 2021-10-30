@@ -295,10 +295,10 @@ Parameters
     These restrictions arise because we allocate a single,
     unique `~Figure.gridspec` for each figure.
 number : int, optional
-    The axes number used for a-b-c labeling. See `~proplot.axes.Axes.format`
-    for details. By default this is incremented automatically based on the other
-    subplots in the figure. Use ``0`` or ``False`` to ensure the subplot has no
-    a-b-c label. Note the number corresponding to ``a`` is ``1``, not ``0``.
+    The axes number used for a-b-c labeling. See `~proplot.axes.Axes.format` for
+    details. By default this is incremented automatically based on the other subplots
+    in the figure. Use e.g. ``number=None`` or ``number=False`` to ensure the subplot
+    has no a-b-c label. Note the number corresponding to ``a`` is ``1``, not ``0``.
 autoshare : bool, optional
     Whether to automatically share the *x* and *y* axes with subplots spanning the
     same rows and columns based on the figure-wide `sharex` and `sharey` settings.
@@ -1168,7 +1168,7 @@ class Figure(mfigure.Figure):
 
     @docstring._concatenate_inherited
     @docstring._snippet_manager
-    def add_subplot(self, *args, number=None, **kwargs):
+    def add_subplot(self, *args, **kwargs):
         """
         %(figure.subplot)s
         """
@@ -1177,7 +1177,7 @@ class Figure(mfigure.Figure):
         args = args or (1, 1, 1)
         gs = self.gridspec
 
-        # Integer
+        # Integer arg
         if len(args) == 1 and isinstance(args[0], Integral):
             if not 111 <= args[0] <= 999:
                 raise ValueError(f'Input {args[0]} must fall between 111 and 999.')
@@ -1247,15 +1247,12 @@ class Figure(mfigure.Figure):
         # to add_subplot() in mpl < 3.4 may return an already-drawn subplot in the
         # wrong location due to gridspec override. Is against OO package design.
         self.gridspec = gs  # trigger layout adjustment
-        if number is None:
-            number = 1 + max(self._subplot_dict, default=0)
-        if number:  # must be added for a-b-c labels
-            kwargs['number'] = number
         self._subplot_counter += 1  # unique label for each subplot
         kwargs.setdefault('label', f'subplot_{self._subplot_counter}')
+        kwargs.setdefault('number', 1 + max(self._subplot_dict, default=0))
         ax = super().add_subplot(ss, _subplot_spec=ss, **kwargs)
-        if number:
-            self._subplot_dict[number] = ax
+        if ax.number:
+            self._subplot_dict[ax.number] = ax
 
         return ax
 
