@@ -660,7 +660,7 @@ class Axes(maxes.Axes):
         # minor releases) because native __repr__ is defined in SubplotBase.
         ax = self._get_topmost_axes()
         try:
-            nrows, ncols, num1, num2 = ax.get_subplotspec()._get_subplot_geometry()
+            nrows, ncols, num1, num2 = ax.get_subplotspec()._get_geometry()
             params = {'index': (num1, num2)}
         except (IndexError, ValueError, AttributeError):  # e.g. a loose axes
             left, bottom, width, height = np.round(self._position.bounds, 2)
@@ -779,7 +779,7 @@ class Axes(maxes.Axes):
 
         # Subplot-specific settings
         # NOTE: Default number for any axes is None (i.e., no a-b-c labels allowed)
-        # and for subplots added with add_subplot is provided by fig._next_number.
+        # and for subplots added with add_subplot is incremented automatically
         # WARNING: For mpl>=3.4.0 subplotspec assigned *after* initialization using
         # set_subplotspec. Tried to defer to setter but really messes up both format()
         # and _auto_share(). Instead use workaround: Have Figure.add_subplot pass
@@ -1090,7 +1090,7 @@ class Axes(maxes.Axes):
 
     def _range_subplotspec(self, x):
         """
-        Return the column or row range for the subplootspec.
+        Return the column or row range for the subplotspec.
         """
         if not isinstance(self, maxes.SubplotBase):
             raise RuntimeError('Axes must be a subplot.')
@@ -3026,8 +3026,8 @@ class Axes(maxes.Axes):
     def number(self):
         """
         The axes number. This controls the order of a-b-c labels and the
-        order of appearence in the `~proplot.gridspec.SubplotGrid` returned by
-        `proplot.figure.Figure.subplots` and `proplot.ui.subplots`.
+        order of appearence in the `~proplot.gridspec.SubplotGrid` returned
+        by `~proplot.figure.Figure.subplots`.
         """
         return self._number
 

@@ -515,18 +515,19 @@ def register_colors(*args, user=None, default=False, space=None, margin=None, **
     %(rc.color_args)s
     %(rc.color_params)s
     space : {'hcl', 'hsl', 'hpl'}, optional
-        The colorspace used to select "perceptually distinct" colors from the XKCD
-        `color survey <https://xkcd.com/color/rgb/>`__. Default is ``'hcl'``. If
-        passed then `default` is set to ``True``.
+        The colorspace used to pick "perceptually distinct" colors from the
+        `XKCD color survey <https://xkcd.com/color/rgb/>`__. Default is ``'hcl'``.
+        If passed then `default` is set to ``True``.
     margin : float, optional
-        The margin by which the normalized hue, saturation, and luminance of each
-        XKCD color must differ from the channel values of the other XKCD colors to
-        be deemed "perceptually distinct" and registered. Must fall between ``0``
-        and ``1`` (``0`` will register all colors). Default is ``0.1``. If passed
-        then `default` is set to ``True``.
+        The margin used to pick "perceptually distinct" colors from the
+        `XKCD color survey <https://xkcd.com/color/rgb/>`__. The normalized hue,
+        saturation, and luminance of each color must differ from the channel
+        values of the prededing colors by `margin` in order to be registered.
+        Must fall between ``0`` and ``1`` (``0`` will register all colors). Default
+        is ``0.1``. If passed then `default` is set to ``True``.
     **kwargs
         Additional color name specifications passed as keyword arguments rather
-        than positional dictionaries.
+        than positional argument dictionaries.
 
     See also
     --------

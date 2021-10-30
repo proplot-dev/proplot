@@ -83,13 +83,13 @@ for _key in ('cycle', 'cmap.sequential', 'cmap.diverging', 'cmap.cyclic', 'cmap.
         rc[_key] = 'Greys'  # fill value
 
 # Validate color names now that colors are registered
+# NOTE: This updates all settings with 'color' in name (harmless if it's not a color)
 from .config import rc_proplot, rc_matplotlib
 rcsetup.VALIDATE_REGISTERED_COLORS = True
 for _src in (rc_proplot, rc_matplotlib):
     for _key in _src:  # loop through unsynced properties
         if 'color' not in _key:
             continue
-        # Likely has a color validator or derivative thereof; if not, harmless
         try:
             _src[_key] = _src[_key]
         except ValueError as err:

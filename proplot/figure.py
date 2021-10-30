@@ -514,7 +514,7 @@ class Figure(mfigure.Figure):
                 opts[attr] = np.round(value, 2)
         geom = ''
         if self.gridspec:
-            nrows, ncols = self.gridspec.get_subplot_geometry()
+            nrows, ncols = self.gridspec.get_geometry()
             geom = f'nrows={nrows}, ncols={ncols}, '
         opts = ', '.join(f'{key}={value!r}' for key, value in opts.items())
         return f'Figure({geom}{opts})'
@@ -910,7 +910,7 @@ class Figure(mfigure.Figure):
         gs = self.gridspec
         if not gs:
             raise RuntimeError('The gridspec must be active.')
-        ss, share = gs._insert_panel(side, ax, **kwargs)
+        ss, share = gs._insert_panel_slot(side, ax, **kwargs)
         pax = self.add_subplot(ss, autoshare=False, number=False)
         pax._panel_side = side
         pax._panel_share = share
@@ -946,7 +946,7 @@ class Figure(mfigure.Figure):
         gs = self.gridspec
         if not gs:
             raise RuntimeError('The gridspec must be active.')
-        ss, _ = gs._insert_panel(side, span, filled=True, **kwargs)
+        ss, _ = gs._insert_panel_slot(side, span, filled=True, **kwargs)
         pax = self.add_subplot(ss, autoshare=False, number=False)
         plist = self._panel_dict[side]
         plist.append(pax)
@@ -1214,7 +1214,7 @@ class Figure(mfigure.Figure):
             i, j = np.resize(num, 2)
             if gs is None:
                 gs = pgridspec.GridSpec(nrows, ncols)
-            orows, ocols = gs.get_subplot_geometry()
+            orows, ocols = gs.get_geometry()
             if orows % nrows:
                 raise ValueError(
                     f'The input number of rows {nrows} does not divide the '
@@ -1448,7 +1448,7 @@ class Figure(mfigure.Figure):
             gs._auto_layout_aspect()
         _align_content()
         if tight:
-            gs._auto_layout_space(renderer)
+            gs._auto_layout_tight(renderer)
         _align_content()
 
     @docstring._snippet_manager
@@ -1860,17 +1860,15 @@ class Figure(mfigure.Figure):
     @property
     def subplotgrid(self):
         """
-        A `~proplot.gridspec.SubplotGrid` containing the numbered subplots in
-        the figure. The subplots are ordered by increasing subplot number.
+        A `~proplot.gridspec.SubplotGrid` containing the numbered subplots in the
+        figure. The subplots are ordered by increasing `~proplot.axes.Axes.number`.
 
         See also
         --------
         proplot.figure.Figure.gridspec
         ptoplot.gridspec.SubplotGrid.figure
         """
-        return pgridspec.SubplotGrid(
-            [ax for num, ax in sorted(self._subplot_dict.items())]
-        )
+        return pgridspec.SubplotGrid([s for _, s in sorted(self._subplot_dict.items())])
 
     @property
     def tight(self):

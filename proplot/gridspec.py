@@ -2,7 +2,6 @@
 """
 The gridspec and subplot grid classes used throughout proplot.
 """
-import functools
 import inspect
 import itertools
 import re
@@ -116,7 +115,7 @@ class _SubplotSpec(mgridspec.SubplotSpec):
         # NOTE: Also include panel obfuscation here to avoid confusion. If this
         # is a panel slot generated internally then show zero info.
         try:
-            nrows, ncols, num1, num2 = self._get_subplot_geometry()
+            nrows, ncols, num1, num2 = self._get_geometry()
         except (IndexError, ValueError, AttributeError):
             return 'SubplotSpec(unknown)'
         else:
@@ -124,60 +123,53 @@ class _SubplotSpec(mgridspec.SubplotSpec):
 
     def _get_geometry(self):
         """
-        Return the full geometry.
-        """
-        return super().get_geometry()
-
-    def _get_subplot_geometry(self):
-        """
-        Return the subplot geometry. May trigger an error if this is a panel slot.
+        Return the geometry and scalar indices relative to the "unhidden" non-panel
+        geometry. May trigger error if this is in a "hidden" panel slot.
         """
         gs = self.get_gridspec()
-        nrows, ncols = gs.get_subplot_geometry()
-        num1, num2 = gs._convert_full_to_subplot(self.num1, self.num2)
+        num1, num2 = self.num1, self.num2
+        if isinstance(gs, GridSpec):
+            nrows, ncols = gs.get_geometry()
+            num1, num2 = gs._decode_indices(num1, num2)  # may trigger error
         return nrows, ncols, num1, num2
 
     def _get_rows_columns(self, ncols=None):
         """
-        Return the full rows and columns.
+        Return the row and column indices. The resulting indices include
+        "hidden" panel rows and columns. See `GridSpec.get_grid_positions`.
         """
-        _, ncols_true, num1, num2 = self._get_geometry()
-        ncols = _not_none(ncols, ncols_true)
-        row1, col1 = divmod(num1, ncols)
-        row2, col2 = divmod(num2, ncols)
+        # NOTE: Sort of confusing that this doesn't have 'total' in name but that
+        # is by analogy with get_grid_positions(). This is used for grid positioning.
+        gs = self.get_gridspec()
+        if isinstance(gs, GridSpec):
+            ncols = _not_none(ncols, gs.ncols_total)
+        else:
+            ncols = _not_none(ncols, gs.ncols)
+        row1, col1 = divmod(self.num1, ncols)
+        row2, col2 = divmod(self.num2, ncols)
         return row1, row2, col1, col2
 
-    def _get_subplot_rows_columns(self, ncols=None):
-        """
-        Return the subplot rows and columns. May trigger error if this is a panel slot.
-        """
-        _, ncols_true, num1, num2 = self._get_subplot_geometry()
-        ncols = _not_none(ncols, ncols_true)
-        row1, col1 = divmod(num1, ncols)
-        row2, col2 = divmod(num2, ncols)
-        return row1, row2, col1, col2
-
-    def get_position(self, *args, **kwargs):
+    def get_position(self, figure, return_all=False):
         # Silent override. Older matplotlib versions can create subplots
         # with negative heights and widths that crash on instantiation.
         # Instead better to dynamically adjust the bounding box and hope
         # that subsequent adjustments will correct the subplot position.
-        result = super().get_position(*args, **kwargs)
-        bbox = result[0] if isinstance(result, tuple) else result
-        if isinstance(bbox, mtransforms.BboxBase):
-            extents = bbox.extents
-            extents = [
-                extents[0],
-                extents[1],
-                max(extents[2], extents[0]),
-                max(extents[3], extents[1]),
-            ]
-            bbox = mtransforms.Bbox.from_extents(extents)
-            if isinstance(result, tuple):
-                result = (bbox, *result[1:])
-            else:
-                result = bbox
-        return result
+        gs = self.get_gridspec()
+        if isinstance(gs, GridSpec):
+            nrows, ncols = gs.get_total_geometry()
+        else:
+            nrows, ncols = gs.get_geometry()
+        rows, cols = np.unravel_index([self.num1, self.num2], (nrows, ncols))
+        fig_bottoms, fig_tops, fig_lefts, fig_rights = gs.get_grid_positions(figure)
+        fig_bottom = fig_bottoms[rows].min()
+        fig_top = max(fig_bottom, fig_tops[rows].max())
+        fig_left = fig_lefts[cols].min()
+        fig_right = max(fig_left, fig_rights[cols].max())
+        figbox = mtransforms.Bbox.from_extents(fig_left, fig_bottom, fig_right, fig_top)
+        if return_all:
+            return figbox, rows[0], cols[0], nrows, ncols
+        else:
+            return figbox
 
 
 class GridSpec(mgridspec.GridSpec):
@@ -186,13 +178,13 @@ class GridSpec(mgridspec.GridSpec):
     between successive rows and columns and hides "panel slots" from indexing.
     """
     def __repr__(self):
-        srows, scols = self.get_subplot_geometry()
+        nrows, ncols = self.get_geometry()
         prows, pcols = self.get_panel_geometry()
-        params = {'nrows': srows, 'ncols': scols}
+        params = {'nrows': nrows, 'ncols': ncols}
         if prows:
-            params['panelrows'] = prows
+            params['nrows_panel'] = prows
         if pcols:
-            params['panelcols'] = pcols
+            params['ncols_panel'] = pcols
         params = ', '.join(f'{key}={value!r}' for key, value in params.items())
         return f'GridSpec({params})'
 
@@ -243,22 +235,22 @@ class GridSpec(mgridspec.GridSpec):
         a copy with `GridSpec.copy` before working on the subsequent figure).
         """
         # Gridspec properties
-        self._nrows = nrows
-        self._ncols = ncols
+        self._nrows_total = nrows
+        self._ncols_total = ncols
         self._left = None
         self._right = None
         self._bottom = None
         self._top = None
-        self._hspace = [None] * (nrows - 1)
-        self._wspace = [None] * (ncols - 1)
-        self._hratios = [1] * nrows
-        self._wratios = [1] * ncols
+        self._hspace_total = [None] * (nrows - 1)
+        self._wspace_total = [None] * (ncols - 1)
+        self._hratios_total = [1] * nrows
+        self._wratios_total = [1] * ncols
         self._left_default = None
         self._right_default = None
         self._bottom_default = None
         self._top_default = None
-        self._hspace_default = [None] * (nrows - 1)
-        self._wspace_default = [None] * (ncols - 1)
+        self._hspace_total_default = [None] * (nrows - 1)
+        self._wspace_total_default = [None] * (ncols - 1)
         self._figure = None  # initial state
 
         # Capture rc settings used for default spacing
@@ -284,8 +276,8 @@ class GridSpec(mgridspec.GridSpec):
         self._outerpad = units(outerpad, 'em', 'in')
         self._innerpad = units(innerpad, 'em', 'in')
         self._panelpad = units(panelpad, 'em', 'in')
-        self._hpad = [units(pad, 'em', 'in')] * (nrows - 1)
-        self._wpad = [units(pad, 'em', 'in')] * (ncols - 1)
+        self._hpad_total = [units(pad, 'em', 'in')] * (nrows - 1)
+        self._wpad_total = [units(pad, 'em', 'in')] * (ncols - 1)
         self._hequal = False
         self._wequal = False
         self._hpanels = [''] * nrows  # axes and figure panel identification
@@ -328,9 +320,9 @@ class GridSpec(mgridspec.GridSpec):
 
         # Normalize the indices
         if includepanels:
-            nrows, ncols = self.get_geometry()
+            nrows, ncols = self.get_total_geometry()
         else:
-            nrows, ncols = self.get_subplot_geometry()
+            nrows, ncols = self.get_geometry()
         if not isinstance(key, tuple):  # usage gridspec[1,2]
             num1, num2 = _normalize_index(key, nrows * ncols)
         elif len(key) == 2:
@@ -343,30 +335,16 @@ class GridSpec(mgridspec.GridSpec):
 
         # Return the subplotspec
         if not includepanels:
-            num1, num2 = self._convert_subplot_to_full(num1, num2)
+            num1, num2 = self._encode_indices(num1, num2)
         return _SubplotSpec(self, num1, num2)
 
-    def _convert_full_to_subplot(self, *args, which=None):
+    def _encode_indices(self, *args, which=None):
         """
-        Convert indices from the full geometry into the "subplot" gridspec
-        geometry. If `which` is not passed these should be flattened indices.
-        """
-        nums = []
-        idxs = self._get_subplot_indices(which)
-        for arg in args:
-            try:
-                nums.append(idxs.index(arg))
-            except ValueError:
-                raise ValueError(f'Invalid gridspec index {arg}.')
-        return nums[0] if len(nums) == 1 else nums
-
-    def _convert_subplot_to_full(self, *args, which=None):
-        """
-        Convert indices from the "subplot" gridspec geometry into indices for the full
-        geometry. If `which` is not passed these should be flattened indices.
+        Convert indices from the "unhidden" gridspec geometry into indices for the
+        total geometry. If `which` is not passed these should be flattened indices.
         """
         nums = []
-        idxs = self._get_subplot_indices(which)
+        idxs = self._get_indices(which)
         for arg in args:
             try:
                 nums.append(idxs[arg])
@@ -374,122 +352,90 @@ class GridSpec(mgridspec.GridSpec):
                 raise ValueError(f'Invalid gridspec index {arg}.')
         return nums[0] if len(nums) == 1 else nums
 
-    def _get_active_space(self, key):
+    def _decode_indices(self, *args, which=None):
         """
-        Get the currently active space accounting for both default
-        values and explicit user-specified values.
+        Convert indices from the total geometry into the "unhidden" gridspec
+        geometry. If `which` is not passed these should be flattened indices.
         """
-        # NOTE: Default panel spaces should already have been filled by _insert_panel.
-        # They use 'panelpad' and the panel-local 'share' setting. This function
-        # instead fills spaces between subplots depending on sharing setting.
-        fig = self.figure
-        if not fig:
-            raise ValueError('Figure must be assigned to get grid positions.')
-        attr = f'_{key}'  # user-specified
-        attr_default = f'_{key}_default'  # default values
-        value = getattr(self, attr)
-        value_default = getattr(self, attr_default)
-        if key in ('left', 'right', 'bottom', 'top'):
-            if value_default is None:
-                value_default = self._get_default_space(key)
-                setattr(self, attr_default, value_default)
-            return _not_none(value, value_default)
-        elif key in ('wspace', 'hspace'):
-            result = []
-            for i, (val, val_default) in enumerate(zip(value, value_default)):
-                if val_default is None:
-                    val_default = self._get_default_space(key)
-                    value_default[i] = val_default
-                result.append(_not_none(val, val_default))
-            return result
+        nums = []
+        idxs = self._get_indices(which)
+        for arg in args:
+            try:
+                nums.append(idxs.index(arg))
+            except ValueError:
+                raise ValueError(f'Invalid gridspec index {arg}.')
+        return nums[0] if len(nums) == 1 else nums
+
+    def _filter_indices(self, key, panel=False):
+        """
+        Filter the vector attribute for "unhidden" or "hidden" slots.
+        """
+        # NOTE: Currently this is just used for unused internal properties,
+        # defined for consistency with the properties ending in "total".
+        # These may be made public in a future version.
+        which = key[0]
+        space = 'space' in key or 'pad' in key
+        idxs = self._get_indices(which=which, space=space, panel=panel)
+        vector = getattr(self, key + '_total')
+        return [vector[i] for i in idxs]
+
+    def _get_indices(self, which=None, space=False, panel=False):
+        """
+        Get the indices associated with "unhidden" or "hidden" slots.
+        """
+        if which:
+            panels = getattr(self, f'_{which}panels')
         else:
-            raise ValueError(f'Unknown space parameter {key!r}.')
-
-    def _get_default_space(self, key, pad=None, share=None, title=True):
-        """
-        Return suitable default spacing given a shared axes setting.
-        This is only relevant when "tight layout" is disabled.
-        """
-        # NOTE: Internal spacing args are stored in inches to simplify the
-        # get_grid_positions() calculations.
-        fig = self.figure
-        if fig is None:
-            raise RuntimeError('Figure must be assigned.')
-        if key == 'right':
-            pad = _not_none(pad, self._outerpad)
-            space = 0
-        elif key == 'top':
-            pad = _not_none(pad, self._outerpad)
-            space = self._titlespace if title else 0
-        elif key == 'left':
-            pad = _not_none(pad, self._outerpad)
-            space = self._labelspace + self._yticklabelspace + self._ytickspace
-        elif key == 'bottom':
-            pad = _not_none(pad, self._outerpad)
-            space = self._labelspace + self._xticklabelspace + self._xtickspace
-        elif key == 'wspace':
-            pad = _not_none(pad, self._innerpad)
-            share = _not_none(share, fig._sharey, 0)
-            space = self._ytickspace
-            if share < 3:
-                space += self._yticklabelspace
-            if share < 1:
-                space += self._labelspace
-        elif key == 'hspace':
-            pad = _not_none(pad, self._innerpad)
-            share = _not_none(share, fig._sharex, 0)
-            space = self._xtickspace
-            if title:
-                space += self._titlespace
-            if share < 3:
-                space += self._xticklabelspace
-            if share < 1:
-                space += self._labelspace
-        else:
-            raise ValueError(f'Invalid space key {key!r}.')
-        return pad + space / 72
-
-    def _get_subplot_indices(self, which=None, space=False):
-        """
-        Get the indices associated with "subplot" gridspec slots or spaces.
-        """
-        panels = self._get_panel_list(which)
-        length = len(panels) - 1 if space else len(panels)
-        idxs = self._get_panel_indices(which, space=space)
-        idxs = [i for i in range(length) if i not in idxs]
-        return idxs
-
-    def _get_panel_list(self, which=None):
-        """
-        Get the panel list for the rows, columns, or flattened array.
-        """
-        hpanels = self._hpanels
-        wpanels = self._wpanels
-        if which is None:
-            panels = tuple(h + w for h, w in itertools.product(hpanels, wpanels))
-        elif which in 'xw':
-            panels = wpanels
-        elif which in 'yh':
-            panels = hpanels
-        else:
-            raise ValueError(f'Invalid which={which!r}.')
-        return panels
-
-    def _get_panel_indices(self, which=None, space=False):
-        """
-        Get the indices associated with panel slots or spaces.
-        """
-        panels = self._get_panel_list(which)
+            panels = [h + w for h, w in itertools.product(self._hpanels, self._wpanels)]
         if not space:
-            idxs = [i for i, s in enumerate(panels) if s]
+            idxs = [
+                i for i, p in enumerate(panels) if p
+            ]
         else:
             idxs = [
                 i for i, (p1, p2) in enumerate(zip(panels[:-1], panels[1:]))
-                if p1 == 'f' and p2 == 'f'
+                if p1 == p2 == 'f'
                 or p1 in ('l', 't') and p2 in ('l', 't', '')
                 or p1 in ('r', 'b', '') and p2 in ('r', 'b')
             ]
+        if not panel:
+            length = len(panels) - 1 if space else len(panels)
+            idxs = [i for i in range(length) if i not in idxs]
         return idxs
+
+    def _modify_subplot_geometry(self, newrow=None, newcol=None):
+        """
+        Update the axes subplot specs by inserting rows and columns as specified.
+        """
+        fig = self.figure
+        ncols = self._ncols_total - int(newcol is not None)  # previous columns
+        inserts = (newrow, newrow, newcol, newcol)
+        for ax in fig._iter_axes(hidden=True, children=True):
+            # Get old index
+            # NOTE: Endpoints are inclusive, not exclusive!
+            if not isinstance(ax, maxes.SubplotBase):
+                continue
+            gs = ax.get_subplotspec().get_gridspec()
+            ss = ax.get_subplotspec().get_topmost_subplotspec()
+            # Get a new subplotspec
+            coords = list(ss._get_rows_columns(ncols=ncols))
+            for i in range(4):
+                if inserts[i] is not None and coords[i] >= inserts[i]:
+                    coords[i] += 1
+            row1, row2, col1, col2 = coords
+            key1 = slice(row1, row2 + 1)
+            key2 = slice(col1, col2 + 1)
+            ss_new = self._make_subplot_spec((key1, key2), includepanels=True)
+            # Apply new subplotspec
+            # NOTE: We should only have one possible level of GridSpecFromSubplotSpec
+            # nesting -- from making side colorbars with length less than 1.
+            if ss is ax.get_subplotspec():
+                ax.set_subplotspec(ss_new)
+            elif ss is getattr(gs, '_subplot_spec', None):
+                gs._subplot_spec = ss_new
+            else:
+                raise RuntimeError('Unexpected GridSpecFromSubplotSpec nesting.')
+            ax._reposition_subplot()
 
     def _parse_panel_arg(self, side, arg):
         """
@@ -522,7 +468,7 @@ class GridSpec(mgridspec.GridSpec):
         ):
             slot = 'f'
             array = self._fpanels[side]
-            nacross = self._ncols if side in ('left', 'right') else self._nrows
+            nacross = self._ncols_total if side in ('left', 'right') else self._nrows_total  # noqa: E501
             npanels, nalong = array.shape
             arg = _not_none(arg, (1, nalong))
             arg = np.atleast_1d(arg)
@@ -547,7 +493,7 @@ class GridSpec(mgridspec.GridSpec):
                 array = np.concatenate((array, iarray), axis=0)
                 self._fpanels[side] = array  # replace array
             which = 'h' if side in ('left', 'right') else 'w'
-            start, stop = self._convert_subplot_to_full(start, stop - 1, which=which)
+            start, stop = self._encode_indices(start, stop - 1, which=which)
 
         else:
             raise ValueError(f'Invalid panel argument {arg!r}.')
@@ -556,7 +502,7 @@ class GridSpec(mgridspec.GridSpec):
         # NOTE: Convert using the lengthwise indices
         return slot, iratio, slice(start, stop + 1)
 
-    def _insert_panel(
+    def _insert_panel_slot(
         self, side, arg, *,
         share=None, width=None, space=None, pad=None, filled=False,
     ):
@@ -564,36 +510,26 @@ class GridSpec(mgridspec.GridSpec):
         Insert a panel slot into the existing gridspec. The `side` is the panel side
         and the `arg` is either an axes instance or the figure row-column span.
         """
-        # Parse input arguments and get the SubplotSpec index
+        # Parse input args and get user-input properties, default properties
+        # NOTE: This gives totally wrong space for 'right' and 'top' colorbars with
+        # tick locations on the outside but that's ok... otherwise would have to
+        # modify existing space which is overkill. People should use tight layout
         fig = self.figure
         if fig is None:
             raise RuntimeError('Figure must be assigned to gridspec.')
         if side not in ('left', 'right', 'bottom', 'top'):
             raise ValueError(f'Invalid side {side}.')
-        if side in ('left', 'right'):
-            pads = self._wpad
-            panels = self._wpanels
-            ratios = self._wratios
-            spaces = self._wspace
-            spaces_default = self._wspace_default
-        else:
-            pads = self._hpad
-            panels = self._hpanels
-            ratios = self._hratios
-            spaces = self._hspace
-            spaces_default = self._hspace_default
         slot, idx, span = self._parse_panel_arg(side, arg)
-        idx_off = 1 * bool(side in ('top', 'left'))
-        idx_space = idx - 1 * bool(side in ('bottom', 'right'))
-
-        # Get user-input properties and default properties
-        # NOTE: This gives totally wrong space for 'right' and 'top' colorbars with
-        # tick locations on the outside but that's ok... otherwise would have to
-        # modify existing space which is overkill. People should use tight layout
         pad = units(pad, 'em', 'in')
         space = units(space, 'em', 'in')
         width = units(width, 'in')
         share = False if filled else _not_none(share, True)
+        which = 'w' if side in ('left', 'right') else 'h'
+        panels = getattr(self, f'_{which}panels')
+        pads = getattr(self, f'_{which}pad_total')  # no copies!
+        ratios = getattr(self, f'_{which}ratios_total')
+        spaces = getattr(self, f'_{which}space_total')
+        spaces_default = getattr(self, f'_{which}space_total_default')
         pad_default = (
             self._panelpad
             if slot != 'f'
@@ -605,7 +541,7 @@ class GridSpec(mgridspec.GridSpec):
             _not_none(pad, pad_default)
             if side in ('top', 'right')
             else self._get_default_space(
-                'hspace' if side == 'bottom' else 'wspace',
+                'hspace_total' if side == 'bottom' else 'wspace_total',
                 title=False,  # no title space
                 share=3 if share else 0,
                 pad=_not_none(pad, pad_default),
@@ -616,11 +552,13 @@ class GridSpec(mgridspec.GridSpec):
         )
 
         # Adjust space, ratio, and panel indicator arrays
+        # If slot exists, overwrite width, pad, space if they were provided by the user
+        # If slot does not exist, modify gemoetry and add insert new spaces
         newrow = newcol = None
+        idx_off = 1 * bool(side in ('top', 'left'))
+        idx_space = idx - 1 * bool(side in ('bottom', 'right'))
         slot_exists = idx not in (-1, len(panels)) and panels[idx] == slot
         if slot_exists:
-            # Slot already exists
-            # Overwrite width, pad, or space only if they were provided by the user
             spaces_default[idx_space] = space_default
             if width is not None:
                 ratios[idx] = width
@@ -629,16 +567,14 @@ class GridSpec(mgridspec.GridSpec):
             if space is not None:
                 spaces[idx_space] = space
         else:
-            # Modify the underlying geometry
-            # NOTE: This is hidden from users manually working with GridSpecs
             idx += idx_off
             idx_space += idx_off
             if side in ('left', 'right'):
                 newcol = idx
-                self._ncols += 1
+                self._ncols_total += 1
             else:
                 newrow = idx
-                self._nrows += 1
+                self._nrows_total += 1
             panels.insert(idx, slot)
             ratios.insert(idx, _not_none(width, width_default))
             pads.insert(idx_space, _not_none(pad, pad_default))
@@ -647,8 +583,8 @@ class GridSpec(mgridspec.GridSpec):
 
         # Update the figure and axes and return a SubplotSpec
         # NOTE: For figure panels indices are determined by user-input spans.
-        self._update_specs(newrow, newcol)
-        figsize = self._calc_figsize()
+        self._modify_subplot_geometry(newrow, newcol)
+        figsize = self._update_figsize()
         if figsize is not None:
             fig.set_size_inches(figsize, internal=True, forward=False)
         else:
@@ -657,67 +593,82 @@ class GridSpec(mgridspec.GridSpec):
         ss = self._make_subplot_spec(key, includepanels=True)  # bypass obfuscation
         return ss, share
 
-    def _calc_figsize(self):
+    def _get_space(self, key):
         """
-        Return an updated auto layout figure size accounting for
-        the gridspec and figure parameters.
+        Get the currently active space accounting for both default
+        values and explicit user-specified values.
         """
+        # NOTE: Default panel spaces should have been filled by _insert_panel_slot.
+        # They use 'panelpad' and the panel-local 'share' setting. This function
+        # instead fills spaces between subplots depending on sharing setting.
         fig = self.figure
-        if fig is None:  # drawing before subplots are added?
-            return
-        ax = fig._subplot_dict.get(fig._refnum, None)
-        if ax is None:  # drawing before subplots are added?
-            return
-        y1, y2, x1, x2 = ax.get_subplotspec()._get_rows_columns()
-        refhspace = sum(self.hspace[y1:y2])
-        refwspace = sum(self.wspace[x1:x2])
-        refhpanel = sum(self.hratios[i] for i in range(y1, y2 + 1) if self._hpanels[i])
-        refwpanel = sum(self.wratios[i] for i in range(x1, x2 + 1) if self._wpanels[i])
-        refhsubplot = sum(self.hratios[i] for i in range(y1, y2 + 1) if not self._hpanels[i])  # noqa: E501
-        refwsubplot = sum(self.wratios[i] for i in range(x1, x2 + 1) if not self._wpanels[i])  # noqa: E501
-
-        # Get the reference sizes
-        # NOTE: The sizing arguments should have been normalized already
-        figwidth, figheight = fig._figwidth, fig._figheight
-        refwidth, refheight = fig._refwidth, fig._refheight
-        refaspect = _not_none(fig._refaspect, fig._refaspect_default)
-        if refheight is None and figheight is None:
-            if figwidth is not None:
-                gridwidth = figwidth - self.spacewidth - self.panelwidth
-                refwidth = gridwidth * refwsubplot / self.subplotwidth
-            if refwidth is not None:  # WARNING: do not change to elif!
-                refheight = refwidth / refaspect
-            else:
-                raise RuntimeError('Figure size arguments are all missing.')
-        if refwidth is None and figwidth is None:
-            if figheight is not None:
-                gridheight = figheight - self.spaceheight - self.panelheight
-                refheight = gridheight * refhsubplot / self.subplotheight
-            if refheight is not None:
-                refwidth = refheight * refaspect
-            else:
-                raise RuntimeError('Figure size arguments are all missing.')
-
-        # Get the auto figure size. Might trigger 'not enough room' error later
-        # NOTE: For e.g. [[1, 1, 2, 2], [0, 3, 3, 0]] we make sure to still scale the
-        # reference axes like a square even though takes two columns of gridspec.
-        if refheight is not None:
-            refheight -= refhspace + refhpanel
-            gridheight = refheight * self.subplotheight / refhsubplot
-            figheight = gridheight + self.spaceheight + self.panelheight
-        if refwidth is not None:
-            refwidth -= refwspace + refwpanel
-            gridwidth = refwidth * self.subplotwidth / refwsubplot
-            figwidth = gridwidth + self.spacewidth + self.panelwidth
-
-        # Return the figure size
-        figsize = (figwidth, figheight)
-        if all(np.isfinite(figsize)):
-            return figsize
+        if not fig:
+            raise ValueError('Figure must be assigned to get grid positions.')
+        attr = f'_{key}'  # user-specified
+        attr_default = f'_{key}_default'  # default values
+        value = getattr(self, attr)
+        value_default = getattr(self, attr_default)
+        if key in ('left', 'right', 'bottom', 'top'):
+            if value_default is None:
+                value_default = self._get_default_space(key)
+                setattr(self, attr_default, value_default)
+            return _not_none(value, value_default)
+        elif key in ('wspace_total', 'hspace_total'):
+            result = []
+            for i, (val, val_default) in enumerate(zip(value, value_default)):
+                if val_default is None:
+                    val_default = self._get_default_space(key)
+                    value_default[i] = val_default
+                result.append(_not_none(val, val_default))
+            return result
         else:
-            warnings._warn_proplot(f'Auto resize failed. Invalid figsize {figsize}.')
+            raise ValueError(f'Unknown space parameter {key!r}.')
 
-    def _calc_space(self, w):
+    def _get_default_space(self, key, pad=None, share=None, title=True):
+        """
+        Return suitable default spacing given a shared axes setting.
+        This is only relevant when "tight layout" is disabled.
+        """
+        # NOTE: Internal spacing args are stored in inches to simplify the
+        # get_grid_positions() calculations.
+        fig = self.figure
+        if fig is None:
+            raise RuntimeError('Figure must be assigned.')
+        if key == 'right':
+            pad = _not_none(pad, self._outerpad)
+            space = 0
+        elif key == 'top':
+            pad = _not_none(pad, self._outerpad)
+            space = self._titlespace if title else 0
+        elif key == 'left':
+            pad = _not_none(pad, self._outerpad)
+            space = self._labelspace + self._yticklabelspace + self._ytickspace
+        elif key == 'bottom':
+            pad = _not_none(pad, self._outerpad)
+            space = self._labelspace + self._xticklabelspace + self._xtickspace
+        elif key in ('wspace', 'wspace_total'):
+            pad = _not_none(pad, self._innerpad)
+            share = _not_none(share, fig._sharey, 0)
+            space = self._ytickspace
+            if share < 3:
+                space += self._yticklabelspace
+            if share < 1:
+                space += self._labelspace
+        elif key in ('hspace', 'hspace_total'):
+            pad = _not_none(pad, self._innerpad)
+            share = _not_none(share, fig._sharex, 0)
+            space = self._xtickspace
+            if title:
+                space += self._titlespace
+            if share < 3:
+                space += self._xticklabelspace
+            if share < 1:
+                space += self._labelspace
+        else:
+            raise ValueError(f'Invalid space key {key!r}.')
+        return pad + space / 72
+
+    def _get_tight_space(self, w):
         """
         Get tight layout spaces between the input subplot rows or columns.
         """
@@ -727,14 +678,14 @@ class GridSpec(mgridspec.GridSpec):
             return
         if w == 'w':
             x, y = 'xy'
-            nacross = self.nrows
-            space = self.wspace
-            pad = self.wpad
+            nacross = self.nrows_total
+            space = self.wspace_total
+            pad = self.wpad_total
         else:
             x, y = 'yx'
-            nacross = self.ncols
-            space = self.hspace
-            pad = self.hpad
+            nacross = self.ncols_total
+            space = self.hspace_total
+            pad = self.hpad_total
 
         # Iterate along each row or column space
         axs = tuple(fig._iter_axes(hidden=True, children=False))
@@ -819,11 +770,11 @@ class GridSpec(mgridspec.GridSpec):
         fig._refaspect_default = aspect
 
         # Update the layout
-        figsize = self._calc_figsize()
+        figsize = self._update_figsize()
         if not fig._is_same_size(figsize):
             fig.set_size_inches(figsize, internal=True)
 
-    def _auto_layout_space(self, renderer):
+    def _auto_layout_tight(self, renderer):
         """
         Update the underlying spaces with tight layout values. If `resize` is
         ``True`` and the auto figure size has changed then update the figure
@@ -859,64 +810,90 @@ class GridSpec(mgridspec.GridSpec):
 
         # Calculate new subplot row and column spaces. Enforce equal
         # default spaces between main subplot edges if requested.
-        hspace = self._calc_space('h')
-        wspace = self._calc_space('w')
+        hspace = self._get_tight_space('h')
+        wspace = self._get_tight_space('w')
         if self._hequal:
-            idxs = self._get_subplot_indices('h', space=True)
+            idxs = self._get_indices('h', space=True)
             space = max(hspace[i] for i in idxs)
             for i in idxs:
                 hspace[i] = space
         if self._wequal:
-            idxs = self._get_subplot_indices('w', space=True)
+            idxs = self._get_indices('w', space=True)
             space = max(wspace[i] for i in idxs)
             for i in idxs:
                 wspace[i] = space
-        self._hspace_default = hspace
-        self._wspace_default = wspace
+        self._hspace_total_default = hspace
+        self._wspace_total_default = wspace
 
         # Update the layout
         # NOTE: fig.set_size_inches() always updates the gridspec to enforce fixed
         # spaces (necessary since native position coordinates are figure-relative)
         # and to enforce fixed panel ratios. So only self.update() if we skip resize.
-        figsize = self._calc_figsize()
+        figsize = self._update_figsize()
         if not fig._is_same_size(figsize):
             fig.set_size_inches(figsize, internal=True)
         else:
             self.update()
 
-    def _update_specs(self, newrow=None, newcol=None):
+    def _update_figsize(self):
         """
-        Update the axes subplot specs by inserting rows and columns as specified.
+        Return an updated auto layout figure size accounting for the
+        gridspec and figure parameters. May or may not need to be applied.
         """
         fig = self.figure
-        ncols = self._ncols - int(newcol is not None)  # previous columns
-        inserts = (newrow, newrow, newcol, newcol)
-        for ax in fig._iter_axes(hidden=True, children=True):
-            # Get old index
-            # NOTE: Endpoints are inclusive, not exclusive!
-            if not isinstance(ax, maxes.SubplotBase):
-                continue
-            gs = ax.get_subplotspec().get_gridspec()
-            ss = ax.get_subplotspec().get_topmost_subplotspec()
-            # Get a new subplotspec
-            coords = list(ss._get_rows_columns(ncols))
-            for i in range(4):
-                if inserts[i] is not None and coords[i] >= inserts[i]:
-                    coords[i] += 1
-            row1, row2, col1, col2 = coords
-            key1 = slice(row1, row2 + 1)
-            key2 = slice(col1, col2 + 1)
-            ss_new = self._make_subplot_spec((key1, key2), includepanels=True)
-            # Apply new subplotspec
-            # NOTE: We should only have one possible level of GridSpecFromSubplotSpec
-            # nesting -- from making side colorbars with length less than 1.
-            if ss is ax.get_subplotspec():
-                ax.set_subplotspec(ss_new)
-            elif ss is getattr(gs, '_subplot_spec', None):
-                gs._subplot_spec = ss_new
+        if fig is None:  # drawing before subplots are added?
+            return
+        ax = fig._subplot_dict.get(fig._refnum, None)
+        if ax is None:  # drawing before subplots are added?
+            return
+        y1, y2, x1, x2 = ax.get_subplotspec()._get_rows_columns()
+        refhspace = sum(self.hspace_total[y1:y2])
+        refwspace = sum(self.wspace_total[x1:x2])
+        refhpanel = sum(self.hratios_total[i] for i in range(y1, y2 + 1) if self._hpanels[i])  # noqa: E501
+        refwpanel = sum(self.wratios_total[i] for i in range(x1, x2 + 1) if self._wpanels[i])  # noqa: E501
+        refhsubplot = sum(self.hratios_total[i] for i in range(y1, y2 + 1) if not self._hpanels[i])  # noqa: E501
+        refwsubplot = sum(self.wratios_total[i] for i in range(x1, x2 + 1) if not self._wpanels[i])  # noqa: E501
+
+        # Get the reference sizes
+        # NOTE: The sizing arguments should have been normalized already
+        figwidth, figheight = fig._figwidth, fig._figheight
+        refwidth, refheight = fig._refwidth, fig._refheight
+        refaspect = _not_none(fig._refaspect, fig._refaspect_default)
+        if refheight is None and figheight is None:
+            if figwidth is not None:
+                gridwidth = figwidth - self.spacewidth - self.panelwidth
+                refwidth = gridwidth * refwsubplot / self.gridwidth
+            if refwidth is not None:  # WARNING: do not change to elif!
+                refheight = refwidth / refaspect
             else:
-                raise RuntimeError('Unexpected GridSpecFromSubplotSpec nesting.')
-            ax._reposition_subplot()
+                raise RuntimeError('Figure size arguments are all missing.')
+        if refwidth is None and figwidth is None:
+            if figheight is not None:
+                gridheight = figheight - self.spaceheight - self.panelheight
+                refheight = gridheight * refhsubplot / self.gridheight
+            if refheight is not None:
+                refwidth = refheight * refaspect
+            else:
+                raise RuntimeError('Figure size arguments are all missing.')
+
+        # Get the auto figure size. Might trigger 'not enough room' error later
+        # NOTE: For e.g. [[1, 1, 2, 2], [0, 3, 3, 0]] we make sure to still scale the
+        # reference axes like a square even though takes two columns of gridspec.
+        if refheight is not None:
+            refheight -= refhspace + refhpanel
+            gridheight = refheight * self.gridheight / refhsubplot
+            figheight = gridheight + self.spaceheight + self.panelheight
+        if refwidth is not None:
+            refwidth -= refwspace + refwpanel
+            gridwidth = refwidth * self.gridwidth / refwsubplot
+            figwidth = gridwidth + self.spacewidth + self.panelwidth
+
+        # Return the figure size
+        figsize = (figwidth, figheight)
+        if all(np.isfinite(figsize)):
+            return figsize
+        else:
+            warnings._warn_proplot(f'Auto resize failed. Invalid figsize {figsize}.')
 
     def _update_params(
         self, *,
@@ -960,7 +937,7 @@ class GridSpec(mgridspec.GridSpec):
         def _assign_vector(key, values, space):
             if values is None:
                 return
-            idxs = self._get_subplot_indices(key[0], space=space)
+            idxs = self._get_indices(key[0], space=space)
             nidxs = len(idxs)
             values = np.atleast_1d(values)
             if values.size == 1:
@@ -986,12 +963,12 @@ class GridSpec(mgridspec.GridSpec):
         wspace = units(wspace, 'em', 'in')
         hratios = _not_none(hratios=hratios, height_ratios=height_ratios)
         wratios = _not_none(wratios=wratios, width_ratios=width_ratios)
-        _assign_vector('hpad', hpad, space=True)
-        _assign_vector('wpad', wpad, space=True)
-        _assign_vector('hspace', hspace, space=True)
-        _assign_vector('wspace', wspace, space=True)
-        _assign_vector('hratios', hratios, space=False)
-        _assign_vector('wratios', wratios, space=False)
+        _assign_vector('hpad_total', hpad, space=True)
+        _assign_vector('wpad_total', wpad, space=True)
+        _assign_vector('hspace_total', hspace, space=True)
+        _assign_vector('wspace_total', wspace, space=True)
+        _assign_vector('hratios_total', hratios, space=False)
+        _assign_vector('wratios_total', wratios, space=False)
 
     @docstring._snippet_manager
     def copy(self, **kwargs):
@@ -1013,20 +990,20 @@ class GridSpec(mgridspec.GridSpec):
         """
         # WARNING: For some reason copy.copy() fails. Updating e.g. wpanels
         # and hpanels on the copy also updates this object. No idea why.
-        nrows, ncols = self.get_subplot_geometry()
+        nrows, ncols = self.get_geometry()
         gs = GridSpec(nrows, ncols)
-        hidxs = self._get_subplot_indices('h')
-        widxs = self._get_subplot_indices('w')
-        gs._hratios = [self._hratios[i] for i in hidxs]
-        gs._wratios = [self._wratios[i] for i in widxs]
-        hidxs = self._get_subplot_indices('h', space=True)
-        widxs = self._get_subplot_indices('w', space=True)
-        gs._hpad = [self._hpad[i] for i in hidxs]
-        gs._wpad = [self._wpad[i] for i in widxs]
-        gs._hspace = [self._hspace[i] for i in hidxs]
-        gs._wspace = [self._wspace[i] for i in widxs]
-        gs._hspace_default = [self._hspace_default[i] for i in hidxs]
-        gs._wspace_default = [self._wspace_default[i] for i in widxs]
+        hidxs = self._get_indices('h')
+        widxs = self._get_indices('w')
+        gs._hratios_total = [self._hratios_total[i] for i in hidxs]
+        gs._wratios_total = [self._wratios_total[i] for i in widxs]
+        hidxs = self._get_indices('h', space=True)
+        widxs = self._get_indices('w', space=True)
+        gs._hpad_total = [self._hpad_total[i] for i in hidxs]
+        gs._wpad_total = [self._wpad_total[i] for i in widxs]
+        gs._hspace_total = [self._hspace_total[i] for i in hidxs]
+        gs._wspace_total = [self._wspace_total[i] for i in widxs]
+        gs._hspace_total_default = [self._hspace_total_default[i] for i in hidxs]
+        gs._wspace_total_default = [self._wspace_total_default[i] for i in widxs]
         for key in (
             'left', 'right', 'bottom', 'top', 'labelspace', 'titlespace',
             'xtickspace', 'ytickspace', 'xticklabelspace', 'yticklabelspace',
@@ -1039,48 +1016,50 @@ class GridSpec(mgridspec.GridSpec):
 
     def get_geometry(self):
         """
-        Return the total number of rows and columns in the grid.
+        Return the number of "unhidden" non-panel rows and columns in the grid
+        (see `GridSpec` for details).
 
         See also
         --------
-        GridSpec.get_subplot_geometry
         GridSpec.get_panel_geometry
-        GridSpec.get_grid_positions
+        GridSpec.get_total_geometry
         """
-        return self.nrows, self.ncols
-
-    def get_subplot_geometry(self):
-        """
-        Return the number of rows and columns allocated for subplots
-        and available with ``gridspec[...]`` indexing.
-
-        See also
-        --------
-        GridSpec.get_geometry
-        GridSpec.get_panel_geometry
-        """
-        nrows, ncols = self.get_geometry()
+        nrows, ncols = self.get_total_geometry()
         nrows_panels, ncols_panels = self.get_panel_geometry()
         return nrows - nrows_panels, ncols - ncols_panels
 
     def get_panel_geometry(self):
         """
-        Return the number of rows and columns allocated for panels
-        and *not* available with ``gridspec[...]`` indexing.
+        Return the number of "hidden" panel rows and columns in the grid
+        (see `GridSpec` for details).
 
         See also
         --------
         GridSpec.get_geometry
-        GridSpec.get_subplot_geometry
+        GridSpec.get_total_geometry
         """
         nrows = sum(map(bool, self._hpanels))
         ncols = sum(map(bool, self._wpanels))
         return nrows, ncols
 
+    def get_total_geometry(self):
+        """
+        Return the total number of "unhidden" and "hidden" rows and columns
+        in the grid (see `GridSpec` for details).
+
+        See also
+        --------
+        GridSpec.get_geometry
+        GridSpec.get_panel_geometry
+        GridSpec.get_grid_positions
+        """
+        return self._nrows_total, self._ncols_total
+
     def get_grid_positions(self, figure=None):
         """
         Return the subplot grid positions allowing for variable inter-subplot
-        spacing and using physical units for the spacing terms.
+        spacing and using physical units for the spacing terms. The resulting
+        positions include "hidden" panel rows and columns.
 
         Note
         ----
@@ -1091,7 +1070,7 @@ class GridSpec(mgridspec.GridSpec):
 
         See also
         --------
-        GridSpec.get_geometry
+        GridSpec.get_total_geometry
         """
         # Grab the figure size
         if not self.figure:
@@ -1104,8 +1083,8 @@ class GridSpec(mgridspec.GridSpec):
         figwidth, figheight = fig.get_size_inches()
         spacewidth, spaceheight = self.spacewidth, self.spaceheight
         panelwidth, panelheight = self.panelwidth, self.panelheight
-        hratios, wratios = self.hratios, self.wratios
-        hidxs, widxs = self._get_subplot_indices('h'), self._get_subplot_indices('w')
+        hratios, wratios = self.hratios_total, self.wratios_total
+        hidxs, widxs = self._get_indices('h'), self._get_indices('w')
 
         # Scale the subplot slot ratios and keep the panel slots fixed
         hsubplot = np.array([hratios[i] for i in hidxs])
@@ -1125,7 +1104,7 @@ class GridSpec(mgridspec.GridSpec):
                 "decreasing the 'top', 'bottom', or 'hspace' gridspec spaces."
             )
         cell_heights = [r * norm for r in hratios]
-        sep_heights = [0] + [s / figheight for s in self.hspace]
+        sep_heights = [0] + [s / figheight for s in self.hspace_total]
         heights = np.cumsum(np.column_stack([sep_heights, cell_heights]).flat)
 
         # Calculate accumulated widths of rows
@@ -1136,7 +1115,7 @@ class GridSpec(mgridspec.GridSpec):
                 "decreasing the 'left', 'right', or 'wspace' gridspec spaces."
             )
         cell_widths = [r * norm for r in wratios]
-        sep_widths = [0] + [s / figwidth for s in self.wspace]
+        sep_widths = [0] + [s / figwidth for s in self.wspace_total]
         widths = np.cumsum(np.column_stack([sep_widths, cell_widths]).flat)
 
         # Return the figure coordinates
@@ -1202,7 +1181,7 @@ class GridSpec(mgridspec.GridSpec):
         self._figure = fig
         self._update_params(**fig._gridspec_params)
         fig._gridspec_params.clear()
-        figsize = self._calc_figsize()
+        figsize = self._update_figsize()
         if figsize is not None:
             fig.set_size_inches(figsize, internal=True, forward=False)
         else:
@@ -1220,32 +1199,50 @@ class GridSpec(mgridspec.GridSpec):
     get_subplot_params = _disable_method('get_subplot_params')
     locally_modified_subplot_params = _disable_method('locally_modified_subplot_params')
 
-    # Make formerly public instance-level attributes immutable. Also redirect space
+    # Immutable helper properties used to calculate figure size and subplot positions
+    # NOTE: The spaces are auto-filled with defaults wherever user left them unset
+    gridheight = property(lambda self: sum(self.hratios))
+    gridwidth = property(lambda self: sum(self.wratios))
+    panelheight = property(lambda self: sum(self.hratios_panel))
+    panelwidth = property(lambda self: sum(self.wratios_panel))
+    spaceheight = property(lambda self: self.bottom + self.top + sum(self.hspace_total))
+    spacewidth = property(lambda self: self.left + self.right + sum(self.wspace_total))
+
+    # Geometry properties. These are included for consistency with get_geometry
+    # functions (would be really confusing if self.nrows, self.ncols disagree).
+    nrows = property(lambda self: self._nrows_total - sum(map(bool, self._hpanels)), doc='')  # noqa: E501
+    ncols = property(lambda self: self._ncols_total - sum(map(bool, self._wpanels)), doc='')  # noqa: E501
+    nrows_panel = property(lambda self: sum(map(bool, self._hpanels)))
+    ncols_panel = property(lambda self: sum(map(bool, self._wpanels)))
+    nrows_total = property(lambda self: self._nrows_total)
+    ncols_total = property(lambda self: self._ncols_total)
+
+    # Make formerly public instance-level attributes immutable and redirect space
     # properties so they try to retrieve user settings then fallback to defaults.
-    # NOTE: Do not document these since intended usage is internal and panel slot
-    # obfuscation makes this confusing. For example gs.update(wspace=gs.wspace) in
-    # presence of panels would yield error. For now the only supported introspection
-    # is the __repr__. Probably no big deal... introspection not critical here.
-    left = property(functools.partial(_get_active_space, key='left'), doc='')
-    bottom = property(functools.partial(_get_active_space, key='bottom'), doc='')
-    right = property(functools.partial(_get_active_space, key='right'), doc='')
-    top = property(functools.partial(_get_active_space, key='top'), doc='')
-    hspace = property(functools.partial(_get_active_space, key='hspace'), doc='')
-    wspace = property(functools.partial(_get_active_space, key='wspace'), doc='')
-    # Additional properties added for consistency
-    nrows = property(lambda self: self._nrows, doc='')  # in case missing
-    ncols = property(lambda self: self._ncols, doc='')  # ...
-    hratios = property(lambda self: list(self._hratios))
-    wratios = property(lambda self: list(self._wratios))
-    hpad = property(lambda self: list(self._hpad))
-    wpad = property(lambda self: list(self._wpad))
-    # Hidden helper properties used to calculate figure size and subplot positions
-    spaceheight = property(lambda self: self.bottom + self.top + sum(self.hspace))
-    spacewidth = property(lambda self: self.left + self.right + sum(self.wspace))
-    panelheight = property(lambda self: sum(r for i, r in enumerate(self.hratios) if self._hpanels[i]))  # noqa: E501
-    panelwidth = property(lambda self: sum(r for i, r in enumerate(self.wratios) if self._wpanels[i]))  # noqa: E501
-    subplotheight = property(lambda self: sum(r for i, r in enumerate(self.hratios) if not self._hpanels[i]))  # noqa: E501
-    subplotwidth = property(lambda self: sum(r for i, r in enumerate(self.wratios) if not self._wpanels[i]))  # noqa: E501
+    # NOTE: These are undocumented for the time being. Generally properties should
+    # be changed with update() and introspection not really necessary.
+    left = property(lambda self: self._get_space('left'))
+    bottom = property(lambda self: self._get_space('bottom'))
+    right = property(lambda self: self._get_space('right'))
+    top = property(lambda self: self._get_space('top'))
+    hratios = property(lambda self: self._filter_indices('hratios', panel=False))
+    wratios = property(lambda self: self._filter_indices('wratios', panel=False))
+    hratios_panel = property(lambda self: self._filter_indices('hratios', panel=True))
+    wratios_panel = property(lambda self: self._filter_indices('wratios', panel=True))
+    hratios_total = property(lambda self: list(self._hratios_total))
+    wratios_total = property(lambda self: list(self._wratios_total))
+    hspace = property(lambda self: self._filter_indices('hspace', panel=False))
+    wspace = property(lambda self: self._filter_indices('wspace', panel=False))
+    hspace_panel = property(lambda self: self._filter_indices('hspace', panel=True))
+    wspace_panel = property(lambda self: self._filter_indices('wspace', panel=True))
+    hspace_total = property(lambda self: self._get_space('hspace_total'))
+    wspace_total = property(lambda self: self._get_space('wspace_total'))
+    hpad = property(lambda self: self._filter_indices('hpad', panel=False))
+    wpad = property(lambda self: self._filter_indices('wpad', panel=False))
+    hpad_panel = property(lambda self: self._filter_indices('hpad', panel=True))
+    wpad_panel = property(lambda self: self._filter_indices('wpad', panel=True))
+    hpad_total = property(lambda self: list(self._hpad_total))
+    wpad_total = property(lambda self: list(self._wpad_total))
 
 
 class SubplotGrid(MutableSequence, list):
@@ -1259,7 +1256,7 @@ class SubplotGrid(MutableSequence, list):
         if not self:
             return 'SubplotGrid(length=0)'
         length = len(self)
-        nrows, ncols = self.gridspec.get_subplot_geometry()
+        nrows, ncols = self.gridspec.get_geometry()
         return f'SubplotGrid(nrows={nrows}, ncols={ncols}, length={length})'
 
     def __str__(self):
@@ -1313,6 +1310,7 @@ class SubplotGrid(MutableSequence, list):
         # Obscure deprecated behavior
         # WARNING: This is now deprecated! Instead we dynamically define a few
         # dedicated relevant commands that can be called from the grid (see below).
+        import functools
         warnings._warn_proplot(
             'Calling arbitrary axes methods from SubplotGrid was deprecated in v0.8 '
             'and will be removed in a future release. Please index the grid or loop '
@@ -1564,7 +1562,7 @@ class SubplotGrid(MutableSequence, list):
         """
         # NOTE: Considered deprecating this but on second thought since this is
         # a 2D array-like object it should definitely have a shape attribute.
-        return self.gridspec.get_subplot_geometry()
+        return self.gridspec.get_geometry()
 
 
 # Dynamically add commands to generate twin or inset axes
