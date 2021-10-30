@@ -2027,7 +2027,6 @@ class Axes(maxes.Axes):
         if ticklocation is not None and ticklocation != 'bottom':
             warnings._warn_proplot('Inset colorbars can only have ticks on the bottom.')
         kwargs.update({'orientation': 'horizontal', 'ticklocation': 'bottom'})
-        kwargs.setdefault('maxn', 5)  # passed to _parse_colorbar_ticks
         return ax, kwargs
 
     def _parse_colorbar_arg(
