@@ -36,27 +36,43 @@ Deprecated
 
 * Deprecate passing `array` to `~proplot.figure.Figure.add_subplots` as a
   keyword argument rather than positional argument (:commit:`3d64a449`).
-* Deprecate `maxn` and `maxn_minor` keywords passed to `~proplot.axes.Axes.colorbar`
-  (:commit:`b94a9b1e`).
+* Deprecate `maxn` and `maxn_minor` passed to `~proplot.axes.Axes.colorbar`,
+  recommend alternative ``locator_kw={'nbins': n}`` (:commit:`b94a9b1e`). Improved
+  colorbar locator means these should not need to be used as much (see below).
+* Improve the `~proplot.gridspec.GridSpec` "panel" obfuscation by
+  renaming `~proplot.gridspec.GridSpec.get_subplot_geometry` to
+  `~proplot.gridspec.GridSpec.get_geometry`, `~proplot.gridspec.GridSpec.get_geometry`
+  to `~proplot.gridspec.GridSpec.get_total_geometry`, and having ``gs.nrows`` and
+  ``gs.ncols`` refer to the reduced non-panel geometry (:commit:`52f57094`).
 
 Features
 --------
 
-* Add `~proplot.gridspec.GridSpec.copy` method to re-use the same gridspec geometry for
-  multiple figures (:commit:`8dc7fe3e`, :commit:`be410341`, :commit:`a82a512c`).
-* Permit passing `~proplot.gridspec.Gridspec` to `~proplot.figure.Figure.add_subplots`
-  to quickly draw a subplot inside each gridspec slot (:commit:`a9ad7429`).
+* Add top-level `~proplot.ui.subplot` command that returns a figure and a single
+  subplot, analogous to `~proplot.ui.subplots` (:commit:`8459c24c`).
+* Add `~proplot.gridspec.GridSpec.copy` method to re-use the same gridspec geometry
+  for multiple figures (re-using an existing gridspec is otherwise not possible)
+  (:commit:`8dc7fe3e`, :commit:`be410341`, :commit:`a82a512c`).
+* Permit passing `~proplot.gridspec.GridSpec` instances to
+  `~proplot.figure.Figure.add_subplots` to quickly draw a subplot
+  inside each gridspec slot in row or column-major order (:commit:`a9ad7429`).
+* Add modifiable `proplot.figure.Figure.tight` property to retrieve/change the
+  "tight layout" setting (:commit:`46f46c26`). Useful for debugging/inspection.
+* Permit disabling a-b-c labels for a particular subplot by passing e.g.
+  ``number=None`` instead of ``number=False`` (:commit:`f7308cbe`).
 * Use custom locator `proplot.ticker.DiscreteLocator` for major/minor discrete colorbar
   ticks to auto-select subset of levels depending on axis length (:commit:`b94a9b1e`).
-* Auto update major/minor discrete colorbar ticks whenever associated axes is drawn
-  to appropriately filter locations (:commit:`92bb937e`, :commit:`302c239e`).
 * Register `proplot.ticker.DiscreteLocator` as ``'discrete'`` and add keywords `index`
   and `discrete` to the constructor `~proplot.constructor.Locator` (:commit:`b94a9b1e`).
+* Auto update major/minor discrete colorbar ticks whenever associated axes is drawn
+  to appropriately filter locations (:commit:`92bb937e`, :commit:`302c239e`).
+* Auto disable minor colorbar and axis ticks when major ticks have non-numeric
+  labels set by `~matplotlib.ticker.FixedFormatter` (:commit:`c747ae44`).
 * Permit passing `vmin` and `vmax` to `proplot.axes.Axes.colorbar`, as quick
   alternative to using `norm_kw` (:commit:`eb9565bd`).
 * Permit discretizing continuous colormaps passed to `~proplot.axes.Axes.colorbar` using
   `values`, instead of ignoring `values` when colormaps are passed (:commit:`503af4be`).
-* Align the default ticks with the colormap levels when passing discrete colormaps
+* Ensure the default ticks are aligned with levels when passing discrete colormaps
   to `~proplot.axes.Axes.colorbar` (:commit:`503af4be`).
 * Emit warning when both a scalar mappable `vmin`, `vmax`, `norm`, or `values`
   are passed to `~proplot.axes.Axes.colorbar` (:commit:`503af4be`).
@@ -64,6 +80,8 @@ Features
 Bug fixes
 ---------
 
+* Fix issue where background properties like `color` and `linewidth` cannot be
+  passed to `~proplot.axes.Axes` instantiation commands (:commit:`b67b046c`).
 * Fix issue where silently-deprecated `aspect` parameter passed to
   `proplot.ui.subplots` is not translated to `refaspect` (:commit:`2406a2ae`).
 * Fix issue where `proplot.gridspec.GridSpec.figure` is allowed to change -- instead
