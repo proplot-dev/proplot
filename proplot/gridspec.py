@@ -463,7 +463,7 @@ class GridSpec(mgridspec.GridSpec):
         # tracked with figure panel array (a boolean mask where each row corresponds
         # to a panel, moving toward the outside, and True indicates a slot is filled).
         elif (
-            isinstance(arg, Integral)
+            arg is None or isinstance(arg, Integral)
             or np.iterable(arg) and all(isinstance(_, Integral) for _ in arg)
         ):
             slot = 'f'
