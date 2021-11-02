@@ -12,6 +12,7 @@ from .internals import _not_none, _pop_params, _pop_rc, docstring
 
 __all__ = [
     'figure',
+    'subplot',
     'subplots',
     'show',
     'close',
@@ -144,11 +145,50 @@ def figure(**kwargs):
 
 
 @docstring._snippet_manager
+def subplot(**kwargs):
+    """
+    Create a figure with a single subplot.
+
+    Other parameters
+    ----------------
+    %(figure.figure)s
+    **kwargs
+        Passed to `proplot.figure.Figure.format` or the
+        projection-specific ``format`` command for the axes.
+
+    Returns
+    -------
+    fig : `proplot.figure.Figure`
+        The figure instance.
+    ax : `proplot.axes.Axes`
+        The axes instance.
+
+    See also
+    --------
+    proplot.ui.figure
+    proplot.figure.Figure.subplot
+    proplot.figure.Figure
+    matplotlib.figure.Figure
+    """
+    # Format keywords
+    _parse_figsize(kwargs)
+    rc_kw, rc_mode = _pop_rc(kwargs)
+    kwformat = {}
+    for sig in paxes.Axes._format_signatures.values():
+        kwformat.update(_pop_params(kwargs, sig))
+    # Initialize
+    kwargs['aspect'] = kwformat.pop('aspect', None)  # keyword conflict
+    fig = figure(rc_kw=rc_kw, **kwargs)
+    ax = fig.add_subplot(rc_kw=rc_kw, **kwformat)
+    return fig, ax
+
+
+@docstring._snippet_manager
 def subplots(*args, **kwargs):
     """
-    Create a figure with a single subplot or an arbitrary grid of
-    subplots. Uses `figure` and `proplot.figure.Figure.subplots`.
-    This command is analogous to `matplotlib.pyplot.subplots`.
+    Create a figure with an arbitrary grid of subplots. Uses `figure`
+    and `proplot.figure.Figure.subplots`. This command is analogous
+    to `matplotlib.pyplot.subplots`.
 
     Parameters
     ----------
