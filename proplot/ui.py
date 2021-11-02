@@ -8,7 +8,7 @@ from . import axes as paxes
 from . import figure as pfigure
 from . import gridspec as pgridspec
 from .internals import ic  # noqa: F401
-from .internals import _not_none, _pop_params, _pop_rc, docstring
+from .internals import _not_none, _pop_params, _pop_props, _pop_rc, docstring
 
 __all__ = [
     'figure',
@@ -170,16 +170,14 @@ def subplot(**kwargs):
     proplot.figure.Figure
     matplotlib.figure.Figure
     """
-    # Format keywords
     _parse_figsize(kwargs)
     rc_kw, rc_mode = _pop_rc(kwargs)
-    kwformat = {}
+    kwsub = _pop_props(kwargs, 'patch')  # e.g. 'color'
     for sig in paxes.Axes._format_signatures.values():
-        kwformat.update(_pop_params(kwargs, sig))
-    # Initialize
-    kwargs['aspect'] = kwformat.pop('aspect', None)  # keyword conflict
+        kwsub.update(_pop_params(kwargs, sig))
+    kwargs['aspect'] = kwsub.pop('aspect', None)  # keyword conflict
     fig = figure(rc_kw=rc_kw, **kwargs)
-    ax = fig.add_subplot(rc_kw=rc_kw, **kwformat)
+    ax = fig.add_subplot(rc_kw=rc_kw, **kwsub)
     return fig, ax
 
 
@@ -216,21 +214,17 @@ def subplots(*args, **kwargs):
     proplot.figure.Figure
     matplotlib.figure.Figure
     """
-    # Subplots keywords
     _parse_figsize(kwargs)
-    kwsubs = _pop_params(kwargs, pfigure.Figure.add_subplots)
+    rc_kw, rc_mode = _pop_rc(kwargs)
+    kwsubs = _pop_props(kwargs, 'patch')  # e.g. 'color'
+    kwsubs.update(_pop_params(kwargs, pfigure.Figure.add_subplots))
     kwsubs.update(_pop_params(kwargs, pgridspec.GridSpec._update_params))
+    for sig in paxes.Axes._format_signatures.values():
+        kwsubs.update(_pop_params(kwargs, sig))
     for key in ('array', 'subplot_kw', 'gridspec_kw'):  # deprecated args
         if key in kwargs:
             kwsubs[key] = kwargs.pop(key)
-    # Format keywords
-    rc_kw, rc_mode = _pop_rc(kwargs)
-    kwformat = _pop_params(kwargs, pfigure.Figure._format_signature)
-    for sig in paxes.Axes._format_signatures.values():
-        kwformat.update(_pop_params(kwargs, sig))
-    # Initialize
-    kwargs['aspect'] = kwformat.pop('aspect', None)  # keyword conflict
+    kwargs['aspect'] = kwsubs.pop('aspect', None)  # keyword conflict
     fig = figure(rc_kw=rc_kw, **kwargs)
-    axs = fig.add_subplots(*args, **kwsubs)
-    axs.format(rc_kw=rc_kw, **kwformat)
+    axs = fig.add_subplots(*args, rc_kw=rc_kw, **kwsubs)
     return fig, axs

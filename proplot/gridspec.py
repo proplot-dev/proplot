@@ -916,7 +916,7 @@ class GridSpec(mgridspec.GridSpec):
             if not np.isscalar(value):
                 raise ValueError(f'Unexpected {key}={value!r}. Must be scalar.')
             value = units(value, 'em', 'in')
-            setattr(self, '_' + key, value)
+            setattr(self, f'_{key}', value)
         hequal = _not_none(hequal, equal)
         wequal = _not_none(wequal, equal)
         _assign_scalar('left', left)
@@ -944,7 +944,7 @@ class GridSpec(mgridspec.GridSpec):
                 values = np.repeat(values, nidxs)
             if values.size != nidxs:
                 raise ValueError(f'Expected len({key}) == {nidxs}. Got {values.size}.')
-            list_ = getattr(self, '_' + key)
+            list_ = getattr(self, f'_{key}_total')
             for i, value in enumerate(values):
                 if value is None:
                     continue
@@ -963,12 +963,12 @@ class GridSpec(mgridspec.GridSpec):
         wspace = units(wspace, 'em', 'in')
         hratios = _not_none(hratios=hratios, height_ratios=height_ratios)
         wratios = _not_none(wratios=wratios, width_ratios=width_ratios)
-        _assign_vector('hpad_total', hpad, space=True)
-        _assign_vector('wpad_total', wpad, space=True)
-        _assign_vector('hspace_total', hspace, space=True)
-        _assign_vector('wspace_total', wspace, space=True)
-        _assign_vector('hratios_total', hratios, space=False)
-        _assign_vector('wratios_total', wratios, space=False)
+        _assign_vector('hpad', hpad, space=True)
+        _assign_vector('wpad', wpad, space=True)
+        _assign_vector('hspace', hspace, space=True)
+        _assign_vector('wspace', wspace, space=True)
+        _assign_vector('hratios', hratios, space=False)
+        _assign_vector('wratios', wratios, space=False)
 
     @docstring._snippet_manager
     def copy(self, **kwargs):

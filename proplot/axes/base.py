@@ -874,8 +874,8 @@ class Axes(maxes.Axes):
         # Deprecated behavior
         if patch_kw:
             warnings._warn_proplot(
-                "Keyword 'patch_kw' was deprecated in v0.8. Please pass "
-                'patch properties as keyword arguments instead.'
+                "'patch_kw' is not necessary as of proplot v0.8. Pass "
+                'the parameters as keyword arguments instead.'
             )
             kwargs.update(patch_kw)
 
