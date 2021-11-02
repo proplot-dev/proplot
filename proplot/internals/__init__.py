@@ -353,6 +353,7 @@ def _pop_rc(src, *, ignore_conflicts=True):
         'facecolor',
         'edgecolor',
         'linewidth',
+        'basemap',
         'share',
         'span',
         'tight',
