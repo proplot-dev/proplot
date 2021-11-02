@@ -643,6 +643,13 @@ class Figure(mfigure.Figure):
             'panelpad': panelpad,
         }
         self._gridspec_params = params  # used to initialize the gridspec
+        for key, value in tuple(params.items()):
+            if not isinstance(value, str) and np.iterable(value) and len(value) > 1:
+                raise ValueError(
+                    f'Invalid gridspec parameter {key}={value!r}. Space parameters '
+                    'passed to Figure() must be scalar. For vector spaces use '
+                    'GridSpec() or pass space parameters to subplots().'
+                )
 
         # Add tight layout setting and ignore native settings
         pars = kwargs.pop('subplotpars', None)
