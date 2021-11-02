@@ -160,16 +160,16 @@ class _SubplotSpec(mgridspec.SubplotSpec):
         else:
             nrows, ncols = gs.get_geometry()
         rows, cols = np.unravel_index([self.num1, self.num2], (nrows, ncols))
-        fig_bottoms, fig_tops, fig_lefts, fig_rights = gs.get_grid_positions(figure)
-        fig_bottom = fig_bottoms[rows].min()
-        fig_top = max(fig_bottom, fig_tops[rows].max())
-        fig_left = fig_lefts[cols].min()
-        fig_right = max(fig_left, fig_rights[cols].max())
-        figbox = mtransforms.Bbox.from_extents(fig_left, fig_bottom, fig_right, fig_top)
+        bottoms, tops, lefts, rights = gs.get_grid_positions(figure)
+        bottom = bottoms[rows].min()
+        top = max(bottom, tops[rows].max())
+        left = lefts[cols].min()
+        right = max(left, rights[cols].max())
+        bbox = mtransforms.Bbox.from_extents(left, bottom, right, top)
         if return_all:
-            return figbox, rows[0], cols[0], nrows, ncols
+            return bbox, rows[0], cols[0], nrows, ncols
         else:
-            return figbox
+            return bbox
 
 
 class GridSpec(mgridspec.GridSpec):
@@ -292,11 +292,11 @@ class GridSpec(mgridspec.GridSpec):
 
     def __getitem__(self, key):
         """
-        Get a `~matplotlib.gridspec.SubplotSpec`. Slots allocated for axes panels,
-        colorbars, and legends are ignored. For example, given a gridspec with 3
-        subplot rows, 3 subplot columns, and 3 "bottom" panel rows, calling
-        ``gs[1, 1]`` returns a `~matplotlib.gridspec.SubplotSpec` corresponding to
-        the second subplot row and column rather than the "bottom" panel slot.
+        Get a `~matplotlib.gridspec.SubplotSpec`. "Hidden" slots allocated for axes
+        panels, colorbars, and legends are ignored. For example, given a gridspec with
+        2 subplot rows, 3 subplot columns, and a "panel" row between the subplot rows,
+        calling ``gs[1, 1]`` returns a `~matplotlib.gridspec.SubplotSpec` corresponding
+        to the central subplot on the second row rather than a "panel" slot.
         """
         return self._make_subplot_spec(key, includepanels=False)
 
