@@ -135,9 +135,9 @@ fig.format(
 # Pandas and xarray integration
 # -----------------------------
 #
-# The `~proplot.axes.PlotAxes` plotting commands recognize `pandas`_ and
-# `xarray`_ data structures. If you omit *x* and *y* coordinates, the
-# plotting commands try to infer them from the `pandas.DataFrame` or
+# The `~proplot.axes.PlotAxes` plotting commands recognize `pandas`_
+# and `xarray`_ data structures. If you omit *x* and *y* coordinates,
+# the plotting commands try to infer them from the `pandas.DataFrame` or
 # `xarray.DataArray`. If you did not explicitly set the *x* or *y* axis label
 # or :ref:`legend or colorbar <ug_cbars_axes>` label(s), the plotting commands
 # try to retrieve them from the `pandas.DataFrame` or `xarray.DataArray`.
@@ -346,11 +346,11 @@ ax.pcolormesh(data, cmap='magma', norm='log', colorbar='b')
 # Special normalizers
 # -------------------
 #
-# Proplot includes two new :ref:`"continuous" normalizers <ug_norm>`.
-# `~proplot.colors.SegmentedNorm` provides even color gradations with respect to
-# index for an arbitrary monotonically increasing or decreasing list of levels. This is
-# automatically applied if you pass unevenly spaced `levels` to a plotting command, or
-# it can be manually applied using e.g. ``norm='segmented'``. This can be useful for
+# Proplot includes two new :ref:`"continuous" normalizers <ug_norm>`. The
+# `~proplot.colors.SegmentedNorm` normalizer provides even color gradations with respect
+# to index for an arbitrary monotonically increasing or decreasing list of levels. This
+# is automatically applied if you pass unevenly spaced `levels` to a plotting command,
+# or it can be manually applied using e.g. ``norm='segmented'``. This can be useful for
 # datasets with unusual statistical distributions or spanning many orders of magnitudes.
 #
 # The `~proplot.colors.DivergingNorm` normalizer ensures that colormap midpoints lie

@@ -36,8 +36,6 @@
 # call `~proplot.axes.Axes.panel_axes` more than once. To generate several
 # panels at once, call `~proplot.gridspec.SubplotGrid.panel_axes` on
 # the `~proplot.gridspec.SubplotGrid` returned by `~proplot.figure.Figure.subplots`.
-# Note that panels :ref:`do not interfere with the tight layout algorithm <ug_tight>`
-# and :ref:`do not affect the subplot aspect ratios <ug_autosize>`.
 #
 # In the first example below, the distances are automatically adjusted by the
 # :ref:`tight layout algorithm <ug_tight>` according to the `pad` keyword
@@ -47,8 +45,21 @@
 # Panel widths are specified in physical units, with the default controlled
 # by :rcraw:`subplots.panelwidth`. This helps preserve the look of the
 # figure if the figure size changes. Note that by default, panels are excluded
-# when centering :ref:`spanning axis labels <ug_share>` and super titles.
-# To include the panels, pass ``includepanels=True`` to `~proplot.figure.Figure`.
+# when centering :ref:`spanning axis labels <ug_share>` and super titles --
+# to include the panels, pass ``includepanels=True`` to `~proplot.figure.Figure`.
+#
+# .. important::
+#
+#    Proplot adds panel axes by allocating new rows and columns in the
+#    `~proplot.gridspec.GridSpec` rather than "stealing" space from the parent
+#    subplot (note that subsequently indexing the `~proplot.gridspec.GridSpec` will
+#    ignore the slots allocated for panels). This approach means that panels
+#    :ref:`do not affect subplot aspect ratios <ug_autosize>` and
+#    :ref:`do not affect subplot spacing <ug_tight>`, which lets
+#    proplot avoid relying on complicated `"constrained layout" algorithms
+#    <https://matplotlib.org/stable/tutorials/intermediate/constrainedlayout_guide.html>`__
+#    and tends to improve the appearance of figures with even the
+#    most complex arrangements of subplots and panels.
 
 # %%
 import proplot as pplt
@@ -152,7 +163,7 @@ state = np.random.RandomState(51423)
 x, y = np.arange(10), np.arange(10)
 data = state.rand(10, 10).cumsum(axis=0)
 
-# Plot data
+# Plot data in the main axes
 fig, ax = pplt.subplots(refwidth=3)
 m = ax.pcolormesh(data, cmap='Grays', levels=N)
 ax.colorbar(m, loc='b', label='label')
@@ -161,13 +172,14 @@ ax.format(
     suptitle='"Zooming in" with an inset axes'
 )
 
-# Create inset axes representing a "zoom-in"
+# Create an inset axes representing a "zoom-in"
+# See the 1D plotting section for more on the "inbounds" keyword
 ix = ax.inset(
     [5, 5, 4, 4], transform='data', zoom=True,
     zoom_kw={'edgecolor': 'red3', 'lw': 2, 'ls': '--'}
 )
 ix.format(
-    xlim=(2, 4), ylim=(2, 4), metacolor='red7',
+    xlim=(2, 4), ylim=(2, 4), color='red9',
     linewidth=1.5, ticklabelweight='bold'
 )
 ix.pcolormesh(data, cmap='Grays', levels=N, inbounds=False)

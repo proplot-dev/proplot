@@ -26,10 +26,10 @@
 # Geographic and polar plots
 # ==========================
 #
-# This section documents several advanced features for working with `polar`_
-# and :ref:`geographic projections <ug_geo>`. The geographic features are
-# powered by the `cartopy`_ and `basemap`_ packages. Note that these features are
-# *optional* -- installation of cartopy and basemap are not required to use proplot.
+# This section documents several useful features for working with `polar`_ plots
+# and :ref:`geographic projections <ug_geo>`. The geographic features are powered
+# by `cartopy`_ (or, optionally, `basemap`_). Note that these features are
+# *optional* -- installation of cartopy or basemap are not required to use proplot.
 #
 # %% [raw] raw_mimetype="text/restructuredtext"
 # .. _ug_geo:
@@ -69,7 +69,7 @@ axs.format(
 # %% [raw] raw_mimetype="text/restructuredtext"
 # .. _ug_backends:
 #
-# Cartopy and basemap
+# Geographic backends
 # -------------------
 #
 # The `proplot.axes.GeoAxes` class uses either `cartopy`_ or `basemap`_ as "backends"
@@ -184,12 +184,11 @@ pplt.rc.reset()
 # to the command. This interpolates the data to the poles and across the longitude
 # seam before plotting. This is a convenient and succinct alternative to cartopy's
 # `~cartopy.util.add_cyclic_point` and basemap's `~mpl_toolkits.basemap.addcyclic`.
-#
-# Geographic features can be drawn underneath data or on top of data by changing the
+# Geographic features can be drawn underneath or on top of content by changing the
 # corresponding `zorder <https://matplotlib.org/3.1.1/gallery/misc/zorder_demo.html>`__
 # setting. For example, to draw land patches on top of all plotted content as
-# a "land mask," use ``ax.format(land=True, landzorder=4)`` or set :rcraw:`land.zorder`
-# to ``True``. See the :ref:`next section <ug_geoformat>` for details.
+# a "land mask," you can use ``ax.format(land=True, landzorder=4)``
+# (see the :ref:`next section <ug_geoformat>` for details).
 
 # %%
 import proplot as pplt
@@ -384,11 +383,11 @@ pplt.rc.reset()
 # `PROJ <https://proj.org>`__ documentation is found :ref:`here <proj_table>`.
 #
 # Proplot uses the cartopy API to add the Aitoff, Hammer, Winkel Tripel, and
-# Kavrisky VII projections (i.e., ``'aitoff'``, ``'hammer'``, ``'wintri'``,
+# Kavrayskiy VII projections (i.e., ``'aitoff'``, ``'hammer'``, ``'wintri'``,
 # and ``'kav7'``), as well as North and South polar versions of the Azimuthal
-# Equidistant, Lambert Azimuthal Equal-Area, and Gnomic projections (i.e.,
+# Equidistant, Lambert Azimuthal Equal-Area, and Gnomonic projections (i.e.,
 # ``'npaeqd'``, ``'spaeqd'``, ``'nplaea'``, ``'splaea'``, ``'npgnom'``, and
-# ``'spgnom'``), modeled after the existing `~cartopy.crs.NorthPolarStereo`
+# ``'spgnom'``), modeled after cartopy's existing `~cartopy.crs.NorthPolarStereo`
 # and `~cartopy.crs.SouthPolarStereo` projections.
 
 # %%

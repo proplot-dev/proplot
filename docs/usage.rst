@@ -140,15 +140,6 @@ packages: the `pandas`_ and `xarray`_ packages, used for working with annotated
 tables and arrays, and the `cartopy`_ and `basemap`_ geographic
 plotting packages.
 
-* If you pass a `pandas.Series`, `pandas.DataFrame`, or `xarray.DataArray`
-  to any plotting command, the axis labels, tick labels, titles, colorbar
-  labels, and legend labels are automatically applied from the metadata. If
-  you did not supply the *x* and *y* coordinates, they are also inferred from
-  the metadata. This works just like the native `xarray.DataArray.plot` and
-  `pandas.DataFrame.plot` methods. A demonstration of this feature is given
-  in the sections on :ref:`1D plotting <ug_1dintegration>` and
-  :ref:`2D plotting <ug_2dintegration>`. This feature can be disabled by
-  setting :rcraw:`autoformat` to ``False``.
 * The `~proplot.axes.GeoAxes` class uses the `cartopy`_ or
   `basemap`_ packages to :ref:`plot geophysical data <ug_geoplot>`,
   :ref:`add geographic features <ug_geoformat>`, and
@@ -156,6 +147,13 @@ plotting packages.
   provides a simpler, cleaner interface than the original `cartopy`_ and `basemap`_
   interfaces. Figures can be filled with `~proplot.axes.GeoAxes` by passing the
   `proj` keyword to `~proplot.ui.subplots`.
+* If you pass a `pandas.Series`, `pandas.DataFrame`, or `xarray.DataArray`
+  to any plotting command, the axis labels, tick labels, titles, colorbar
+  labels, and legend labels are automatically applied from the metadata. If
+  you did not supply the *x* and *y* coordinates, they are also inferred from
+  the metadata. This works just like the native `xarray.DataArray.plot` and
+  `pandas.DataFrame.plot` commands. See the sections on :ref:`1D plotting
+  <ug_1dintegration>` and :ref:`2D plotting <ug_2dintegration>` for a demonstration.
 
 Since these features are optional,
 proplot can be used without installing any of these packages.

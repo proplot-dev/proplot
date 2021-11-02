@@ -214,18 +214,19 @@ pplt.rc.reset()
 #
 # .. _ug_datetime:
 #
-# Datetime axes
-# -------------
+# Datetime ticks
+# --------------
 #
-# Proplot can also be used to customize the tick locations and tick label
-# format of "datetime" axes. To draw ticks on some particular time unit, just use a
-# unit string (e.g., ``xlocator='month'``). To draw ticks every ``N`` time units,
-# just use a (unit, N) tuple (e.g., ``xlocator=('day', 5)``). For `% style formatting
+# The above examples all assumed typical "numeric" axes. However
+# `~proplot.axes.CartesianAxes.format` can also modify the tick locations and tick
+# labels for "datetime" axes. To draw ticks on each occurence of some particular time
+# unit, use a unit string (e.g., ``xlocator='month'``). To draw ticks every ``N`` time
+# units, use a (unit, N) tuple (e.g., ``xlocator=('day', 5)``). For `% style formatting
 # <https://docs.python.org/3/library/datetime.html#strftime-strptime-behavior>`__
-# of datetime tick labels, just use a string containing ``'%'`` (e.g.
-# ``xformatter='%Y-%m-%d'``). By default, *x* axis datetime axis labels are
-# rotated 90 degrees, like in `pandas`_. This can be disabled by passing
-# ``xrotation=0`` to `~proplot.axes.CartesianAxes.format` or by setting
+# of datetime tick labels with `~datetime.datetime.strftime`, you can use a string
+# containing ``'%'`` (e.g. ``xformatter='%Y-%m-%d'``). By default, *x* axis datetime
+# axis labels are rotated 90 degrees, like in `pandas`_. This can be disabled by
+# passing ``xrotation=0`` to `~proplot.axes.CartesianAxes.format` or by setting
 # :rcraw:`formatter.timerotation` to ``0``. See `~proplot.constructor.Locator`
 # and `~proplot.constructor.Formatter` for details.
 

@@ -25,19 +25,20 @@
 # Creating figures
 # ----------------
 #
-# Proplot works by subclassing three fundamental matplotlib objects:
-# `proplot.figure.Figure` replaces `matplotlib.figure.Figure`, `proplot.axes.Axes`
-# and `proplot.axes.PlotAxes` replace `matplotlib.axes.Axes`, and
-# `proplot.gridspec.GridSpec` replaces `matplotlib.gridspec.GridSpec`
-# (for more on gridspecs, see this `matplotlib tutorial
+# Proplot works by `subclassing <https://docs.python.org/3/tutorial/classes.html>`__
+# three fundamental matplotlib objects instead of `matplotlib.figure.Figure`,
+# `matplotlib.axes.Axes`, and `matplotlib.gridspec.GridSpec`, we have
+# `proplot.figure.Figure`, `proplot.axes.Axes`, `proplot.axes.PlotAxes`, and
+# `proplot.gridspec.GridSpec` (for more on gridspecs, see this `matplotlib tutorial
 # <https://matplotlib.org/stable/tutorials/intermediate/gridspec.html>`__).
 #
-# To make plots with these classes, you must start with the `~proplot.ui.figure` or
-# `~proplot.ui.subplots` commands. These are modeled after the `~matplotlib.pyplot`
-# commands of the same name. As in `~matplotlib.pyplot`, `~proplot.ui.subplots`
-# creates a figure and a grid of subplots all at once, while `~proplot.ui.figure`
-# creates an empty figure that can be subsequently filled with subplots.
-# A minimal example with just one subplot is shown below.
+# To make plots with these classes, you must start with the top-level commands
+# `~proplot.ui.figure`, `~proplot.ui.subplot`, or `~proplot.ui.subplots`. These are
+# modeled after the `~matplotlib.pyplot` commands of the same name. As in
+# `~matplotlib.pyplot`, `~proplot.ui.subplot` creates a figure and a single
+# subplot, `~proplot.ui.subplots` creates a figure and a grid of subplots, and
+# `~proplot.ui.figure` creates an empty figure that can be subsequently filled
+# with subplots. A minimal example with just one subplot is shown below.
 #
 # %% [raw] raw_mimetype="text/restructuredtext"
 # .. note::
@@ -68,19 +69,19 @@
 #    In case you *do* need a raster format like PNG, proplot increases the
 #    default :rcraw:`savefig.dpi` to 1000 dots per inch, which is
 #    `recommended <https://www.pnas.org/page/authors/format>`__ by most journals
-#    as the minimum resolution for rasterized figures containing lines and text.
-#    See the :ref:`configuration section <ug_proplotrc>` for how to change
-#    these settings.
+#    as the minimum resolution for figures containing lines and text. See the
+#    :ref:`configuration section <ug_proplotrc>` for how to change these settings.
 #
 
 # %%
-# Single subplot
+# Simple subplot
 import numpy as np
 import proplot as pplt
 state = np.random.RandomState(51423)
 data = 2 * (state.rand(100, 5) - 0.5).cumsum(axis=0)
 fig = pplt.figure(suptitle='Single subplot')
 ax = fig.subplot(xlabel='x axis', ylabel='y axis')
+# fig, ax = pplt.subplot(suptitle='...', xlabel='...', ylabel='...')  # equivalent
 ax.plot(data, lw=2)
 
 
@@ -219,21 +220,29 @@ fig.save('~/example4.png')
 # Plotting stuff
 # --------------
 #
-# Matplotlib has
-# `two different interfaces <https://matplotlib.org/stable/api/index.html>`__:
-# an object-oriented interface and a MATLAB-style `~matplotlib.pyplot` interface
-# (which uses the object-oriented interface internally). Plotting with proplot is just
-# like plotting with matplotlib's *object-oriented* interface. The added plotting
-# features are implemented with an intermediate `proplot.axes.PlotAxes` subclass.
-# This subclass adds several new plotting commands and adds new features to existing
-# commands. These additions do not change the usage or syntax of existing commands,
-# which means a shallow learning curve for the average matplotlib user.
-#
-# In the below example, we create a 4-panel figure with the familiar "1D" and "2D"
-# plot commands `~proplot.axes.PlotAxes.plot`, `~proplot.axes.PlotAxes.scatter`,
-# `~proplot.axes.PlotAxes.pcolormesh`, and `~proplot.axes.PlotAxes.contourf`.
-# See the :ref:`1D plotting <ug_1dplots>` and :ref:`2D plotting <ug_2dplots>`
-# sections for details on the features added by proplot.
+# Matplotlib includes `two different interfaces
+# <https://matplotlib.org/stable/api/index.html>`__ for plotting stuff:
+# a "python-style" object-oriented interface with axes-level commands
+# like `matplotlib.axes.Axes.plot`, and a "MATLAB-style" interface
+# that tracks "current" axes and provides global
+# `~matplotlib.pyplot` commands like `matplotlib.pyplot.plot`.
+# Rather than adding commands to the `~matplotlib.pyplot` module,
+# proplot uses the intermediate subclass `proplot.axes.PlotAxes`
+# to modify existing axes-level commands and add a few new commands.
+# While certain `~proplot.axes.PlotAxes` features may be accessible via
+# the relevant `~matplotlib.pyplot` commands, proplot only officially supports
+# the "python-style" object-oriented interface.
+
+# `~proplot.axes.PlotAxes` does not change the usage or syntax of existing commands,
+# which means a shallow learning curve for the average matplotlib user. It also
+# tries to standardize the positional "data" arguments and optional keyword arguments
+# accepted by similar or analogous commands, providing a more intuitive interface
+# for new and old matplotlib users alike.
+# In the below example, we create a 4-panel figure with the familiar "1D"
+# plotting commands `~proplot.axes.PlotAxes.plot` and `~proplot.axes.PlotAxes.scatter`,
+# along with the "2D" plotting commands `~proplot.axes.PlotAxes.pcolormesh` and
+# `~proplot.axes.PlotAxes.contourf`. See the :ref:`1D plotting <ug_1dplots>` and
+# :ref:`2D plotting <ug_2dplots>` sections for details on the features added by proplot.
 
 
 # %%
@@ -265,14 +274,20 @@ fig.colorbar(m, loc='b', label='label')
 # Formatting stuff
 # ----------------
 #
-# Proplot's ``format`` command is your one-stop-shop for changing figure and axes
-# settings. While one-liner matplotlib setters like ``set_xlabel`` and ``set_title``
-# still work, ``format`` is usually more succinct -- it only needs to be called once.
-# You can also pass arbitrary ``format`` arguments to axes-creation commands
+# Matplotlib includes `two different interfaces
+# <https://matplotlib.org/stable/api/index.html>`__ for formatting stuff:
+# a "python-style" object-oriented interface with instance-level commands
+# like `matplotlib.axes.Axes.set_title`, and a "MATLAB-style" interface that
+# tracks "current" axes and provides global `~matplotlib.pyplot` commands like
+# `matplotlib.pyplot.title`. Proplot provides the ``format`` command as a succinct
+# and powerful alternative to these two approaches. While the above one-liner
+# commands still work, we recommend using ``format`` -- it only needs to
+# be called once, and it tends to cut down on boilerplate code. You can call
+# ``format`` manually or pass ``format`` parameters to axes-creation commands
 # like `~proplot.figure.Figure.subplots`, `~proplot.figure.Figure.add_subplot`,
 # `~proplot.axes.Axes.inset_axes`, `~proplot.axes.Axes.panel_axes`, and
-# `~proplot.axes.CartesianAxes.altx` or `~proplot.axes..Axes.alty`. The keyword
-# arguments accepted by ``format`` fall into the following groups:
+# `~proplot.axes.CartesianAxes.altx` or `~proplot.axes.CartesianAxes.alty`. The
+# keyword arguments accepted by ``format`` can be grouped as follows:
 #
 # * Figure settings. These are related to row labels, column labels, and
 #   figure "super" titles -- for example, ``fig.format(suptitle='Super title')``.
@@ -310,14 +325,14 @@ fig.colorbar(m, loc='b', label='label')
 #   See :ref:`this section <ug_config>` for more on rc settings.
 #
 # A ``format`` command is available on every figure and axes.
-# `proplot.figure.Figure.format` accepts both figure and axes
+# Notably, `proplot.figure.Figure.format` accepts both figure and axes
 # settings (applying them to each numbered subplot by default). Likewise,
 # `proplot.axes.Axes.format` accepts both axes and figure settings.
 # There is also a `proplot.gridspec.SubplotGrid.format` command
 # that can be used to change settings for a subset of subplots
 # -- for example, ``axs[:2].format(xtickminor=True)``
-# turns on minor ticks for the first two subplots. See
-# :ref:`this section <ug_subplotgrid>` for more on subplot grids.
+# turns on minor ticks for the first two subplots (see
+# :ref:`this section <ug_subplotgrid>` for more on subplot grids).
 #
 # The below example shows the many different keyword arguments
 # accepted by ``format``, and demonstrates how ``format`` can be

@@ -24,7 +24,7 @@
 # Statistical plotting
 # ====================
 #
-# This section documents a few very basic additions to matplotlib's plotting commands
+# This section documents a few basic additions to matplotlib's plotting commands
 # that can be useful for statistical analysis. The :ref:`1D plotting <ug_1dplots>`
 # section should be read before this section. Some of these tools will be
 # expanded in the future, but for a more comprehensive suite of statistical

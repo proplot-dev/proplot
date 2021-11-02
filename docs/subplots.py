@@ -23,20 +23,20 @@
 # spacing between subplots, and a unique feature where the figure size is
 # automatically determined from a reference subplot and the subplot geometry.
 #
-# .. important::
+# .. note::
 #
-#    Proplot does not officially support "nested" matplotlib
-#    structures like `~matplotlib.figure.SubFigure` and
-#    `~matplotlib.gridspec.GridSpecFromSubplotSpec`. Also,
-#    proplot subplots are only allowed to use one `~proplot.figure.Figure.gridspec`
-#    per figure (see :ref:`this section <ug_subplot>`). These restrictions considerably
-#    simplify the algorithm used to calculate :ref:`figure sizes <ug_autosize>` and
-#    :ref:`subplot spaces <ug_tight>` and makes the default :ref:`a-b-c label
-#    assignment <ug_abc>` and :ref:`axis sharing between subplots <ug_share>` less
-#    ambiguous. Some features associated with "nested" matplotlib structures can be
-#    reproduced with proplot, including :ref:`different spaces <ug_tight>` between
-#    different subplot rows and columns and :ref:`different formatting <ug_subplotgrid>`
-#    for groups of subplots. "Highlighting" behind groups of subplots (analogous to
+#    Proplot only supports one `~proplot.gridspec.GridSpec` per figure
+#    (see the section on :ref:`adding subplots <ug_subplot>`), and proplot
+#    does not officially support the "nested" matplotlib structures
+#    `~matplotlib.gridspec.GridSpecFromSubplotSpec` and `~matplotlib.figure.SubFigure`.
+#    These restrictions have the advantage of 1) considerably simplifying the algorithm
+#    used to calculate :ref:`figure sizes <ug_autosize>` and :ref:`subplot spaces
+#    <ug_tight>` and 2) making the default :ref:`a-b-c label assignment <ug_abc>` and
+#    :ref:`axis sharing between subplots <ug_share>` less ambiguous. If you need the
+#    features associated with "nested" matplotlib structures, some are reproducible with
+#    proplot -- including :ref:`different spaces <ug_tight>` between distinct subplot
+#    rows and columns and :ref:`different formatting <ug_subplotgrid>` for distinct
+#    groups of subplots. "Highlighting" behind groups of subplots (analogous to
 #    different subfigure background colors) will also be supported in the future.
 #
 #
