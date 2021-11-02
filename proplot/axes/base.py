@@ -25,6 +25,7 @@ from matplotlib import cbook
 
 from .. import colors as pcolors
 from .. import constructor
+from .. import ticker as pticker
 from ..config import rc
 from ..internals import ic  # noqa: F401
 from ..internals import (
@@ -2242,17 +2243,18 @@ class Axes(maxes.Axes):
         name = 'y' if kwargs.get('orientation') == 'vertical' else 'x'
         axis = cax.yaxis if kwargs.get('orientation') == 'vertical' else cax.xaxis
         locator = _not_none(locator, locator_default, None)
-        tickminor = _not_none(tickminor, rc[name + 'tick.minor.visible'])
-        if tickminor and minorlocator is None and np.iterable(locator) and not isinstance(locator, str):  # noqa: E501
-            minorlocator = locator
-            minorlocator_kw['minor'] = True
         formatter = _not_none(formatter, formatter_default, 'auto')
         formatter = constructor.Formatter(formatter, **formatter_kw)
+        isfixed = isinstance(formatter, mticker.FixedFormatter)
+        tickminor = _not_none(tickminor, False if isfixed else rc[name + 'tick.minor.visible'])  # noqa: E501
         if locator is not None:
-            locator_kw.setdefault('discrete', True)
+            locator_kw.setdefault('discrete', not isfixed)
             locator = constructor.Locator(locator, **locator_kw)
+        if tickminor and minorlocator is None and isinstance(locator, pticker.DiscreteLocator):  # noqa: E501
+            minorlocator = list(locator._locs)  # copy
+            minorlocator_kw.update({'minor': True, 'discrete': True})
         if minorlocator is not None:
-            minorlocator_kw.setdefault('discrete', True)
+            minorlocator_kw.setdefault('discrete', not isfixed)
             minorlocator = constructor.Locator(minorlocator, **minorlocator_kw)
         for ticker in (locator, formatter, minorlocator):
             if ticker is not None:

@@ -995,14 +995,19 @@ class CartesianAxes(shared._SharedAxes, plot.PlotAxes):
             ymargin = _not_none(ymargin, rc.find('axes.ymargin', context=True))
             xtickdir = _not_none(xtickdir, rc.find('xtick.direction', context=True))
             ytickdir = _not_none(ytickdir, rc.find('ytick.direction', context=True))
-            xformatter = _not_none(xformatter=xformatter, xticklabels=xticklabels)
-            yformatter = _not_none(yformatter=yformatter, yticklabels=yticklabels)
             xlocator = _not_none(xlocator=xlocator, xticks=xticks)
             ylocator = _not_none(ylocator=ylocator, yticks=yticks)
-            xtickminor = _not_none(xtickminor, rc.find('xtick.minor.visible', context=True))  # noqa: E501
-            ytickminor = _not_none(ytickminor, rc.find('ytick.minor.visible', context=True))  # noqa: E501
             xminorlocator = _not_none(xminorlocator=xminorlocator, xminorticks=xminorticks)  # noqa: E501
             yminorlocator = _not_none(yminorlocator=yminorlocator, yminorticks=yminorticks)  # noqa: E501
+            xformatter = _not_none(xformatter=xformatter, xticklabels=xticklabels)
+            yformatter = _not_none(yformatter=yformatter, yticklabels=yticklabels)
+            xtickminor_default = ytickminor_default = None
+            if isinstance(xformatter, mticker.FixedFormatter) or np.iterable(xformatter) and not isinstance(xformatter, str):  # noqa: E501
+                xtickminor_default = False
+            if isinstance(yformatter, mticker.FixedFormatter) or np.iterable(yformatter) and not isinstance(yformatter, str):  # noqa: E501
+                ytickminor_default = False
+            xtickminor = _not_none(xtickminor, xtickminor_default, rc.find('xtick.minor.visible', context=True))  # noqa: E501
+            ytickminor = _not_none(ytickminor, ytickminor_default, rc.find('ytick.minor.visible', context=True))  # noqa: E501
             ticklabeldir = kwargs.pop('ticklabeldir', None)
             xticklabeldir = _not_none(xticklabeldir, ticklabeldir)
             yticklabeldir = _not_none(yticklabeldir, ticklabeldir)
