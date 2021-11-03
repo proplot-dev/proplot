@@ -43,12 +43,12 @@
 #   (e.g., ``loc='right'`` or the shorthand ``loc='r'``). If you draw multiple legends
 #   or colorbars on one side, they are "stacked" on top of each other. Unlike using
 #   `bbox_to_anchor`, the "outer" legend position is adjusted automatically when the
-#   :ref:`tight layout algorithm <ug_tight>` is active for the figure.
+#   :ref:`tight layout algorithm <ug_tight>` is active.
 # * Proplot adds the axes command `proplot.axes.Axes.colorbar`,
 #   analogous to `proplot.axes.Axes.legend` and equivalent to
 #   calling `proplot.figure.Figure.colorbar` with an `ax` keyword.
 #   `~proplot.axes.Axes.colorbar` can draw both "outer" colorbars when you request
-#   a side location (e.g., loc='right'`` or the shorthand ``loc='r'``) and "inset"
+#   a side location (e.g., ``loc='right'`` or the shorthand ``loc='r'``) and "inset"
 #   colorbars when you request an :ref:`inset location <colorbar_table>`
 #   (e.g., ``loc='upper right'`` or the shorthand ``loc='ur'``). Inset
 #   colorbars have optional background "frames" that can be configured
@@ -57,7 +57,7 @@
 # `~proplot.axes.Axes.colorbar` and `~proplot.axes.Axes.legend` also both accept
 # `space` and `pad` keywords. `space` controls the absolute separation of the
 # "outer" colorbar or legend from the parent subplot edge and `pad` controls the
-# :ref:`tight layout <ug_tight>` padding relative to the subplot axis and tick labels
+# :ref:`tight layout <ug_tight>` padding relative to the subplot's tick and axis labels
 # (or, for "inset" locations, the padding between the subplot edge and the inset frame).
 # The below example shows a variety of arrangements of "outer" and "inset"
 # colorbars and legends.
@@ -155,7 +155,7 @@ ax.contourf(
     colorbar_kw={'length': 0.8, 'label': 'colorbar label'},
 )
 ax.contour(
-    state.rand(10, 10), cmap='Blues1', cmap_kw={'left': 0.1}, levels=9, lw=2,
+    state.rand(10, 10), cmap='Mono', cmap_kw={'left': 0.1}, levels=9, lw=2,
     colorbar='r', colorbar_kw={'label': 'colorbar label', 'length': 0.7},
     label='contour', legend='ul', legend_kw={'label': 'legend from mappable'},
 )
@@ -264,7 +264,7 @@ for ax, title in zip(axs, ('2D {} #1', '2D {} #2', 'Line {} #1', 'Line {} #2')):
 #
 # The basic usage of `proplot.axes.Axes.colorbar` and `proplot.figure.Figure.colorbar`
 # includes a few useful improvements compared to the matplotlib commands. The following
-# core feature is useful for labeling discrete plot elements that bear some numeric
+# feature is useful for labeling discrete plot elements that bear some numeric
 # relationship to one another:
 
 # * Calling ``colorbar`` with a list of `~matplotlib.artist.Artist`\ s,
@@ -274,9 +274,9 @@ for ax, title in zip(axs, ('2D {} #1', '2D {} #2', 'Line {} #1', 'Line {} #2')):
 #   with :ref:`1D plot commands <ug_1dplots>` like `~proplot.axes.PlotAxes.plot`.
 # * The associated :ref:`colormap normalizer <ug_norm>` can be specified with the
 #   `vmin`, `vmax`, `norm`, and `norm_kw` keywords. The `~proplot.colors.DiscreteNorm`
-#   levels and default tick locations can be specified with `values`, or proplot will
-#   infer them from the `~matplotlib.artist.Artist` labels (non-numeric labels will be
-#   applied to the colorbar as tick labels).
+#   levels can be specified with `values`, or proplot will infer them from the
+#   `~matplotlib.artist.Artist` labels (non-numeric labels will be applied to
+#   the colorbar as tick labels).
 #
 # Proplot also includes improvements for adding ticks and tick labels to colorbars.
 # Similar to `proplot.axes.CartesianAxes.format`, you can flexibly specify

@@ -1853,7 +1853,7 @@ class Figure(mfigure.Figure):
         --------
         proplot.figure.Figure.subplotgrid
         proplot.gridspec.GridSpec.figure
-        ptoplot.gridspec.SubplotGrid.gridspec
+        proplot.gridspec.SubplotGrid.gridspec
         """
         return self._gridspec
 
@@ -1873,7 +1873,7 @@ class Figure(mfigure.Figure):
         See also
         --------
         proplot.figure.Figure.gridspec
-        ptoplot.gridspec.SubplotGrid.figure
+        proplot.gridspec.SubplotGrid.figure
         """
         return pgridspec.SubplotGrid([s for _, s in sorted(self._subplot_dict.items())])
 

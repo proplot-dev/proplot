@@ -224,25 +224,24 @@ fig.save('~/example4.png')
 # <https://matplotlib.org/stable/api/index.html>`__ for plotting stuff:
 # a "python-style" object-oriented interface with axes-level commands
 # like `matplotlib.axes.Axes.plot`, and a "MATLAB-style" interface
-# that tracks "current" axes and provides global
-# `~matplotlib.pyplot` commands like `matplotlib.pyplot.plot`.
-# Rather than adding commands to the `~matplotlib.pyplot` module,
+# with global commands like `matplotlib.pyplot.plot` that tracks "current" axes.
+# Rather than adding to the `~matplotlib.pyplot` namespace,
 # proplot uses the intermediate subclass `proplot.axes.PlotAxes`
-# to modify existing axes-level commands and add a few new commands.
+# to modify existing axes-level commands and add a few new ones.
 # While certain `~proplot.axes.PlotAxes` features may be accessible via
 # the relevant `~matplotlib.pyplot` commands, proplot only officially supports
 # the "python-style" object-oriented interface.
 
 # `~proplot.axes.PlotAxes` does not change the usage or syntax of existing commands,
-# which means a shallow learning curve for the average matplotlib user. It also
-# tries to standardize the positional "data" arguments and optional keyword arguments
-# accepted by similar or analogous commands, providing a more intuitive interface
-# for new and old matplotlib users alike.
-# In the below example, we create a 4-panel figure with the familiar "1D"
-# plotting commands `~proplot.axes.PlotAxes.plot` and `~proplot.axes.PlotAxes.scatter`,
-# along with the "2D" plotting commands `~proplot.axes.PlotAxes.pcolormesh` and
-# `~proplot.axes.PlotAxes.contourf`. See the :ref:`1D plotting <ug_1dplots>` and
-# :ref:`2D plotting <ug_2dplots>` sections for details on the features added by proplot.
+# which means a shallow learning curve for the average matplotlib user. It also tries
+# to :ref:`standardize the positional arguments <ug_1dstd>` and optional keyword
+# arguments accepted by similar or analogous commands, providing an arguably more
+# intuitive interface. In the below example, we create a 4-panel figure with the
+# familiar "1D" plotting commands `~proplot.axes.PlotAxes.plot` and
+# `~proplot.axes.PlotAxes.scatter`, along with the "2D" plotting commands
+# `~proplot.axes.PlotAxes.pcolormesh` and `~proplot.axes.PlotAxes.contourf`.
+# See the :ref:`1D plotting <ug_1dplots>` and :ref:`2D plotting <ug_2dplots>`
+# sections for details on the features added by proplot.
 
 
 # %%
@@ -277,10 +276,10 @@ fig.colorbar(m, loc='b', label='label')
 # Matplotlib includes `two different interfaces
 # <https://matplotlib.org/stable/api/index.html>`__ for formatting stuff:
 # a "python-style" object-oriented interface with instance-level commands
-# like `matplotlib.axes.Axes.set_title`, and a "MATLAB-style" interface that
-# tracks "current" axes and provides global `~matplotlib.pyplot` commands like
+# like `matplotlib.axes.Axes.set_title`, and a "MATLAB-style" interface
+# that tracks current axes and provides global commands like
 # `matplotlib.pyplot.title`. Proplot provides the ``format`` command as a succinct
-# and powerful alternative to these two approaches. While the above one-liner
+# and powerful alternative to these interfaces. While matplotlib's one-liner
 # commands still work, we recommend using ``format`` -- it only needs to
 # be called once, and it tends to cut down on boilerplate code. You can call
 # ``format`` manually or pass ``format`` parameters to axes-creation commands
@@ -300,8 +299,8 @@ fig.colorbar(m, loc='b', label='label')
 # * Cartesian axes settings (valid only for `~proplot.axes.CartesianAxes`).
 #   These are related to *x* and *y* axis ticks, spines, bounds, and labels --
 #   for example, ``ax.format(xlim=(0, 5))`` changes the x axis bounds.
-#   See `proplot.axes.CartesianAxes.format`
-#   and :ref:`this section <ug_cartesian>` for details.
+#   See `proplot.axes.CartesianAxes.format` and
+#   :ref:`this section <ug_cartesian>` for details.
 #
 # * Polar axes settings (valid only for `~proplot.axes.PolarAxes`).
 #   These are related to azimuthal and radial grid lines, bounds, and labels --
