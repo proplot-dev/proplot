@@ -1893,11 +1893,15 @@ class PlotAxes(base.Axes):
 
         # Convert string-type coordinates
         # NOTE: This should even allow qualitative string input to hist()
-        descending = x.ndim == 1 and x.size > 1 and np.all(np.sign(np.diff(x)) == -1)
         if autox:
             x, kw_format = process._meta_coords(x, which=sx, **kw_format)
         if autoy:
             *ys, kw_format = process._meta_coords(*ys, which=sy, **kw_format)
+        descending = (
+            x.ndim == 1
+            and x.size > 1
+            and np.all(np.sign(np.diff(process._to_numpy_array(x))) == -1)
+        )
         if autox and descending and autoreverse and getattr(self, f'get_autoscale{sx}_on')():  # noqa: E501
             kw_format[sx + 'reverse'] = True
 
