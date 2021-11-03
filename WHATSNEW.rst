@@ -94,6 +94,8 @@ Bug fixes
   max of `levels` when passed to `~proplot.colors.DiscreteNorm` (:commit:`e9ed16c1`).
 * Fix issue where unevenly-spaced `levels` combined with
   `~proplot.colors.DiscreteColormap` incorrectly samples the color list (:issue:`299`).
+* Fix issue where setting :rcraw:`legend.facecolor` or :rcraw:`legend.edgecolor` to
+  ``'inherit'`` (or passing as keyword argument) raises error (:issue:`298`).
 
 Version 0.9.5 (2021-10-19)
 ==========================

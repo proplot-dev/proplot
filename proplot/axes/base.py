@@ -1861,13 +1861,12 @@ class Axes(maxes.Axes):
             labels_full.extend(labels[:length])
             kwargs_full.update(kwargs)
 
-    @staticmethod
-    def _parse_frame(guide, fancybox=None, shadow=None, **kwargs):
+    def _parse_frame(self, guide, fancybox=None, shadow=None, **kwargs):
         """
         Parse frame arguments.
         """
-        # NOTE: Here we permit only 'edgewidth' to avoid conflict with 'linewidth'
-        # used for legend handles and colorbar edge.
+        # NOTE: Here we permit only 'edgewidth' to avoid conflict with
+        # 'linewidth' used for legend handles and colorbar edge.
         kw_frame = _pop_kwargs(
             kwargs,
             alpha=('a', 'framealpha', 'facealpha'),
@@ -1883,6 +1882,9 @@ class Axes(maxes.Axes):
         }
         for key, name in _kw_frame_default.items():
             kw_frame.setdefault(key, rc[name])
+        for key in ('facecolor', 'edgecolor'):
+            if kw_frame[key] == 'inherit':
+                kw_frame[key] = rc['axes.' + key]
         kw_frame['linewidth'] = kw_frame.pop('edgewidth')
         kw_frame['fancybox'] = _not_none(fancybox, rc[f'{guide}.fancybox'])
         kw_frame['shadow'] = _not_none(shadow, rc[f'{guide}.shadow'])
