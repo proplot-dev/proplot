@@ -26,9 +26,9 @@
 # ----------------
 #
 # Proplot works by `subclassing <https://docs.python.org/3/tutorial/classes.html>`__
-# three fundamental matplotlib objects instead of `matplotlib.figure.Figure`,
+# three fundamental matplotlib objects: Instead of `matplotlib.figure.Figure`,
 # `matplotlib.axes.Axes`, and `matplotlib.gridspec.GridSpec`, we have
-# `proplot.figure.Figure`, `proplot.axes.Axes`, `proplot.axes.PlotAxes`, and
+# `proplot.figure.Figure`, `proplot.axes.Axes`, and
 # `proplot.gridspec.GridSpec` (for more on gridspecs, see this `matplotlib tutorial
 # <https://matplotlib.org/stable/tutorials/intermediate/gridspec.html>`__).
 #
@@ -230,7 +230,7 @@ fig.save('~/example4.png')
 # to modify existing axes-level commands and add a few new ones.
 # While certain `~proplot.axes.PlotAxes` features may be accessible via
 # the relevant `~matplotlib.pyplot` commands, proplot only officially supports
-# the "python-style" object-oriented interface.
+# the "python-style" axes-level commands.
 
 # `~proplot.axes.PlotAxes` does not change the usage or syntax of existing commands,
 # which means a shallow learning curve for the average matplotlib user. It also tries
@@ -278,10 +278,10 @@ fig.colorbar(m, loc='b', label='label')
 # a "python-style" object-oriented interface with instance-level commands
 # like `matplotlib.axes.Axes.set_title`, and a "MATLAB-style" interface
 # that tracks current axes and provides global commands like
-# `matplotlib.pyplot.title`. Proplot provides the ``format`` command as a succinct
-# and powerful alternative to these interfaces. While matplotlib's one-liner
-# commands still work, we recommend using ``format`` -- it only needs to
-# be called once, and it tends to cut down on boilerplate code. You can call
+# `matplotlib.pyplot.title`. Proplot provides the ``format`` command as a
+# succinct and powerful alternative for formatting a variety of plot elements. While
+# matplotlib's one-liner commands still work, ``format`` only needs to be
+# called once and tends to cut down on boilerplate code. You can call
 # ``format`` manually or pass ``format`` parameters to axes-creation commands
 # like `~proplot.figure.Figure.subplots`, `~proplot.figure.Figure.add_subplot`,
 # `~proplot.axes.Axes.inset_axes`, `~proplot.axes.Axes.panel_axes`, and
