@@ -1861,7 +1861,8 @@ class Axes(maxes.Axes):
             labels_full.extend(labels[:length])
             kwargs_full.update(kwargs)
 
-    def _parse_frame(self, guide, fancybox=None, shadow=None, **kwargs):
+    @staticmethod
+    def _parse_frame(guide, fancybox=None, shadow=None, **kwargs):
         """
         Parse frame arguments.
         """
@@ -2247,16 +2248,17 @@ class Axes(maxes.Axes):
         locator = _not_none(locator, locator_default, None)
         formatter = _not_none(formatter, formatter_default, 'auto')
         formatter = constructor.Formatter(formatter, **formatter_kw)
-        isfixed = isinstance(formatter, mticker.FixedFormatter)
-        tickminor = _not_none(tickminor, False if isfixed else rc[name + 'tick.minor.visible'])  # noqa: E501
+        segmented = isinstance(mappable.norm, pcolors.SegmentedNorm) or isinstance(getattr(mappable.norm, '_norm', None), pcolors.SegmentedNorm)  # noqa E501
+        categorical = isinstance(formatter, mticker.FixedFormatter)
+        tickminor = _not_none(tickminor, False if categorical else rc[name + 'tick.minor.visible'])  # noqa: E501
         if locator is not None:
-            locator_kw.setdefault('discrete', not isfixed)
+            locator_kw.setdefault('discrete', not categorical and not segmented)
             locator = constructor.Locator(locator, **locator_kw)
         if tickminor and minorlocator is None and isinstance(locator, pticker.DiscreteLocator):  # noqa: E501
             minorlocator = list(locator._locs)  # copy
             minorlocator_kw.update({'minor': True, 'discrete': True})
         if minorlocator is not None:
-            minorlocator_kw.setdefault('discrete', not isfixed)
+            minorlocator_kw.setdefault('discrete', not categorical and not segmented)
             minorlocator = constructor.Locator(minorlocator, **minorlocator_kw)
         for ticker in (locator, formatter, minorlocator):
             if ticker is not None:
