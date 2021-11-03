@@ -2483,15 +2483,15 @@ class PlotAxes(base.Axes):
         # Ensure end colors are unique by scaling colors as if extend='both'
         # NOTE: Inside _parse_cmap should have enforced extend='neither'
         if cyclic:
-            step = 0.5
+            step = 0.5  # try to allocate space for unique end colors
             unique = 'both'
 
         # Ensure color list length matches level list length using rotation
         # NOTE: No harm if not enough colors, we just end up with the same
         # color for out-of-bounds extensions. This is a gentle failure
         elif qualitative:
-            step = 0.5  # try to sample the central index for safety, but not important
-            unique = 'neither'
+            step = 0.5  # try to sample the central index for safety
+            unique = 'both'
             auto_under = under is None and extend in ('min', 'both')
             auto_over = over is None and extend in ('max', 'both')
             ncolors = len(levels) - min_levels + 1 + auto_under + auto_over

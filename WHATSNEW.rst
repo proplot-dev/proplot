@@ -80,18 +80,20 @@ Features
 Bug fixes
 ---------
 
-* Fix issue where background properties like `color` and `linewidth` cannot be
-  passed to `~proplot.axes.Axes` instantiation commands (:commit:`b67b046c`).
 * Fix issue where silently-deprecated `aspect` parameter passed to
   `proplot.ui.subplots` is not translated to `refaspect` (:commit:`2406a2ae`).
 * Fix issue where `proplot.gridspec.GridSpec.figure` is allowed to change -- instead
   raise error that recommends `~proplot.gridspec.GridSpec.copy` (:commit:`d8898f5f`).
 * Fix issue where `proplot.gridspec.GridSpec.update` cannot be called
   on gridspecs without companion `~proplot.figure.Figure`\ s (:commit:`e69fd041`).
+* Fix issue where background properties like `color` and `linewidth` cannot be
+  passed to `~proplot.axes.Axes` instantiation commands (:commit:`b67b046c`).
 * Fix issue where manual data aspect ratio passed with `~proplot.axes.Axes.format`
   or `~matplotlib.axes.Axes.set_aspect` is inverted (:commit:`7cda3b23`).
 * Fix issue where continuous normalizer `vmin` and `vmax` are not set to min and
   max of `levels` when passed to `~proplot.colors.DiscreteNorm` (:commit:`e9ed16c1`).
+* Fix issue where unevenly-spaced `levels` combined with
+  `~proplot.colors.DiscreteColormap` incorrectly samples the color list (:issue:`299`).
 
 Version 0.9.5 (2021-10-19)
 ==========================

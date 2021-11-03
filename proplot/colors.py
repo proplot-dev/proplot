@@ -2361,6 +2361,8 @@ class DiscreteNorm(mcolors.BoundaryNorm):
             The intensity of the transition to out-of-bounds colors as a fraction
             of the adjacent step between in-bounds colors. Internally, proplot sets
             this to ``0.5`` for cyclic colormaps and ``1`` for all other colormaps.
+            This only has an effect on lower colors when `unique` is ``'min'`` or
+            ``'both'``, and on upper colors when `unique` is ``'max'`` or ``'both'``.
         clip : bool, optional
             Whether to clip values falling outside of the level bins. This only
             has an effect on lower colors when unique is ``'min'`` or ``'both'``,
