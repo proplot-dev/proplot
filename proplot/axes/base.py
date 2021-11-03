@@ -2307,23 +2307,13 @@ class Axes(maxes.Axes):
             kwargs['extend'] = extend
         obj = cax._colorbar_fill = self.figure.colorbar(mappable, **kwargs)
         obj.minorlocator = minorlocator  # backwards compatibility
-        obj.update_ticks = guides._update_ticks.__get__(obj)  # updates minor ticks
-
-        # Update the minor locator
-        # NOTE: Integrating custom minor locators with matplotlib's _ticker()
-        # override is not normally possible. So we use guides._update_ticks().
-        if minorlocator is None:
-            if tickminor:
-                obj.minorticks_on()
-            else:
-                obj.minorticks_off()
-        elif not hasattr(obj, '_ticker'):
-            warnings._warn_proplot(
-                'Matplotlib colorbar API has changed. Cannot use '
-                f'custom minor tick locator {minorlocator!r}.'
-            )
-            obj.minorticks_on()  # at least turn them on
-            obj.minorlocator = None
+        obj.update_ticks = guides._update_ticks.__get__(obj)  # backwards compatibility
+        if minorlocator is not None:
+            pass
+        elif tickminor:
+            obj.minorticks_on()
+        else:
+            obj.minorticks_off()
 
         # Update various axis settings
         # WARNING: Must use colorbar set_label to set text,

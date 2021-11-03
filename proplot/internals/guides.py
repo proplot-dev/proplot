@@ -9,6 +9,7 @@ import matplotlib.ticker as mticker
 import numpy as np
 
 from . import ic  # noqa: F401
+from . import warnings
 
 
 def _fill_guide_kw(kwargs, **pairs):
@@ -90,18 +91,30 @@ def _update_ticks(self, manual_only=False):
     """
     Refined colorbar tick updater without subclassing.
     """
-    # WARNING: Important to guard against colorbar private API changes here
+    # TODO: Add this to generalized colorbar subclass?
+    # NOTE: Matplotlib 3.5+ does not define _use_auto_colorbar_locator since
+    # ticks are always automatically adjusted by its colorbar subclass. This
+    # override is thus backwards and forwards compatible.
     use_auto = getattr(self, '_use_auto_colorbar_locator', lambda: True)
-    if not use_auto():
+    if use_auto():
+        if manual_only:
+            pass
+        else:
+            mcolorbar.Colorbar.update_ticks(self)  # here AutoMinorLocator auto updates
+    else:
         mcolorbar.Colorbar.update_ticks(self)  # update necessary
         minorlocator = getattr(self, 'minorlocator', None)
-        if minorlocator is not None and hasattr(self, '_ticker'):
+        if minorlocator is None:
+            pass
+        elif hasattr(self, '_ticker'):
             ticks, *_ = self._ticker(self.minorlocator, mticker.NullFormatter())
             axis = self.ax.yaxis if self.orientation == 'vertical' else self.ax.xaxis
             axis.set_ticks(ticks, minor=True)
             axis.set_ticklabels([], minor=True)
-    elif not manual_only:
-        mcolorbar.Colorbar.update_ticks(self)  # here AutoMinorLocator auto updates
+        else:
+            warnings._warn_proplot(f'Cannot use user-input colorbar minor locator {minorlocator!r} (older matplotlib version). Turning on minor ticks instead.')  # noqa: E501
+            self.minorlocator = None
+            self.minorticks_on()  # at least turn them on
 
 
 class _InsetColorbar(martist.Artist):
