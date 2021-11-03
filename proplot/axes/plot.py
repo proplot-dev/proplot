@@ -1898,11 +1898,13 @@ class PlotAxes(base.Axes):
         if autoy:
             *ys, kw_format = process._meta_coords(*ys, which=sy, **kw_format)
         descending = (
-            x.ndim == 1
+            autox
+            and autoreverse
+            and x.ndim == 1
             and x.size > 1
             and np.all(np.sign(np.diff(process._to_numpy_array(x))) == -1)
         )
-        if autox and descending and autoreverse and getattr(self, f'get_autoscale{sx}_on')():  # noqa: E501
+        if descending and getattr(self, f'get_autoscale{sx}_on')():
             kw_format[sx + 'reverse'] = True
 
         # Apply formatting
@@ -1983,11 +1985,12 @@ class PlotAxes(base.Axes):
             y, kw_format = process._meta_coords(y, which='y', **kw_format)
             for s, d in zip('xy', (x, y)):
                 descending = (
-                    d.ndim == 1
+                    autoreverse
+                    and d.ndim == 1
                     and d.size > 1
                     and np.all(np.sign(np.diff(process._to_numpy_array(d))) == -1)
                 )
-                if descending and autoreverse and getattr(self, f'get_autoscale{s}_on')():  # noqa: E501
+                if descending and getattr(self, f'get_autoscale{s}_on')():
                     kw_format[s + 'reverse'] = True
 
             # Apply formatting
