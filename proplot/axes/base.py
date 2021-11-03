@@ -2306,14 +2306,38 @@ class Axes(maxes.Axes):
         else:
             kwargs['extend'] = extend
         obj = cax._colorbar_fill = self.figure.colorbar(mappable, **kwargs)
+        obj.minorlocator = minorlocator  # backwards compatibility
         obj.update_ticks = guides._update_ticks.__get__(obj)  # updates minor ticks
 
-        # Update tickers, labels, and tick labels
-        # WARNING: Must use colorbar set_label to set text, calling
-        # set_text on the axis will do nothing!
+        # Update the minor locator
+        # NOTE: Integrating custom minor locators with matplotlib's _ticker()
+        # override is not normally possible. So we use guides._update_ticks().
+        if minorlocator is None:
+            if tickminor:
+                obj.minorticks_on()
+            else:
+                obj.minorticks_off()
+        elif not hasattr(obj, '_ticker'):
+            warnings._warn_proplot(
+                'Matplotlib colorbar API has changed. Cannot use '
+                f'custom minor tick locator {minorlocator!r}.'
+            )
+            obj.minorticks_on()  # at least turn them on
+            obj.minorlocator = None
+
+        # Update various axis settings
+        # WARNING: Must use colorbar set_label to set text,
+        # calling set_text on the axis will do nothing!
         # WARNING: Colorbar _ticker() internally makes dummy axis and updates view
         # limits. Here we apply actual axis rather than dummy, otherwise default nbins
         # of DiscreteLocator will not work. Not sure if this has side effects...
+        axis.set_tick_params(which='both', color=color, direction=tickdir)
+        axis.set_tick_params(which='major', length=ticklen, width=tickwidth)
+        axis.set_tick_params(which='minor', length=ticklen * ticklenratio, width=tickwidth * tickwidthratio)  # noqa: E501
+        if getattr(mappable.norm, 'descending', None):
+            axis.set_inverted(True)
+        if reverse:  # potentially double reverse, although that would be weird...
+            axis.set_inverted(True)
         if label is not None:
             obj.set_label(label)
         if labelloc is not None:
@@ -2321,43 +2345,13 @@ class Axes(maxes.Axes):
         axis.label.update(kw_label)
         for label in axis.get_ticklabels():
             label.update(kw_ticklabels)
-        axis.set_tick_params(which='both', color=color, direction=tickdir)
-        axis.set_tick_params(which='major', length=ticklen, width=tickwidth)
-        axis.set_tick_params(which='minor', length=ticklen * ticklenratio, width=tickwidth * tickwidthratio)  # noqa: E501
 
-        # The minor locator
-        # NOTE: Integrating custom minor locators with matplotlib's colorbar _ticker()
-        # override is not normally possible. So we use guides._update_ticks().
-        if minorlocator is None:
-            if tickminor:
-                obj.minorticks_on()
-            else:
-                obj.minorticks_off()
-        else:
-            if hasattr(obj, '_ticker'):
-                obj.minorlocator = minorlocator  # auto-updated during draw()
-            else:
-                warnings._warn_proplot(
-                    'Matplotlib colorbar API has changed. Cannot use '
-                    f'custom minor tick locator {minorlocator!r}.'
-                )
-                obj.minorticks_on()  # at least turn them on
-
-        # Invert the axis if norm is a descending DiscreteNorm
-        norm = mappable.norm
-        if getattr(norm, 'descending', None):
-            axis.set_inverted(True)
-        if reverse:  # potentially double reverse, although that would be weird...
-            axis.set_inverted(True)
-
-        # Fix colorbar outline
+        # Fix colorbar outline and apply rasterization
         kw_outline = {'edgecolor': color, 'linewidth': linewidth}
         if obj.outline is not None:
             obj.outline.update(kw_outline)
         if obj.dividers is not None:
             obj.dividers.update(kw_outline)
-
-        # Disable rasterization by default because it causes misalignment with grid
         if obj.solids:
             cax._apply_edgefix(obj.solids, edgefix=edgefix)
             obj.solids.set_rasterized(rasterize)

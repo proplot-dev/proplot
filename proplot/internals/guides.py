@@ -91,18 +91,17 @@ def _update_ticks(self, manual_only=False):
     Refined colorbar tick updater without subclassing.
     """
     # WARNING: Important to guard against colorbar private API changes here
-    if getattr(self, '_use_auto_colorbar_locator', lambda: True)():
-        if manual_only:
-            pass  # update not necessary
-        else:
-            mcolorbar.Colorbar.update_ticks(self)  # here AutoMinorLocator auto updates
-    else:
-        long_axis = self.ax.yaxis if self.orientation == 'vertical' else self.ax.xaxis
+    use_auto = getattr(self, '_use_auto_colorbar_locator', lambda: True)
+    if not use_auto():
         mcolorbar.Colorbar.update_ticks(self)  # update necessary
-        if getattr(self, 'minorlocator', None) is not None and hasattr(self, '_ticker'):
+        minorlocator = getattr(self, 'minorlocator', None)
+        if minorlocator is not None and hasattr(self, '_ticker'):
             ticks, *_ = self._ticker(self.minorlocator, mticker.NullFormatter())
-            long_axis.set_ticks(ticks, minor=True)
-            long_axis.set_ticklabels([], minor=True)
+            axis = self.ax.yaxis if self.orientation == 'vertical' else self.ax.xaxis
+            axis.set_ticks(ticks, minor=True)
+            axis.set_ticklabels([], minor=True)
+    elif not manual_only:
+        mcolorbar.Colorbar.update_ticks(self)  # here AutoMinorLocator auto updates
 
 
 class _InsetColorbar(martist.Artist):
