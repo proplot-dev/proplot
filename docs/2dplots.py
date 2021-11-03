@@ -44,14 +44,15 @@
 # (see :ref:`xarray and pandas integration <ug_2dintegration>`). If coordinates
 # are string labels, they are converted to indices and tick labels using
 # `~matplotlib.ticker.FixedLocator` and `~matplotlib.ticker.IndexFormatter`.
-# Coordinate *centers* passed to commands like `~proplot.axes.PlotAxes.pcolor` and
-# `~proplot.axes.PlotAxes.pcolormesh` are automatically converted to edges using
-# `~proplot.utils.edges` or `~proplot.utils.edges2d`, and coordinate *edges*
-# passed to commands like `~proplot.axes.PlotAxes.contour` and
-# `~proplot.axes.PlotAxes.contourf` are automatically converted to centers
-# (notice the locations of the rectangle edges in the ``pcolor`` plots below).
-# All positional arguments can also be optionally specified as keyword
-# arguments (see the individual command documentation).
+# If coordinates are descending and the axis limits are unset, the axis
+# direction is automatically reversed. If coordinate *centers* are passed to commands
+# like `~proplot.axes.PlotAxes.pcolor` and `~proplot.axes.PlotAxes.pcolormesh`, they
+# are automatically converted to edges using `~proplot.utils.edges` or
+# `~proplot.utils.edges2d`, and if coordinate *edges* are passed to commands like
+# `~proplot.axes.PlotAxes.contour` and `~proplot.axes.PlotAxes.contourf`, they are
+# automatically converted to centers (notice the locations of the rectangle edges
+# in the ``pcolor`` plots below). All positional arguments can also be specified
+# as keyword arguments (see the documentation for each plotting command).
 #
 # .. note::
 #

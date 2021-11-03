@@ -1893,11 +1893,12 @@ class PlotAxes(base.Axes):
 
         # Convert string-type coordinates
         # NOTE: This should even allow qualitative string input to hist()
+        descending = x.ndim == 1 and x.size > 1 and np.all(np.sign(np.diff(x)) == -1)
         if autox:
             x, kw_format = process._meta_coords(x, which=sx, **kw_format)
         if autoy:
             *ys, kw_format = process._meta_coords(*ys, which=sy, **kw_format)
-        if autox and autoreverse and x.ndim == 1 and x.size > 1 and x[1] < x[0]:
+        if autox and descending and autoreverse and getattr(self, f'get_autoscale{sx}_on')():  # noqa: E501
             kw_format[sx + 'reverse'] = True
 
         # Apply formatting
@@ -1942,7 +1943,9 @@ class PlotAxes(base.Axes):
 
         return (x, *ys, kwargs)
 
-    def _parse_format2d(self, x, y, *zs, autoformat=None, autoguide=True, **kwargs):
+    def _parse_format2d(
+        self, x, y, *zs, autoformat=None, autoguide=True, autoreverse=True, **kwargs
+    ):
         """
         Try to retrieve default coordinates from array-like objects and apply default
         formatting. Also apply optional transpose and update the keyword arguments.
@@ -1975,11 +1978,12 @@ class PlotAxes(base.Axes):
             x, kw_format = process._meta_coords(x, which='x', **kw_format)
             y, kw_format = process._meta_coords(y, which='y', **kw_format)
             for s, d in zip('xy', (x, y)):
-                if (
-                    d.size > 1
-                    and d.ndim == 1
-                    and process._to_numpy_array(d)[1] < process._to_numpy_array(d)[0]
-                ):
+                descending = (
+                    d.ndim == 1
+                    and d.size > 1
+                    and np.all(np.sign(np.diff(process._to_numpy_array(d))) == -1)
+                )
+                if descending and autoreverse and getattr(self, f'get_autoscale{s}_on')():  # noqa: E501
                     kw_format[s + 'reverse'] = True
 
             # Apply formatting

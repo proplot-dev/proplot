@@ -47,8 +47,9 @@
 # plotting command is called for each column of the 2D array(s). If coordinates
 # are string labels, they are converted to indices and tick labels using
 # `~matplotlib.ticker.FixedLocator` and `~matplotlib.ticker.IndexFormatter`.
-# All positional arguments can also be optionally specified as keyword
-# arguments (see the individual command documentation).
+# If coordinates are descending and the axis limits are unset, the axis
+# direction is automatically reversed. All positional arguments can also be
+# specified as keyword arguments (see the documentation for each plotting command).
 #
 # .. note::
 #
