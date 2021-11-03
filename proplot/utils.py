@@ -198,8 +198,8 @@ def edges(z, axis=-1):
     """
     z = np.asarray(z)
     z = np.swapaxes(z, axis, -1)
-    *nextra, nx = z.shape
-    zb = np.zeros((*nextra, nx + 1))
+    *dims, n = z.shape
+    zb = np.zeros((*dims, n + 1))
 
     # Inner edges
     zb[..., 1:-1] = 0.5 * (z[..., :-1] + z[..., 1:])
@@ -258,7 +258,7 @@ def edges2d(z):
 def get_colors(*args, **kwargs):
     """
     Get the colors associated with a registered or
-    on-the-fly color cycle.
+    on-the-fly color cycle or colormap.
 
     Parameters
     ----------
@@ -272,7 +272,6 @@ def get_colors(*args, **kwargs):
 
     See also
     --------
-    cycler.Cycler
     proplot.constructor.Cycle
     proplot.constructor.Colormap
     """

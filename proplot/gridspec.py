@@ -61,7 +61,7 @@ wspace, hspace, space : unit-spec or sequence, optional
 wratios, hratios : float or sequence, optional
     Passed to `~proplot.gridspec.GridSpec`, denotes the width and height
     ratios for the subplot grid. Length of `wratios` must match the number
-    of rows, and length of `hratios` must match the number of columns.
+    of columns, and length of `hratios` must match the number of rows.
 width_ratios, height_ratios
     Aliases for `wratios`, `hratios`. Included for
     consistency with `matplotlib.gridspec.GridSpec`.

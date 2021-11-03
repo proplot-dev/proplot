@@ -108,9 +108,9 @@ class DiscreteLocator(mticker.Locator):
     """
     A tick locator suitable for discretized colorbars. Adds ticks to some
     subset of the location list depending on the available space determined from
-    `~matplotlib.axis.Axis.get_tick_space`. Zero will always be used if it appears
-    in the location list, and step sizes along the location list are restricted
-    to "nice" intervals by default.
+    `~matplotlib.axis.Axis.get_tick_space`. Zero will be used if it appears in the
+    location list, and step sizes along the location list are restricted to "nice"
+    intervals by default.
     """
     default_params = {
         'steps': np.array([1, 2, 3, 4, 5, 6, 8, 10]),

@@ -22,8 +22,8 @@ Figure class
    :toctree: api
 
 
-Gridspec class
-==============
+Grid classes
+============
 
 .. automodule:: proplot.gridspec
 

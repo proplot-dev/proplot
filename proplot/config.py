@@ -1140,20 +1140,19 @@ class Configurator(MutableMapping, dict):
               if :rcraw:`axes.titlesize` was passed to `~Configurator.context`,
               then ``pplt.rc.find('axes.titlesize', context=True)`` will return
               this value, but ``pplt.rc.find('axes.titleweight', context=True)``
-              will return ``None``. This is used internally when
-              `~proplot.axes.Axes.format` is called during axes instantiation.
+              will return ``None``.
             * ``mode=2``: Matplotlib's `rc_matplotlib` settings and proplot's
               `rc_proplot` settings are only returned if they are local to the
-              "with as" block. This is used internally when
-              `~proplot.axes.Axes.format` is manually called by users.
+              "with as" block.
 
         Note
         ----
-        This is used by proplot internally but may also be useful for power users.
-        It was invented to prevent successive calls to `~proplot.axes.Axes.format`
-        from constantly looking up and re-applying unchanged settings. These
-        gratuitous lookups increased runtime significantly, and resulted in successive
-        calls to `~proplot.axes.Axes.format` overwriting the previous calls.
+        Context "modes" are primarily used internally but may also be useful for power
+        users. Mode ``1`` is used when `~proplot.axes.Axes.format` is called during
+        axes instantiation, and mode ``2`` is used when `~proplot.axes.Axes.format`
+        is manually called by users. The latter prevents successive calls to
+        `~proplot.axes.Axes.format` from constantly looking up and re-applying
+        unchanged settings and significantly increasing the runtime.
 
         Example
         -------

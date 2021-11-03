@@ -53,9 +53,9 @@
 #
 # On import, proplot registers a few sample
 # :ref:`perceptually uniform colormaps <ug_perceptual>`, plus several
-# colormaps from other online data viz projects. Use
-# `~proplot.demos.show_cmaps` to generate a table of registered maps. The
-# figure is broken down into the following sections:
+# colormaps from other online data viz projects. Use `~proplot.demos.show_cmaps`
+# to generate a table of registered colormaps. The figure is broken down into
+# the following sections:
 #
 # * "User" colormaps created with `~proplot.constructor.Colormap`
 #   or loaded from `~proplot.config.Configurator.user_folder`.
@@ -70,7 +70,9 @@
 #   of these because they are intended to be merged into more complex colormaps.
 #
 # Matplotlib colormaps with erratic color transitions like ``'jet'`` are still
-# registered, but they are hidden from this table, and their usage is discouraged.
+# registered, but they are hidden from this table by default, and their usage is
+# discouraged. If you need a list of colors associated with a registered or
+# on-the-fly colormap, simply use `~proplot.utils.get_colors`.
 #
 # .. note::
 #

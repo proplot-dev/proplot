@@ -21,10 +21,10 @@
 # Proplot defines **color cycles** or **discrete colormaps** as color palettes
 # comprising sets of *distinct colors*. Unlike :ref:`continuous colormaps <ug_cmaps>`,
 # interpolation between these colors may not make sense. Generally, color cycles are
-# used with line plots, bar plots, and other distinct plot elements. Occasionally,
-# they are used as colormaps for qualitative or categorical data. Proplot's
+# used with distinct plot elements like lines and bars. Occasionally,
+# they are used with categorical data as "qualitative" colormaps. Proplot's
 # color cycles are registered as `~proplot.colors.DiscreteColormap`\ s,
-# and can be converted into matplotlib `property cyclers
+# and can be converted into `property cyclers
 # <https://matplotlib.org/stable/tutorials/intermediate/color_cycle.html>`__
 # for use with distinct plot elements using the `~proplot.constructor.Cycle`
 # constructor function. `~proplot.constructor.Cycle` can also
@@ -42,11 +42,11 @@
 # Included color cycles
 # ---------------------
 #
-# Use `~proplot.demos.show_cycles` to generate a table of the color cycles
-# registered by default, loaded from the ``cycles``
-# `~proplot.config.Configurator.user_folder`, and/or created with the
-# `~proplot.constructor.Cycle` constructor function. To retrieve the list
-# of colors associated with a registered or on-the-fly color cycle,
+# Use `~proplot.demos.show_cycles` to generate a table of registered color
+# cycles. The table includes the default color cycles registered by proplot and
+# "user" color cycles created with the `~proplot.constructor.Cycle` constructor
+# function or loaded from `~proplot.config.Configurator.user_folder`. If you need
+# the list of colors associated with a registered or on-the-fly color cycle,
 # simply use `~proplot.utils.get_colors`.
 
 # %%
