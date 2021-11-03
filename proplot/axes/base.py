@@ -2108,7 +2108,7 @@ class Axes(maxes.Axes):
         norm = constructor.Norm(norm, vmin=vmin, vmax=vmax, **norm_kw)
         locator = formatter = None
         if values is not None:
-            locator = []
+            ticks = []
             for i, val in enumerate(values):
                 try:
                     val = float(val)
@@ -2116,13 +2116,17 @@ class Axes(maxes.Axes):
                     pass
                 if val is None:
                     val = i
-                locator.append(val)
-            if any(isinstance(value, str) for value in values):
-                locator, formatter = np.arange(len(locator)), list(map(str, locator))
-            if len(locator) == 1:
-                levels = [locator[0] - 1, locator[0] + 1]
+                ticks.append(val)
+            if not any(isinstance(_, str) for _ in ticks):
+                locator = pticker.DiscreteLocator(ticks)
             else:
-                levels = edges(locator)
+                formatter = mticker.FixedFormatter(list(map(str, ticks)))
+                ticks = np.arange(len(ticks))
+                locator = mticker.FixedLocator(ticks)
+            if len(ticks) == 1:
+                levels = [ticks[0] - 1, ticks[0] + 1]
+            else:
+                levels = edges(ticks)
             from . import PlotAxes  # in case this is e.g. ThreeAxes
             norm, cmap, _ = PlotAxes._parse_discrete(self, levels, norm, cmap)
 
@@ -2248,25 +2252,29 @@ class Axes(maxes.Axes):
         locator = _not_none(locator, locator_default, None)
         formatter = _not_none(formatter, formatter_default, 'auto')
         formatter = constructor.Formatter(formatter, **formatter_kw)
-        segmented = isinstance(mappable.norm, pcolors.SegmentedNorm) or isinstance(getattr(mappable.norm, '_norm', None), pcolors.SegmentedNorm)  # noqa E501
         categorical = isinstance(formatter, mticker.FixedFormatter)
-        tickminor = _not_none(tickminor, False if categorical else rc[name + 'tick.minor.visible'])  # noqa: E501
+        discrete = isinstance(mappable.norm, pcolors.DiscreteNorm)
         if locator is not None:
-            locator_kw.setdefault('discrete', not categorical and not segmented)
             locator = constructor.Locator(locator, **locator_kw)
-        if tickminor and minorlocator is None and isinstance(locator, pticker.DiscreteLocator):  # noqa: E501
-            minorlocator = list(locator._locs)  # copy
-            minorlocator_kw.update({'minor': True, 'discrete': True})
+        if minorlocator is None and isinstance(locator, pticker.DiscreteLocator):
+            if categorical:  # never add default minor ticks
+                pass
+            elif tickminor or tickminor is None:
+                minorlocator = pticker.DiscreteLocator(list(locator.locs), minor=True)
+        if tickminor is None:
+            if discrete or categorical:  # never use the default minor locator
+                tickminor = False
+            else:
+                tickminor = rc[name + 'tick.minor.visible']
         if minorlocator is not None:
-            minorlocator_kw.setdefault('discrete', not categorical and not segmented)
             minorlocator = constructor.Locator(minorlocator, **minorlocator_kw)
-        for ticker in (locator, formatter, minorlocator):
-            if ticker is not None:
-                ticker.set_axis(axis)
         if isinstance(locator, mticker.NullLocator):
             locator = []  # passed as 'ticks'
         if isinstance(minorlocator, mticker.NullLocator):
             minorlocator, tickminor = None, False  # attempted fix
+        for ticker in (locator, formatter, minorlocator):
+            if isinstance(ticker, mticker.TickHelper):
+                ticker.set_axis(axis)
         if extendsize is not None and extendfrac is not None:
             warnings._warn_proplot(
                 f'You cannot specify both an absolute extendsize={extendsize!r} '

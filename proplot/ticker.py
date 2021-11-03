@@ -140,9 +140,9 @@ class DiscreteLocator(mticker.Locator):
         min_n_ticks : int, optional
             The minimum number of ticks to select. Default is ``1``.
         """
-        self._locs = locs
-        self._nbins = None
+        self.locs = locs
         self.set_params(**{**self.default_params, **kwargs})
+        self._nbins = None  # otherwise unset
 
     def __call__(self):
         """
@@ -183,7 +183,7 @@ class DiscreteLocator(mticker.Locator):
         # list. For example _parse_autolev will interpolate to even points in log-space
         # between powers of 10 if the powers don't give us enough levels. Therefore
         # x/y axis-style unevenly spaced log minor ticks would be confusing/ugly.
-        locs = self._locs
+        locs = self.locs
         if self.axis is None:
             return locs
         nbins = self._nbins

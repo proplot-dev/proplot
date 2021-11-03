@@ -23,7 +23,9 @@ import numpy as np
 import numpy.ma as ma
 
 from .. import colors as pcolors
-from .. import constructor, utils
+from .. import constructor
+from .. import ticker as pticker
+from .. import utils
 from ..config import rc
 from ..internals import ic  # noqa: F401
 from ..internals import (
@@ -2066,9 +2068,7 @@ class PlotAxes(base.Axes):
         """
         # NOTE: This function is positioned above the _parse_cmap and _parse_cycle
         # functions and helper functions.
-        methods = (
-            self._parse_cmap, self._parse_levels, self._parse_autolev, self._parse_vlim
-        )
+        methods = (self._parse_cmap, self._parse_levels, self._parse_autolev, self._parse_vlim)  # noqa: E501
         if c is None or mcolors.is_color_like(c):
             if infer_rgb and c is not None:
                 c = pcolors.to_hex(c)  # avoid scatter() ambiguous color warning
@@ -2422,9 +2422,29 @@ class PlotAxes(base.Axes):
                 *args, levels=levels, norm=norm, norm_kw=norm_kw, extend=extend,
                 negative=negative, positive=positive, **kwargs
             )
-        ticks = values if np.iterable(values) else levels
-        if ticks is not None and np.iterable(ticks):
-            guides._guide_kw_to_arg('colorbar', kwargs, locator=ticks)
+
+        # Determine default norm
+        # NOTE: DiscreteNorm does not currently support vmin and vmax different
+        # from level list minimum and maximum.
+        if levels is not None:
+            if len(levels) == 1:  # use central colormap color
+                vmin, vmax = levels[0] - 1, levels[0] + 1
+            elif len(levels) > 1:  # use minimum and maximum
+                vmin, vmax = np.min(levels), np.max(levels)
+                if not np.allclose(levels[1] - levels[0], np.diff(levels)):
+                    norm = _not_none(norm, 'segmented')
+        if np.iterable(levels) and norm in ('segments', 'segmented'):
+            norm_kw['levels'] = levels
+
+        # Determine default colorbar locator
+        # NOTE: Always show all segmented levels in case distribution is uneven
+        locator = values if np.iterable(values) else levels
+        if locator is not None and np.iterable(locator):
+            if norm in ('segments', 'segmented') or isinstance(norm, pcolors.SegmentedNorm):  # noqa: E501
+                locator = mticker.FixedLocator(locator)
+            else:
+                locator = pticker.DiscreteLocator(locator)
+            guides._guide_kw_to_arg('colorbar', kwargs, locator=locator)
 
         # Filter the level boundaries
         # NOTE: This should have no effect if levels were generated automatically.
@@ -2436,7 +2456,7 @@ class PlotAxes(base.Axes):
                 levels = levels[levels >= 0]
             if negative:
                 levels = levels[levels <= 0]
-        return levels, kwargs
+        return levels, vmin, vmax, norm, norm_kw, kwargs
 
     def _parse_discrete(
         self, levels, norm, cmap, *, extend=None, min_levels=None, **kwargs,
@@ -2649,7 +2669,7 @@ class PlotAxes(base.Axes):
                 if abs(np.sign(vmax) - np.sign(vmin)) == 2:
                     isdiverging = True
         if discrete:
-            levels, kwargs = self._parse_levels(
+            levels, vmin, vmax, norm, norm_kw, kwargs = self._parse_levels(
                 *args, vmin=vmin, vmax=vmax, norm=norm, norm_kw=norm_kw, extend=extend,
                 min_levels=min_levels, skip_autolev=skip_autolev, **kwargs
             )
@@ -2660,24 +2680,7 @@ class PlotAxes(base.Axes):
         if not trues and isdiverging and modes['diverging'] is None:
             trues['diverging'] = modes['diverging'] = True
 
-        # Create the continuous normalizer. Only use SegmentedNorm if necessary
-        # NOTE: DiscreteNorm does not currently support vmin and vmax different from
-        # level list minimum and maximum.
-        # NOTE: We create normalizer here only because auto level generation depends
-        # on the normalizer class (e.g. LogNorm). We don't have to worry about vmin
-        # and vmax because they get applied to normalizer inside DiscreteNorm.
-        if levels is not None:
-            if len(levels) == 1:  # use central colormap color
-                vmin, vmax = levels[0] - 1, levels[0] + 1
-            elif len(levels) > 1:  # use minimum and maximum
-                vmin, vmax = np.min(levels), np.max(levels)
-                if not np.allclose(levels[1] - levels[0], np.diff(levels)):
-                    norm = _not_none(norm, 'segmented')
-        if norm in ('segments', 'segmented'):
-            if np.iterable(levels):  # add levels as keyword
-                norm_kw['levels'] = levels
-            elif 'levels' not in norm_kw:  # ignore input value
-                norm = None
+        # Create the continuous normalizer.
         norm = _not_none(norm, 'div' if 'diverging' in trues else 'linear')
         if isinstance(norm, mcolors.Normalize):
             norm.vmin, norm.vmax = vmin, vmax

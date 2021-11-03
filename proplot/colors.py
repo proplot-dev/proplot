@@ -2527,7 +2527,8 @@ class SegmentedNorm(mcolors.Normalize):
         levels : sequence of float
             The level boundaries. Must be monotonically increasing or decreasing.
         vmin, vmax : None
-            Ignored. These are set to the minimum and maximum of `levels`.
+            Ignored but included for consistency with other normalizers. These are
+            set to the minimum and maximum of `levels`.
         clip : bool, optional
             Whether to clip values falling outside of the minimum and
             maximum levels.
