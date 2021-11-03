@@ -74,8 +74,10 @@ Features
   `values`, instead of ignoring `values` when colormaps are passed (:commit:`503af4be`).
 * Ensure the default ticks are aligned with levels when passing discrete colormaps
   to `~proplot.axes.Axes.colorbar` (:commit:`503af4be`).
-* Emit warning when both a scalar mappable `vmin`, `vmax`, `norm`, or `values`
+* Emit warning when both a scalar mappable and `vmin`, `vmax`, `norm`, or `values`
   are passed to `~proplot.axes.Axes.colorbar` (:commit:`503af4be`).
+* Disable automatic reversal of dependent variable coordinates when axis limits
+  are fixed, and add documentation for this feature (:issue:`300`).
 
 Bug fixes
 ---------
