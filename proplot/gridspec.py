@@ -1436,7 +1436,7 @@ class SubplotGrid(MutableSequence, list):
             return SubplotGrid(objs)
 
         # Clean the docstring
-        cmd = getattr(getattr(paxes, src), name)
+        cmd = getattr(src, name)
         doc = inspect.cleandoc(cmd.__doc__)  # dedents
         dot = doc.find('.')
         if dot != -1:
@@ -1569,16 +1569,16 @@ class SubplotGrid(MutableSequence, list):
 # TODO: Add commands that plot the input data for every
 # axes in the grid along a third dimension.
 for _src, _name in (
-    ('Axes', 'panel'),
-    ('Axes', 'panel_axes'),
-    ('Axes', 'inset'),
-    ('Axes', 'inset_axes'),
-    ('CartesianAxes', 'altx'),
-    ('CartesianAxes', 'alty'),
-    ('CartesianAxes', 'dualx'),
-    ('CartesianAxes', 'dualy'),
-    ('CartesianAxes', 'twinx'),
-    ('CartesianAxes', 'twiny'),
+    (paxes.Axes, 'panel'),
+    (paxes.Axes, 'panel_axes'),
+    (paxes.Axes, 'inset'),
+    (paxes.Axes, 'inset_axes'),
+    (paxes.CartesianAxes, 'altx'),
+    (paxes.CartesianAxes, 'alty'),
+    (paxes.CartesianAxes, 'dualx'),
+    (paxes.CartesianAxes, 'dualy'),
+    (paxes.CartesianAxes, 'twinx'),
+    (paxes.CartesianAxes, 'twiny'),
 ):
     SubplotGrid._add_command(_src, _name)
 
