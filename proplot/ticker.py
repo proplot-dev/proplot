@@ -140,7 +140,7 @@ class DiscreteLocator(mticker.Locator):
         min_n_ticks : int, optional
             The minimum number of ticks to select. Default is ``1``.
         """
-        self.locs = locs
+        self.locs = np.asarray(locs)
         self.set_params(**{**self.default_params, **kwargs})
         self._nbins = None  # otherwise unset
 
@@ -176,13 +176,15 @@ class DiscreteLocator(mticker.Locator):
         """
         # NOTE: It is critical that minor tick interval evenly divides major tick
         # interval. Otherwise get misaligned major and minor tick steps.
-        # NOTE: We select from a subset of possible steps to avoid awkward intervals
+        # NOTE: Unlike FixedLocator (and like AutoLocator) this tries to find list
+        # intervals that would step to zero. Only use the list minimum if this fails
+        # NOTE: This selects from a subset of possible steps to avoid awkward intervals
         # like '7' or '13' that eliminate minor ticks and (because tick locs usually
-        # have "nice" step sizes) tend to create awkward jumps.
-        # NOTE: For discrete colorbars we virtually always want to subsample the level
-        # list. For example _parse_autolev will interpolate to even points in log-space
-        # between powers of 10 if the powers don't give us enough levels. Therefore
-        # x/y axis-style unevenly spaced log minor ticks would be confusing/ugly.
+        # have "nice" step sizes) that tend to create awkward jumps.
+        # NOTE: We virtually always want to subsample the level list rather than
+        # using continuous minor locators like LogLocator. For example _parse_autolev
+        # interpolates evenly in log-space if powers of 10 don't give enough levels.
+        # Therefore x/y axis-style unevenly spaced log minor ticks would be confusing.
         locs = self.locs
         if self.axis is None:
             return locs
@@ -191,22 +193,24 @@ class DiscreteLocator(mticker.Locator):
         if nbins is None:
             nbins = self.axis.get_tick_space()
             nbins = max((1, self._min_n_ticks - 1, nbins))
-        offset = np.argmin(np.abs(locs))
-        step = max(1, int(np.ceil(len(locs) / nbins)))
+        step = max(1, int(np.ceil(locs.size / nbins)))
         fact = 10 ** max(0, -AutoFormatter._decimal_place(step))  # e.g. 2 for 100
         idx = min(len(steps) - 1, np.searchsorted(steps, step / fact))
         step = int(np.round(steps[idx] * fact))
         if self._minor:  # tick every half font size
             if isinstance(self.axis, maxis.XAxis):
-                fact = 6  # unscale heuristic of 3 em-widths
+                fact = 6  # unscale heuristic scaling of 3 em-widths
             elif isinstance(self.axis, maxis.YAxis):
-                fact = 4  # unscale 2 em-width scaling
+                fact = 4  # unscale standard scaling of 2 em-widths
             else:
-                fact = 2  # fall back to just half em-width
+                fact = 2  # fall back to just one em-width
             for i in range(fact, 0, -1):
                 if step % i == 0:
                     step = step // i
                     break
+        diff = np.abs(np.diff(locs[:step + 1:step]))
+        offset, = np.where(np.isclose(locs % diff if diff.size else 0.0, 0.0))
+        offset = offset[0] if offset.size else np.argmin(np.abs(locs))
         return locs[offset % step::step]  # even multiples from zero or zero-close
 
 
