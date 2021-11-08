@@ -136,7 +136,7 @@ fig.format(
 # and `xarray`_ data structures. If you omit dependent variable coordinates,
 # the plotting commands try to infer them from the `pandas.Series`, `pandas.DataFrame`,
 # or `xarray.DataArray`. If you did not explicitly set the *x* or *y* axis label
-# or :ref:`legend or colorbar <ug_cbars_axes>` label(s), the plotting commands
+# or :ref:`legend or colorbar <ug_guides_loc>` label(s), the plotting commands
 # try to retrieve them from the `pandas.DataFrame` or `xarray.DataArray`.
 # The plotting commands also recognize `pint.Quantity` structures and apply
 # unit string labels with formatting specified by :rc:`unitformat`.

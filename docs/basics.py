@@ -25,11 +25,12 @@
 # Creating figures
 # ----------------
 #
-# Proplot works by `subclassing <https://docs.python.org/3/tutorial/classes.html>`__
-# three fundamental matplotlib objects: Instead of `matplotlib.figure.Figure`,
-# `matplotlib.axes.Axes`, and `matplotlib.gridspec.GridSpec`, we have
-# `proplot.figure.Figure`, `proplot.axes.Axes`, and
-# `proplot.gridspec.GridSpec` (for more on gridspecs, see this `matplotlib tutorial
+# Proplot works by `subclassing
+# <https://docs.python.org/3/tutorial/classes.html#inheritance>`__
+# three fundamental matplotlib objects: `proplot.figure.Figure` replaces
+# `matplotlib.figure.Figure`, `proplot.axes.Axes` replaces `matplotlib.axes.Axes`,
+# and `proplot.gridspec.GridSpec` replaces `matplotlib.gridspec.GridSpec`
+# (for more on gridspecs, see this `matplotlib tutorial
 # <https://matplotlib.org/stable/tutorials/intermediate/gridspec.html>`__).
 #
 # To make plots with these classes, you must start with the top-level commands

@@ -174,17 +174,16 @@ class DiscreteLocator(mticker.Locator):
         """
         Return the locations of the ticks.
         """
-        # NOTE: It is critical that minor tick interval evenly divides major tick
+        # NOTE: Critical that minor tick interval evenly divides major tick
         # interval. Otherwise get misaligned major and minor tick steps.
-        # NOTE: Unlike FixedLocator (and like AutoLocator) this tries to find list
-        # intervals that would step to zero. Only use the list minimum if this fails
-        # NOTE: This selects from a subset of possible steps to avoid awkward intervals
-        # like '7' or '13' that eliminate minor ticks and (because tick locs usually
-        # have "nice" step sizes) that tend to create awkward jumps.
+        # NOTE: This tries to select ticks that are integer steps away from zero (like
+        # AutoLocator). The list minimum is used if this fails (like FixedLocator)
+        # NOTE: This avoids awkward steps like '7' or '13' that produce awkward
+        # jumps and have no integer divisors (and therefore eliminate minor ticks)
         # NOTE: We virtually always want to subsample the level list rather than
-        # using continuous minor locators like LogLocator. For example _parse_autolev
-        # interpolates evenly in log-space if powers of 10 don't give enough levels.
-        # Therefore x/y axis-style unevenly spaced log minor ticks would be confusing.
+        # using continuous minor locators (e.g. LogLocator or SymLogLocator) because
+        # _parse_autolev interpolates evenly in the norm-space (e.g. 1, 3.16, 10, 31.6
+        # for a LogNorm) rather than in linear-space (e.g. 1, 5, 10, 15, 20).
         locs = self.locs
         if self.axis is None:
             return locs

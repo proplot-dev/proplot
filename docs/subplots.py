@@ -239,7 +239,7 @@ pplt.rc.reset()
 # This padding can be set locally by passing an array of values to `wpad`
 # and `hpad` (analogous to `wspace` and `hspace`), or by passing the `pad`
 # keyword when creating :ref:`panel axes <ug_panels>` or :ref:`outer
-# colorbars or legends <ug_cbars_axes>` (analogous to `space`). Finally, passing
+# colorbars or legends <ug_guides_loc>` (analogous to `space`). Finally, passing
 # ``wequal=True``, ``hequal=True``, or ``equal=True`` constrains the tight layout
 # algorithm to produce equal spacing between main subplot rows or columns
 # (note that equal spacing is the default behavior when tight layout is disabled).

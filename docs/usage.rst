@@ -119,8 +119,8 @@ functionality to existing figure and axes methods.
   draw colorbars and legends inside of subplots or along the outside edges of
   subplots. The `proplot.figure.Figure.colorbar` and `proplot.figure.Figure.legend`
   commands draw colorbars or legends along the edges of figures (aligned by subplot
-  boundaries). These commands considerably :ref:`simplify <ug_cbars_legends>`
-  the process of drawing colorbars and legends.
+  boundaries). These commands considerably :ref:`simplify <ug_guides>` the
+  process of drawing colorbars and legends.
 * The `proplot.axes.PlotAxes` subclass (used for all proplot axes)
   adds many, many useful features to virtually every plotting command
   (including `~proplot.axes.PlotAxes.plot`, `~proplot.axes.PlotAxes.scatter`,

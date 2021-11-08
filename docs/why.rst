@@ -269,7 +269,7 @@ provides the following advantages:
 * The `proplot.gridspec.GridSpec` subclass permits variable spacing
   between rows and columns, and the tight layout algorithm takes
   this into account. Variable spacing is critical for making
-  outer :ref:`colorbars and legends <ug_cbars_legends>` and
+  outer :ref:`colorbars and legends <ug_guides>` and
   :ref:`axes panels <ug_insets_panels>` without "stealing space"
   from the parent subplot -- these objects usually need to be
   spaced closer to their parents than other subplots.
@@ -343,7 +343,7 @@ Links
 
 * For more on axis sharing, see :ref:`this page <ug_share>`.
 * For more on panels, see :ref:`this page <ug_panels>`.
-* For more on colorbars and legends, see :ref:`this page <ug_cbars_legends>`.
+* For more on colorbars and legends, see :ref:`this page <ug_guides>`.
 * For more on a-b-c labels, see :ref:`this page <ug_abc>`.
 * For more on subplot grids,  see :ref:`this page <ug_subplotgrid>`.
 
@@ -369,8 +369,8 @@ Solution
 --------
 
 Proplot includes a simple framework for drawing colorbars and legends
-that reference :ref:`individual subplots <ug_cbars_axes>` and
-:ref:`multiple contiguous subplots <ug_cbars_figure>`.
+that reference :ref:`individual subplots <ug_guides_loc>` and
+:ref:`multiple contiguous subplots <ug_guides_multi>`.
 
 * To draw a colorbar or legend on the outside of a specific subplot, pass an
   "outer" location (e.g. ``loc='l'`` or ``loc='left'``)
@@ -396,11 +396,11 @@ Links
 -----
 
 * For more on single-subplot colorbars and legends,
-  see :ref:`this page <ug_cbars_axes>`.
+  see :ref:`this page <ug_guides_loc>`.
 * For more on multi-subplot colorbars and legends,
-  see :ref:`this page <ug_cbars_figure>`.
+  see :ref:`this page <ug_guides_multi>`.
 * For new colorbar features,
-  see :ref:`this page <ug_cbars>`.
+  see :ref:`this page <ug_colorbars>`.
 * For new legend features,
   see :ref:`this page <ug_legends>`.
 
@@ -421,9 +421,9 @@ Solution
 
 Proplot uses the `~proplot.axes.PlotAxes` subclass to add various `seaborn`_,
 `xarray`_, and `pandas`_ features to existing matplotlib plotting commands
-along with several additional features designed to make your life easier.
+along with several additional features designed to make things easier.
 
-The following features are relevant for the 1D plotting commands like
+The following features are relevant for "1D" plotting commands like
 `~proplot.axes.PlotAxes.line` (equivalent to `~proplot.axes.PlotAxes.plot`)
 and `~proplot.axes.PlotAxes.scatter`:
 
@@ -432,8 +432,8 @@ and `~proplot.axes.PlotAxes.scatter`:
   :ref:`property cyclers <ug_apply_cycle>` on-the-fly. This permits succinct
   and flexible property cycler declaration.
 * The `legend` and `colorbar` keywords draw :ref:`on-the-fly legends and colorbars
-  <ug_cbars_axes>` using the result of the plotting command. Note that colorbars can
-  be drawn from :ref:`lists of artists <ug_cbars>` (see `~proplot.axes.Axes.legend`).
+  <ug_guides_plot>` using the result of the plotting command. Note that colorbars can be
+  drawn from :ref:`lists of artists <ug_colorbars>` (see `~proplot.axes.Axes.legend`).
 * The default `ylim` (`xlim`) in the presence of a fixed `xlim` (`ylim`) is now
   adjusted to exclude out-of-bounds data. This can be useful when "zooming in" on
   a dependent variable axis but can be disabled by setting :rcraw:`axes.inbounds`
@@ -446,8 +446,8 @@ and `~proplot.axes.PlotAxes.scatter`:
 * The `~proplot.axes.PlotAxes.bar`, `~proplot.axes.PlotAxes.barh`,
   `~proplot.axes.PlotAxes.vlines`, `~proplot.axes.PlotAxes.hlines`,
   `~proplot.axes.PlotAxes.area`, and `~proplot.axes.PlotAxes.areax`
-  commands accept a `negpos` keyword argument that :ref:`assigns different colors
-  <ug_negpos>` colors to "negative" and "positive" regions.
+  commands accept a `negpos` keyword argument that :ref:`assigns different
+  colors <ug_negpos>` to "negative" and "positive" regions.
 * The `~proplot.axes.PlotAxes.linex` and `~proplot.axes.PlotAxes.scatterx` commands
   are just like `~proplot.axes.PlotAxes.line` and `~proplot.axes.PlotAxes.scatter`,
   but positional arguments are interpreted as *x* coordinates or (*y*, *x*) pairs.
@@ -458,23 +458,23 @@ and `~proplot.axes.PlotAxes.scatter`:
 * The `~proplot.axes.PlotAxes.line`, `~proplot.axes.PlotAxes.linex`,
   `~proplot.axes.PlotAxes.scatter`, `~proplot.axes.PlotAxes.scatterx`,
   `~proplot.axes.PlotAxes.bar`, and `~proplot.axes.PlotAxes.barh` commands can
-  quickly draw vertical or horizontal :ref:`error bars or "shading" <ug_errorbars>`
-  using a variety of keyword arguments. This is often more convenient than
-  working directly with `~matplotlib.axes.Axes.errorbar`.
+  draw vertical or horizontal :ref:`error bars or "shading" <ug_errorbars>` using a
+  variety of keyword arguments. This is often more convenient than working directly
+  with `~matplotlib.axes.Axes.errorbar` or `~matplotlib.axes.Axes.fill_between`.
 * The `~proplot.axes.PlotAxes.parametric` command draws clean-looking
   :ref:`parametric lines <ug_parametric>` by encoding the parametric
   coordinate using colormap colors rather than text annotations.
 
-The following features are relevant for the 2D plotting commands like
+The following features are relevant for "2D" plotting commands like
 `~proplot.axes.PlotAxes.pcolor` and `~proplot.axes.PlotAxes.contour`:
 
 * The `cmap` and `norm` :ref:`keyword arguments <ug_apply_cmap>` are interpreted
   by the `~proplot.constructor.Colormap` and `~proplot.constructor.Norm`
   :ref:`constructor functions <why_constructor>`. This permits succinct
   and flexible colormap and normalizer application.
-* The `colorbar` keyword draws on-the-fly :ref:`colorbars <ug_cbars_axes>`
-  using the result of the plotting command. Note that "inset" colorbars can also
-  be drawn, analogous to "inset" legends (see `~proplot.axes.Axes.colorbar`).
+* The `colorbar` keyword draws :ref:`on-the-fly colorbars <ug_guides_plot>` using the
+  result of the plotting command. Note that :ref:`"inset" colorbars <ug_guides_loc>` can
+  also be drawn, analogous to "inset" legends.
 * The `~proplot.axes.PlotAxes.contour`, `~proplot.axes.PlotAxes.contourf`,
   `~proplot.axes.PlotAxes.pcolormesh`, and `~proplot.axes.PlotAxes.pcolor` commands
   all accept a `labels` keyword. This draws :ref:`contour and grid box labels
@@ -613,7 +613,7 @@ This includes :ref:`grouped or stacked <ug_bar>` bar plots
 and :ref:`layered or stacked <ug_bar>` area plots from two-dimensional
 input data, auto-detection of :ref:`diverging datasets <ug_autonorm>` for
 application of diverging colormaps and normalizers, and
-:ref:`on-the-fly colorbars and legends <ug_cbars_axes>` using `colorbar`
+:ref:`on-the-fly colorbars and legends <ug_guides_loc>` using `colorbar`
 and `legend` keywords.
 
 Proplot also handles metadata associated with `xarray.DataArray`, `pandas.DataFrame`,
@@ -640,7 +640,7 @@ Links
 * For diverging datasets,
   see :ref:`this page <ug_autonorm>`.
 * For on-the-fly colorbars and legends,
-  see :ref:`this page <ug_cbars_axes>`.
+  see :ref:`this page <ug_guides_plot>`.
 
 .. _why_aesthetics:
 

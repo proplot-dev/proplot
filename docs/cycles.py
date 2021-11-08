@@ -123,8 +123,8 @@ for i in range(data.shape[1]):
 # the :ref:`colormaps section <ug_cmaps>` for details.
 #
 # In the below example, several cycles are constructed from scratch, and the
-# lines are referenced with colorbars and legends. Note that proplot allows
-# you to :ref:`generate colorbars from lists of artists <ug_cbars>`.
+# lines are referenced with colorbars and legends. Note that proplot permits
+# generating colorbars from :ref:`lists of artists <ug_colorbars>`.
 
 # %%
 import proplot as pplt
