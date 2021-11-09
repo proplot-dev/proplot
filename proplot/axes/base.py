@@ -2243,10 +2243,8 @@ class Axes(maxes.Axes):
                 cax._parse_colorbar_arg(mappable, values, **kwargs)
             )
 
-        # Parse colorbar keyword arguments
-        # NOTE: We use DiscreteLocator as the default.
-        # WARNING: Matplotlib >= 3.4 seems to have issue with assigning no ticks
-        # to colorbar. Tried to fix with below block but doesn't seem to help.
+        # Parse ticking keyword arguments
+        # NOTE: This uses DiscreteLocator for default discrete minor ticks
         name = 'y' if kwargs.get('orientation') == 'vertical' else 'x'
         axis = cax.yaxis if kwargs.get('orientation') == 'vertical' else cax.xaxis
         locator = _not_none(locator, locator_default, None)
@@ -2268,9 +2266,11 @@ class Axes(maxes.Axes):
                 tickminor = rc[name + 'tick.minor.visible']
         if minorlocator is not None:
             minorlocator = constructor.Locator(minorlocator, **minorlocator_kw)
-        if isinstance(locator, mticker.NullLocator):
-            locator = []  # passed as 'ticks'
-        if isinstance(minorlocator, mticker.NullLocator):
+
+        # Prepare colorbar keyword arguments
+        # WARNING: Critical to not pass empty major locators in matplotlib < 3.5
+        # See: https://github.com/lukelbd/proplot/issues/301
+        if isinstance(locator, mticker.NullLocator) or not len(getattr(locator, 'locs', (None,))):  # noqa: E501
             minorlocator, tickminor = None, False  # attempted fix
         for ticker in (locator, formatter, minorlocator):
             if isinstance(ticker, mticker.TickHelper):
@@ -2286,10 +2286,6 @@ class Axes(maxes.Axes):
             scale = height if kwargs.get('orientation') == 'vertical' else width
             extendsize = units(extendsize, 'em', 'in')
             extendfrac = extendsize / max(scale - 2 * extendsize, units(1, 'em', 'in'))
-
-        # Draw the colorbar
-        # NOTE: Set default formatter here because we optionally apply a FixedFormatter
-        # using *labels* from handle input.
         kwargs.update(
             {
                 'cax': cax,
@@ -2305,6 +2301,13 @@ class Axes(maxes.Axes):
             mappable.extend = extend  # required in mpl >= 3.3, else optional
         else:
             kwargs['extend'] = extend
+
+        # Draw and update the colorbar
+        # WARNING: Must use colorbar set_label to set text,
+        # calling set_text on the axis will do nothing!
+        # WARNING: Colorbar _ticker() internally makes dummy axis and updates view
+        # limits. Here we apply actual axis rather than dummy, otherwise default nbins
+        # of DiscreteLocator will not work. Not sure if this has side effects...
         obj = cax._colorbar_fill = self.figure.colorbar(mappable, **kwargs)
         obj.minorlocator = minorlocator  # backwards compatibility
         obj.update_ticks = guides._update_ticks.__get__(obj)  # backwards compatibility
@@ -2314,13 +2317,6 @@ class Axes(maxes.Axes):
             obj.minorticks_on()
         else:
             obj.minorticks_off()
-
-        # Update various axis settings
-        # WARNING: Must use colorbar set_label to set text,
-        # calling set_text on the axis will do nothing!
-        # WARNING: Colorbar _ticker() internally makes dummy axis and updates view
-        # limits. Here we apply actual axis rather than dummy, otherwise default nbins
-        # of DiscreteLocator will not work. Not sure if this has side effects...
         axis.set_tick_params(which='both', color=color, direction=tickdir)
         axis.set_tick_params(which='major', length=ticklen, width=tickwidth)
         axis.set_tick_params(which='minor', length=ticklen * ticklenratio, width=tickwidth * tickwidthratio)  # noqa: E501
@@ -2335,8 +2331,6 @@ class Axes(maxes.Axes):
         axis.label.update(kw_label)
         for label in axis.get_ticklabels():
             label.update(kw_ticklabels)
-
-        # Fix colorbar outline and apply rasterization
         kw_outline = {'edgecolor': color, 'linewidth': linewidth}
         if obj.outline is not None:
             obj.outline.update(kw_outline)
