@@ -187,7 +187,7 @@ class LogScale(_Scale, mscale.LogScale):
         nonpos : {'mask', 'clip'}, optional
             Non-positive values in *x* or *y* can be masked as
             invalid, or clipped to a very small positive number.
-        subs : sequence of int, default: ``(1, 2, 3, 4, 5, 6, 7, 8, 9)``
+        subs : sequence of int, default: ``[1 2 3 4 5 6 7 8 9]``
             Default *minor* tick locations are on these multiples of each power
             of the base. For example, ``subs=(1, 2, 5)`` draws ticks on 1, 2,
             5, 10, 20, 50, 100, 200, 500, etc.
@@ -227,7 +227,7 @@ class SymmetricalLogScale(_Scale, mscale.SymmetricalLogScale):
             example, when `linscale` is ``1`` (the default), the space used
             for the positive and negative halves of the linear range will be
             equal to one decade in the logarithmic range.
-        subs : sequence of int, default: ``(1, 2, 3, 4, 5, 6, 7, 8, 9)``
+        subs : sequence of int, default: ``[1 2 3 4 5 6 7 8 9]``
             Default *minor* tick locations are on these multiples of each power
             of the base. For example, ``subs=(1, 2, 5)`` draws ticks on 1, 2,
             5, 10, 20, 50, 100, 200, 500, etc.

@@ -131,7 +131,7 @@ class DiscreteLocator(mticker.Locator):
         minor : bool, default: False
             Whether this is for "minor" ticks. Setting to ``True`` will select more
             ticks with an index step that divides the index step used for "major" ticks.
-        steps : array-like of int, default: ``(1, 2, 3, 4, 5, 6, 8)``
+        steps : array-like of int, default: ``[1 2 3 4 5 6 8]``
             Valid integer index steps when selecting from the tick list. Must fall
             between 1 and 9. Powers of 10 of these step sizes will also be permitted.
         min_n_ticks : int, default: 1

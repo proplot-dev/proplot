@@ -515,7 +515,7 @@ def show_cmaps(*args, **kwargs):
         Category names to be shown in the table. Use this to limit
         the table to a subset of categories. Valid categories are
         %(demos.cmaps)s.
-    ignore : str or sequence of str, default: ``('MATLAB', 'GNUplot', 'GIST', 'Other')``
+    ignore : str or sequence of str, default: 'MATLAB', 'GNUplot', 'GIST', 'Other'
         Used only if `include` was not passed. Category names to be removed from the
         table. Use of the default ignored colormaps is discouraged because they contain
         non-uniform color transitions (see the :ref:`user guide <ug_perceptual>`).
