@@ -99,6 +99,12 @@ Bug fixes
 * Fix issue where setting :rcraw:`legend.facecolor` or :rcraw:`legend.edgecolor` to
   ``'inherit'`` (or passing as keyword argument) raises error (:issue:`298`).
 
+Documentation
+-------------
+
+* Indicate default values in type-specification rather than
+  parameter descriptions (:commit:`50546dee`).
+
 Version 0.9.5 (2021-10-19)
 ==========================
 
