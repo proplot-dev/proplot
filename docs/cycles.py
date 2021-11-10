@@ -111,9 +111,9 @@ for i in range(data.shape[1]):
 # :ref:`constructor function <why_constructor>`. One great way to make cycles is by
 # sampling colormaps! Just pass the colormap name to `~proplot.constructor.Cycle`,
 # and optionally specify the number of samples you want to draw as the last
-# positional argument -- e.g. ``pplt.Cycle('Blues', 5)``. Using e.g.
-# ``ax.plot(data, cycle='Blues')`` will automatically use the same
-# number of samples as the number of columns in the dataset.
+# positional argument -- e.g. ``pplt.Cycle('Blues', 5)``. Calling e.g.
+# ``ax.plot(data, cycle='Blues')`` where ``data`` is a 2D array will automatically
+# use the same number of samples as the number of columns in the array.
 #
 # Positional arguments passed to `~proplot.constructor.Cycle` are interpreted
 # by the `~proplot.constructor.Colormap` constructor function, and the resulting

@@ -307,18 +307,19 @@ pplt.rc.reset()
 # %%
 import proplot as pplt
 pplt.rc.update(
-    metawidth=1.2, fontsize=10, figurefacecolor='w',
-    axesedgecolor='deep orange', gridcolor='coral',
+    metawidth=1.2, fontsize=10, gridcolor='coral',
+    axesedgecolor='deep orange', figurefacecolor='white',
 )
 fig = pplt.figure(share=False, refwidth=2, suptitle='Axis locations demo')
 
 # Spine location demonstration
 ax = fig.subplot(121, title='Various locations')
-ax.format(xloc='bottom', xlabel='original axis')
-ax.twiny(xloc=('axes', 1.1), xlabel='offset twin')
-ax.twiny(xloc=('axes', -0.25), xlabel='offset twin')
+ax.format(xloc='top', xlabel='original axis')
+ax.twiny(xloc='bottom', xcolor='black', xlabel='locked twin')
+ax.twiny(xloc=('axes', 1.25), xcolor='black', xlabel='offset twin')
+ax.twiny(xloc=('axes', -0.25), xcolor='black', xlabel='offset twin')
 ax.format(ytickloc='both', yticklabelloc='both')
-ax.format(ylabel='tickloc both labelloc right', ylabelloc='right')
+ax.format(ylabel='labels on both sides')
 
 # Other locations locations
 ax = fig.subplot(122, title='Zero-centered spines', titlepad='1em')

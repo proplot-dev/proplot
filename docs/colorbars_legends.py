@@ -150,12 +150,13 @@ for i in range(5):
 
 # Colorbars
 ax = fig.subplot(122, title='On-the-fly colorbar')
+data = state.rand(8, 8)
 ax.contourf(
-    state.rand(10, 10), cmap='Reds1', extend='both', colorbar='b',
+    data, cmap='Reds1', extend='both', colorbar='b',
     colorbar_kw={'length': 0.8, 'label': 'colorbar label'},
 )
 ax.contour(
-    state.rand(10, 10), cmap='Mono', cmap_kw={'left': 0.1}, levels=9, lw=2,
+    data, cmap='Mono_r', cmap_kw={'left': 0.05}, lw=1.5,
     colorbar='r', colorbar_kw={'label': 'colorbar label', 'length': 0.7},
     label='contour', legend='ul', legend_kw={'label': 'legend from mappable'},
 )

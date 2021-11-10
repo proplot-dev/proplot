@@ -30,8 +30,9 @@
 # three fundamental matplotlib objects: `proplot.figure.Figure` replaces
 # `matplotlib.figure.Figure`, `proplot.axes.Axes` replaces `matplotlib.axes.Axes`,
 # and `proplot.gridspec.GridSpec` replaces `matplotlib.gridspec.GridSpec`
-# (for more on gridspecs, see this `matplotlib tutorial
-# <https://matplotlib.org/stable/tutorials/intermediate/gridspec.html>`__).
+# (see this `tutorial
+# <https://matplotlib.org/stable/tutorials/intermediate/gridspec.html>`__
+# for more on matplotlib gridspecs).
 #
 # To make plots with these classes, you must start with the top-level commands
 # `~proplot.ui.figure`, `~proplot.ui.subplot`, or `~proplot.ui.subplots`. These are
@@ -80,9 +81,9 @@ import numpy as np
 import proplot as pplt
 state = np.random.RandomState(51423)
 data = 2 * (state.rand(100, 5) - 0.5).cumsum(axis=0)
-fig = pplt.figure(suptitle='Single subplot')
-ax = fig.subplot(xlabel='x axis', ylabel='y axis')
-# fig, ax = pplt.subplot(suptitle='...', xlabel='...', ylabel='...')  # equivalent
+fig, ax = pplt.subplot(suptitle='Single subplot', xlabel='x axis', ylabel='y axis')
+# fig = pplt.figure(suptitle='Single subplot')  # equivalent to above
+# ax = fig.subplot(xlabel='x axis', ylabel='y axis')
 ax.plot(data, lw=2)
 
 
@@ -135,7 +136,7 @@ ax.plot(data, lw=2)
 #    subplots in the same row or column share the same axis limits, scales, ticks,
 #    and labels. This is often convenient, but may be annoying for some users. To
 #    keep this feature turned off, simply :ref:`change the default settings <ug_rc>`
-#    with e.g. ``pplt.rc.update(share=False, span=False)``. See the
+#    with e.g. ``pplt.rc.update('subplots', share=False, span=False)``. See the
 #    :ref:`axis sharing section <ug_share>` for details.
 
 # %%

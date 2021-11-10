@@ -999,7 +999,7 @@ class Configurator(MutableMapping, dict):
                 return rcdict[key]
             except KeyError:
                 continue
-        if mode == 0:
+        if mode == 0:  # otherwise return None
             raise KeyError(f'Invalid rc setting {key!r}.')
 
     @staticmethod
@@ -1240,7 +1240,8 @@ class Configurator(MutableMapping, dict):
         Parameters
         ----------
         props : dict-like
-            Dictionary whose values are setting names.
+            Dictionary whose values are setting names -- for example
+            ``rc.fill({'edgecolor': 'axes.edgecolor', 'facecolor': 'axes.facecolor'})``.
         context : bool, optional
             If ``True``, then settings not found in the context mode dictionaries
             are excluded from the output dictionary. See `~Configurator.context`.
