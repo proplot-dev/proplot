@@ -38,12 +38,12 @@ The projection resolution.
 _init_docstring = """
 Parameters
 ----------
-central_longitude : float, optional
-    The central meridian longitude in degrees. Default is 0.
-false_easting: float, optional
-    X offset from planar origin in metres. Default is 0.
-false_northing: float, optional
-    Y offset from planar origin in metres. Default is 0.
+central_longitude : float, default: 0
+    The central meridian longitude in degrees.
+false_easting: float, default: 0
+    X offset from planar origin in metres.
+false_northing: float, default: 0
+    Y offset from planar origin in metres.
 globe : `~cartopy.crs.Globe`, optional
     If omitted, a default globe is created.
 """

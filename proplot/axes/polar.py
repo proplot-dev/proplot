@@ -19,13 +19,13 @@ __all__ = ['PolarAxes']
 
 # Format docstring
 _format_docstring = """
-r0 : float, optional
-    The radial origin. Default is ``0``.
-theta0 : {'N', 'NW', 'W', 'SW', 'S', 'SE', 'E', 'NE'}
-    The zero azimuth location. Default is ``N``.
+r0 : float, default: 0
+    The radial origin.
+theta0 : {'N', 'NW', 'W', 'SW', 'S', 'SE', 'E', 'NE'}, optional
+    The zero azimuth location.
 thetadir : {1, -1, 'anticlockwise', 'counterclockwise', 'clockwise'}, optional
-    The positive azimuth direction. Clockwise corresponds to ``-1``
-    and anticlockwise corresponds to ``1``. Default is ``1``.
+    The positive azimuth direction. Clockwise corresponds to
+    ``-1`` and anticlockwise corresponds to ``1``.
 thetamin, thetamax : float, optional
     The lower and upper azimuthal bounds in degrees. If
     ``thetamax != thetamin + 360``, this produces a sector plot.
@@ -42,13 +42,13 @@ rborder : bool, optional
     automatically by matplotlib.
 thetagrid, rgrid, grid : bool, optional
     Whether to draw major gridlines for the azimuthal and radial axis.
-    Use `grid` to toggle both.
+    Use the keyword `grid` to toggle both.
 thetagridminor, rgridminor, gridminor : bool, optional
     Whether to draw minor gridlines for the azimuthal and radial axis.
-    Use `gridminor` to toggle both.
+    Use the keyword `gridminor` to toggle both.
 thetagridcolor, rgridcolor, gridcolor : color-spec, optional
     Color for the major and minor azimuthal and radial gridlines.
-    Use `gridcolor` to set both at once.
+    Use the keyword `gridcolor` to set both at once.
 thetalocator, rlocator : locator-spec, optional
     Used to determine the azimuthal and radial gridline positions.
     Passed to the `~proplot.constructor.Locator` constructor. Can be
@@ -76,20 +76,19 @@ thetalabels, rlabels : optional
 thetaformatter_kw, rformatter_kw : dict-like, optional
     The azimuthal and radial label formatter settings. Passed to
     `~proplot.constructor.Formatter`.
-color : color-spec, optional
-    Color for the axes edge. Propagates to `labelcolor` unless
-    specified otherwise (similar to `proplot.axes.CartesianAxes.format`).
-labelcolor, gridlabelcolor : color-spec, optional
-    Color for the gridline labels. Default is `color` or :rc:`grid.labelcolor`
-    if `color` was not passed.
-labelpad, gridlabelpad : unit-spec, optional
+color : color-spec, default: :rc:`meta.color`
+    Color for the axes edge. Propagates to `labelcolor` unless specified
+    otherwise (similar to `proplot.axes.CartesianAxes.format`).
+labelcolor, gridlabelcolor : color-spec, default: `color` or :rc:`grid.labelcolor`
+    Color for the gridline labels.
+labelpad, gridlabelpad : unit-spec, default: :rc:`grid.labelpad`
     The padding between the axes edge and the radial and azimuthal labels.
-    Default is :rcraw:`grid.labelpad`. %(units.pt)s
-labelsize, gridlabelsize : unit-spec or str, optional
-    Font size for the gridline labels. Default is :rc:`grid.labelsize`.
     %(units.pt)s
-labelweight, gridlabelweight : str, optional
-    Font weight for the gridline labels. Default is :rc:`grid.labelweight`.
+labelsize, gridlabelsize : unit-spec or str, default: :rc:`grid.labelsize`
+    Font size for the gridline labels.
+    %(units.pt)s
+labelweight, gridlabelweight : str, default: :rc:`grid.labelweight`
+    Font weight for the gridline labels.
 """
 docstring._snippet_manager['polar.format'] = _format_docstring
 

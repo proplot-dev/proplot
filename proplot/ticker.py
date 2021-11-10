@@ -46,19 +46,18 @@ REGEX_MINUS = re.compile('\\A[-\N{MINUS SIGN}]\\Z')
 REGEX_MINUS_ZERO = re.compile('\\A[-\N{MINUS SIGN}]0(.0*)?\\Z')
 
 _precision_docstring = """
-precision : int, optional
+precision : int, default: {6, 2}
     The maximum number of digits after the decimal point. Default is ``6``
     when `zerotrim` is ``True`` and ``2`` otherwise.
 """
 _zerotrim_docstring = """
-zerotrim : bool, optional
+zerotrim : bool, default: :rc:`format.zerotrim`
     Whether to trim trailing decimal zeros.
-    Default is :rc:`formatter.zerotrim`.
 """
 _auto_docstring = """
 tickrange : 2-tuple of float, optional
-    Range within which major tick marks are labelled. Default is
-    ``(-np.inf, np.inf)``.
+    Range within which major tick marks are labeled.
+    All ticks are labeled by default.
 wraprange : 2-tuple of float, optional
     Range outside of which tick values are wrapped. For example,
     ``(-180, 180)`` will format a value of ``200`` as ``-160``.
@@ -87,9 +86,9 @@ docstring._snippet_manager['ticker.call'] = _formatter_call
 _dms_docstring = """
 Parameters
 ----------
-dms : bool, optional
+dms : bool, default: False
     Locate the ticks on clean degree-minute-second intervals and format the
-    ticks with minutes and seconds instead of decimals. Default is ``False``.
+    ticks with minutes and seconds instead of decimals.
 """
 docstring._snippet_manager['ticker.dms'] = _dms_docstring
 
@@ -113,9 +112,9 @@ class DiscreteLocator(mticker.Locator):
     intervals by default.
     """
     default_params = {
-        'steps': np.array([1, 2, 3, 4, 5, 6, 8, 10]),
         'nbins': None,
         'minor': False,
+        'steps': np.array([1, 2, 3, 4, 5, 6, 8, 10]),
         'min_n_ticks': 2
     }
 
@@ -126,19 +125,17 @@ class DiscreteLocator(mticker.Locator):
         ----------
         locs : array-like
             The tick location list.
-        steps : array-like of int, optional
-            Valid integer index steps when selecting from the tick list. Must fall
-            between 1 and 10. Default is ``[1, 2, 3, 4, 5, 6, 8, 10]``. Powers of
-            10 of these step sizes are also allowed.
         nbins : int, optional
-            Maximum number of ticks to select. By default this depends on
-            the axis length and the tick label font size.
-        minor : bool, optional
-            Whether this is for minor ticks. Default is ``False``. Setting to ``True``
-            will select more ticks from the list. The index step will always divide
-            the index step for an equivalent `DiscreteLocator` with ``minor=False``.
-        min_n_ticks : int, optional
-            The minimum number of ticks to select. Default is ``1``.
+            Maximum number of ticks to select. By default this is automatically
+            determined based on the the axis length and tick label font size.
+        minor : bool, default: False
+            Whether this is for "minor" ticks. Setting to ``True`` will select more
+            ticks with an index step that divides the index step used for "major" ticks.
+        steps : array-like of int, default: ``(1, 2, 3, 4, 5, 6, 8)``
+            Valid integer index steps when selecting from the tick list. Must fall
+            between 1 and 9. Powers of 10 of these step sizes will also be permitted.
+        min_n_ticks : int, default: 1
+            The minimum number of ticks to select. See also `nbins`.
         """
         self.locs = np.asarray(locs)
         self.set_params(**{**self.default_params, **kwargs})
@@ -434,18 +431,18 @@ class AutoFormatter(mticker.ScalarFormatter):
 
 class FracFormatter(mticker.Formatter):
     r"""
-    Format numbers as fractions or multiples of some value.
-    This is powered by the builtin `~fractions.Fraction` class
-    and the `~fractions.Fraction.limit_denominator` method.
+    Format numbers as integers or integer fractions. Optionally express the
+    values relative to some constant like `numpy.pi`. This is powered by the
+    builtin `fractions.Fraction` class and `fractions.Fraction.limit_denominator`.
     """
     def __init__(self, symbol='', number=1):
         r"""
         Parameters
         ----------
-        symbol : str
-            The symbol, e.g. ``r'$\pi$'``. Default is ``''``.
-        number : float
-            The value, e.g. `numpy.pi`. Default is ``1``.
+        symbol : str, default: ''
+            The constant symbol, e.g. ``r'$\pi$'``.
+        number : float, default: 1`
+            The constant value, e.g. `numpy.pi`.
         """
         self._symbol = symbol
         self._number = number
@@ -553,13 +550,12 @@ class SigFigFormatter(mticker.Formatter):
         """
         Parameters
         ----------
-        sigfig : float, optional
-            The number of significant digits. Default is ``3``.
+        sigfig : float, default: 3
+            The number of significant digits.
         %(ticker.zerotrim)s
-        base : float, optional
-            The base unit for rounding. Default is ``1``. For example
-            ``SigFigFormatter(2, base=5)`` rounds to the nearest 5 with
-            up to 2 significant digits (e.g., 87 --> 85, 8.7 --> 8.5).
+        base : float, default: 1
+            The base unit for rounding. For example ``SigFigFormatter(2, base=5)``
+            rounds to the nearest 5 with up to 2 digits (e.g., 87 --> 85, 8.7 --> 8.5).
         """
         self._sigfig = _not_none(sigfig, 3)
         self._zerotrim = _not_none(zerotrim, rc['formatter.zerotrim'])

@@ -179,9 +179,9 @@ length : unit-spec, optional
 width : float or str, optional
     The width of each colorbar.
     %(units.in)s
-rasterize : bool, optional
-    Whether to rasterize the colorbar solids. This increases rendering time and
-    decreases file sizes for vector graphics. Default is :rc:`colorbar.rasterize`.
+rasterize : bool, default: :rc:`colorbar.rasterize`
+    Whether to rasterize the colorbar solids. This increases rendering
+    time and decreases file sizes for vector graphics.
 """
 docstring._snippet_manager['demos.cmaps'] = ', '.join(f'``{s!r}``' for s in CMAPS_TABLE)
 docstring._snippet_manager['demos.cycles'] = ', '.join(f'``{s!r}``' for s in CYCLES_TABLE)  # noqa: E501
@@ -190,8 +190,8 @@ docstring._snippet_manager['demos.colorbar'] = _colorbar_docstring
 
 
 def show_channels(
-    *args, N=100, saturation=True, rgb=False, minhue=0,
-    maxsat=500, width=100, refwidth=1.7
+    *args, N=100, rgb=False, saturation=True,
+    minhue=0, maxsat=500, width=100, refwidth=1.7
 ):
     """
     Show how arbitrary colormap(s) vary with respect to the hue, chroma,
@@ -201,17 +201,14 @@ def show_channels(
 
     Parameters
     ----------
-    *args : colormap-spec, optional
-        Positional arguments are colormap names or objects. Default is
-        :rc:`image.cmap`.
+    *args : colormap-spec, default: :rc:`image.cmap`
+        Positional arguments are colormap names or objects.
     N : int, optional
         The number of markers to draw for each colormap.
     rgb : bool, optional
-        Whether to also show the red, green, and blue channels in the bottom
-        row. Default is ``True``.
+        Whether to also show the red, green, and blue channels in the bottom row.
     saturation : bool, optional
-        Whether to show the HSL and HPL saturation channels alongside the
-        raw chroma.
+        Whether to show the HSL and HPL saturation channels alongside the raw chroma.
     minhue : float, optional
         The minimum hue. This lets you rotate the hue plot cyclically.
     maxsat : float, optional
@@ -329,9 +326,9 @@ def show_colorspaces(*, luminance=None, saturation=None, hue=None, refwidth=2):
 
     Parameters
     ----------
-    luminance : float, optional
+    luminance : float, default: 50
         If passed, saturation-hue cross-sections are drawn for
-        this luminance. Must be between ``0`` and ``100``. Default is ``50``.
+        this luminance. Must be between ``0`` and ``100``.
     saturation : float, optional
         If passed, luminance-hue cross-sections are drawn for this
         saturation. Must be between ``0`` and ``100``.
@@ -509,22 +506,19 @@ def show_cmaps(*args, **kwargs):
     ----------
     *args : colormap-spec, optional
         Colormap names or objects.
-    N : int, optional
-        The number of levels in each colorbar. Default is
-        :rc:`image.lut`.
-    unknown : str, optional
-        Category name for colormaps that are unknown to proplot. The
-        default is ``'User'``. Set this to ``False`` to hide
-        unknown colormaps.
-    include : str or sequence of str, optional
+    N : int, default: :rc:`image.lut`
+        The number of levels in each colorbar.
+    unknown : str, default: 'User'
+        Category name for colormaps that are unknown to proplot.
+        Set this to ``False`` to hide unknown colormaps.
+    include : str or sequence of str, default: None
         Category names to be shown in the table. Use this to limit
         the table to a subset of categories. Valid categories are
         %(demos.cmaps)s.
-    ignore : str or sequence of str, optional
+    ignore : str or sequence of str, default: ``('MATLAB', 'GNUplot', 'GIST', 'Other')``
         Used only if `include` was not passed. Category names to be removed from the
-        table. Default is ``'MATLAB'``, ``'GNUplot'``, ``'GIST'``, and ``'Other'``.
-        Use of these colormaps is discouraged because they contain non-uniform color
-        transitions (see the :ref:`user guide <ug_perceptual>`).
+        table. Use of the default ignored colormaps is discouraged because they contain
+        non-uniform color transitions (see the :ref:`user guide <ug_perceptual>`).
     %(demos.colorbar)s
 
     Returns
@@ -575,14 +569,14 @@ def show_cycles(*args, **kwargs):
     ----------
     *args : colormap-spec, optional
         Cycle names or objects.
-    unknown : str, optional
-        Category name for cycles that are unknown to proplot. The default
-        is ``'User'``. Set this to ``False`` to hide unknown colormaps.
-    include : str or sequence of str, optional
+    unknown : str, default: 'User'
+        Category name for cycles that are unknown to proplot.
+        Set this to ``False`` to hide unknown colormaps.
+    include : str or sequence of str, default: None
         Category names to be shown in the table. Use this to limit
         the table to a subset of categories. Valid categories are
         %(demos.cycles)s.
-    ignore : str or sequence of str, optional
+    ignore : str or sequence of str, default: None
         Used only if `include` was not passed. Category names to be removed
         from the table.
     %(demos.colorbar)s
@@ -664,16 +658,16 @@ def show_colors(*, nhues=17, minsat=10, unknown='User', include=None, ignore=Non
     minsat : float, optional
         The threshold saturation, between ``0`` and ``100``, for designating
         "gray colors" in the color table.
-    unknown : str, optional
-        Category name for color names that are unknown to proplot. The default
-        is ``'User'``. Set this to ``False`` to hide unknown color names.
-    include : str or sequence of str, optional
+    unknown : str, default: 'User'
+        Category name for color names that are unknown to proplot.
+        Set this to ``False`` to hide unknown color names.
+    include : str or sequence of str, default: None
         Category names to be shown in the table. Use this to limit
         the table to a subset of categories. Valid categories are
         %(demos.colors)s.
-    ignore : str or sequence of str, optional
+    ignore : str or sequence of str, default: 'CSS4'
         Used only if `include` was not passed. Category names to be removed
-        from the colormap table. Default is ``'CSS4'``.
+        from the colormap table.
 
     Returns
     -------

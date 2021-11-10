@@ -73,11 +73,11 @@ refaspect : float or 2-tuple of float, optional
     passed. The default value is ``1`` or the "data aspect ratio" if the latter
     is explicitly fixed (as with `~proplot.axes.PlotAxes.imshow` plots and
     `~proplot.axes.Axes.GeoAxes` projections; see `~matplotlib.axes.Axes.set_aspect`).
-refwidth, refheight : unit-spec, optional
-    The width, height of the reference subplot. Default is :rc:`subplots.refwidth`.
+refwidth, refheight : unit-spec, default: :rc:`subplots.refwidth`
+    The width, height of the reference subplot.
     %(units.in)s
-    Ignored if `figwidth`, `figheight`, or `figsize` was passed. If you specify
-    just one, `refaspect` will be respected.
+    Ignored if `figwidth`, `figheight`, or `figsize` was passed. If you
+    specify just one, `refaspect` will be respected.
 ref, aspect, axwidth, axheight
     Aliases for `refnum`, `refaspect`, `refwidth`, `refheight`.
     *These may be deprecated in a future release.*
@@ -90,9 +90,10 @@ width, height
 figsize : 2-tuple, optional
     Tuple specifying the figure ``(width, height)``.
 sharex, sharey, share \
-: {0, False, 1, 'labels', 'labs', 2, 'limits', 'lims', 3, True, 4, 'all'}, optional
-    The axis sharing "level" for the *x* axis, *y* axis, or both axes.
-    Default is :rc:`subplots.share`. Options are as follows:
+: {0, False, 1, 'labels', 'labs', 2, 'limits', 'lims', 3, True, 4, 'all'}, \
+default: :rc:`subplots.share`
+    The axis sharing "level" for the *x* axis, *y* axis, or both
+    axes. Options are as follows:
 
     * ``0`` or ``False``: No axis sharing. This also sets the default `spanx`
       and `spany` values to ``False``.
@@ -105,31 +106,27 @@ sharex, sharey, share \
     * ``4`` or ``'all'``: As above but also share the axis limits, scales, and
       tick locations between subplots not in the same row or column.
 
-spanx, spany, span : bool or {0, 1}, optional
+spanx, spany, span : bool or {0, 1}, default: :rc:`subplots.span`
     Whether to use "spanning" axis labels for the *x* axis, *y* axis, or both
     axes. Default is ``False`` if `sharex`, `sharey`, or `share` are ``0`` or
-    ``False``, :rc:`subplots.span` otherwise. When ``True``, a single, centered
-    axis label is used for all axes with bottom and left edges in the same
-    row or column.  This can considerably redundancy in your figure.
-
-    "Spanning" labels integrate with "shared" axes. For example,
-    for a 3-row, 3-column figure, with ``sharey > 1`` and ``spany=1``,
-    your figure will have 1 ylabel instead of 9.
-alignx, aligny, align : bool or {0, 1}, optional
+    ``False``. When ``True``, a single, centered axis label is used for all axes
+    with bottom and left edges in the same row or column. This can considerably
+    redundancy in your figure. "Spanning" labels integrate with "shared" axes. For
+    example, for a 3-row, 3-column figure, with ``sharey > 1`` and ``spany == True``,
+    your figure will have 1 y axis label instead of 9 y axis labels.
+alignx, aligny, align : bool or {0, 1}, default: :rc:`subplots.align`
     Whether to `"align" axis labels \
 <https://matplotlib.org/stable/gallery/subplots_axes_and_figures/align_labels_demo.html>`__
-    for the *x* axis, *y* axis, or both axes. Aligned labels always appear in the
-    same row or column. This Only has an effect when `spanx`, `spany`, or `span`
-    are ``False``. Default is :rc:`subplots.align`.
+    for the *x* axis, *y* axis, or both axes. Aligned labels always appear in the same
+    row or column. This is ignored if `spanx`, `spany`, or `span` are ``True``.
 %(gridspec.shared)s
 %(gridspec.scalar)s
-tight : bool, optional
+tight : bool, default: :rc`subplots.tight`
     Whether automatic calls to `~Figure.auto_layout` should include
-    :ref:`tight layout adjustments <ug_tight>`. Default is :rc:`subplots.tight`.
-    If you manually specified a spacing in the call to `~proplot.ui.subplots`,
-    it will be used to override the tight layout spacing. For example, with
-    ``left=1``, the left margin is set to 1 em-width, while the remaining
-    margin widths are calculated automatically.
+    :ref:`tight layout adjustments <ug_tight>`. If you manually specified a spacing
+    in the call to `~proplot.ui.subplots`, it will be used to override the tight
+    layout spacing. For example, with ``left=1``, the left margin is set to 1
+    em-width, while the remaining margin widths are calculated automatically.
 %(gridspec.tight)s
 journal : str, optional
     String corresponding to an academic journal standard used to control the figure
@@ -188,10 +185,10 @@ _subplots_params_docstring = """
     Integers must range from 1 to the number of plots, and ``0`` indicates an
     empty space -- for example, ``[[1, 1, 1], [2, 0, 3]]`` creates one long subplot
     in the top row with two subplots in the bottom row separated by a space.
-nrows, ncols : int, optional
-    The number of rows and columns in the subplot grid. Default is ``1`` for both.
-    Ignored if `array` was passed. Use these arguments for simple subplot grids.
-order : {'C', 'F'}, optional
+nrows, ncols : int, default: 1
+    The number of rows and columns in the subplot grid. Ignored
+    if `array` was passed. Use these arguments for simple subplot grids.
+order : {'C', 'F'}, default: 'C'
     Whether subplots are numbered in column-major (``'C'``) or row-major (``'F'``)
     order. Analogous to `numpy.array` ordering. This controls the order that
     subplots appear in the `SubplotGrid` returned by this function, and the order
@@ -299,11 +296,11 @@ number : int, optional
     details. By default this is incremented automatically based on the other subplots
     in the figure. Use e.g. ``number=None`` or ``number=False`` to ensure the subplot
     has no a-b-c label. Note the number corresponding to ``a`` is ``1``, not ``0``.
-autoshare : bool, optional
+autoshare : bool, default: True
     Whether to automatically share the *x* and *y* axes with subplots spanning the
     same rows and columns based on the figure-wide `sharex` and `sharey` settings.
-    Default is ``True``. This has no effect if :rcraw:`subplots.share` is ``False``
-    or if ``sharex=False`` or ``sharey=False`` were passed to the figure.
+    This has no effect if :rcraw:`subplots.share` is ``False`` or if ``sharex=False``
+    or ``sharey=False`` were passed to the figure.
 %(axes.proj)s
 %(axes.proj_kw)s
 %(axes.basemap)s
@@ -355,32 +352,31 @@ loc : str, optional
 
 %(axes.panel_loc)s
 
-space : float or str, optional
+space : float or str, default: None
     The fixed space between the {name} and the subplot grid edge.
     %(units.em)s
     When the :ref:`tight layout algorithm <ug_tight>` is active for the figure,
     `space` is computed automatically (see `pad`). Otherwise, `space` is set to
     a suitable default.
-pad : float or str, optional
+pad : float or str, default: :rc:`subplots.innerpad` or :rc:`subplots.panelpad`
     The :ref:`tight layout padding <ug_tight>` between the {name} and the
-    subplot grid. Default is :rc:`subplots.innerpad` for the first {name}
-    and :rc:`subplots.panelpad` for subsequently "stacked" {name}s.
+    subplot grid. Default is :rcraw:`subplots.innerpad` for the first {name}
+    and :rcraw:`subplots.panelpad` for subsequently "stacked" {name}s.
     %(units.em)s
 row, rows
     Aliases for `span` for {name}s on the left or right side.
 col, cols
     Aliases for `span` for {name}s on the top or bottom side.
-span : int or 2-tuple of int, optional
+span : int or 2-tuple of int, default: None
     Integer(s) indicating the span of the {name} across rows and columns of
     subplots. For example, ``fig.{name}(loc='b', col=1)`` draws a {name} beneath
-    the leftmost column of subplots, and ``fig.{name}(loc='b', cols=(1,2))``
-    draws a {name} beneath the left two columns of subplots. By default,
+    the leftmost column of subplots, and ``fig.{name}(loc='b', cols=(1, 2))``
+    draws a {name} beneath the left two columns of subplots. By default
     the {name} will span every subplot row and column.
 align : {{'center', 'top', 't', 'bottom', 'b', 'left', 'l', 'right', 'r'}}, optional
     For outer {name}s only. How to align the {name} against the
-    subplot edge. Default is ``'center'``. The values ``'top'``
-    and ``'bottom'`` are valid for left and right {name}s and
-    ``'left'`` and ``'right'`` are valid for top and bottom
+    subplot edge. The values ``'top'`` and ``'bottom'`` are valid for left and
+    right {name}s and ``'left'`` and ``'right'`` are valid for top and bottom
     {name}s. The default is always ``'center'``.
 """
 docstring._snippet_manager['figure.legend_space'] = _space_docstring.format(name='legend')  # noqa: E501
@@ -1602,14 +1598,14 @@ class Figure(mfigure.Figure):
         Parameters
         ----------
         %(axes.colorbar_args)s
-        length : float, optional
+        length : float, default: :rc:`colorbar.length`
             The colorbar length. Units are relative to the span of the rows and
-            columns of subplots. Default is :rc:`colorbar.length`.
+            columns of subplots.
         shrink : float, optional
             Alias for `length`. This is included for consistency with
             `matplotlib.figure.Figure.colorbar`.
-        width : unit-spec, optional
-            The colorbar width. Default is :rc:`colorbar.width`.
+        width : unit-spec, default: :rc:`colorbar.width`
+            The colorbar width.
             %(units.in)s
         %(figure.colorbar_space)s
             Has no visible effect if `length` is ``1``.

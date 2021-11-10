@@ -118,26 +118,26 @@ data : dict-like, optional
     be a string `key` and the arrays used for plotting are retrieved
     with ``data[key]``. This is a `native matplotlib feature
     <https://matplotlib.org/stable/gallery/misc/keyword_plotting.html>`__.
-autoformat : bool, optional
+autoformat : bool, default: :rc:`autoformat`
     Whether the `x` axis labels, `y` axis labels, axis formatters, axes titles,
     legend titles, and colorbar labels are automatically configured when a
     `~pandas.Series`, `~pandas.DataFrame`, `~xarray.DataArray`, or `~pint.Quantity`
-    is passed to the plotting command. Default is :rc:`autoformat`. Formatting
-    of `pint.Quantity` unit strings is controlled by :rc:`unitformat`.
+    is passed to the plotting command. Formatting of `pint.Quantity`
+    unit strings is controlled by :rc:`unitformat`.
 """
 _args_2d_shared_docstring = """
 %(plot.args_1d_shared)s
-transpose : bool, optional
+transpose : bool, default: False
     Whether to transpose the input data. This should be used when
     passing datasets with column-major dimension order ``(x, y)``.
     Otherwise row-major dimension order ``(y, x)`` is expected.
-order : {'C', 'F'}, optional
+order : {'C', 'F'}, default: 'C'
     Alternative to `transpose`. ``'C'`` corresponds to the default C-cyle
     row-major ordering (equivalent to ``transpose=False``). ``'F'`` corresponds
     to Fortran-style column-major ordering (equivalent to ``transpose=True``).
-globe : bool, optional
-    For `proplot.axes.GeoAxes` only. Whether to enforce global coverage.
-    Default is ``False``. When set to ``True`` this does the following:
+globe : bool, default: False
+    For `proplot.axes.GeoAxes` only. Whether to enforce global
+    coverage. When set to ``True`` this does the following:
 
     #. Interpolates input data to the North and South poles by setting the data
        values at the poles to the mean from latitudes nearest each pole.
@@ -176,23 +176,23 @@ docstring._snippet_manager['plot.guide'] = _guide_docstring
 
 # Misc shared 1D plotting docstrings
 _inbounds_docstring = """
-inbounds : bool, optional
+inbounds : bool, default: :rc:`axes.inbounds`
     Whether to restrict the default `y` (`x`) axis limits to account for only
-    in-bounds data when the `x` (`y`) axis limits have been locked. Default
-    is :rc:`axes.inbounds`. See also :rcraw:`cmap.inbounds`.
+    in-bounds data when the `x` (`y`) axis limits have been locked.
+    See also :rcraw:`axes.inbounds` and :rcraw:`cmap.inbounds`.
 """
 _error_means_docstring = """
-mean, means : bool, optional
+mean, means : bool, default: False
     Whether to plot the means of each column for 2D `{y}` coordinates. Means
     are calculated with `numpy.nanmean`. If no other arguments are specified,
     this also sets ``barstd=True`` (and ``boxstd=True`` for violin plots).
-median, medians : bool, optional
+median, medians : bool, default: False
     Whether to plot the medians of each column for 2D `{y}` coordinates. Medians
     are calculated with `numpy.nanmedian`. If no other arguments arguments are
     specified, this also sets ``barstd=True`` (and ``boxstd=True`` for violin plots).
 """
 _error_bars_docstring = """
-bars : bool, optional
+bars : bool, default: None
     Shorthand for `barstd`, `barstds`.
 barstd, barstds : bool, float, or 2-tuple of float, optional
     Valid only if `mean` or `median` is ``True``. Standard deviation multiples for
@@ -207,7 +207,7 @@ bardata : array-like, optional
     Valid only if `mean` and `median` are ``False``. If shape is 2 x N, these
     are the lower and upper bounds for the thin error bars. If shape is N, these
     are the absolute, symmetric deviations from the central points.
-boxes : bool, optional
+boxes : bool, default: None
     Shorthand for `boxstd`, `boxstds`.
 boxstd, boxstds, boxpctile, boxpctiles, boxdata : optional
     As with `barstd`, `barpctile`, and `bardata`, but for *thicker error bars*
@@ -216,51 +216,50 @@ boxstd, boxstds, boxpctile, boxpctiles, boxdata : optional
     is ``True``, the default percentile range of 25 to 75 is used (i.e., the
     interquartile range). When "boxes" and "bars" are combined, this has the
     effect of drawing miniature box-and-whisker plots.
-capsize : float, optional
-    The cap size for thin error bars in points. Default is :rc:`errorbar.capsize`.
-barz, barzorder, boxz, boxzorder : float, optional
-    The "zorder" for the thin and thick error bars. Default is ``2.5``.
-barc, barcolor, boxc, boxcolor : color-spec, optional
-    Colors for the thin and thick error bars. Default is
-    :rc:`boxplot.whiskerprops.color`.
-barlw, barlinewidth, boxlw, boxlinewidth : float, optional
-    Line widths for the thin and thick error bars, in points. The defaults
-    :rc:`boxplot.whiskerprops.linewidth` (bars) and four times that value (boxes).
-boxm, boxmarker : bool or marker-spec, optional
-    Whether to draw a small marker in the middle of the box denoting the mean or
-    median position. Ignored if `boxes` is ``False``. Default is ``'o'``.
-boxms, boxmarkersize : size-spec, optional
-    The marker size for the `boxmarker` marker in points ** 2. Default size
-    is equal to ``(2 * boxlinewidth) ** 2``.
-boxmc, boxmarkercolor, boxmec, boxmarkeredgecolor : color-spec, optional
-    Color, face color, and edge color for the `boxmarker` marker. Default color
-    and edge color are ``'w'``.
+capsize : float, default: :rc:`errorbar.capsize`
+    The cap size for thin error bars in points.
+barz, barzorder, boxz, boxzorder : float, default: 2.5
+    The "zorder" for the thin and thick error bars.
+barc, barcolor, boxc, boxcolor \
+: color-spec, default: :rc:`boxplot.whiskerprops.color`
+    Colors for the thin and thick error bars.
+barlw, barlinewidth, boxlw, boxlinewidth \
+: float, default: :rc:`boxplot.whiskerprops.linewidth`
+    Line widths for the thin and thick error bars, in points. The default for boxes
+    is 4 times :rcraw:`boxplot.whiskerprops.linewidth`.
+boxm, boxmarker : bool or marker-spec, default: 'o'
+    Whether to draw a small marker in the middle of the box denoting
+    the mean or median position. Ignored if `boxes` is ``False``.
+boxms, boxmarkersize : size-spec, default: ``(2 * boxlinewidth) ** 2``
+    The marker size for the `boxmarker` marker in points ** 2.
+boxmc, boxmarkercolor, boxmec, boxmarkeredgecolor : color-spec, default: 'w'
+    Color, face color, and edge color for the `boxmarker` marker.
 """
 _error_shading_docstring = """
-shade : bool, optional
+shade : bool, default: None
     Shorthand for `shadestd`.
 shadestd, shadestds, shadepctile, shadepctiles, shadedata : optional
     As with `barstd`, `barpctile`, and `bardata`, but using *shading* to indicate
     the error range. If `shadestds` is ``True``, the default standard deviation
     range of +/-2 is used. If `shadepctiles` is ``True``, the default
     percentile range of 10 to 90 is used.
-fade : bool, optional
+fade : bool, default: None
     Shorthand for `fadestd`.
 fadestd, fadestds, fadepctile, fadepctiles, fadedata : optional
     As with `shadestd`, `shadepctile`, and `shadedata`, but for an additional,
     more faded, *secondary* shaded region. If `fadestds` is ``True``, the default
     standard deviation range of +/-3 is used. If `fadepctiles` is ``True``,
     the default percentile range of 0 to 100 is used.
-shadec, shadecolor, fadec, fadecolor : color-spec, optional
-    Colors for the different shaded regions. Default is to inherit the parent color.
-shadez, shadezorder, fadez, fadezorder : float, optional
-    The "zorder" for the different shaded regions. Default is ``1.5``.
-shadea, shadealpha, fadea, fadealpha : float, optional
-    The opacity for the different shaded regions. Defaults are ``0.4`` and ``0.2``.
-shadelw, shadelinewidth, fadelw, fadelinewidth : float, optional
-    The edge line width for the shading patches. Default is :rc:`patch.linewidth`.
-shdeec, shadeedgecolor, fadeec, fadeedgecolor : float, optional
-    The edge color for the shading patches. Default is ``'none'``.
+shadec, shadecolor, fadec, fadecolor : color-spec, default: None
+    Colors for the different shaded regions. The parent artist color is used by default.
+shadez, shadezorder, fadez, fadezorder : float, default: 1.5
+    The "zorder" for the different shaded regions.
+shadea, shadealpha, fadea, fadealpha : float, default: 0.4, 0.2
+    The opacity for the different shaded regions.
+shadelw, shadelinewidth, fadelw, fadelinewidth : float, default: :rc:`patch.linewidth`.
+    The edge line width for the shading patches.
+shdeec, shadeedgecolor, fadeec, fadeedgecolor : float, default: 'none'
+    The edge color for the shading patches.
 shadelabel, fadelabel : bool or str, optional
     Labels for the shaded regions to be used as separate legend entries. To toggle
     labels "on" and apply a *default* label, use e.g. ``shadelabel=True``. To apply
@@ -287,33 +286,40 @@ cycle_kw : dict-like, optional
     Passed to `~proplot.constructor.Cycle`.
 """
 _cmap_norm_docstring = """
-cmap : colormap-spec, optional
-    The colormap specifer, passed to the `~proplot.constructor.Colormap`
-    constructor function.
+cmap : colormap-spec, default: \
+:rc:`cmap.sequential` or :rc:`cmap.diverging`
+    The colormap specifer, passed to the `~proplot.constructor.Colormap` constructor
+    function. If :rcraw:`cmap.autodiverging` is ``True`` and the normalization
+    range contains negative and positive values then :rcraw:`cmap.diverging` is used.
+    Otherwise :rcraw:`cmap.sequential` is used.
 cmap_kw : dict-like, optional
     Passed to `~proplot.constructor.Colormap`.
 c, color, colors : color-spec or sequence of color-spec, optional
     The color(s) used to create a `~proplot.colors.DiscreteColormap`.
     If not passed, `cmap` is used.
-norm : norm-spec, optional
+norm : norm-spec, default: \
+`~matplotlib.colors.Normalize` or `~proplot.colors.DivergingNorm`
     The data value normalizer, passed to the `~proplot.constructor.Norm`
     constructor function. If `discrete` is ``True`` then 1) this affects the default
     level-generation algorithm (e.g. ``norm='log'`` builds levels in log-space) and
     2) this is passed to `~proplot.colors.DiscreteNorm` to scale the colors before they
     are discretized (if `norm` is not already a `~proplot.colors.DiscreteNorm`).
+    If :rcraw:`cmap.autodiverging` is ``True`` and the normalization range contains
+    negative and positive values then `~proplot.colors.DivergingNorm` is used.
+    Otherwise `~matplotlib.colors.Normalize` is used.
 norm_kw : dict-like, optional
     Passed to `~proplot.constructor.Norm`.
-extend : {'neither', 'both', 'min', 'max'}, optional
-    Direction for drawing colorbar "extensions" (i.e. color keys for out-of-bounds
-    data on the end of the colorbar). Default is ``'neither'``.
-discrete : bool, optional
+extend : {'neither', 'both', 'min', 'max'}, default: 'neither'
+    Direction for drawing colorbar "extensions" indicating
+    out-of-bounds data on the end of the colorbar.
+discrete : bool, default: :rc:`cmap.discrete`
     If ``False``, then `~proplot.colors.DiscreteNorm` is not applied to the
     colormap. Instead, for non-contour plots, the number of levels will be
     roughly controlled by :rcraw:`cmap.lut`. This has a similar effect to
-    using `levels=large_number` but it may improve rendering speed. Default
-    is ``True`` for only contour-plotting commands like `~proplot.axes.Axes.contourf`
+    using `levels=large_number` but it may improve rendering speed. Default is
+    ``True`` for only contour-plotting commands like `~proplot.axes.Axes.contourf`
     and pseudocolor-plotting commands like `~proplot.axes.Axes.pcolor`.
-sequential, diverging, cyclic, qualitative : bool, optional
+sequential, diverging, cyclic, qualitative : bool, default: None
     Boolean arguments used if `cmap` is not passed. Set these to ``True``
     to use the default :rcraw:`cmap.sequential`, :rcraw:`cmap.diverging`,
     :rcraw:`cmap.cyclic`, and :rcraw:`cmap.qualitative` colormaps.
@@ -340,46 +346,46 @@ vmin, vmax : float, optional
 _manual_levels_docstring = """
 N
     Shorthand for `levels`.
-levels : int or sequence of float, optional
+levels : int or sequence of float, default: :rc:`cmap.levels`
     The number of level edges or a sequence of level edges. If the former, `locator`
     is used to generate this many level edges at "nice" intervals. If the latter,
     the levels should be monotonically increasing or decreasing (note decreasing
-    levels fail with ``contour`` plots). Default is :rc:`cmap.levels`.
-values : int or sequence of float, optional
+    levels fail with ``contour`` plots).
+values : int or sequence of float, default: None
     The number of level centers or a sequence of level centers. If the former,
     `locator` is used to generate this many level centers at "nice" intervals.
     If the latter, levels are inferred using `~proplot.utils.edges`.
     This will override any `levels` input.
 """
 _auto_levels_docstring = """
-robust : bool, float, or 2-tuple, optional
+robust : bool, float, or 2-tuple, default: :rc:`cmap.robust`
     If ``True`` and `vmin` or `vmax` were not provided, they are
     determined from the 2nd and 98th data percentiles rather than the
     minimum and maximum. If float, this percentile range is used (for example,
     ``90`` corresponds to the 5th to 95th percentiles). If 2-tuple of float,
     these specific percentiles should be used. This feature is useful
-    when your data has large outliers. Default is :rc:`cmap.robust`.
-inbounds : bool, optional
+    when your data has large outliers.
+inbounds : bool, default: :rc:`cmap.inbounds`
     If ``True`` and `vmin` or `vmax` were not provided, when axis limits
     have been explicitly restricted with `~matplotlib.axes.Axes.set_xlim`
     or `~matplotlib.axes.Axes.set_ylim`, out-of-bounds data is ignored.
-    Default is :rc:`cmap.inbounds`. See also :rcraw:`axes.inbounds`.
-locator : locator-spec, optional
+    See also :rcraw:`cmap.inbounds` and :rcraw:`axes.inbounds`.
+locator : locator-spec, default: `matplotlib.ticker.MaxNLocator`
     The locator used to determine level locations if `levels` or `values` were not
     already passed as lists. Passed to the `~proplot.constructor.Locator` constructor.
-    Default is `~matplotlib.ticker.MaxNLocator` with ``levels`` integer levels.
+    Default is `~matplotlib.ticker.MaxNLocator` with `levels` integer levels.
 locator_kw : dict-like, optional
     Keyword arguments passed to `matplotlib.ticker.Locator` class.
-symmetric : bool, optional
+symmetric : bool, default: False
     If ``True``, the normalization range or discrete colormap levels are
-    symmetric about zero. Default is always ``False``.
-positive : bool, optional
+    symmetric about zero.
+positive : bool, default: False
     If ``True``, the normalization range or discrete colormap levels are
-    positive with a minimum at zero. Default is always ``False``.
-negative : bool, optional
+    positive with a minimum at zero.
+negative : bool, default: False
     If ``True``, the normaliation range or discrete colormap levels are
-    negative with a minimum at zero. Default is always ``False``.
-nozero : bool, optional
+    negative with a minimum at zero.
+nozero : bool, default: False
     If ``True``, ``0`` is removed from the level list. This is mainly useful for
     single-color `~matplotlib.axes.Axes.contour` plots.
 """
@@ -431,13 +437,13 @@ docstring._snippet_manager['plot.labels_2d'] = _labels_2d_docstring
 
 # Negative-positive colors
 _negpos_docstring = """
-negpos : bool, optional
+negpos : bool, default: False
     Whether to shade {objects} where ``{pos}`` with `poscolor`
-    and where ``{neg}`` with `negcolor`. Default is ``False``. If
-    ``True`` this function will return a 2-tuple of values.
-negcolor, poscolor : color-spec, optional
-    Colors to use for the negative and positive {objects}. Ignored if `negpos`
-    is ``False``. Defaults are :rc:`negcolor` and :rc:`poscolor`.
+    and where ``{neg}`` with `negcolor`. If ``True`` this
+    function will return a length-2 silent list of handles.
+negcolor, poscolor : color-spec, default: :rc:`negcolor`, :rc:`poscolor`
+    Colors to use for the negative and positive {objects}. Ignored if
+    `negpos` is ``False``.
 """
 docstring._snippet_manager['plot.negpos_fill'] = _negpos_docstring.format(
     objects='patches', neg='y2 < y1', pos='y2 >= y1'
@@ -544,9 +550,9 @@ Parameters
 
 Other parameters
 ----------------
-stack, stacked : bool, optional
+stack, stacked : bool, default: False
     Whether to "stack" lines from successive columns of {y} data
-    or plot lines on top of each other. Default is ``False``.
+    or plot lines on top of each other.
 %(plot.cycle)s
 %(artist.line)s
 %(plot.negpos_lines)s
@@ -586,10 +592,10 @@ c, color, colors, values, labels : sequence of float, str, or color-spec, option
     be labeled with the strings. If they are colors, they are used for the
     line segments and `cmap` is ignored -- for example, ``colors='blue'``
     makes a monochromatic "parametric" line.
-interp : int, optional
+interp : int, default: 0
     Interpolate to this many additional points between the parametric
-    coordinates. Default is ``0``. This can be increased to make the color
-    gradations between a small number of coordinates appear "smooth".
+    coordinates. This can be increased to make the color gradations
+    between a small number of coordinates appear "smooth".
 %(plot.args_1d_shared)s
 
 Other parameters
@@ -640,7 +646,7 @@ smin, smax : float, optional
     The minimum and maximum marker size area in units ``points ** 2``. Ignored
     if `absolute_size` is ``True``. Default value for `smin` is ``1`` and for
     `smax` is the square of :rc:`lines.markersize`.
-absolute_size : bool, optional
+absolute_size : bool, default: True or False
     Whether `s` should be taken to represent "absolute" marker size areas in units
     ``points ** 2`` or "relative" marker size areas scaled by `smin` and `smax`.
     Default is ``True`` if `s` is scalar and ``False`` if `s` is array-like.
@@ -685,18 +691,19 @@ Plot individual, grouped, or stacked bars.
 Parameters
 ----------
 %(plot.args_1d_{y})s
-width : float or array-like, optional
-    The width(s) of the bars relative to the {x} coordinate step size.
-    Can be passed as a third positional argument.
-{bottom} : float or array-like, optional
-    The coordinate(s) of the {bottom} edge of the bars. Default is
-    ``0``. Can be passed as a fourth positinal argument.
-absolute_width : bool, optional
-    Whether to make the `width` units *absolute*. If ``True``, this
-    restores the default matplotlib behavior. Default is ``False``.
-stack, stacked : bool, optional
-    Whether to "stack" bars from successive columns of {y} data
-    or plot bars side-by-side in groups. Default is ``False``.
+width : float or array-like, default: 0.8
+    The width(s) of the bars. Can be passed as a third positional argument. If
+    `absolute_width` is ``True`` (the default) these are in units relative to the
+    {x} coordinate step size. Otherwise these are in {x} coordinate units.
+{bottom} : float or array-like, default: 0
+    The coordinate(s) of the {bottom} edge of the bars.
+    Can be passed as a fourth positional argument.
+absolute_width : bool, default: False
+    Whether to make the `width` units *absolute*. If ``True``,
+    this restores the default matplotlib behavior.
+stack, stacked : bool, default: False
+    Whether to "stack" bars from successive columns of {y}
+    data or plot bars side-by-side in groups.
 %(plot.args_1d_shared)s
 
 Other parameters
@@ -735,9 +742,9 @@ Plot individual, grouped, or overlaid shading patches.
 Parameters
 ----------
 %(plot.args_1d_multi{y})s
-stack, stacked : bool, optional
-    Whether to "stack" area patches from successive columns of {y} data
-    or plot area patches on top of each other. Default is ``False``.
+stack, stacked : bool, default: False
+    Whether to "stack" area patches from successive columns of {y}
+    data or plot area patches on top of each other.
 %(plot.args_1d_shared)s
 
 Other parameters
@@ -784,33 +791,39 @@ Parameters
 
 Other parameters
 ----------------
-fill : bool, optional
-    Whether to fill the box with a color. Default is ``True``.
-mean, means : bool, optional
+fill : bool, default: True
+    Whether to fill the box with a color.
+mean, means : bool, default: False
     If ``True``, this passes ``showmeans=True`` and ``meanline=True`` to
     `matplotlib.axes.Axes.boxplot`. Adds mean lines alongside the median.
 %(plot.cycle)s
 %(artist.patch_black)s
 m, marker, ms, markersize : float or str, optional
-    Marker style and size for the 'fliers', i.e. outliers. Default is
-    determined by :rcraw:`boxplot.flierprops`.
+    Marker style and size for the 'fliers', i.e. outliers. See the
+    ``boxplot.flierprops`` `~matplotlib.rcParams` settings.
 meanls, medianls, meanlinestyle, medianlinestyle, meanlinestyles, medianlinestyles \
-: line style-spec, optional
-    The line style for the mean and median lines drawn horizontally
-    across the box.
+: str, optional
+    Line style for the mean and median lines drawn across the box.
+    See the ``boxplot.meanprops`` and ``boxplot.medianprops``
+    `~matplotlib.rcParams` settings.
 boxc, capc, whiskerc, flierc, meanc, medianc, \
 boxcolor, capcolor, whiskercolor, fliercolor, meancolor, mediancolor \
 boxcolors, capcolors, whiskercolors, fliercolors, meancolors, mediancolors \
 : color-spec or sequence, optional
-    The color of various boxplot components. If a sequence, should be the
-    same length as the number of boxes. These are shorthands so you don't
-    have to pass e.g. a ``boxprops`` dictionary.
+    Color of various boxplot components. If a sequence, should be the same length as
+    the number of boxes. These are shorthands so you don't have to pass e.g. a
+    `boxprops` dictionary keyword. See the ``boxplot.boxprops``, ``boxplot.capprops``,
+    ``boxplot.whiskerprops``, ``boxplot.flierprops``, ``boxplot.meanprops``, and
+    ``boxplot.medianprops`` `~matplotlib.rcParams` settings.
 boxlw, caplw, whiskerlw, flierlw, meanlw, medianlw, boxlinewidth, caplinewidth, \
 meanlinewidth, medianlinewidth, whiskerlinewidth, flierlinewidth, boxlinewidths, \
 caplinewidths, meanlinewidths, medianlinewidths, whiskerlinewidths, flierlinewidths \
 : float, optional
-    The line width of various boxplot components. These are shorthands so
-    you don't have to pass e.g. a ``boxprops`` dictionary.
+    Line width of various boxplot components. These are shorthands so
+    you don't have to pass e.g. a `boxprops` dictionary keyword.
+    See the ``boxplot.boxprops``, ``boxplot.capprops``, ``boxplot.whiskerprops``,
+    ``boxplot.flierprops``, ``boxplot.meanprops``, and ``boxplot.medianprops``
+    `~matplotlib.rcParams` settings.
 %(plot.labels_1d)s
 **kwargs
     Passed to `matplotlib.axes.Axes.boxplot`.
@@ -883,7 +896,7 @@ bins : int or sequence of float, optional
 %(plot.weights)s
 histtype : {{'bar', 'barstacked', 'step', 'stepfilled'}}, optional
     The histogram type. See `matplotlib.axes.Axes.hist` for details.
-width, rwidth : float, optional
+width, rwidth : float, default: 0.8 or 1
     The bar width(s) for bar-type histograms relative to the bin size. Default
     is ``0.8`` for multiple columns of unstacked data and ``1`` otherwise.
 stack, stacked : bool, optional
@@ -1073,11 +1086,10 @@ boxes, adds major ticks to the center of each grid box, disables minor
 ticks and gridlines, and sets :rcraw:`cmap.discrete` to ``False`` by default
 """.strip()
 _heatmap_aspect = """
-aspect : {'equal', 'auto'} or float, optional
-    Modify the axes aspect ratio. The aspect ratio is of particular
-    relevance for heatmaps since it may lead to non-square grid boxes.
-    This parameter is a shortcut for calling `~matplotlib.axes.set_aspect`.
-    Default is :rc:`image.aspect`. The options are as follows:
+aspect : {'equal', 'auto'} or float, default: :rc:`image.aspet`
+    Modify the axes aspect ratio. The aspect ratio is of particular relevance for
+    heatmaps since it may lead to non-square grid boxes. This parameter is a shortcut
+    for calling `~matplotlib.axes.set_aspect`. The options are as follows:
 
     * Number: The data aspect ratio.
     * ``'equal'``: A data aspect ratio of 1.

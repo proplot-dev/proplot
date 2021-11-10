@@ -72,19 +72,19 @@ color : color-spec
     channels are larger than ``2``, the channels are assumed to be
     on the ``0`` to ``255`` scale and are divided by ``255``.
 space : {'rgb', 'hsv', 'hcl', 'hpl', 'hsl'}, optional
-    The colorspace for the input channel values. Ignored unless `color` is
-    a tuple of numbers.
-cycle : str, optional
+    The colorspace for the input channel values. Ignored unless `color`
+    is a tuple of numbers.
+cycle : str, default: :rcraw:`cycle`
     The registered color cycle name used to interpret colors that
-    look like ``'C0'``, ``'C1'``, etc. Default is :rc:`cycle`.
-clip : bool, optional
+    look like ``'C0'``, ``'C1'``, etc.
+clip : bool, default: True
     Whether to clip channel values into the valid ``0`` to ``1`` range.
-    Default is ``True``.
+    Setting this to ``False`` can result in invalid colors.
 """
 _docstring_space = """
 space : {'hcl', 'hpl', 'hsl', 'hsv'}, optional
     The hue-saturation-luminance-like colorspace used to transform the color.
-    Default is the perceptually uniform colorspace ``'hcl'``.
+    Default is the strictly perceptually uniform colorspace ``'hcl'``.
 """
 _docstring_hex = """
 color : str
@@ -556,9 +556,9 @@ def to_hex(color, space='rgb', cycle=None, keep_alpha=True):
     Parameters
     ----------
     %(utils.to)s
-    keep_alpha : bool, optional
+    keep_alpha : bool, default: True
         Whether to keep the opacity channel. If ``True`` an 8-digit HEX
-        is returned. Otherwise a 6-digit HEX is returned. Default is ``True``.
+        is returned. Otherwise a 6-digit HEX is returned.
 
     Returns
     -------
@@ -805,11 +805,11 @@ def units(
         .. _em: https://en.wikipedia.org/wiki/Em_(typography)
         .. _en: https://en.wikipedia.org/wiki/En_(typography)
 
-    numeric : str, optional
-        The units associated with numeric input. Default is inches.
-    dest : str, optional
-        The destination units. Default is the same as `numeric`.
-    fontsize : str or float, optional
+    numeric : str, default: 'in'
+        The units associated with numeric input.
+    dest : str, default: `numeric`
+        The destination units.
+    fontsize : str or float, default: :rc:`font.size` or :rc:`axes.titlesize`
         The font size in points used for scaling. Default is
         :rcraw:`font.size` for ``em`` and ``en`` units and
         :rcraw:`axes.titlesize` for ``Em`` and ``En`` units.
@@ -817,7 +817,7 @@ def units(
         The axes to use for scaling units that look like ``'0.1ax'``.
     figure : `~matplotlib.figure.Figure`, optional
         The figure to use for scaling units that look like ``'0.1fig'``.
-        If ``None`` we try to get the figure from ``axes.figure``.
+        If not provided we try to get the figure from ``axes.figure``.
     width : bool, optional
         Whether to use the width or height for the axes and figure
         relative coordinates.

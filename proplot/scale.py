@@ -182,15 +182,15 @@ class LogScale(_Scale, mscale.LogScale):
         """
         Parameters
         ----------
-        base : float, optional
-            The base of the logarithm. Default is ``10``.
+        base : float, default: 10
+            The base of the logarithm.
         nonpos : {'mask', 'clip'}, optional
             Non-positive values in *x* or *y* can be masked as
             invalid, or clipped to a very small positive number.
-        subs : sequence of int, optional
+        subs : sequence of int, default: ``(1, 2, 3, 4, 5, 6, 7, 8, 9)``
             Default *minor* tick locations are on these multiples of each power
-            of the base. For example, ``subs=(1, 2, 5)`` draws ticks on 1, 2, 5,
-            10, 20, 50, etc. The default is ``subs=numpy.arange(1, 10)``.
+            of the base. For example, ``subs=(1, 2, 5)`` draws ticks on 1, 2,
+            5, 10, 20, 50, 100, 200, 500, etc.
         basex, basey, nonposx, nonposy, subsx, subsy
             Aliases for the above keywords. These used to be conditional
             on the *name* of the axis.
@@ -215,24 +215,22 @@ class SymmetricalLogScale(_Scale, mscale.SymmetricalLogScale):
         """
         Parameters
         ----------
-        base : float, optional
-            The base of the logarithm. Default is ``10``.
-        linthresh : float, optional
-            Defines the range ``(-linthresh, linthresh)``, within which the
-            plot is linear.  This avoids having the plot go to infinity around
-            zero. Defaults to 2.
-        linscale : float, optional
+        base : float, default: 10
+            The base of the logarithm.
+        linthresh : float, default: 1
+            Defines the range ``(-linthresh, linthresh)``, within which the plot
+            is linear.  This avoids having the plot go to infinity around zero.
+        linscale : float, default: 1
             This allows the linear range ``(-linthresh, linthresh)`` to be
             stretched relative to the logarithmic range. Its value is the
             number of decades to use for each half of the linear range. For
             example, when `linscale` is ``1`` (the default), the space used
             for the positive and negative halves of the linear range will be
             equal to one decade in the logarithmic range.
-        subs : sequence of int, optional
+        subs : sequence of int, default: ``(1, 2, 3, 4, 5, 6, 7, 8, 9)``
             Default *minor* tick locations are on these multiples of each power
             of the base. For example, ``subs=(1, 2, 5)`` draws ticks on 1, 2,
-            5, 10, 20, 50, 100, 200, 500, etc. The default is
-            ``subs=numpy.arange(1, 10)``.
+            5, 10, 20, 50, 100, 200, 500, etc.
         basex, basey, linthreshx, linthreshy, linscalex, linscaley, subsx, subsy
             Aliases for the above keywords. These keywords used to be
             conditional on the name of the axis.
@@ -278,9 +276,9 @@ class FuncScale(_Scale, mscale.ScaleBase):
         invert : bool, optional
             If ``True``, the forward and inverse functions are *swapped*.
             Used when drawing dual axes.
-        parent_scale : `~matplotlib.scale.ScaleBase`
-            The axis scale of the "parent" axis. Its forward transform is
-            applied to the `FuncTransform`. Default is `LinearScale`.
+        parent_scale : `~matplotlib.scale.ScaleBase`, default: `LinearScale`
+            The axis scale of the "parent" axis. Its forward transform
+            is applied to the `FuncTransform`.
         major_locator, minor_locator : locator-spec, optional
             The default major and minor locator. Passed to the
             `~proplot.constructor.Locator` constructor function. By default, these are

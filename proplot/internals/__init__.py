@@ -110,53 +110,52 @@ docstring._snippet_manager['units.em'] = _units_docstring.format(units='em-width
 # Style docstrings
 # NOTE: These are needed in a few different places
 _line_docstring = """
-lw, linewidth, linewidths : unit-spec, optional
-    The width of the line(s). Default is :rc:`lines.linewidth`.
+lw, linewidth, linewidths : unit-spec, default: :rc:`lines.linewidth`
+    The width of the line(s).
     %(units.pt)s
-ls, linestyle, linestyles : str, optional
-    The style of the line(s). Default is :rc:`lines.linestyle`.
+ls, linestyle, linestyles : str, default: :rc:`lines.linestyle`
+    The style of the line(s).
 c, color, colors : color-spec, optional
-    The color of the line(s). Default is to use the property `cycle`.
+    The color of the line(s). The property `cycle` is used by default.
 a, alpha, alphas : float, optional
-    The opacity of the line(s).
+    The opacity of the line(s). Inferred from `color` by default.
 """
 _patch_docstring = """
-lw, linewidth, linewidths : unit-spec, optional
-    The edge width of the patch(es). Default is :rc:`patch.linewidth`.
+lw, linewidth, linewidths : unit-spec, default: :rc:`patch.linewidth`
+    The edge width of the patch(es).
     %(units.pt)s
-ls, linestyle, linestyles : str, optional
-    The edge style of the patch(es). Default is ``'-'``.
-ec, edgecolor, edgecolors : color-spec, optional
-    The edge color of the patch(es). Default is ``'{edgecolor}'``.
+ls, linestyle, linestyles : str, default: '-'
+    The edge style of the patch(es).
+ec, edgecolor, edgecolors : color-spec, default: '{edgecolor}'
+    The edge color of the patch(es).
 fc, facecolor, facecolors, fillcolor, fillcolors : color-spec, optional
-    The face color of the patch(es). Default is to use the property `cycle`.
+    The face color of the patch(es). The property `cycle` is used by default.
 a, alpha, alphas : float, optional
-    The opacity of the patch(es).
+    The opacity of the patch(es). Inferred from `facecolor` and `edgecolor` by default.
 """
 _pcolor_collection_docstring = """
-lw, linewidth, linewidths : unit-spec, optional
+lw, linewidth, linewidths : unit-spec, default: 0.3
     The width of lines between grid boxes.
     %(units.pt)s
-ls, linestyle, linestyles : str, optional
+ls, linestyle, linestyles : str, default: '-'
     The style of lines between grid boxes.
-ec, edgecolor, edgecolors : color-spec, optional
+ec, edgecolor, edgecolors : color-spec, default: 'k'
     The color of lines between grid boxes.
 a, alpha, alphas : float, optional
-    The opacity of the grid boxes.
+    The opacity of the grid boxes. Inferred from `cmap` by default.
 """
 _contour_collection_docstring = """
-lw, linewidth, linewidths : unit-spec, optional
-    The width of the contour lines. For `contourf` plots,
-    lines are added between the filled contours.
-    %(units.pt)s
-ls, linestyle, linestyles : str, optional
-    The style of the contour lines. For `contourf` plots,
-    lines are added between the filled contours.
-ec, edgecolor, edgecolors : color-spec, optional
-    The color for the contour lines. For `contourf` plots,
-    lines are added between the filled contours.
+lw, linewidth, linewidths : unit-spec, default: 0.3 or :rc:`lines.linewidth`
+    The width of the line contours. Default is ``0.3`` when adding to filled contours
+    or :rc:`lines.linewidth` otherwise. %(units.pt)s
+ls, linestyle, linestyles : str, default: '-' or :rc:`contour.negative_linestyle`
+    The style of the line contours. Default is ``'-'`` for positive contours and
+    :rcraw:`contour.negative_linestyle` for negative contours.
+ec, edgecolor, edgecolors : color-spec, default: 'k' or inferred
+    The color of the line contours. Default is ``'k'`` when adding to filled contours
+    or inferred from `color` or `cmap` otherwise.
 a, alpha, alpha : float, optional
-    The opacity of the contours.
+    The opacity of the contours. Inferred from `edgecolor` by default.
 """
 _text_docstring = """
 name, fontname, family, fontfamily : str, optional

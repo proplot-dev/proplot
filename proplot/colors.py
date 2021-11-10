@@ -262,8 +262,8 @@ COLORS_REPLACE = (
 
 # Simple snippets
 _N_docstring = """
-N : int, optional
-    Number of points in the colormap lookup table. Default is :rc:`image.lut`.
+N : int, default: :rc:`image.lut`
+    Number of points in the colormap lookup table.
 """
 _alpha_docstring = """
 alpha : float, optional
@@ -292,12 +292,12 @@ _space_docstring = """
 space : {'hsl', 'hpl', 'hcl', 'hsv'}, optional
     The hue, saturation, luminance-style colorspace to use for interpreting
     the channels. See `this page <http://www.hsluv.org/comparison/>`__ for
-    a full description. Default is ``'hsl'``.
+    a full description.
 """
 _name_docstring = """
-name : str, optional
+name : str, default: '_no_name'
     The colormap name. This can also be passed as the first
-    positional string argument. Default is ``'_no_name'``.
+    positional string argument.
 """
 _ratios_docstring = """
 ratios : sequence of float, optional
@@ -977,17 +977,17 @@ class ContinuousColormap(mcolors.LinearSegmentedColormap, _Colormap):
         *args
             Instances of `ContinuousColormap`.
         ratios : sequence of float, optional
-            Relative extent of each component colormap in the merged colormap.
-            Length must equal ``len(args) + 1``.
-
+            Relative extent of each component colormap in the
+            merged colormap. Length must equal ``len(args) + 1``.
             For example, ``cmap1.append(cmap2, ratios=(2, 1))`` generates
             a colormap with the left two-thrids containing colors from
             ``cmap1`` and the right one-third containing colors from ``cmap2``.
         name : str, optional
-            The new colormap name. Default is ``'_name1_name2_[...]'``.
+            The colormap name. Default is to merge each name with underscores and
+            prepend a leading underscore, for example ``_name1_name2``.
         N : int, optional
-            The number of points in the colormap lookup table. Default
-            is :rc:`image.lut` times the number of colormaps.
+            The number of points in the colormap lookup table. Default is
+            to sum the length of each lookup table.
 
         Other parameters
         ----------------
@@ -1111,12 +1111,11 @@ class ContinuousColormap(mcolors.LinearSegmentedColormap, _Colormap):
             The proportion to cut from the center of the colormap. For example,
             ``cut=0.1`` cuts the central 10%, or ``cut=-0.1`` fills the ctranl 10%
             of the colormap with the current central color (usually white).
-        name : str, optional
-            The new colormap name. Default is ``'_name_copy'``.
-        left, right : float, optional
-            The colormap indices for the "leftmost" and "rightmost" colors.
-            Defaults are ``0`` and ``1``. See
-            `~ContinuousColormap.truncate` for details.
+        name : str, default: '_name_copy'
+            The new colormap name.
+        left, right : float, default: 0, 1
+            The colormap indices for the "leftmost" and "rightmost"
+            colors. See `~ContinuousColormap.truncate` for details.
         right : float, optional
             The colormap index for the new "rightmost" color. Must fall between
 
@@ -1175,8 +1174,8 @@ class ContinuousColormap(mcolors.LinearSegmentedColormap, _Colormap):
 
         Parameters
         ----------
-        name : str, optional
-            The new colormap name. Default is ``'_name_r'``.
+        name : str, default: '_name_r'
+            The new colormap name.
 
         Other parameters
         ----------------
@@ -1309,10 +1308,10 @@ class ContinuousColormap(mcolors.LinearSegmentedColormap, _Colormap):
 
         Parameters
         ----------
-        shift : float, optional
-            The number of degrees to shift, out of 360 degrees. Default is ``180``.
-        name : str, optional
-            The new colormap name. Default is ``'_name_s'``.
+        shift : float, default: 180
+            The number of degrees to shift, out of 360 degrees.
+        name : str, default: '_name_s'
+            The new colormap name.
 
         Other parameters
         ----------------
@@ -1347,14 +1346,14 @@ class ContinuousColormap(mcolors.LinearSegmentedColormap, _Colormap):
 
         Parameters
         ----------
-        left : float, optional
+        left : float, default: 0
             The colormap index for the new "leftmost" color. Must fall between ``0``
             and ``1``. For example, ``left=0.1`` cuts the leftmost 10%% of the colors.
-        right : float, optional
+        right : float, default: 1
             The colormap index for the new "rightmost" color. Must fall between ``0``
             and ``1``. For example, ``right=0.9`` cuts the leftmost 10%% of the colors.
-        name : str, optional
-            The new colormap name. Default is ``'_name_copy'``.
+        name : str, default: '_name_copy'
+            The new colormap name.
 
         Other parameters
         ----------------
@@ -1443,11 +1442,11 @@ class ContinuousColormap(mcolors.LinearSegmentedColormap, _Colormap):
 
         Parameters
         ----------
-        name : str
-            The new colormap name. Default is ``'_name_copy'``.
+        name : str, default: '_name_copy'
+            The new colormap name.
         segmentdata, N, alpha, gamma, cyclic : optional
-            See `ContinuousColormap`. If not provided, these are copied from
-            the current colormap.
+            See `ContinuousColormap`. If not provided, these are copied
+            from the current colormap.
 
         See also
         --------
@@ -1484,8 +1483,8 @@ class ContinuousColormap(mcolors.LinearSegmentedColormap, _Colormap):
             If integer, draw samples at the colormap coordinates
             ``np.linspace(0, 1, samples)``. If sequence of float,
             draw samples at the specified points.
-        name : str, optional
-            The new colormap name. Default is ``'_name_copy'``.
+        name : str, default: '_name_copy'
+            The new colormap name.
 
         Other parameters
         ----------------
@@ -1611,11 +1610,11 @@ class DiscreteColormap(mcolors.ListedColormap, _Colormap):
         ----------
         colors : sequence of color-spec, optional
             The colormap colors.
-        name : str, optional
-            The colormap name. Default is ``'_no_name'``.
-        N : int, optional
-            The number of levels. Default is the length of `colors`. The
-            color list is truncated or wrapped to match this length.
+        name : str, default: '_no_name'
+            The colormap name.
+        N : int, default: ``len(colors)``
+            The number of levels. The color list is truncated or wrapped
+            to match this length.
         alpha : float, optional
             The opacity for the colormap colors. This overrides the
             input color opacities.
@@ -1656,7 +1655,8 @@ class DiscreteColormap(mcolors.ListedColormap, _Colormap):
         *args
             Instances of `DiscreteColormap`.
         name : str, optional
-            The new colormap name. Default is ``'_name1_name2_[...]'``.
+            The new colormap name. Default is to merge each name with underscores and
+            prepend a leading underscore, for example ``_name1_name2``.
         N : int, optional
             The number of points in the colormap lookup table. Default is
             the number of colors in the concatenated lists.
@@ -1733,8 +1733,8 @@ class DiscreteColormap(mcolors.ListedColormap, _Colormap):
 
         Parameters
         ----------
-        name : str, optional
-            The new colormap name. Default is ``'_name_r'``.
+        name : str, default: '_name_r'
+            The new colormap name.
 
         Other parameters
         ----------------
@@ -1758,11 +1758,10 @@ class DiscreteColormap(mcolors.ListedColormap, _Colormap):
 
         Parameters
         ----------
-        shift : float, optional
-            The number of places to shift, between ``-len(cmap.colors)``
-            and ``len(cmap.colors)``. Default is ``1``.
-        name : str, optional
-            The new colormap name. Default is ``'_name_s'``.
+        shift : float, default: 1
+            The number of list indices to shift.
+        name : str, eefault: '_name_s'
+            The new colormap name.
 
         See also
         --------
@@ -1783,16 +1782,14 @@ class DiscreteColormap(mcolors.ListedColormap, _Colormap):
 
         Parameters
         ----------
-        left : float, optional
-            The colormap index for the new "leftmost" color. Must fall between
-            ``0`` and ``self.N``. For example,
-            ``left=2`` deletes the two first colors.
-        right : float, optional
-            The colormap index for the new "rightmost" color. Must fall between
-            ``0`` and ``self.N``. For example,
-            ``right=4`` deletes colors after the fourth color.
-        name : str, optional
-            The new colormap name. Default is ``'_name_copy'``.
+        left : float, default: None
+            The colormap index for the new "leftmost" color. Must fall between ``0``
+            and ``self.N``. For example, ``left=2`` drops the first two colors.
+        right : float, default: None
+            The colormap index for the new "rightmost" color. Must fall between ``0``
+            and ``self.N``. For example, ``right=4`` keeps the first four colors.
+        name : str, default: '_name_copy'
+            The new colormap name.
 
         See also
         --------
@@ -1812,8 +1809,8 @@ class DiscreteColormap(mcolors.ListedColormap, _Colormap):
 
         Parameters
         ----------
-        name : str
-            The new colormap name. Default is ``'_name_copy'``.
+        name : str, default: '_name_copy'
+            The new colormap name.
         colors, N, alpha : optional
             See `DiscreteColormap`. If not provided,
             these are copied from the current colormap.
@@ -2007,8 +2004,8 @@ class PerceptualColormap(ContinuousColormap):
 
         Parameters
         ----------
-        name : str
-            The new colormap name. Default is ``'_name_copy'``.
+        name : str, default: '_name_copy'
+            The new colormap name.
         segmentdata, N, alpha, clip, cyclic, gamma, gamma1, gamma2, space : optional
             See `PerceptualColormap`. If not provided,
             these are copied from the current colormap.
@@ -2053,8 +2050,8 @@ class PerceptualColormap(ContinuousColormap):
 
         Parameters
         ----------
-        name : str, optional
-            The new colormap name. Default is ``'_name_copy'``.
+        name : str, default: '_name_copy'
+            The new colormap name.
 
         Other parameters
         ----------------
@@ -2087,10 +2084,10 @@ class PerceptualColormap(ContinuousColormap):
         %(colors.space)s
         l, s, a, c
             Shorthands for `luminance`, `saturation`, `alpha`, and `chroma`.
-        luminance : float or color-spec, optional
+        luminance : float or color-spec, default: 100
             If float, this is the luminance channel strength on the left-hand
-            side of the colormap (default is ``100``). If RGB[A] tuple, hex string,
-            or named color string, the luminance is inferred from the color.
+            side of the colormap. If RGB[A] tuple, hex string, or named color
+            string, the luminance is inferred from the color.
         saturation, alpha : float or color-spec, optional
             As with `luminance`, except the default `saturation` and the default
             `alpha` are the channel values taken from `color`.
@@ -2148,21 +2145,20 @@ class PerceptualColormap(ContinuousColormap):
             *twice as long* as the transition from luminance ``50`` to ``0``.
         h, s, l, a, c
             Shorthands for `hue`, `saturation`, `luminance`, `alpha`, and `chroma`.
-        hue : float or color-spec or sequence, optional
-            Hue channel value or sequence of values. The shorthand keyword
-            `h` is also acceptable. Values can be any of the following.
+        hue : float or color-spec or sequence, default: 0
+            Hue channel value or sequence of values. The shorthand keyword `h` is also
+            acceptable. Values can be any of the following.
 
             1. Numbers, within the range 0 to 360 for hue and 0 to 100 for
                saturation and luminance.
             2. Color string names or hex strings, in which case the channel
                value for that color is looked up.
-
-            If scalar, the hue does not change across the colormap.
-            Default is ``0`` (i.e., red).
-        saturation, luminance, alpha : float or color-spec or sequence, optional
-            As with `hue`, but for the saturation, luminance, and alpha (opacity)
-            channels, respectively. The default `saturation` is ``50``, luminance is
-            ``(100, 20)``, and alpha is ``1`` (i.e., no transparency).
+        saturation : float or color-spec or sequence, default: 50
+            As with `hue`, but for the saturation channel.
+        luminance : float or color-spec or sequence, default: ``(100, 20)``
+            As with `hue`, but for the luminance channel.
+        alpha : float or color-spec or sequence, default: 1
+            As with `hue`, but for the alpha (opacity) channel.
         chroma
             Alias for `saturation`.
 
@@ -2478,9 +2474,8 @@ class DiscreteNorm(mcolors.BoundaryNorm):
         ----------
         value : numeric
             The data to be normalized.
-        clip : bool, optional
+        clip : bool, default: ``self.clip``
             Whether to clip values falling outside of the level bins.
-            Default is ``self.clip``.
         """
         # Follow example of SegmentedNorm, but perform no interpolation,
         # just use searchsorted to bin the data.
@@ -2570,9 +2565,8 @@ class SegmentedNorm(mcolors.Normalize):
         ----------
         value : numeric
             The data to be normalized.
-        clip : bool, optional
-            Whether to clip values falling outside of the minimum and
-            maximum levels. Default is ``self.clip``.
+        clip : bool, default: ``self.clip``
+            Whether to clip values falling outside of the minimum and maximum levels.
         """
         if clip is None:  # builtin clipping
             clip = self.clip
@@ -2614,9 +2608,8 @@ class DivergingNorm(mcolors.Normalize):
         """
         Parameters
         ----------
-        vcenter : float, optional
-            The data value corresponding to the central position
-            of the colormap. Default is ``0``.
+        vcenter : float, default: 0
+            The data value corresponding to the central colormap position.
         vmin, vmax : float, optional
             The minimum and maximum data values.
         fair : bool, optional
@@ -2654,9 +2647,8 @@ class DivergingNorm(mcolors.Normalize):
         ----------
         value : numeric
             The data to be normalized.
-        clip : bool, optional
+        clip : bool, default: ``self.clip``
             Whether to clip values falling outside of `vmin` and `vmax`.
-            Default is ``self.clip``.
         """
         xq, is_scalar = self.process_value(value)
         self.autoscale_None(xq)  # sets self.vmin, self.vmax if None

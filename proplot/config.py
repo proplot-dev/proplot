@@ -69,15 +69,12 @@ COLORS_KEEP = (
 
 # Configurator docstrings
 _rc_docstring = """
-local : bool, optional
+local : bool, default: True
     Whether to load settings from the `~Configurator.local_files` file.
-    Default is ``True``.
-user : bool, optional
+user : bool, default: True
     Whether to load settings from the `~Configurator.user_file` file.
-    Default is ``True``.
-default : bool, optional
+default : bool, default: True
     Whether to reload built-in default proplot settings.
-    Default is ``True``.
 """
 docstring._snippet_manager['rc.params'] = _rc_docstring
 
@@ -129,7 +126,7 @@ _register_docstring = """
 user : bool, optional
     Whether to reload {objects} from `~Configurator.user_folder`. Default is
     ``False`` if positional arguments were passed and ``True`` otherwise.
-default : bool, optional
+default : bool, default: False
     Whether to reload the default {objects} packaged with proplot.
     Default is always ``False``.
 """
@@ -374,8 +371,8 @@ def config_inline_backend(fmt=None):
 
     Parameters
     ----------
-    fmt : str or sequence, optional
-        The inline backend file format(s). Default is :rc:`inlinefmt`. Valid formats
+    fmt : str or sequence, default: :rc:`inlinefmt`
+        The inline backend file format or a list thereof. Valid formats
         include ``'jpg'``, ``'png'``, ``'svg'``, ``'pdf'``, and ``'retina'``.
 
     See also
@@ -515,16 +512,16 @@ def register_colors(*args, user=None, default=False, space=None, margin=None, **
     %(rc.color_args)s
     %(rc.color_params)s
     space : {'hcl', 'hsl', 'hpl'}, optional
-        The colorspace used to pick "perceptually distinct" colors from the
-        `XKCD color survey <https://xkcd.com/color/rgb/>`__. Default is ``'hcl'``.
+        The colorspace used to pick "perceptually distinct" colors from
+        the `XKCD color survey <https://xkcd.com/color/rgb/>`__.
         If passed then `default` is set to ``True``.
-    margin : float, optional
+    margin : float, default: 0.1
         The margin used to pick "perceptually distinct" colors from the
         `XKCD color survey <https://xkcd.com/color/rgb/>`__. The normalized hue,
         saturation, and luminance of each color must differ from the channel
         values of the prededing colors by `margin` in order to be registered.
-        Must fall between ``0`` and ``1`` (``0`` will register all colors). Default
-        is ``0.1``. If passed then `default` is set to ``True``.
+        Must fall between ``0`` and ``1`` (``0`` will register all colors).
+        If passed then `default` is set to ``True``.
     **kwargs
         Additional color name specifications passed as keyword arguments rather
         than positional argument dictionaries.
@@ -1201,13 +1198,11 @@ class Configurator(MutableMapping, dict):
         ----------
         cat : str, optional
             The `rc` setting category.
-        trimcat : bool, optional
-            Whether to trim ``cat`` from the key names in the output
-            dictionary. Default is ``True``.
-        context : bool, optional
-            If ``True``, then each category setting that is not found in the
-            context mode dictionaries is omitted from the output dictionary.
-            See `~Configurator.context`.
+        trimcat : bool, default: True
+            Whether to trim ``cat`` from the key names in the output dictionary.
+        context : bool, default: False
+            If ``True``, then settings not found in the context dictionaries
+            are omitted from the output dictionary. See `~Configurator.context`.
 
         See also
         --------
@@ -1242,9 +1237,9 @@ class Configurator(MutableMapping, dict):
         props : dict-like
             Dictionary whose values are setting names -- for example
             ``rc.fill({'edgecolor': 'axes.edgecolor', 'facecolor': 'axes.facecolor'})``.
-        context : bool, optional
-            If ``True``, then settings not found in the context mode dictionaries
-            are excluded from the output dictionary. See `~Configurator.context`.
+        context : bool, default: False
+            If ``True``, then settings not found in the context dictionaries
+            are omitted from the output dictionary. See `~Configurator.context`.
 
         See also
         --------
@@ -1266,9 +1261,9 @@ class Configurator(MutableMapping, dict):
         ----------
         key : str
             The single setting name.
-        context : bool, optional
+        context : bool, default: False
             If ``True``, then ``None`` is returned if the setting is not found
-            in the context mode dictionaries. See `~Configurator.context`.
+            in the context dictionaries. See `~Configurator.context`.
 
         See also
         --------
@@ -1446,21 +1441,19 @@ class Configurator(MutableMapping, dict):
 
         Parameters
         ----------
-        path : path-like, optional
-            The path. The default file name is ``proplotrc`` and the default
-            directory is the current directory.
-        user : bool, optional
-            If ``True`` (the default), the settings that have `~Configurator.changed`
-            from the proplot defaults are shown uncommented at the top of the file.
-        backup : bool, optional
-            If the file already exists and this is set to ``True``, it is moved
-            to a backup file with the suffix ``.bak``.
-        comment : bool, optional
-            Whether to comment out the default settings. Default is the
-            value of `user`.
-        description : bool, optional
+        path : path-like, default: 'proplotrc'
+            The file name and/or directory. The default file name is ``proplotrc``
+            and the default directory is the current directory.
+        user : bool, default: True
+            If ``True`` then settings that have been `~Configurator.changed` from
+            the proplot defaults are shown uncommented at the top of the file.
+        backup : bool, default: True
+            Whether to "backup" an existing file by renaming with the suffix ``.bak``
+            or overwrite an existing file.
+        comment : bool, default: `user`
+            Whether to comment out the default settings.
+        description : bool, default: False
             Whether to include descriptions of each setting as comments.
-            Default is ``False``.
 
         See also
         --------

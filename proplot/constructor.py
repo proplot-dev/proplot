@@ -505,10 +505,9 @@ def Colormap(
     chroma
         Alias for `saturation`.
     cycle : str, optional
-        The registered cycle name used to interpret cycle color strings
-        like ``'C0'`` and ``'C2'``. Default is from the active property
-        cycler. This lets you make monochromatic colormaps using
-        colors selected from arbitrary property cycles.
+        The registered cycle name used to interpret color strings like ``'C0'``
+        and ``'C2'``. Default is from the active property :rcraw:`cycle`. This lets
+        you make monochromatic colormaps using colors selected from arbitrary cycles.
     save : bool, optional
         Whether to call the colormap/color cycle save method, i.e.
         `proplot.colors.ContinuousColormap.save` or
@@ -1338,15 +1337,12 @@ def Proj(name, basemap=None, **kwargs):
         ``'wintri'``   `Winkel tripel <wintri_>`_                       ✓ (added)  ✗
         =============  ===============================================  =========  =======
 
-    basemap : bool, optional
+    basemap : bool, default: :rc:`basemap`
         Whether to use the basemap package as opposed to the cartopy package.
-        Default is :rc:`basemap`.
     lonlim : 2-tuple of float, optional
-        Alternative way to specify `llcrnrlon` and `urcrnrlon` for basemap
-        projections.
+        Alternative way to specify `llcrnrlon` and `urcrnrlon` for basemap projections.
     latlim : 2-tuple of float, optional
-        Alternative way to specify `llcrnrlat` and `urcrnrlat` for basemap
-        projections.
+        Alternative way to specify `llcrnrlat` and `urcrnrlat` for basemap projections.
 
     Other parameters
     ----------------

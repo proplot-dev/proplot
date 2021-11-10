@@ -105,9 +105,9 @@ proj_kw, projection_kw : dict-like, optional
     cartopy `~cartopy.crs.Projection` classes on instantiation.
 """
 _basemap_docstring = """
-basemap : bool or dict-like, optional
-    Whether to use `~mpl_toolkits.basemap.Basemap` or `~cartopy.crs.Projection`
-    for map projections. Default is :rc:`basemap`.
+basemap : bool or dict-like, default: :rc:`basemap`
+    Whether to use `~mpl_toolkits.basemap.Basemap` or
+    `~cartopy.crs.Projection` for map projections.
 """
 docstring._snippet_manager['axes.proj'] = _proj_docstring
 docstring._snippet_manager['axes.proj_kw'] = _proj_kw_docstring
@@ -123,17 +123,17 @@ queue : bool, optional
     calls. If ``False`` (the default) and `loc` is the same as an existing
     *inset* {name}, the old {name} is removed. If ``False`` and `loc` is an
     *outer* {name}, the {name}s are "stacked".
-space : unit-spec, optional
+space : unit-spec, default: None
     For outer {name}s only. The fixed space between the {name} and the subplot
     edge. %(units.em)s
     When the :ref:`tight layout algorithm <ug_tight>` is active for the figure,
     `space` is computed automatically (see `pad`). Otherwise, `space` is set to
     a suitable default.
-pad : unit-spec, optional
+pad : unit-spec, default: :rc:`subplots.panelpad` or :rc:`{default}`
     For outer {name}s, this is the :ref:`tight layout padding <ug_tight>`
-    between the {name} and the subplot. Default is :rc:`subplots.panelpad`.
+    between the {name} and the subplot (default is :rcraw:`subplots.panelpad`).
     For inset {name}s, this is the fixed space between the axes
-    edge and the {name}. Default is :rc:`{default}`.
+    edge and the {name} (default is :rcraw:`{default}`).
     %(units.em)s
 align : {{'center', 'top', 'bottom', 'left', 'right', 't', 'b', 'l', 'r'}}, optional
     For outer {name}s only. How to align the {name} against the subplot edge.
@@ -154,10 +154,9 @@ docstring._snippet_manager['axes.colorbar_space'] = _space_docstring.format(
 _transform_docstring = """
 transform : {'data', 'axes', 'figure'} or `~matplotlib.transforms.Transform`, optional
     The transform used to interpret the bounds. Can be a
-    `~matplotlib.transforms.Transform` instance
-    or a string representing the `~matplotlib.axes.Axes.transData`,
-    `~matplotlib.axes.Axes.transAxes`, or `~matplotlib.figure.Figure.transFigure`
-    transforms. Default is ``'axes'``, i.e. `bounds` is in axes-relative coordinates.
+    `~matplotlib.transforms.Transform` instance or a string representing
+    the `~matplotlib.axes.Axes.transData`, `~matplotlib.axes.Axes.transAxes`,
+    or `~matplotlib.figure.Figure.transFigure` transforms.
 """
 docstring._snippet_manager['axes.transform'] = _transform_docstring
 
@@ -177,15 +176,13 @@ bounds : 4-tuple of float
 %(axes.proj)s
 %(axes.proj_kw)s
 %(axes.basemap)s
-zorder : float, optional
+zorder : float, default: 4
     The `zorder <https://matplotlib.org/stable/gallery/misc/zorder_demo.html>`__
-    of the axes. Should be greater than the zorder
-    of elements in the parent axes. Default is ``4``.
-zoom : bool, optional
-    Whether to draw lines indicating the inset zoom using
-    `~Axes.indicate_inset_zoom`. The line positions will automatically
-    adjust when the parent or inset axes limits change. Default
-    is ``True`` only if both axes are `~proplot.axes.CartesianAxes`.
+    of the axes. Should be greater than the zorder of elements in the parent axes.
+zoom : bool, default: True or False
+    Whether to draw lines indicating the inset zoom using `~Axes.indicate_inset_zoom`.
+    The line positions will automatically adjust when the parent or inset axes limits
+    change. Default is ``True`` only if both axes are `~proplot.axes.CartesianAxes`.
 zoom_kw : dict, optional
     Passed to `~Axes.indicate_inset_zoom`.
 
@@ -213,10 +210,9 @@ This will replace previously drawn zoom indicators.
 Parameters
 ----------
 %(artist.patch)s
-zorder : float, optional
-    The `zorder <https://matplotlib.org/stable/gallery/misc/zorder_demo.html>`__
-    of the indicators. Should be greater than the zorder
-    of elements in the parent axes. Default is ``3.5``.
+zorder : float, default: 3.5
+    The `zorder <https://matplotlib.org/stable/gallery/misc/zorder_demo.html>`__ of
+    the indicators. Should be greater than the zorder of elements in the parent axes.
 
 Other parameters
 ----------------
@@ -261,19 +257,19 @@ side : str, optional
 
 %(axes.panel_loc)s
 
-width : unit-spec, optional
-    The panel width. Default is :rc:`subplots.panelwidth`.
+width : unit-spec, default: :rc:`subplots.panelwidth`
+    The panel width.
     %(units.in)s
-space : unit-spec, optional
+space : unit-spec, default: None
     The fixed space between the panel and the subplot edge.
     %(units.em)s
     When the :ref:`tight layout algorithm <ug_tight>` is active for the figure,
     `space` is computed automatically (see `pad`). Otherwise, `space` is set to
     a suitable default.
-pad : unit-spec, optional
+pad : unit-spec, default: :rc:`subplots.panelpad`
     The :ref:`tight layout padding <ug_tight>` between the panel and the subplot.
     %(units.em)s
-share : bool, optional
+share : bool, default: True
     Whether to enable axis sharing between the *x* and *y* axes of the
     main subplot and the panel long axes for each panel in the "stack".
     Sharing between the panel short axis and other panel short axes
@@ -297,16 +293,15 @@ docstring._snippet_manager['axes.panel'] = _panel_docstring
 _axes_format_docstring = """
 title : str, optional
     The axes title.
-abc : bool or str, optional
+abc : bool or str, default: :rc:`abc`
     The "a-b-c" subplot label style. Must contain the character ``a`` or ``A``,
     for example ``'a.'``, or ``'A'``. If ``True`` then the default style of
     ``'a'`` is used. The ``a`` or ``A`` is replaced with the alphabetic character
     matching the `~Axes.number`. If `~Axes.number` is greater than 26, the
     characters loop around to a, ..., z, aa, ..., zz, aaa, ..., zzz, etc.
-abcloc, titleloc : str, optional
+abcloc, titleloc : str, default: :rc:`abc.loc`, :rc:`title.loc`
     Strings indicating the location for the a-b-c label and main title.
-    The following locations are valid (defaults are :rc:`abc.loc` and
-    :rc:`title.loc`):
+    The following locations are valid:
 
     .. _title_table:
 
@@ -324,26 +319,26 @@ abcloc, titleloc : str, optional
     lower right inside axes   ``'lower right'``, ``'lr'``
     ========================  ============================
 
-abcborder, titleborder : bool, optional
+abcborder, titleborder : bool, default: :rc:`abc.border` and :rc:`title.border`
     Whether to draw a white border around titles and a-b-c labels positioned
-    inside the axes. This can help them stand out on top of artists plotted
-    inside the axes. Defaults are :rc:`abc.border` and :rc:`title.border`.
-abcbbox, titlebbox : bool, optional
+    inside the axes. This can help them stand out on top of artists
+    plotted inside the axes.
+abcbbox, titlebbox : bool, default: :rc:`abc.bbox` and :rc:`title.bbox`
     Whether to draw a white bbox around titles and a-b-c labels positioned
     inside the axes. This can help them stand out on top of artists plotted
-    inside the axes. Defaults are :rc:`abc.bbox` and :rc:`title.bbox`.
+    inside the axes.
 abc_kw, title_kw : dict-like, optional
     Additional settings used to update the a-b-c label and title
     with ``text.update()``.
-titlepad : float, optional
-    The padding for the inner and outer titles and a-b-c labels in
-    arbitrary units (default is points). Default is :rc:`title.pad`.
-titleabove : bool, optional
+titlepad : float, default: :rc:`title.pad`
+    The padding for the inner and outer titles and a-b-c labels.
+    %(units.pt)s
+titleabove : bool, default: :rc:`title.above`
     Whether to try to put outer titles and a-b-c labels above panels,
-    colorbars, or legends that are above the axes. Default is :rc:`title.above`.
-abctitlepad : float, optional
-    The horizontal padding between the a-b-c label and title when they are
-    in the same location. Default is :rc:`abc.titlepad`.
+    colorbars, or legends that are above the axes.
+abctitlepad : float, default: :rc:`abc.titlepad`
+    The horizontal padding between a-b-c labels and titles in the same location.
+    %(units.pt)s
 ltitle, ctitle, rtitle, ultitle, uctitle, urtitle, lltitle, lctitle, lrtitle \
 : str, optional
     Shorthands for the below keywords.
@@ -352,10 +347,10 @@ lowerlefttitle, lowercentertitle, lowerrighttitle : str, optional
     Additional titles in specific positions. This works as an alternative
     to the ``ax.format(title='Title', titleloc=loc)`` workflow and permits
     adding more than one title-like label for a single axes.
-a, alpha, fc, facecolor, ec, edgecolor, lw, linewidth, ls, linestyle : optional
+a, alpha, fc, facecolor, ec, edgecolor, lw, linewidth, ls, linestyle : default: \
+:rc:`axes.alpha`, :rc:`axes.facecolor`, :rc:`axes.edgecolor`, :rc:`axes.linewidth`, '-'
     Additional settings applied to the background patch, and their
-    shorthands. Defaults are :rcraw:`axes.alpha`, :rcraw:`axes.facecolor`,
-    :rcraw:`axes.edgecolor`, :rcraw:`axes.linewidth`, and ``'-'``, respectively.
+    shorthands. Defaults are the ``'axes'`` properties.
 """
 _figure_format_docstring = """
 rowlabels, collabels, llabels, tlabels, rlabels, blabels
@@ -365,10 +360,10 @@ leftlabels, toplabels, rightlabels, bottomlabels : sequence of str, optional
     Labels for the subplots lying along the left, top, right, and
     bottom edges of the figure. The length of each list must match
     the number of subplots along the corresponding edge.
-leftlabelpad, toplabelpad, rightlabelpad, bottomlabelpad : float, optional
-    The padding between the labels and the axes content in arbitrary units
-    (default is points). Defaults are :rcraw:`leftlabel.pad`,
-    :rcraw:`toplabel.pad`, :rcraw:`rightlabel.pad`, and :rcraw:`bottomlabel.pad`
+leftlabelpad, toplabelpad, rightlabelpad, bottomlabelpad : float or unit-spec, default\
+: :rc:`leftlabel.pad`, :rc:`toplabel.pad`, :rc:`rightlabel.pad`, :rc:`bottomlabel.pad`
+    The padding between the labels and the axes content.
+    %(units.pt)s
 leftlabels_kw, toplabels_kw, rightlabels_kw, bottomlabels_kw : dict-like, optional
     Additional settings used to update the labels with ``text.update()``.
 figtitle
@@ -378,24 +373,23 @@ suptitle : str, optional
     column of subplots and the right edge of the rightmost column of subplots, and
     automatically offset above figure titles. This is an improvement on matplotlib's
     "super" title, which just centers the text between figure edges.
-suptitlepad : float, optional
-    The padding between the super title and the axes content in arbitrary
-    units (default is points). Default is :rcraw:`suptitle.pad`.
+suptitlepad : float, default: :rc:`suptitle.pad`
+    The padding between the super title and the axes content.
+    %(units.pt)s
 suptitle_kw : optional
     Additional settings used to update the super title with ``text.update()``.
-includepanels : bool, optional
+includepanels : bool, default: False
     Whether to include panels when aligning figure "super titles" along the top
-    of the subplot grid and when aligning the `spanx` *x* axis labels and `spany`
-    *y* axis labels along the sides of the subplot grid. Default is ``False``.
-mathtext_fallback : bool or str, optional
-    Apply this :rc:`mathtext.fallback` value when drawing the figure. If
+    of the subplot grid and when aligning the `spanx` *x* axis labels and
+    `spany` *y* axis labels along the sides of the subplot grid.
+mathtext_fallback : bool or str, default: :rc:`mathtext.fallback`
+    Apply this :rcraw:`mathtext.fallback` value when drawing the figure. If
     ``True`` or string, unavailable glyphs are replaced with a glyph from a
     fallback font (Computer Modern by default). Otherwise, they are replaced
     with the "¤" dummy character. For details see this `mathtext tutorial \
 <https://matplotlib.org/stable/tutorials/text/mathtext.html#custom-fonts>`__.
 """
 _rc_init_docstring = """
-    Remaining keyword arguments are passed to `matplotlib.axes.Axes`.
 """
 _rc_format_docstring = """
 rc_mode : int, optional
@@ -412,7 +406,9 @@ rc_kw : dict-like, optional
     of the keyword arguments documented above are internally applied by retrieving
     settings passed to `~proplot.config.Configurator.context`.
 """
-docstring._snippet_manager['rc.init'] = _rc_format_docstring.format(_rc_init_docstring.strip())  # noqa: E501
+docstring._snippet_manager['rc.init'] = _rc_format_docstring.format(
+    'Remaining keyword arguments are passed to `matplotlib.axes.Axes`.\n    '
+)
 docstring._snippet_manager['rc.format'] = _rc_format_docstring.format('')
 docstring._snippet_manager['axes.format'] = _axes_format_docstring
 docstring._snippet_manager['figure.format'] = _figure_format_docstring
@@ -473,11 +469,10 @@ label, title : str, optional
 reverse : bool, optional
     Whether to reverse the direction of the colorbar. This is done automatically
     when descending levels are used with `~proplot.colors.DiscreteNorm`.
-rotation : float, optional
-    The tick label rotation. Default is ``0``.
-grid, edges, drawedges : bool, optional
-    Whether to draw level dividers (i.e., gridlines) between each distinct color.
-    Default is :rc:`colorbar.grid`.
+rotation : float, default: 0
+    The tick label rotation.
+grid, edges, drawedges : bool, default: :rc:`colorbar.grid`
+    Whether to draw "grid" dividers between each distinct color.
 extend : {'neither', 'both', 'min', 'max'}, optional
     Direction for drawing colorbar "extensions" (i.e. color keys for out-of-bounds
     data on the end of the colorbar). Default behavior is to use the value of `extend`
@@ -485,13 +480,13 @@ extend : {'neither', 'both', 'min', 'max'}, optional
 extendfrac : float, optional
     The length of the colorbar "extensions" relative to the length of the colorbar.
     This is a native matplotlib `~matplotlib.figure.Figure.colorbar` keyword.
-extendsize : unit-spec, optional
+extendsize : unit-spec, default: :rc:`colorbar.extend` or :rc:`colorbar.insetextend`
     The length of the colorbar "extensions" in physical units. Default is
-    :rc:`colorbar.insetextend` for inset colorbars and :rc:`colorbar.extend` for
-    outer colorbars. %(units.em)s
-extendrect : bool, optional
-    Whether to draw colorbar "extensions" as rectangles. Default is ``False``
-    (i.e. extensions are drawn as triangles).
+    :rcraw:`colorbar.extend` for outer colorbars and :rcraw:`colorbar.insetextend`
+    for inset colorbars. %(units.em)s
+extendrect : bool, default: False
+    Whether to draw colorbar "extensions" as rectangles. If ``False`` then
+    the extensions are drawn as triangles.
 locator, ticks : locator-spec, optional
     Used to determine the colorbar tick positions. Passed to the
     `~proplot.constructor.Locator` constructor function. By default
@@ -510,59 +505,58 @@ format, formatter, ticklabels : formatter-spec, optional
     constructor function.
 formatter_kw : dict-like, optional
     Keyword arguments passed to `matplotlib.ticker.Formatter` class.
-frame, frameon : bool, optional
-    For inset colorbars only. Indicates whether to draw a "frame", just
-    like `~matplotlib.axes.Axes.legend`. Default is :rc:`colorbar.frameon`.
+frame, frameon : bool, default: :rc:`colorbar.frameon`
+    For inset colorbars only. Indicates whether to draw a "frame",
+    just like `~matplotlib.axes.Axes.legend`.
 tickminor : bool, optional
     Whether to add minor ticks using `~matplotlib.colorbar.ColorbarBase.minorticks_on`.
 tickloc, ticklocation : {'bottom', 'top', 'left', 'right'}, optional
     Where to draw tick marks on the colorbar. Default is toward the outside
     of the subplot for outer colorbars and ``'bottom'`` for inset colorbars.
-tickdir, tickdirection : {'out', 'in', 'inout'}, optional
-    Direction of major and minor colorbar ticks. Default is :rc:`tick.dir`.
-ticklen : unit-spec, optional
-    Major tick lengths for the colorbar ticks. Default is :rc:`tick.len`.
-ticklenratio : float, optional
+tickdir, tickdirection : {'out', 'in', 'inout'}, default: :rc:`tick.dir`
+    Direction of major and minor colorbar ticks.
+ticklen : unit-spec, default: :rc:`tick.len`
+    Major tick lengths for the colorbar ticks.
+ticklenratio : float, default: :rc:`tick.lenratio`
     Relative scaling of `ticklen` used to determine minor tick lengths.
-    Default is :rc:`tick.lenratio`.
-tickwidth : unit-spec, optional
-    Major tick widths for the colorbar ticks. Default is `linewidth`
+tickwidth : unit-spec, default: `linewidth`
+    Major tick widths for the colorbar ticks.
     or :rc:`tick.width` if `linewidth` was not passed.
-tickwidthratio : float, optional
+tickwidthratio : float, default: :rc:`tick.widthratio`
     Relative scaling of `tickwidth` used to determine minor tick widths.
-    Default is :rc:`tick.widthratio`.
-ticklabelcolor, ticklabelsize, ticklabelweight : optional
-    The font color, size, and weight for colorbar tick labels. Defaults
-    are :rc:`tick.labelcolor`, :rc:`tick.labelsize`, :rc:`tick.labelweight`.
+ticklabelcolor, ticklabelsize, ticklabelweight \
+: default: :rc:`tick.labelcolor`, :rc:`tick.labelsize`, :rc:`tick.labelweight`.
+    The font color, size, and weight for colorbar tick labels
 labelloc, labellocation : {'bottom', 'top', 'left', 'right'}
     The colorbar label location. Inherits from `tickloc` by default. Default is toward
     the outside of the subplot for outer colorbars and ``'bottom'`` for inset colorbars.
-labelcolor, labelsize, labelweight : optional
-    The font color, size, and weight for the colorbar label. Defaults are
-    :rc:`label.color`, :rc:`label.size`, and :rc:`label.weight`.
-a, alpha, framealpha, fc, facecolor, framecolor, ec, edgecolor, ew, edgewidth : optional
-    For inset colorbars only. Controls the transparency and color of the frame.
-    Defaults are :rc:`colorbar.framealpha` and :rc:`colorbar.framecolor`.
+labelcolor, labelsize, labelweight \
+: default: :rc:`label.color`, :rc:`label.size`, and :rc:`label.weight`.
+    The font color, size, and weight for the colorbar label.
+a, alpha, framealpha, fc, facecolor, framecolor, ec, edgecolor, ew, edgewidth : default\
+: :rc:`colorbar.framealpha`, :rc:`colorbar.framecolor`
+    For inset colorbars only. Controls the transparency and color of
+    the background frame.
 lw, linewidth, c, color : optional
     Controls the line width and edge color for both the colorbar
     outline and the level dividers.
 %(axes.edgefix)s
-rasterize : bool, optional
-    Whether to rasterize the colorbar solids. The matplotlib default is ``True``
-    but we change this to :rcraw:`colorbar.rasterize` because rasterization can
-    cause misalignment between `edges` and the level patches.
+rasterize : bool, default: :rc:`colorbar.rasterize`
+    Whether to rasterize the colorbar solids. The matplotlib default was ``True``
+    but proplot changes this to ``False`` since rasterization can cause misalignment
+    between the color patches and the colorbar outline.
 **kwargs
     Passed to `~matplotlib.figure.Figure.colorbar`.
 """
 _edgefix_docstring = """
-edgefix : bool or float, optional
+edgefix : bool or float, default: :rc:`edgefix`
     Whether to fix the common issue where white lines appear between adjacent
     patches in saved vector graphics (this can slow down figure rendering).
     See this `stackoverflow post <https://stackoverflow.com/q/27092991/4970632>`__
-    for a demonstration of the problem. Default is :rc:`edgefix`. If ``True``,
-    a small default linewidth is used to cover up the white lines. If float (e.g.
-    ``edgefix=0.5``), this specific linewidth is used to cover up the white lines.
-    This feature is automatically disabled when the patches have transparency.
+    for a demonstration of the problem. If ``True``, a small default linewidth
+    of ``0.3`` is used to cover up the white lines. If float (e.g. ``edgefix=0.5``),
+    this specific linewidth is used to cover up the white lines. This feature is
+    automatically disabled when the patches have transparency.
 """
 docstring._snippet_manager['axes.edgefix'] = _edgefix_docstring
 docstring._snippet_manager['axes.colorbar_args'] = _colorbar_args_docstring
@@ -601,15 +595,16 @@ ncol, ncols : int, optional
     for consistency with `~matplotlib.pyplot.subplots`.
 order : {'C', 'F'}, optional
     Whether legend handles are drawn in row-major (``'C'``) or column-major
-    (``'F'``) order. Analagous to `numpy.array` ordering. Default is ``'F'``.
+    (``'F'``) order. Analagous to `numpy.array` ordering. The matplotlib
+    default was ``'F'`` but proplot changes this to ``'C'``.
 center : bool, optional
     Whether to center each legend row individually. If ``True``, we draw
     successive single-row legends "stacked" on top of each other. If ``None``,
     we infer this setting from `handles`. By default, `center` is set to ``True``
     if `handles` is a list of lists (each sublist is used as a row in the legend).
-alphabetize : bool, optional
-    Whether to alphabetize the legend entries according to the legend labels.
-    Default is ``False``.
+alphabetize : bool, default: False
+    Whether to alphabetize the legend entries according to
+    the legend labels.
 title, label : str, optional
     The legend title. The `label` keyword is also accepted, for consistency
     with `~matplotlib.figure.Figure.colorbar`.
@@ -623,10 +618,10 @@ borderpad, borderaxespad, handlelength, handleheight, handletextpad, \
 labelspacing, columnspacing : unit-spec, optional
     Various matplotlib `~matplotlib.axes.Axes.legend` spacing arguments.
     %(units.em)s
-a, alpha, framealpha, fc, facecolor, framecolor, ec, edgecolor, ew, edgewidth : optional
+a, alpha, framealpha, fc, facecolor, framecolor, ec, edgecolor, ew, edgewidth \
+: default: :rc:`legend.framealpha`, :rc:`legend.facecolor`, :rc:`legend.edgecolor`, \
+:rc:`axes.linewidth`
     The opacity, face color, edge color, and edge width for the legend frame.
-    Defaults are :rc:`legend.framealpha`, :rc:`legend.facecolor`,
-    :rc:`legend.edgecolor` and :rc:`axes.linewidth`.
 c, color, lw, linewidth, m, marker, ls, linestyle, dashes, ms, markersize : optional
     Properties used to override the legend handles. For example, for a
     legend describing variations in line style ignoring variations
@@ -2355,9 +2350,8 @@ class Axes(maxes.Axes):
         Parameters
         ----------
         %(axes.colorbar_args)s
-        loc, location : str, optional
-            The colorbar location. Default is :rc:`colorbar.loc`. Valid location
-            keys are shown in the below table.
+        loc, location : int or str, default: :rc:`colorbar.loc`
+            The colorbar location. Valid location keys are shown in the below table.
 
             .. _colorbar_table:
 
@@ -2376,20 +2370,20 @@ class Axes(maxes.Axes):
             "filled"            ``'fill'``
             ==================  =======================================
 
-        length : float or unit-spec, optional
-            The colorbar length. For outer colorbars, default is
-            :rc:`colorbar.length` and units are relative to the axes
-            width or height. For inset colorbars, default is
-            :rc:`colorbar.insetlength` and units are absolute.
-            %(units.em)s
-        shrink : float, optional
+        shrink
             Alias for `length`. This is included for consistency with
             `matplotlib.figure.Figure.colorbar`.
-        width : unit-spec, optional
-            The colorbar width. For outer colorbars, default is :rc:`colorbar.width`.
-            %(units.in)s
-            For inset colorbars, default is :rc:`colorbar.insetwidth`.
-            %(units.em)s
+        length \
+: float or unit-spec, default: :rc:`colorbar.length` or :rc:`colorbar.insetlength`
+            The colorbar length. For outer colorbars, units are relative to the axes
+            width or height (default is :rcraw:`colorbar.length`). For inset
+            colorbars, floats interpreted as em-widths and strings interpreted
+            by `~proplot.utils.units` (default is :rcraw:`colorbar.insetlength`).
+        width : unit-spec, default: :rc:`colorbar.width` or :rc:`colorbar.insetwidth
+            The colorbar width. For outer colorbars, floats are interpreted as inches
+            (default is :rcraw:`colorbar.width`). For inset colorbars, floats are
+            interpreted as em-widths (default is :rcraw:`colorbar.insetwidth`).
+            Strings are interpreted by `~proplot.utils.units`.
         %(axes.colorbar_space)s
             Has no visible effect if `length` is ``1``.
 
@@ -2831,9 +2825,8 @@ class Axes(maxes.Axes):
         Parameters
         ----------
         %(axes.legend_args)s
-        loc, location : int or str, optional
-            The legend location. Default is :rc:`legend.loc`. Valid location
-            keys are shown in the below table.
+        loc, location : int or str, default: :rc:`legend.loc`
+            The legend location. Valid location keys are shown in the below table.
 
             .. _legend_table:
 
@@ -2907,28 +2900,28 @@ class Axes(maxes.Axes):
 
         Other parameters
         ----------------
-        border : bool, optional
+        border : bool, default: False
             Whether to draw border around text.
-        borderwidth : float, optional
-            The width of the text border. Default is ``2`` points.
-        bordercolor : color-spec, optional
-            The color of the text border. Default is ``'w'``.
+        borderwidth : float, default: 2
+            The width of the text border.
+        bordercolor : color-spec, default: 'w'
+            The color of the text border.
         borderinvert : bool, optional
             If ``True``, the text and border colors are swapped.
         borderstyle : {'miter', 'round', 'bevel'}, optional
             The `line join style \
 <https://matplotlib.org/stable/gallery/lines_bars_and_markers/joinstyle.html>`__
             used for the border.
-        bbox : bool, optional
+        bbox : bool, default: False
             Whether to draw a bounding box around text.
-        bboxcolor : color-spec, optional
-            The color of the text bounding box. Default is ``'w'``.
-        bboxstyle : boxstyle, optional
-            The style of the bounding box. Default is ``'round'``.
-        bboxalpha : float, optional
-            The alpha for the bounding box. Default is ``0.5``.
-        bboxpad : float, optional
-            The padding for the bounding box. Default is :rc:`title.bboxpad`.
+        bboxcolor : color-spec, default: 'w'
+            The color of the text bounding box.
+        bboxstyle : boxstyle, default: 'round'
+            The style of the bounding box.
+        bboxalpha : float, default: 0.5
+            The alpha for the bounding box.
+        bboxpad : float, default: :rc:`title.bboxpad`
+            The padding for the bounding box.
         %(artist.text)s
 
         **kwargs

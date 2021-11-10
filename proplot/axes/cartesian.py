@@ -59,10 +59,10 @@ xscale, yscale : scale-spec, optional
     ``xscale=('cutoff', 100, 2)`` applies a `~proplot.scale.CutoffScale`.
 xscale_kw, yscale_kw : dict-like, optional
     The x and y axis scale settings. Passed to `~proplot.scale.Scale`.
-xmargin, ymargin, margin : float, optional
+xmargin, ymargin, margin : float, default: :rc:`margin`
     The default margin between plotted content and the x and y axis spines in
-    axes-relative coordinates. Use this to add whitespace between plotted content and
-    axes edges without explicitly setting the limits. Use `margin` to set both at once.
+    axes-relative coordinates. This is useful if you don't witch to explicitly set
+    axis limits. Use the keyword `margin` to set both at once.
 xbounds, ybounds : 2-tuple of float, optional
     The x and y axis data bounds within which to draw the spines. For example,
     ``xlim=(0, 4)`` combined with ``xbounds=(2, 4)`` will prevent the spines
@@ -98,24 +98,24 @@ xlabelloc, ylabelloc : {'bottom', 'top', 'left', 'right'}, optional
 xoffsetloc, yoffsetloc : {'left', 'right'}, optional
     Which x and y axis spines should have the axis offset indicator. Inherits from
     `ticklabelloc` by default (if `ticklabelloc` is a single side).
-xtickdir, ytickdir, tickdir : {'out', 'in', 'inout'}
+xtickdir, ytickdir, tickdir : {'out', 'in', 'inout'}, optional
     Direction that major and minor tick marks point for the x and y axis.
-    Default is :rc:`tick.dir`. Use `tickdir` to control both.
-xticklabeldir, yticklabeldir : {'in', 'out'}
+    Use the keyword `tickdir` to control both.
+xticklabeldir, yticklabeldir : {'in', 'out'}, optional
     Whether to place x and y axis tick label text inside or outside the axes.
     Propagates to `xtickdir` and `ytickdir` unless specified otherwise.
-xrotation, yrotation : float, optional
-    The rotation for x and y axis tick labels. Default is ``0``
+xrotation, yrotation : float, default: 0
+    The rotation for x and y axis tick labels.
     for normal axes, :rc:`formatter.timerotation` for time x axes.
-xgrid, ygrid, grid : bool, optional
+xgrid, ygrid, grid : bool, default: :rc:`grid`
     Whether to draw major gridlines on the x and y axis.
-    Use `grid` to toggle both.
-xgridminor, ygridminor, gridminor : bool, optional
+    Use the keyword `grid` to toggle both.
+xgridminor, ygridminor, gridminor : bool, default: :rc:`gridminor`
     Whether to draw minor gridlines for the x and y axis.
-    Use `gridminor` to toggle both.
-xtickminor, ytickminor, tickminor : bool, optional
+    Use the keyword `gridminor` to toggle both.
+xtickminor, ytickminor, tickminor : bool, default: :rc:`tick.minor`
     Whether to draw minor ticks on the x and y axes.
-    Use `tickminor` to toggle both.
+    Use the keyword `tickminor` to toggle both.
 xticks, yticks : optional
     Aliases for `xlocator`, `ylocator`.
 xlocator, ylocator : locator-spec, optional
@@ -136,72 +136,70 @@ xticklabels, yticklabels : optional
 xformatter, yformatter : formatter-spec, optional
     Used to determine the x and y axis tick label string format.
     Passed to the `~proplot.constructor.Formatter` constructor.
-    Can be string, list of strings, or `matplotlib.ticker.Formatter`
-    instance. Use ``[]``, ``'null'``, or ``'none'`` for no labels.
+    Can be string, list of strings, or `matplotlib.ticker.Formatter` instance.
+    Use ``[]``, ``'null'``, or ``'none'`` for no labels.
 xformatter_kw, yformatter_kw : dict-like, optional
     Keyword arguments passed to the `matplotlib.ticker.Formatter` class.
-xcolor, ycolor, color : color-spec, optional
-    Color for the x and y axis spines, ticks, tick labels, and axis
-    labels. Use `color` to set both at once.
-xgridcolor, ygridcolor, gridcolor : color-spec, optional
-    Color for the x and y axis major and minor gridlines. Default is :rc:`grid.color`.
-    Use `gridcolor` to set both at once.
-xlinewidth, ylinewidth, linewidth : color-spec, optional
-    Line width for the x and y axis spines and major ticks. Propagates to
-    `tickwidth` unless specified otherwise. Use `linewidth` to set both at once.
-xtickcolor, ytickcolor, tickcolor : color-spec, optional
-    Color for the x and y axis ticks. Default is `xcolor`, `ycolor`, and `color` or
-    :rc:`tick.color` if they were not passed. Use `tickcolor` to set both at once.
-xticklen, yticklen, ticklen : unit-spec, optional
-    Major tick lengths for the x and y axis. Default is :rc:`tick.len`.
+xcolor, ycolor, color : color-spec, default: :rc:`meta.color`
+    Color for the x and y axis spines, ticks, tick labels, and axis labels.
+    Use the keyword `color` to set both at once.
+xgridcolor, ygridcolor, gridcolor : color-spec, default: :rc:`grid.color`
+    Color for the x and y axis major and minor gridlines.
+    Use the keyword `gridcolor` to set both at once.
+xlinewidth, ylinewidth, linewidth : color-spec, default: :rc:`meta.width`
+    Line width for the x and y axis spines and major ticks. Propagates to `tickwidth`
+    unless specified otherwise. Use the keyword `linewidth` to set both at once.
+xtickcolor, ytickcolor, tickcolor : color-spec, default: :rc:`tick.color`
+    Color for the x and y axis ticks. Defaults are `xcolor`, `ycolor`, and `color`
+    if they were passed. Use the keyword `tickcolor` to set both at once.
+xticklen, yticklen, ticklen : unit-spec, default: :rc:`tick.len`
+    Major tick lengths for the x and y axis.
     %(units.pt)s
-    Use `ticklen` to set both at once.
-xticklenratio, yticklenratio, ticklenratio : float, optional
-    Relative scaling of `xticklen` and `yticklen` used to determine
-    minor tick lengths. Default is :rc:`tick.lenratio`.
-    Use `ticklenratio` to set both at once.
-xtickwidth, ytickwidth, tickwidth, : unit-spec, optional
-    Major tick widths for the x ans y axis. Default is `linewidth`
-    or :rc:`tick.width` if `linewidth` was not passed.
+    Use the keyword `ticklen` to set both at once.
+xticklenratio, yticklenratio, ticklenratio : float, default: :rc:`tick.lenratio`
+    Relative scaling of `xticklen` and `yticklen` used to determine minor
+    tick lengths. Use the keyword `ticklenratio` to set both at once.
+xtickwidth, ytickwidth, tickwidth, : unit-spec, default: :rc:`tick.width`
+    Major tick widths for the x ans y axis. Default is `linewidth` if it was passed.
     %(units.pt)s
-    Use `tickwidth` to set both at once.
-xtickwidthratio, ytickwidthratio, tickwidthratio
+    Use the keyword `tickwidth` to set both at once.
+xtickwidthratio, ytickwidthratio, tickwidthratio : float, default: :rc:`tick.widthratio`
     Relative scaling of `xtickwidth` and `ytickwidth` used to determine
-    minor tick widths. Default is :rc:`tick.widthratio`.
-    Use `tickwidthratio` to set both at once.
-xticklabelpad, yticklabelpad : unit-spec, optional
-    The padding between the x and y axis ticks and
-    tick labels. Default is :rcraw:`tick.labelpad`.
+    minor tick widths. Use the keyword `tickwidthratio` to set both at once.
+xticklabelpad, yticklabelpad, ticklabelpad : unit-spec, default: :rc:`tick.labelpad`
+    The padding between the x and y axis ticks and tick labels. Use the
+    keyword `ticklabelpad` to set both at once.
     %(units.pt)s
-xticklabelcolor, yticklabelcolor, ticklabelcolor : color-spec, optional
-    Color for the x and y tick labels. Default is `xcolor`, `ycolor`, and `color` or
-    :rc:`tick.labelcolor` if they were not passed. Use `ticklabelcolor` to set both.
-xticklabelsize, yticklabelsize, ticklabelsize : unit-spec or str, optional
-    Font size for the x and y tick labels. Default is :rc:`tick.labelsize`.
+xticklabelcolor, yticklabelcolor, ticklabelcolor \
+: color-spec, default: :rc:`tick.labelcolor`
+    Color for the x and y tick labels. Defaults are `xcolor`, `ycolor`, and `color`
+    if they were passed. Use the keyword `ticklabelcolor` to set both at once.
+xticklabelsize, yticklabelsize, ticklabelsize \
+: unit-spec or str, default: :rc:`tick.labelsize`
+    Font size for the x and y tick labels.
     %(units.pt)s
-    Use `ticklabelsize` to set both at once.
-xticklabelweight, yticklabelweight, ticklabelweight : str, optional
-    Font weight for the x and y axis labels. Default is :rc:`label.weight`.
-    Use `ticklabelweight` to set both at once.
-xlabelpad, ylabelpad : unit-spec, optional
-    The padding between the x and y axis bounding box and
-    the x and y axis labels. Default is :rc:`label.pad`.
+    Use the keyword `ticklabelsize` to set both at once.
+xticklabelweight, yticklabelweight, ticklabelweight \
+: str, default: :rc:`tick.labelweight`
+    Font weight for the x and y tick labels.
+    Use the keyword `ticklabelweight` to set both at once.
+xlabelpad, ylabelpad : unit-spec, default: :rc:`label.pad`
+    The padding between the x and y axis bounding box and the x and y axis labels.
     %(units.pt)s
-xlabelcolor, ylabelcolor, labelcolor : color-spec, optional
-    Color for the x and y axis labels. Default is `xcolor`, `ycolor`, and `color` or
-    :rc:`label.color` if they were not passed. Use `labelcolor` to set both at once.
-xlabelsize, ylabelsize, labelsize : unit-spec or str, optional
-    Font size for the x and y axis labels. Default is :rc:`label.size`.
+xlabelcolor, ylabelcolor, labelcolor : color-spec, default: :rc:`label.color`
+    Color for the x and y axis labels. Defaults are `xcolor`, `ycolor`, and `color`
+    if they were passed. Use the keyword `labelcolor` to set both at once.
+xlabelsize, ylabelsize, labelsize : unit-spec or str, default: :rc:`label.size`
+    Font size for the x and y axis labels.
     %(units.pt)s
-    Use `labelsize` to set both at once.
-xlabelweight, ylabelweight, labelweight : str, optional
-    Font weight for the x and y axis labels. Default is :rc:`label.weight`.
-    Use `labelweight` to set both at once.
-fixticks : bool, optional
-    Whether to always transform the tick locators to a
-    `~matplotlib.ticker.FixedLocator` instance. Default is ``False``.
-    If your axis ticks are doing weird things (for example, ticks
-    drawn outside of the axis spine), try setting this to ``True``.
+    Use the keyword `labelsize` to set both at once.
+xlabelweight, ylabelweight, labelweight : str, default: :rc:`label.weight`
+    Font weight for the x and y axis labels.
+    Use the keyword `labelweight` to set both at once.
+fixticks : bool, default: False
+    Whether to transform the tick locators to a `~matplotlib.ticker.FixedLocator`.
+    If your axis ticks are doing weird things (for example, ticks are drawn
+    outside of the axis spine) you can try setting this to ``True``.
 """
 docstring._snippet_manager['cartesian.format'] = _format_docstring
 
