@@ -17,7 +17,7 @@ def get_nodes(rawtext, text, inliner):
     else:
         levels = relsource[1].count('/')  # distance to base URL
         refuri = '../' * levels + 'en/stable/configuration.html'
-        refuri += f'?highlight={text}#rc-proplot'
+        refuri += f'?highlight={text}#table-of-settings'
     ref = nodes.reference(rawtext, rendered, refuri=refuri)
     return [nodes.literal('', '', ref)]
 
