@@ -27,7 +27,7 @@
 #
 # Proplot works by `subclassing
 # <https://docs.python.org/3/tutorial/classes.html#inheritance>`__
-# three fundamental matplotlib objects: `proplot.figure.Figure` replaces
+# three fundamental matplotlib classes: `proplot.figure.Figure` replaces
 # `matplotlib.figure.Figure`, `proplot.axes.Axes` replaces `matplotlib.axes.Axes`,
 # and `proplot.gridspec.GridSpec` replaces `matplotlib.gridspec.GridSpec`
 # (see this `tutorial

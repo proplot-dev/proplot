@@ -381,16 +381,24 @@ class GeoAxes(plot.PlotAxes):
     Axes subclass for plotting in geographic projections. Uses either cartopy
     or basemap as a "backend".
 
+    Note
+    ----
+    This subclass uses longitude and latitude as the default coordinate system for all
+    plotting commands by passing ``transform=cartopy.crs.PlateCarree()`` to cartopy
+    commands and ``latlon=True`` to basemap commands. Also, when using basemap as the
+    "backend", plotting is still done "cartopy-style" by calling methods from the axes
+    instance rather than the `~mpl_toolkits.basemap.Basemap` instance.
+
     Important
     ---------
     This axes subclass can be used by passing ``proj='proj_name'``
     to axes-creation commands like `~proplot.figure.Figure.add_axes`,
     `~proplot.figure.Figure.add_subplot`, and `~proplot.figure.Figure.subplots`,
     where ``proj_name`` is a registered :ref:`PROJ projection name <proj_table>`.
-    You can also pass a `cartopy.crs.Projection` or `~mpl_toolkits.basemap.Basemap`
+    You can also pass a `~cartopy.crs.Projection` or `~mpl_toolkits.basemap.Basemap`
     instance instead of a projection name. Alternatively, you can pass any of the
     matplotlib-recognized axes subclass names ``proj='cartopy'``, ``proj='geo'``, or
-    ``proj='geographic'`` with a `cartopy.crs.Projection` `map_projection` keyword
+    ``proj='geographic'`` with a `~cartopy.crs.Projection` `map_projection` keyword
     argument, or pass ``proj='basemap'`` with a `~mpl_toolkits.basemap.Basemap`
     `map_projection` keyword argument.
     """
@@ -421,15 +429,6 @@ class GeoAxes(plot.PlotAxes):
         ----------------
         %(axes.format)s
         %(rc.init)s
-
-        Note
-        ----
-        This makes "longitude-latitude" coordinates the default for all plotting
-        commands by passing ``transform=cartopy.crs.PlateCarree()`` when cartopy is
-        the backend and ``latlon=True`` when basemap is the projection. Also,
-        regardless of the backend, plotting is accomplished "cartopy-style" by
-        calling plotting methods on the axes instance. You should not have to
-        work with the `~mpl_toolkits.basemap.Basemap` instance directly.
 
         See also
         --------

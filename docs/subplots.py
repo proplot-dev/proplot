@@ -36,8 +36,7 @@
 #    features associated with "nested" matplotlib structures, some are reproducible with
 #    proplot -- including :ref:`different spaces <ug_tight>` between distinct subplot
 #    rows and columns and :ref:`different formatting <ug_subplotgrid>` for distinct
-#    groups of subplots. "Highlighting" behind groups of subplots (analogous to
-#    different subfigure background colors) will also be supported in the future.
+#    groups of subplots.
 #
 #
 # %% [raw] raw_mimetype="text/restructuredtext"

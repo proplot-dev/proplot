@@ -81,7 +81,7 @@ Proplot settings
 ----------------
 
 Proplot settings are natively stored in the `~proplot.config.rc_proplot` dictionary.
-In general they should be changed with `~proplot.config.rc` rather than
+They should almost always be changed with `~proplot.config.rc` rather than
 `~proplot.config.rc_proplot` to ensure that :ref:`meta-settings <ug_meta>` are
 synced. These settings are not found in `~matplotlib.rcParams` -- they either
 control proplot-managed features (e.g., a-b-c labels and geographic gridlines)
