@@ -402,7 +402,7 @@ class CartesianAxes(shared._SharedAxes, plot.PlotAxes):
         if f'{sy}spineloc' not in kwargs:  # acccount for aliases
             kwargs.setdefault(f'{sy}loc', 'neither')
         if f'{sx}spineloc' not in kwargs:  # account for aliases
-            kwargs.setdefault(f'{sx}loc', 'top')  # other locs follow by default
+            kwargs.setdefault(f'{sx}loc', 'top' if sx == 'x' else 'right')
         kwargs.setdefault(f'autoscale{sy}_on', getattr(self, f'get_autoscale{sy}_on')())
         kwargs.setdefault(f'share{sy}', self)
 
@@ -421,6 +421,7 @@ class CartesianAxes(shared._SharedAxes, plot.PlotAxes):
         setattr(ax, f'_alt{sx}_parent', self)
         getattr(ax, f'{sy}axis').set_visible(False)
         getattr(ax, 'patch').set_visible(False)
+        return ax
 
     def _dual_scale(self, s, funcscale=None):
         """
