@@ -18,7 +18,6 @@
 # The basics
 # ==========
 
-
 # %% [raw] raw_mimetype="text/restructuredtext"
 # .. _ug_intro:
 #

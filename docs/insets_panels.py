@@ -176,10 +176,10 @@ ax.format(
 # See the 1D plotting section for more on the "inbounds" keyword
 ix = ax.inset(
     [5, 5, 4, 4], transform='data', zoom=True,
-    zoom_kw={'edgecolor': 'red3', 'lw': 2, 'ls': '--'}
+    zoom_kw={'ec': 'blush', 'ls': '--', 'lw': 2}
 )
 ix.format(
-    xlim=(2, 4), ylim=(2, 4), color='red9',
+    xlim=(2, 4), ylim=(2, 4), color='maroon',
     linewidth=1.5, ticklabelweight='bold'
 )
 ix.pcolormesh(data, cmap='Grays', levels=N, inbounds=False)
