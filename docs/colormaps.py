@@ -464,18 +464,20 @@ for ax, gamma in zip(axs, (0.7, 1.0, 1.4)):
 # Downloading colormaps
 # ---------------------
 #
-# There are plenty of online interactive tools for generating perceptually
+# There are several interactive online tools for generating perceptually
 # uniform colormaps, including
 # `Chroma.js <https://gka.github.io/palettes/>`__,
 # `HCLWizard <http://hclwizard.org:64230/hclwizard/>`__,
 # `HCL picker <http://tristen.ca/hcl-picker/>`__,
-# the `CCC-tool <https://ccctool.com>`__,
-# and `SciVisColor <https://sciviscolor.org/home/colormaps/>`__.
+# `SciVisColor <https://sciviscolor.org/home/colormaps/>`__,
+# and `CCC-tool <https://ccctool.com>`__,
 #
-# To add colormaps downloaded from any of these sources, save the colormap data file
-# to the ``cmaps`` subfolder inside `~proplot.config.Configurator.user_folder`
-# and call `~proplot.config.register_cmaps` (or restart your python session). You
-# can also use `~proplot.colors.ContinuousColormap.from_file` or manually pass
-# continuous colormaps or file paths to `~proplot.config.register_cmaps`. See
-# `~proplot.colors.ContinuousColormap.from_file` for a table of valid
-# data file extensions.
+# To add colormaps downloaded from any of these sources, save the color data file
+# to the ``cmaps`` subfolder inside `~proplot.config.Configurator.user_folder`,
+# or to a folder named ``proplot_cmaps`` in the same directory as your python session
+# or an arbitrary parent directory (see `~proplot.config.Configurator.local_folders`).
+# After adding the file, call `~proplot.config.register_cmaps` or restart your python
+# session. You can also use `~proplot.colors.ContinuousColormap.from_file` or manually
+# pass `~proplot.config.ContinuousColormap` instances or file paths to
+# `~proplot.config.register_cmaps`. See `~proplot.config.register_cmaps`
+# for a table of recognized file extensions.

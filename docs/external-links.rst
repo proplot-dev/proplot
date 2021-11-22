@@ -83,6 +83,9 @@ them into proplot by adding files to the ``.proplot/cmaps`` folder
 * `SciVisColor <https://sciviscolor.org/home/colormoves/>`__ -
   An advanced interface for concatenating segments from a suite of colormap
   presets. Useful for datasets with complex statistical distributions.
+* `CCC-tool <http://vrl.cs.brown.edu/color>`__ -
+  An advanced interface for designing, analyzing, and concatenating colormaps,
+  leaning on the `SciViscolor <https://sciviscolor.org/home/colormoves/>`__ presets.
 * `HCL Picker <http://tristen.ca/hcl-picker/#/hlc/6/1/15534C/E2E062>`__ -
   A simple interface for taking cross-sections of the HCL colorspace.
   Resembles the examples :ref:`shown here <ug_perceptual>`.
@@ -101,11 +104,14 @@ them into proplot by adding files to the ``.proplot/cycles`` folder
   Namely, the `~proplot.colors.DiscreteColormap` class and
   `~proplot.constructor.Cycle` constructor function.
 * `i want hue <http://medialab.github.io/iwanthue/>`__ -
-  An advanced interface for automatically generating perceptually distinct
-  color sets within restricted hue, chroma, and luminance ranges.
+  An advanced interface for generating perceptually distinct color sets
+  with options for restricting the hue, chroma, and luminance ranges.
 * `Color Cycle Picker <https://colorcyclepicker.mpetroff.net/>`__ -
-  An advanced interface for manually and successively selecting perceptually distinct
-  colors based on seed colors, with colorblind-friendliness measures included.
+  An advanced interface for generating perceptually distinct color sets
+  based on seed colors, with colorblind-friendliness measures included.
+* `Colorgorical <http://vrl.cs.brown.edu/color>`__ -
+  An advanced interface for making perceptually distinct colors sets
+  with both seed color and channel restriction options.
 * `Adobe Color <https://color.adobe.com/explore>`__ - A simple interface
   for selecting color sets derived from sample images, including an option
   to upload images and a searchable image database.

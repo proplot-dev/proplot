@@ -126,6 +126,9 @@ _register_docstring = """
 user : bool, optional
     Whether to reload {objects} from `~Configurator.user_folder`. Default is
     ``False`` if positional arguments were passed and ``True`` otherwise.
+local : bool, optional
+    Whether to reload {objects} from `~Configurator.local_folders`. Default is
+    ``False`` if positional arguments were passed and ``True`` otherwise.
 default : bool, default: False
     Whether to reload the default {objects} packaged with proplot.
     Default is always ``False``.
@@ -161,7 +164,7 @@ def _init_user_folders():
             os.mkdir(folder)
 
 
-def _get_data_folders(folder, user=True, default=True, reverse=False):
+def _get_data_folders(folder, user=True, local=True, default=True, reverse=False):
     """
     Return data folder paths in reverse order of precedence.
     """
@@ -173,6 +176,8 @@ def _get_data_folders(folder, user=True, default=True, reverse=False):
         paths.append(os.path.join(os.path.dirname(__file__), folder))
     if user:
         paths.append(Configurator.user_folder(folder))
+    if local:
+        paths.extend(Configurator.local_folders(folder))
     if reverse:
         paths = paths[::-1]
     return paths
@@ -346,7 +351,7 @@ def _iter_data_objects(folder, *args, **kwargs):
     i += 1  # user files
     for path in args:
         path = os.path.expanduser(path)
-        if os.path.exists(path):
+        if os.path.isfile(path):
             yield i, path
         else:
             raise FileNotFoundError(f'Invalid file path {path!r}.')
@@ -425,7 +430,7 @@ def use_style(style):
 
 
 @docstring._snippet_manager
-def register_cmaps(*args, user=None, default=False):
+def register_cmaps(*args, user=None, local=None, default=False):
     """
     Register named colormaps. This is called on import.
 
@@ -447,6 +452,7 @@ def register_cmaps(*args, user=None, default=False):
     # Register input colormaps
     from . import colors as pcolors
     user = _not_none(user, not bool(args))  # skip user folder if input args passed
+    local = _not_none(local, not bool(args))
     paths = []
     for arg in args:
         if isinstance(arg, mcolors.Colormap):
@@ -455,7 +461,9 @@ def register_cmaps(*args, user=None, default=False):
             paths.append(arg)
 
     # Register data files
-    for i, path in _iter_data_objects('cmaps', *paths, user=user, default=default):
+    for i, path in _iter_data_objects(
+        'cmaps', *paths, user=user, local=local, default=default
+    ):
         cmap = pcolors.ContinuousColormap.from_file(path, warn_on_failure=True)
         if not cmap:
             continue
@@ -465,7 +473,7 @@ def register_cmaps(*args, user=None, default=False):
 
 
 @docstring._snippet_manager
-def register_cycles(*args, user=None, default=False):
+def register_cycles(*args, user=None, local=None, default=False):
     """
     Register named color cycles. This is called on import.
 
@@ -487,6 +495,7 @@ def register_cycles(*args, user=None, default=False):
     # Register input color cycles
     from . import colors as pcolors
     user = _not_none(user, not bool(args))  # skip user folder if input args passed
+    local = _not_none(local, not bool(args))
     paths = []
     for arg in args:
         if isinstance(arg, mcolors.Colormap):
@@ -495,7 +504,9 @@ def register_cycles(*args, user=None, default=False):
             paths.append(arg)
 
     # Register data files
-    for _, path in _iter_data_objects('cycles', *paths, user=user, default=default):
+    for _, path in _iter_data_objects(
+        'cycles', *paths, user=user, local=local, default=default
+    ):
         cmap = pcolors.DiscreteColormap.from_file(path, warn_on_failure=True)
         if not cmap:
             continue
@@ -503,7 +514,9 @@ def register_cycles(*args, user=None, default=False):
 
 
 @docstring._snippet_manager
-def register_colors(*args, user=None, default=False, space=None, margin=None, **kwargs):
+def register_colors(
+    *args, user=None, local=None, default=False, space=None, margin=None, **kwargs
+):
     """
     Register named colors. This is called on import.
 
@@ -550,6 +563,7 @@ def register_colors(*args, user=None, default=False, space=None, margin=None, **
 
     # Register input colors
     user = _not_none(user, not bool(args) and not bool(kwargs))  # skip if args passed
+    local = _not_none(local, not bool(args) and not bool(kwargs))
     paths = []
     for arg in args:
         if isinstance(arg, dict):
@@ -564,7 +578,9 @@ def register_colors(*args, user=None, default=False, space=None, margin=None, **
 
     # Load colors from file and get their HCL values
     # NOTE: Colors that come *later* overwrite colors that come earlier.
-    for i, path in _iter_data_objects('colors', *paths, user=user, default=default):
+    for i, path in _iter_data_objects(
+        'colors', *paths, user=user, local=local, default=default
+    ):
         loaded = pcolors._load_colors(path, warn_on_failure=True)
         if i == 0:
             cat, _ = os.path.splitext(os.path.basename(path))
@@ -581,7 +597,7 @@ def register_colors(*args, user=None, default=False, space=None, margin=None, **
 
 
 @docstring._snippet_manager
-def register_fonts(*args, user=True, default=False):
+def register_fonts(*args, user=True, local=True, default=False):
     """
     Register font families. This is called on import.
 
@@ -607,11 +623,13 @@ def register_fonts(*args, user=True, default=False):
     # https://matplotlib.org/api/font_manager_api.html
     # For macOS the only fonts with 'Thin' in one of the .ttf file names
     # are Helvetica Neue and .SF NS Display Condensed. Never try to use these!
-    paths_proplot = _get_data_folders('fonts', user=user, default=default, reverse=True)
+    paths_proplot = _get_data_folders(
+        'fonts', user=user, local=local, default=default, reverse=True
+    )
     fnames_proplot = set(mfonts.findSystemFonts(paths_proplot))
     for path in args:
         path = os.path.expanduser(path)
-        if os.path.exists(path):
+        if os.path.isfile(path):
             fnames_proplot.add(path)
         else:
             raise FileNotFoundError(f'Invalid font file path {path!r}.')
@@ -1002,29 +1020,60 @@ class Configurator(MutableMapping, dict):
     @staticmethod
     def local_files():
         """
-        Return locations of local proplotrc files in this directory
-        and in parent directories.
+        Return locations of files named ``proplotrc`` in this directory and in parent
+        directories. "Hidden" files with a leading dot are also recognized. These are
+        automatically loaded when proplot is imported.
 
         See also
         --------
         Configurator.user_file
         Configurator.user_folder
+        Configurator.local_folders
         """
         cdir = os.getcwd()
         paths = []
-        # Loop until we reach root
-        while cdir:
-            # Look for hidden and unhidden proplotrc files
+        while cdir:  # i.e. not root
             for name in ('proplotrc', '.proplotrc'):
                 path = os.path.join(cdir, name)
-                if os.path.exists(path):
+                if os.path.isfile(path):
                     paths.append(path)
-            # Move on to next parent directory
             ndir = os.path.dirname(cdir)
             if ndir == cdir:  # root
                 break
             cdir = ndir
         return paths[::-1]  # sort from decreasing to increasing importantce
+
+    @staticmethod
+    def local_folders(subfolder=None):
+        """
+        Return locations of folders named ``proplot_cmaps``, ``proplot_cycles``,
+        ``proplot_colors``, and ``proplot_fonts`` in this directory and in parent
+        directories. "Hidden" folders with a leading dot are also recognized. Files
+        in these directories are automatically loaded when proplot is imported.
+
+        See also
+        --------
+        Configurator.user_file
+        Configurator.user_folder
+        Configurator.local_files
+        """
+        cdir = os.getcwd()
+        paths = []
+        if subfolder is None:
+            subfolder = ('cmaps', 'cycles', 'colors', 'fonts')
+        if isinstance(subfolder, str):
+            subfolder = (subfolder,)
+        while cdir:  # i.e. not root
+            for prefix in ('proplot', '.proplot'):
+                for suffix in subfolder:
+                    path = os.path.join(cdir, '_'.join((prefix, suffix)))
+                    if os.path.isdir(path):
+                        paths.append(path)
+            ndir = os.path.dirname(cdir)
+            if ndir == cdir:  # root
+                break
+            cdir = ndir
+        return paths[::-1]
 
     @staticmethod
     def _config_folder():
@@ -1035,7 +1084,7 @@ class Configurator(MutableMapping, dict):
         base = os.environ.get('XDG_CONFIG_HOME')
         if not base:
             base = os.path.join(home, '.config')
-        if sys.platform.startswith(('linux', 'freebsd')) and os.path.exists(base):
+        if sys.platform.startswith(('linux', 'freebsd')) and os.path.isdir(base):
             configdir = os.path.join(base, 'proplot')
         else:
             configdir = os.path.join(home, '.proplot')
@@ -1082,7 +1131,7 @@ class Configurator(MutableMapping, dict):
         See also
         --------
         Configurator.user_file
-        Configurator.local_files
+        Configurator.local_folders
         """
         # Try the XDG standard location
         # NOTE: This is borrowed from matplotlib.get_configdir

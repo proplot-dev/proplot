@@ -171,9 +171,9 @@ after a version change, simply remove it and restart your python session.
 To change the global `~proplot.config.rc` settings, edit and uncomment the lines
 in the ``proplotrc`` file. To change the settings for a specific project, place a file
 named either ``.proplotrc`` or ``proplotrc`` in the same directory as your python
-script or jupyter session, or in an arbitrary parent directory. To generate a
-``proplotrc`` file containing the settings you have changed during a python session,
-use `~proplot.config.Configurator.save` (use `~proplot.config.Configurator.changed`
+session, or in an arbitrary parent directory. To generate a ``proplotrc`` file
+containing the settings you have changed during a python session, use
+`~proplot.config.Configurator.save` (use `~proplot.config.Configurator.changed`
 to preview a dictionary of the changed settings). To explicitly load a ``proplotrc``
 file, use `~proplot.config.Configurator.load`.
 

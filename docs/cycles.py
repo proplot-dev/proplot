@@ -187,16 +187,22 @@ obj = ax.plot(
 # Downloading color cycles
 # ------------------------
 #
-# There are plenty of online interactive tools for generating and testing
-# color cycles, including
+# There are several interactive online tools for generating perceptually
+# distinct color cycles, including
 # `i want hue <http://tools.medialab.sciences-po.fr/iwanthue/index.php>`__,
-# `coolers <https://coolors.co>`__, and
-# `viz palette <https://projects.susielu.com/viz-palette>`__.
-#
-# To add color cycles downloaded from any of these sources, add a cycle data file
-# to the ``cycles`` subfolder inside `~proplot.config.Configurator.user_folder`
-# and call `~proplot.config.register_cycles` (or restart your python session). You
-# can also use `~proplot.colors.DiscreteColormap.from_file` or manually pass
-# discrete colormaps or file paths to `~proplot.config.register_cycles`. See
-# `~proplot.colors.DiscreteColormap.from_file` for a table of valid
-# data file extensions.
+# `Color Cycle Picker <https://colorcyclepicker.mpetroff.net/>`__,
+# `Colorgorical <http://vrl.cs.brown.edu/color>`__,
+# `Adobe Color <https://color.adobe.com/explore>`__,
+# `Color Hunt <https://colorhunt.co/>`__,
+# `Coolers <https://coolors.co>`__,
+# and `Color Drop <https://colordrop.io/>`__.
+
+# To add color cycles downloaded from any of these sources, save the color data file
+# to the ``cycles`` subfolder inside `~proplot.config.Configurator.user_folder`,
+# or to a folder named ``proplot_cycles`` in the same directory as your python session
+# or an arbitrary parent directory (see `~proplot.config.Configurator.local_folders`).
+# After adding the file, call `~proplot.config.register_cycles` or restart your python
+# session. You can also use `~proplot.colors.DiscreteColormap.from_file` or manually
+# pass `~proplot.colors.DiscreteColormap` instances or file paths to
+# `~proplot.config.register_cycles`. See `~proplot.config.register_cycles`
+# for a table of recognized data file extensions.

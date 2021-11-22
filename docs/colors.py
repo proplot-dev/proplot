@@ -178,9 +178,11 @@ fig.format(
 # ---------------------
 #
 # You can register your own colors by adding ``.txt`` files to the
-# ``colors`` subfolder inside `~proplot.config.Configurator.user_folder`
-# and calling `~proplot.config.register_colors`. This command is also called
-# on import. You can also manually pass file paths, dictionaries, ``name=color``
+# ``colors`` subfolder inside `~proplot.config.Configurator.user_folder`,
+# or to a folder named ``proplot_colors`` in the same directory as your python session
+# or an arbitrary parent directory (see `~proplot.config.Configurator.local_folders`).
+# After adding the file, call `~proplot.config.register_colors` or restart your python
+# session. You can also manually pass file paths, dictionaries, ``name=color``
 # keyword arguments to `~proplot.config.register_colors`. Each color
 # file should contain lines that look like ``color: #xxyyzz``
 # where ``color`` is the registered color name and ``#xxyyzz`` is
