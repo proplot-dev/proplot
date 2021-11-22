@@ -809,7 +809,7 @@ class Axes(maxes.Axes):
             raise ValueError(f'Unexpected axisbelow value {axisbelow!r}.')
         return zorder
 
-    def _get_share_axes(self, x, panels=False):
+    def _get_share_axes(self, sx, panels=False):
         """
         Return the axes whose horizontal or vertical extent in the main gridspec
         matches the horizontal or vertical extent of this axes.
@@ -817,14 +817,14 @@ class Axes(maxes.Axes):
         # NOTE: The lefmost or bottommost axes are at the start of the list.
         if not isinstance(self, maxes.SubplotBase):
             return [self]
-        y = 'y' if x == 'x' else 'x'
-        idx = 0 if x == 'x' else 1
-        argfunc = np.argmax if x == 'x' else np.argmin
-        irange = self._range_subplotspec(x)
+        i = 0 if sx == 'x' else 1
+        sy = 'y' if sx == 'x' else 'x'
+        argfunc = np.argmax if sx == 'x' else np.argmin
+        irange = self._range_subplotspec(sx)
         axs = self.figure._iter_axes(hidden=False, children=False, panels=panels)
-        axs = [ax for ax in axs if ax._range_subplotspec(x) == irange]
+        axs = [ax for ax in axs if ax._range_subplotspec(sx) == irange]
         axs = list({self, *axs})  # self may be missing during initialization
-        pax = axs.pop(argfunc([ax._range_subplotspec(y)[idx] for ax in axs]))
+        pax = axs.pop(argfunc([ax._range_subplotspec(sy)[i] for ax in axs]))
         return [pax, *axs]  # return with leftmost or bottommost first
 
     def _get_span_axes(self, side, panels=False):
@@ -967,12 +967,12 @@ class Axes(maxes.Axes):
         return kw
 
     @staticmethod
-    def _get_loc(x, string):
+    def _get_loc(sx, string):
         """
         Convert the boolean "left", "right", "top", and "bottom" spine or tick rc
         settings to a location string. Returns ``None`` if settings are unchanged.
         """
-        opt1, opt2 = ('top', 'bottom') if x == 'x' else ('left', 'right')
+        opt1, opt2 = ('top', 'bottom') if sx == 'x' else ('left', 'right')
         b1 = rc.find(f'{string}.{opt1}', context=True)
         b2 = rc.find(f'{string}.{opt2}', context=True)
         if b1 is None and b2 is None:
@@ -1084,7 +1084,7 @@ class Axes(maxes.Axes):
             return bb
         return _inset_locator
 
-    def _range_subplotspec(self, x):
+    def _range_subplotspec(self, s):
         """
         Return the column or row range for the subplotspec.
         """
@@ -1092,12 +1092,12 @@ class Axes(maxes.Axes):
             raise RuntimeError('Axes must be a subplot.')
         ss = self.get_subplotspec()
         row1, row2, col1, col2 = ss._get_rows_columns()
-        if x == 'x':
+        if s == 'x':
             return (col1, col2)
         else:
             return (row1, row2)
 
-    def _range_tightbbox(self, x):
+    def _range_tightbbox(self, s):
         """
         Return the tight bounding box span from the cached bounding box.
         """
@@ -1105,7 +1105,7 @@ class Axes(maxes.Axes):
         bbox = self._tight_bbox
         if bbox is None:
             return np.nan, np.nan
-        if x == 'x':
+        if s == 'x':
             return bbox.xmin, bbox.xmax
         else:
             return bbox.ymin, bbox.ymax
@@ -1134,13 +1134,13 @@ class Axes(maxes.Axes):
         """
         if share is None or self._panel_side:
             return  # if this is a panel
-        axis = 'x' if side in ('left', 'right') else 'y'
+        s = 'x' if side in ('left', 'right') else 'y'
         caxs = self._panel_dict[side]
         paxs = share._panel_dict[side]
         caxs = [pax for pax in caxs if not pax._panel_hidden]
         paxs = [pax for pax in paxs if not pax._panel_hidden]
         for cax, pax in zip(caxs, paxs):  # may be uneven
-            getattr(cax, '_share' + axis + '_setup')(pax, **kwargs)
+            getattr(cax, f'_share{s}_setup')(pax, **kwargs)
 
     def _share_long_axis(self, share, side, **kwargs):
         """
@@ -1150,11 +1150,11 @@ class Axes(maxes.Axes):
         # sharing with main subplot, not other subplots
         if share is None or self._panel_side:
             return  # if this is a panel
-        axis = 'x' if side in ('top', 'bottom') else 'y'
+        s = 'x' if side in ('top', 'bottom') else 'y'
         paxs = self._panel_dict[side]
         paxs = [pax for pax in paxs if not pax._panel_hidden]
         for pax in paxs:
-            getattr(pax, '_share' + axis + '_setup')(share, **kwargs)
+            getattr(pax, f'_share{s}_setup')(share, **kwargs)
 
     def _reposition_subplot(self):
         """
@@ -1581,49 +1581,14 @@ class Axes(maxes.Axes):
         """
         %(axes.inset)s
         """
-        return self.inset_axes(*args, **kwargs)
+        return self._add_inset(*args, **kwargs)
 
     @docstring._snippet_manager
-    def inset_axes(
-        self, bounds, transform=None, *, proj=None, projection=None,
-        zoom=None, zoom_kw=None, zorder=None, **kwargs
-    ):
+    def inset_axes(self, *args, **kwargs):
         """
         %(axes.inset)s
         """
-        # Converting transform to figure-relative coordinates
-        transform = self._get_transform(transform, 'axes')
-        locator = self._make_inset_locator(bounds, transform)
-        bb = locator(None, None)
-        label = kwargs.pop('label', 'inset_axes')
-        zorder = _not_none(zorder, 4)
-
-        # Get projection, inherit from current axes by default
-        # NOTE: The _parse_proj method also accepts axes classes.
-        proj = _not_none(proj=proj, projection=projection)
-        if proj is None:
-            if self._name in ('cartopy', 'basemap'):
-                proj = copy.copy(self.projection)
-            else:
-                proj = self._name
-        kwargs = self.figure._parse_proj(proj, **kwargs)
-        cls = mprojections.get_projection_class(kwargs.pop('projection'))
-
-        # Create axes and apply locator. The locator lets the axes adjust
-        # automatically if we used data coords. Called by ax.apply_aspect()
-        ax = cls(self.figure, bb.bounds, zorder=zorder, label=label, **kwargs)
-        ax.set_axes_locator(locator)
-        ax._inset_parent = self
-        ax._inset_bounds = bounds
-        self.add_child_axes(ax)
-
-        # Add zoom indicator (NOTE: requires matplotlib >= 3.0)
-        zoom = _not_none(zoom, self._name == 'cartesian' and ax._name == 'cartesian')
-        ax._inset_zoom = zoom
-        if zoom:
-            zoom_kw = zoom_kw or {}
-            ax.indicate_inset_zoom(**zoom_kw)
-        return ax
+        return self._add_inset(*args, **kwargs)
 
     @docstring._snippet_manager
     def indicate_inset_zoom(self, **kwargs):
@@ -1684,7 +1649,7 @@ class Axes(maxes.Axes):
         self, xmin, ymin, width, height, *, fontsize, fancybox=None, **kwargs
     ):
         """
-        Manually add a colorbar or multilegend frame.
+        Add a colorbar or multilegend frame.
         """
         # TODO: Shadow patch does not seem to work. Unsure why.
         # TODO: Add basic 'colorbar' and 'legend' artists with
@@ -1709,6 +1674,47 @@ class Axes(maxes.Axes):
         patch.update(kwargs)
         self.add_artist(patch)
         return patch
+
+    def _add_inset(
+        self, bounds, transform=None, *, proj=None, projection=None,
+        zoom=None, zoom_kw=None, zorder=None, **kwargs
+    ):
+        """
+        Add an inset axes.
+        """
+        # Converting transform to figure-relative coordinates
+        transform = self._get_transform(transform, 'axes')
+        locator = self._make_inset_locator(bounds, transform)
+        bb = locator(None, None)
+        label = kwargs.pop('label', 'inset_axes')
+        zorder = _not_none(zorder, 4)
+
+        # Get projection, inherit from current axes by default
+        # NOTE: The _parse_proj method also accepts axes classes.
+        proj = _not_none(proj=proj, projection=projection)
+        if proj is None:
+            if self._name in ('cartopy', 'basemap'):
+                proj = copy.copy(self.projection)
+            else:
+                proj = self._name
+        kwargs = self.figure._parse_proj(proj, **kwargs)
+        cls = mprojections.get_projection_class(kwargs.pop('projection'))
+
+        # Create axes and apply locator. The locator lets the axes adjust
+        # automatically if we used data coords. Called by ax.apply_aspect()
+        ax = cls(self.figure, bb.bounds, zorder=zorder, label=label, **kwargs)
+        ax.set_axes_locator(locator)
+        ax._inset_parent = self
+        ax._inset_bounds = bounds
+        self.add_child_axes(ax)
+
+        # Add zoom indicator (NOTE: requires matplotlib >= 3.0)
+        zoom = _not_none(zoom, self._name == 'cartesian' and ax._name == 'cartesian')
+        ax._inset_zoom = zoom
+        if zoom:
+            zoom_kw = zoom_kw or {}
+            ax.indicate_inset_zoom(**zoom_kw)
+        return ax
 
     def _apply_title_above(self):
         """

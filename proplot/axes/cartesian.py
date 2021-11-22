@@ -383,9 +383,48 @@ class CartesianAxes(shared._SharedAxes, plot.PlotAxes):
                 axis.set_tick_params(which='both', labelleft=False, labelright=False)
         axis.set_minor_formatter(mticker.NullFormatter())
 
-    def _dualx_scale(self):
+    def _add_alt(self, sx, **kwargs):
         """
-        Lock the child "dual" *x* axis limits to the parent.
+        Add an alternate axes.
+        """
+        # Parse keyword arguments. Optionally omit redundant leading 'x' and 'y'
+        # WARNING: We add axes as children for tight layout algorithm convenience and
+        # to support eventual paradigm of arbitrarily many duplicates with spines
+        # arranged in an edge stack. However this means all artists drawn there take
+        # on zorder of their axes when drawn inside the "parent" (see Axes.draw()).
+        # To restore matplotlib behavior, which draws "child" artists on top simply
+        # because the axes was created after the "parent" one, use the inset_axes
+        # zorder of 4 and make the background transparent.
+        sy = 'y' if sx == 'x' else 'x'
+        sig = self._format_signatures[CartesianAxes]
+        keys = tuple(key[1:] for key in sig.parameters if key[0] == sx)
+        kwargs = {(sx + key if key in keys else key): val for key, val in kwargs.items()}  # noqa: E501
+        if f'{sy}spineloc' not in kwargs:  # acccount for aliases
+            kwargs.setdefault(f'{sy}loc', 'neither')
+        if f'{sx}spineloc' not in kwargs:  # account for aliases
+            kwargs.setdefault(f'{sx}loc', 'top')  # other locs follow by default
+        kwargs.setdefault(f'autoscale{sy}_on', getattr(self, f'get_autoscale{sy}_on')())
+        kwargs.setdefault(f'share{sy}', self)
+
+        # Initialize axes
+        kwargs.setdefault('grid', False)  # note xgrid=True would override this
+        kwargs.setdefault('zorder', 4)  # increased default zorder
+        kwargs.setdefault('number', None)
+        kwargs.setdefault('autoshare', False)
+        kwargs.setdefault('projection', 'cartesian')
+        ax = self._make_twin_axes(**kwargs)
+
+        # Parent and child defaults
+        self.format(**{f'{sx}loc': REVERSE_SIDE.get(kwargs[f'{sx}loc'], None)})
+        self.add_child_axes(ax)  # to facilitate tight layout
+        self.figure._axstack.remove(ax)  # or gets drawn twice!
+        setattr(ax, f'_alt{sx}_parent', self)
+        getattr(ax, f'{sy}axis').set_visible(False)
+        getattr(ax, 'patch').set_visible(False)
+
+    def _dual_scale(self, s, funcscale=None):
+        """
+        Lock the child "dual" axis limits to the parent.
         """
         # NOTE: We bypass autoscale_view because we set limits manually, and bypass
         # child.stale = True because that is done in call to set_xlim() below.
@@ -395,46 +434,30 @@ class CartesianAxes(shared._SharedAxes, plot.PlotAxes):
         # NOTE: Dual axis only needs to be constrained if the parent axis scale
         # and limits have changed, and limits are always applied before we reach
         # the child.draw() because always called after parent.draw()
-        funcscale, parent, child = self._dualx_funcscale, self._altx_parent, self
-        if funcscale is None or parent is None:
+        child = self
+        parent = getattr(self, f'_alt{s}_parent')
+        if funcscale is not None:
+            setattr(self, f'_dual{s}_funcscale', funcscale)
+        else:
+            funcscale = getattr(self, f'_dual{s}_funcscale')
+        if parent is None or funcscale is None:
             return
-        olim = parent.get_xlim()
-        scale = parent.xaxis._scale
-        if (scale, *olim) == child._dualx_prevstate:
+        olim = getattr(parent, f'get_{s}lim')()
+        scale = getattr(parent, f'{s}axis')._scale
+        if (scale, *olim) == getattr(child, f'_dual{s}_prevstate'):
             return
         funcscale = pscale.FuncScale(funcscale, invert=True, parent_scale=scale)
-        child.xaxis._scale = funcscale
+        caxis = getattr(child, f'{s}axis')
+        caxis._scale = funcscale
         child._update_transScale()
-        funcscale.set_default_locators_and_formatters(child.xaxis, only_if_default=True)
+        funcscale.set_default_locators_and_formatters(caxis, only_if_default=True)
         nlim = list(map(funcscale.functions[1], np.array(olim)))
         if np.sign(np.diff(olim)) != np.sign(np.diff(nlim)):
             nlim = nlim[::-1]  # if function flips limits, so will set_xlim!
-        child.set_xlim(nlim, emit=False)
-        child._dualx_prevstate = (scale, *olim)
+        getattr(child, f'set_{s}lim')(nlim, emit=False)
+        setattr(child, f'_dual{s}_prevstate', (scale, *olim))
 
-    def _dualy_scale(self):
-        """
-        Lock the child "dual" *y* axis limits to the parent.
-        """
-        # See _dualx_scale() comments
-        funcscale, parent, child = self._dualy_funcscale, self._alty_parent, self
-        if funcscale is None or parent is None:
-            return
-        olim = parent.get_ylim()
-        scale = parent.yaxis._scale
-        if (scale, *olim) == child._dualy_prevstate:
-            return
-        funcscale = pscale.FuncScale(funcscale, invert=True, parent_scale=scale)
-        child.yaxis._scale = funcscale
-        child._update_transScale()
-        funcscale.set_default_locators_and_formatters(child.yaxis, only_if_default=True)
-        nlim = list(map(funcscale.functions[1], np.array(olim)))
-        if np.sign(np.diff(olim)) != np.sign(np.diff(nlim)):
-            nlim = nlim[::-1]
-        child.set_ylim(nlim, emit=False)
-        child._dualy_prevstate = (scale, *olim)
-
-    def _fix_ticks(self, x, fixticks=False):
+    def _fix_ticks(self, s, fixticks=False):
         """
         Ensure there are no out-of-bounds ticks. Mostly a brute-force version of
         `~matplotlib.axis.Axis.set_smart_bounds` (which I couldn't get to work).
@@ -445,14 +468,13 @@ class CartesianAxes(shared._SharedAxes, plot.PlotAxes):
         # successfully calling this and messing up the ticks for some reason.
         # So avoid using this when possible, and try to make behavior consistent
         # by cacheing the locators before we use them for ticks.
-        axis = getattr(self, f'{x}axis')
-        sides = ('bottom', 'top') if x == 'x' else ('left', 'right')
-        l0, l1 = getattr(self, f'get_{x}lim')()
+        axis = getattr(self, f'{s}axis')
+        sides = ('bottom', 'top') if s == 'x' else ('left', 'right')
+        l0, l1 = getattr(self, f'get_{s}lim')()
         bounds = tuple(self.spines[side].get_bounds() or (None, None) for side in sides)
-        skipticks = lambda xs: [  # noqa: E731
-            x for x in xs if not any(
-                x < _not_none(b0, l0) or x > _not_none(b1, l1) for (b0, b1) in bounds
-            )
+        skipticks = lambda ticks: [  # noqa: E731
+            x for x in ticks
+            if not any(x < _not_none(b0, l0) or x > _not_none(b1, l1) for (b0, b1) in bounds)  # noqa: E501
         ]
         if fixticks or any(x is not None for b in bounds for x in b):
             # Major locator
@@ -468,16 +490,16 @@ class CartesianAxes(shared._SharedAxes, plot.PlotAxes):
             locator = constructor.Locator(skipticks(locator()))
             axis.set_minor_locator(locator)
 
-    def _get_spine_side(self, x, loc):
+    def _get_spine_side(self, s, loc):
         """
         Get the spine side implied by the input location or position. This
         propagates to tick mark, tick label, and axis label positions.
         """
-        sides = ('bottom', 'top') if x == 'x' else ('left', 'right')
+        sides = ('bottom', 'top') if s == 'x' else ('left', 'right')
         centers = ('zero', 'center')
         options = (*sides, 'both', 'neither', 'none')
         if np.iterable(loc) and len(loc) == 2 and loc[0] in ('axes', 'data', 'outward'):
-            lim = getattr(self, f'get_{x}lim')()
+            lim = getattr(self, f'get_{s}lim')()
             if loc[0] == 'outward':  # ambiguous so just choose first side
                 side = sides[0]
             elif loc[0] == 'axes':
@@ -490,7 +512,7 @@ class CartesianAxes(shared._SharedAxes, plot.PlotAxes):
             side = loc
         else:
             raise ValueError(
-                f'Invalid {x} spine location {loc!r}. Options are: '
+                f'Invalid {s} spine location {loc!r}. Options are: '
                 + ', '.join(map(repr, (*options, *centers)))
                 + " or a coordinate position ('axes', coord), "
                 + " ('data', coord), or ('outward', coord)."
@@ -603,7 +625,7 @@ class CartesianAxes(shared._SharedAxes, plot.PlotAxes):
             self._sharey_limits(sharey)
 
     def _update_formatter(
-        self, x, formatter=None, *, formatter_kw=None,
+        self, s, formatter=None, *, formatter_kw=None,
         tickrange=None, wraprange=None,
     ):
         """
@@ -612,7 +634,7 @@ class CartesianAxes(shared._SharedAxes, plot.PlotAxes):
         # Test if this is date axes
         # See: https://matplotlib.org/api/units_api.html
         # And: https://matplotlib.org/api/dates_api.html
-        axis = getattr(self, x + 'axis')
+        axis = getattr(self, f'{s}axis')
         date = isinstance(axis.converter, mdates.DateConverter)
 
         # Major formatter
@@ -643,7 +665,7 @@ class CartesianAxes(shared._SharedAxes, plot.PlotAxes):
             formatter = constructor.Formatter(formatter, date=date, **formatter_kw)
             axis.set_major_formatter(formatter)
 
-    def _update_labels(self, x, *args, **kwargs):
+    def _update_labels(self, s, *args, **kwargs):
         """
         Apply axis labels to the relevant shared axis. If spanning labels are toggled
         this keeps the labels synced for all subplots in the same row or column. Label
@@ -659,21 +681,21 @@ class CartesianAxes(shared._SharedAxes, plot.PlotAxes):
         no_kwargs = all(v is None for v in kwargs.values())
         if no_args and no_kwargs:
             return  # also returns if args and kwargs are empty
-        setter = getattr(self, 'set_' + x + 'label')
-        getter = getattr(self, 'get_' + x + 'label')
+        setter = getattr(self, f'set_{s}label')
+        getter = getattr(self, f'get_{s}label')
         if no_args:  # otherwise label text is reset!
             args = (getter(),)
         setter(*args, **kwargs)
 
     def _update_locators(
-        self, x, locator=None, minorlocator=None, *,
+        self, s, locator=None, minorlocator=None, *,
         tickminor=None, locator_kw=None, minorlocator_kw=None,
     ):
         """
         Update the locators. Requires `Locator` instances.
         """
         # Apply input major locator
-        axis = getattr(self, x + 'axis')
+        axis = getattr(self, f'{s}axis')
         locator_kw = locator_kw or {}
         if locator is not None:
             locator = constructor.Locator(locator, **locator_kw)
@@ -706,21 +728,21 @@ class CartesianAxes(shared._SharedAxes, plot.PlotAxes):
         if tickminor is not None and not tickminor:
             axis.set_minor_locator(constructor.Locator('null'))
 
-    def _update_limits(self, x, *, min_=None, max_=None, lim=None, reverse=None):
+    def _update_limits(self, s, *, min_=None, max_=None, lim=None, reverse=None):
         """
         Update the axis limits.
         """
         # Set limits for just one side or both at once
-        axis = getattr(self, x + 'axis')
+        axis = getattr(self, f'{s}axis')
         if min_ is not None or max_ is not None:
             if lim is not None:
                 warnings._warn_proplot(
-                    f'Overriding {x}lim={lim!r} '
-                    f'with {x}min={min_!r} and {x}max={max_!r}.'
+                    f'Overriding {s}lim={lim!r} '
+                    f'with {s}min={min_!r} and {s}max={max_!r}.'
                 )
             lim = (min_, max_)
         if lim is not None:
-            getattr(self, 'set_' + x + 'lim')(lim)
+            getattr(self, f'set_{s}lim')(lim)
 
         # Reverse direction
         # NOTE: 3.1+ has axis.set_inverted(), below is from source code
@@ -732,7 +754,7 @@ class CartesianAxes(shared._SharedAxes, plot.PlotAxes):
                 lim = (min(lo, hi), max(lo, hi))
             axis.set_view_interval(*lim, ignore=True)
 
-    def _update_rotation(self, x, *, rotation=None):
+    def _update_rotation(self, s, *, rotation=None):
         """
         Rotate the tick labels. Rotate 90 degrees by default for datetime *x* axes.
         """
@@ -740,15 +762,14 @@ class CartesianAxes(shared._SharedAxes, plot.PlotAxes):
         # NOTE: Rotation is done *before* horizontal/vertical alignment. Cannot
         # change alignment with set_tick_params so we must apply to text objects.
         # Note fig.autofmt_date calls subplots_adjust, so we cannot use it.
-        x = _not_none(x, 'x')
-        current = '_' + x + 'axis_current_rotation'
-        default = '_' + x + 'axis_isdefault_rotation'
-        axis = getattr(self, x + 'axis')
+        current = f'_{s}axis_current_rotation'
+        default = f'_{s}axis_isdefault_rotation'
+        axis = getattr(self, f'{s}axis')
         if rotation is not None:
             setattr(self, default, False)
         elif not getattr(self, default):
             return  # do not rotate
-        elif x == 'x' and isinstance(axis.converter, mdates.DateConverter):
+        elif s == 'x' and isinstance(axis.converter, mdates.DateConverter):
             rotation = rc['formatter.timerotation']
         else:
             rotation = 'horizontal'
@@ -763,13 +784,13 @@ class CartesianAxes(shared._SharedAxes, plot.PlotAxes):
                 label.update(kw)
             setattr(self, current, rotation)
 
-    def _update_spines(self, x, *, loc=None, bounds=None):
+    def _update_spines(self, s, *, loc=None, bounds=None):
         """
         Update the spine settings.
         """
         # Iterate over spines associated with this axis
-        sides = ('bottom', 'top') if x == 'x' else ('left', 'right')
-        pside = self._get_spine_side(x, loc)  # side for set_position()
+        sides = ('bottom', 'top') if s == 'x' else ('left', 'right')
+        pside = self._get_spine_side(s, loc)  # side for set_position()
         if bounds is not None and all(self.spines[s].get_visible() for s in sides):
             loc = _not_none(loc, sides[0])
         for side in sides:
@@ -796,7 +817,7 @@ class CartesianAxes(shared._SharedAxes, plot.PlotAxes):
                     spine.set_position(loc)
                 except ValueError:
                     raise ValueError(
-                        f'Invalid {x} spine location {loc!r}. Options are: '
+                        f'Invalid {s} spine location {loc!r}. Options are: '
                         + ', '.join(map(repr, (*sides, 'both', 'neither'))) + '.'
                     )
             # Apply spine bounds
@@ -804,14 +825,14 @@ class CartesianAxes(shared._SharedAxes, plot.PlotAxes):
                 spine.set_bounds(*bounds)
 
     def _update_locs(
-        self, x, *, tickloc=None, ticklabelloc=None, labelloc=None, offsetloc=None
+        self, s, *, tickloc=None, ticklabelloc=None, labelloc=None, offsetloc=None
     ):
         """
         Update the tick, tick label, and axis label locations.
         """
         # The tick and tick label sides for Cartesian axes
         kw = {}
-        sides = ('bottom', 'top') if x == 'x' else ('left', 'right')
+        sides = ('bottom', 'top') if s == 'x' else ('left', 'right')
         sides_map = {'both': sides, 'neither': (), 'none': (), None: None}
         sides_active = tuple(side for side in sides if self.spines[side].get_visible())
 
@@ -865,14 +886,14 @@ class CartesianAxes(shared._SharedAxes, plot.PlotAxes):
         # Apply the tick, tick label, and label locations
         # Uses ugly mpl 3.3+ tick_top() tick_bottom() kludge for offset location
         # See: https://matplotlib.org/3.3.1/users/whats_new.html
-        axis = getattr(self, x + 'axis')
-        self.tick_params(axis=x, which='both', **kw)
+        axis = getattr(self, f'{s}axis')
+        self.tick_params(axis=s, which='both', **kw)
         if labelloc is not None:
             axis.set_label_position(labelloc)
         if offsetloc is not None:
             if hasattr(axis, 'set_offset_position'):  # y axis (and future x axis?)
                 axis.set_offset_position(offsetloc)
-            elif x == 'x' and dependencies._version_mpl >= 3.3:  # ugly mpl kludge
+            elif s == 'x' and dependencies._version_mpl >= 3.3:  # ugly mpl kludge
                 axis._tick_position = offsetloc
                 axis.offsetText.set_verticalalignment(REVERSE_SIDE[offsetloc])
 
@@ -1040,7 +1061,7 @@ class CartesianAxes(shared._SharedAxes, plot.PlotAxes):
 
             # Loop over axes
             for (
-                x,
+                s,
                 min_,
                 max_,
                 lim,
@@ -1142,36 +1163,36 @@ class CartesianAxes(shared._SharedAxes, plot.PlotAxes):
                 # so critical to do it first.
                 if scale is not None:
                     scale = constructor.Scale(scale, **scale_kw)
-                    getattr(self, 'set_' + x + 'scale')(scale)
+                    getattr(self, f'set_{s}scale')(scale)
 
                 # Axis limits
                 self._update_limits(
-                    x, min_=min_, max_=max_, lim=lim, reverse=reverse
+                    s, min_=min_, max_=max_, lim=lim, reverse=reverse
                 )
                 if margin is not None:
-                    self.margins(**{x: margin})
+                    self.margins(**{s: margin})
 
                 # Axis spine settings
                 # NOTE: This sets spine-specific color and linewidth settings. For
                 # non-specific settings _update_background is called in Axes.format()
                 self._update_spines(
-                    x, loc=spineloc, bounds=bounds
+                    s, loc=spineloc, bounds=bounds
                 )
                 self._update_background(
-                    x, edgecolor=color, linewidth=linewidth,
+                    s, edgecolor=color, linewidth=linewidth,
                     tickwidth=tickwidth, tickwidthratio=tickwidthratio,
                 )
 
                 # Axis tick settings
                 self._update_locs(
-                    x, tickloc=tickloc, ticklabelloc=ticklabelloc,
+                    s, tickloc=tickloc, ticklabelloc=ticklabelloc,
                     labelloc=labelloc, offsetloc=offsetloc,
                 )
                 self._update_rotation(
-                    x, rotation=rotation
+                    s, rotation=rotation
                 )
                 self._update_ticks(
-                    x, grid=grid, gridminor=gridminor,
+                    s, grid=grid, gridminor=gridminor,
                     ticklen=ticklen, ticklenratio=ticklenratio,
                     tickdir=tickdir, labeldir=ticklabeldir, labelpad=ticklabelpad,
                     tickcolor=tickcolor, gridcolor=gridcolor, labelcolor=ticklabelcolor,
@@ -1188,112 +1209,48 @@ class CartesianAxes(shared._SharedAxes, plot.PlotAxes):
                     weight=labelweight,
                     **label_kw
                 )
-                self._update_labels(x, label, **kw)
+                self._update_labels(s, label, **kw)
 
                 # Axis locator
                 if minorlocator is True or minorlocator is False:  # must test identity
                     warnings._warn_proplot(
-                        f'You passed {x}minorticks={minorlocator}, but this '
-                        'argument is used to specify tick *locations*. If '
-                        'you just want to *toggle* minor ticks on and off, '
-                        f'please use {x}tickminor=True or {x}tickminor=False.'
+                        f'You passed {s}minorticks={minorlocator}, but this argument '
+                        'is used to specify the tick locations. If you just want to '
+                        f'toggle minor ticks, please use {s}tickminor={minorlocator}.'
                     )
                     minorlocator = None
                 self._update_locators(
-                    x, locator, minorlocator, tickminor=tickminor,
+                    s, locator, minorlocator, tickminor=tickminor,
                     locator_kw=locator_kw, minorlocator_kw=minorlocator_kw,
                 )
 
                 # Axis formatter
                 self._update_formatter(
-                    x, formatter, formatter_kw=formatter_kw,
+                    s, formatter, formatter_kw=formatter_kw,
                     tickrange=tickrange, wraprange=wraprange,
                 )
 
                 # Ensure ticks are within axis bounds
-                self._fix_ticks(x, fixticks=fixticks)
+                self._fix_ticks(s, fixticks=fixticks)
 
         # Parent format method
         if aspect is not None:
             self.set_aspect(aspect)
         super().format(rc_kw=rc_kw, rc_mode=rc_mode, **kwargs)
 
-    def _parse_alt(self, x, **kwargs):
-        """
-        Optionally omit the leading x or y from "twin axes" methods.
-        """
-        sig = self._format_signatures[CartesianAxes]
-        keys = tuple(key[1:] for key in sig.parameters if key[0] == x)
-        kwargs = {(x + key if key in keys else key): val for key, val in kwargs.items()}
-        for axis in 'xy':  # standardize format() location aliases
-            if axis + 'spineloc' in kwargs:
-                kwargs[axis + 'loc'] = kwargs.pop(axis + 'spineloc')
-        return kwargs
-
     @docstring._snippet_manager
     def altx(self, **kwargs):
         """
         %(axes.altx)s
         """
-        # Initialize axes
-        # WARNING: We add axes as children for tight layout algorithm convenience and
-        # to support eventual paradigm of arbitrarily many duplicates with spines
-        # arranged in an edge stack. However this means all artists drawn there take
-        # on zorder of their axes when drawn inside the "parent" (see Axes.draw()).
-        # To restore matplotlib behavior, which draws "child" artists on top simply
-        # because the axes was created after the "parent" one, use the inset_axes
-        # zorder of 4 and make the background transparent.
-        kwargs = self._parse_alt('x', **kwargs)
-        kwargs.setdefault('yloc', 'neither')
-        kwargs.setdefault('xloc', 'top')  # other locations follow by default
-        kwargs.setdefault('grid', False)  # note xgrid=True would override this
-        kwargs.setdefault('zorder', 4)
-        kwargs.setdefault('autoscaley_on', self.get_autoscaley_on())
-
-        # Initialize twin axes
-        ax = self._make_twin_axes(
-            sharey=self, number=False, autoshare=False, projection='cartesian', **kwargs
-        )
-        ax._altx_parent = self
-        ax.patch.set_visible(False)
-        ax.yaxis.set_visible(False)
-
-        # Parent defaults
-        kwformat = {'xloc': REVERSE_SIDE.get(kwargs['xloc'], None)}
-        self.format(**kwformat)
-        self.add_child_axes(ax)  # to facilitate tight layout
-        self.figure._axstack.remove(ax)  # or gets drawn twice!
-
-        return ax
+        return self._add_alt('x', **kwargs)
 
     @docstring._snippet_manager
     def alty(self, **kwargs):
         """
         %(axes.alty)s
         """
-        # Parse input args
-        kwargs = self._parse_alt('y', **kwargs)
-        kwargs.setdefault('xloc', 'neither')
-        kwargs.setdefault('yloc', 'right')  # other locations follow by default
-        kwargs.setdefault('grid', False)  # note ygrid=True would override this
-        kwargs.setdefault('zorder', 4)
-        kwargs.setdefault('autoscalex_on', self.get_autoscalex_on())
-
-        # Initialize twin axes
-        ax = self._make_twin_axes(
-            sharex=self, number=False, autoshare=False, projection='cartesian', **kwargs
-        )
-        ax._alty_parent = self
-        ax.patch.set_visible(False)
-        ax.xaxis.set_visible(False)
-
-        # Update parent axes
-        kwformat = {'yloc': REVERSE_SIDE.get(kwargs['yloc'], None)}
-        self.format(**kwformat)
-        self.add_child_axes(ax)  # to facilitate tight layout
-        self.figure._axstack.remove(ax)  # or gets drawn twice!
-
-        return ax
+        return self._add_alt('y', **kwargs)
 
     @docstring._snippet_manager
     def dualx(self, funcscale, **kwargs):
@@ -1303,9 +1260,8 @@ class CartesianAxes(shared._SharedAxes, plot.PlotAxes):
         # NOTE: Matplotlib 3.1 has a 'secondary axis' feature. For the time
         # being, our version is more robust (see FuncScale) and simpler, since
         # we do not create an entirely separate _SecondaryAxis class.
-        ax = self.altx(**kwargs)
-        ax._dualx_funcscale = funcscale
-        ax._dualx_scale()
+        ax = self._add_alt('x', **kwargs)
+        ax._dual_scale('x', funcscale)
         return ax
 
     @docstring._snippet_manager
@@ -1313,9 +1269,8 @@ class CartesianAxes(shared._SharedAxes, plot.PlotAxes):
         """
         %(axes.dualy)s
         """
-        ax = self.alty(**kwargs)
-        ax._dualy_funcscale = funcscale
-        ax._dualy_scale()
+        ax = self._add_alt('y', **kwargs)
+        ax._dual_scale('y', funcscale)
         return ax
 
     @docstring._snippet_manager
@@ -1323,30 +1278,30 @@ class CartesianAxes(shared._SharedAxes, plot.PlotAxes):
         """
         %(axes.twinx)s
         """
-        return self.alty(**kwargs)
+        return self._add_alt('y', **kwargs)
 
     @docstring._snippet_manager
     def twiny(self, **kwargs):
         """
         %(axes.twiny)s
         """
-        return self.altx(**kwargs)
+        return self._add_alt('x', **kwargs)
 
     def draw(self, renderer=None, *args, **kwargs):
         # Perform extra post-processing steps
         # NOTE: In *principle* axis sharing application step goes here. But should
         # already be complete because auto_layout() (called by figure pre-processor)
         # has to run it before aligning labels. So this is harmless no-op.
-        self._dualx_scale()
-        self._dualy_scale()
+        self._dual_scale('x')
+        self._dual_scale('y')
         self._apply_axis_sharing()
         self._update_rotation('x')
         super().draw(renderer, *args, **kwargs)
 
     def get_tightbbox(self, renderer, *args, **kwargs):
         # Perform extra post-processing steps
-        self._dualx_scale()
-        self._dualy_scale()
+        self._dual_scale('x')
+        self._dual_scale('y')
         self._apply_axis_sharing()
         self._update_rotation('x')
         return super().get_tightbbox(renderer, *args, **kwargs)
