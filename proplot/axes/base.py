@@ -1626,24 +1626,18 @@ class Axes(maxes.Axes):
         return rectpatch, connects
 
     @docstring._snippet_manager
-    def panel(self, *args, **kwargs):
+    def panel(self, side=None, **kwargs):
         """
         %(axes.panel)s
         """
-        return self.panel_axes(*args, **kwargs)
+        return self.figure._add_axes_panel(self, side, **kwargs)
 
     @docstring._snippet_manager
-    def panel_axes(self, *args, **kwargs):
+    def panel_axes(self, side=None, **kwargs):
         """
         %(axes.panel)s
         """
-        self = self._altx_parent or self
-        self = self._alty_parent or self
-        if not isinstance(self, maxes.SubplotBase):
-            raise RuntimeError('Cannot create panels for non-subplot axes.')
-        if self._panel_parent:
-            raise RuntimeError('Cannot create panels for existing panel axes.')
-        return self.figure._add_axes_panel(self, *args, **kwargs)
+        return self.figure._add_axes_panel(self, side, **kwargs)
 
     def _add_frame(
         self, xmin, ymin, width, height, *, fontsize, fancybox=None, **kwargs

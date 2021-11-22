@@ -903,10 +903,20 @@ class Figure(mfigure.Figure):
         # NOTE: Axis sharing not implemented for figure panels, 99% of the
         # time this is just used as construct for adding global colorbars and
         # legends, really not worth implementing axis sharing
-        if not isinstance(ax, paxes.Axes) or not isinstance(ax, maxes.SubplotBase):
-            raise RuntimeError('Cannot add axes panels to a non-subplot axes.')
-        ax = ax._panel_parent or ax  # redirect to main axes
-        side = _translate_loc(side, 'panel', default='right')
+        ax = ax._altx_parent or ax
+        ax = ax._alty_parent or ax
+        if not isinstance(ax, paxes.Axes):
+            raise RuntimeError('Cannot add panels to non-proplot axes.')
+        if not isinstance(ax, maxes.SubplotBase):
+            raise RuntimeError('Cannot add panels to non-subplot axes.')
+        orig = ax._panel_side
+        if orig is None:
+            pass
+        elif side is None or side == orig:
+            ax, side = ax._panel_parent, orig
+        else:
+            raise RuntimeError(f'Cannot add {side!r} panel to existing {orig!r} panel.')
+        side = _translate_loc(side, 'panel', default=_not_none(orig, 'right'))
 
         # Add and setup the panel accounting for index changes
         # NOTE: Always put tick labels on the 'outside'
