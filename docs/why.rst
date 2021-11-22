@@ -868,19 +868,21 @@ Solution
 
 Proplot settings can be changed persistently by editing the default ``proplotrc``
 file in the location given by `~proplot.config.Configurator.user_file` (this is
-usually ``$HOME/.proplot/proplotrc``) or by adding ``proplotrc`` files to either
-the current directory or any parent directory. Adding files to parent directories
-can be useful when working in projects with lots of subfolders.
+usually ``$HOME/.proplot/proplotrc``) or by adding loose ``proplotrc`` files to
+either the current directory or an arbitrary parent directory. Adding files to
+parent directories can be useful when working in projects with lots of subfolders.
 
 Proplot also automatically registers colormaps, color cycles, colors, and font
-files stored in the ``cmaps``,  ``cycles``, ``colors``, and ``fonts`` folders in
-the location given by `~proplot.config.Configurator.user_folder` (this is usually
-``$HOME/.proplot``). You can save colormaps and color cycles to these
-folders simply by passing ``save=True`` to `~proplot.constructor.Colormap` and
-`~proplot.constructor.Cycle`. To manually register these files, or to
-register arbitrary input arguments, you can use `~proplot.config.register_cmaps`,
-`~proplot.config.register_cycles`, `~proplot.config.register_colors`, or
-`~proplot.config.register_fonts`.
+files stored in subfolders named ``cmaps``,  ``cycles``, ``colors``, and ``fonts``
+in the location given by `~proplot.config.Configurator.user_folder` (this is usually
+``$HOME/.proplot``), as well as loose subfolders named ``proplot_cmaps``,
+``proplot_cycles``, ``proplot_colors``, and ``proplot_fonts`` in the current
+directory or an arbitrary parent directory. You can save colormaps and color cycles to
+`~proplot.config.Configurator.user_folder` simply by passing ``save=True`` to
+`~proplot.constructor.Colormap` and `~proplot.constructor.Cycle`. To re-register
+these files during an active python session, or to register arbitrary input arguments,
+you can use `~proplot.config.register_cmaps`, `~proplot.config.register_cycles`,
+`~proplot.config.register_colors`, or `~proplot.config.register_fonts`.
 
 Links
 -----
