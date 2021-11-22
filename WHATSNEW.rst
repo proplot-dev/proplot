@@ -62,6 +62,12 @@ Features
   from the current subplot (:commit:`cfaeb177`).
 * Permit disabling a-b-c labels for a particular subplot by passing e.g.
   ``number=None`` instead of ``number=False`` (:commit:`f7308cbe`).
+* Automatically load from "local" folders named ``proplot_cmaps``, ``proplot_cycles``,
+  ``proplot_colors``, and ``proplot_fonts`` in current or parent directories,
+  analogous to "local" ``proplotrc`` (:commit:`a3a7bb33`).
+* Add the `proplot.config.Configurator.local_folders` function, analogous to
+  `~proplot.config.Configurator.local_files`, and add a `local` keyword to
+  each ``register`` function (:commit:`a3a7bb33`).
 * Use custom locator `proplot.ticker.DiscreteLocator` for major/minor discrete colorbar
   ticks to auto-select subset of levels depending on axis length (:commit:`b94a9b1e`).
 * Refresh major/minor discrete colorbar ticks when the associated axis is drawn to
