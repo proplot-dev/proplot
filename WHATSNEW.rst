@@ -58,6 +58,8 @@ Features
   inside each gridspec slot in row or column-major order (:commit:`a9ad7429`).
 * Add modifiable `proplot.figure.Figure.tight` property to retrieve/change the
   "tight layout" setting (:commit:`46f46c26`). Useful for debugging/inspection.
+* Permit adding additional panels (or outer legends or colorbars) by calling
+  from the current subplot (:commit:`cfaeb177`).
 * Permit disabling a-b-c labels for a particular subplot by passing e.g.
   ``number=None`` instead of ``number=False`` (:commit:`f7308cbe`).
 * Use custom locator `proplot.ticker.DiscreteLocator` for major/minor discrete colorbar
