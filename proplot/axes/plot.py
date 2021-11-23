@@ -1521,9 +1521,6 @@ class PlotAxes(base.Axes):
         input coordinates. This is used to copy `bar` behavior to `area` and `lines`.
         """
         for sides in args:
-            sides = np.atleast_1d(sides)
-            if not sides.size:
-                continue
             min_, max_ = process._safe_range(sides)
             if min_ is None or max_ is None:
                 continue
@@ -2876,7 +2873,7 @@ class PlotAxes(base.Axes):
                 objs.append((*eb, *es, obj) if eb or es else obj)
 
         # Add sticky edges
-        self._add_sticky_edges(objs, 'x' if vert else 'y', xsides, only=mlines.Line2D)
+        self._add_sticky_edges(objs, 'x' if vert else 'y', *xsides, only=mlines.Line2D)
         self._update_guide(objs, **guide_kw)
         return cbook.silent_list('Line2D', objs)  # always return list
 
