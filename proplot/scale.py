@@ -249,7 +249,7 @@ class FuncScale(_Scale, mscale.ScaleBase):
     #: The registered scale name
     name = 'function'
 
-    def __init__(self, transform, invert=False, parent_scale=None, **kwargs):
+    def __init__(self, transform=None, invert=False, parent_scale=None, **kwargs):
         """
         Parameters
         ----------
@@ -294,6 +294,12 @@ class FuncScale(_Scale, mscale.ScaleBase):
         # NOTE: Permit *arbitrary* parent axis scales and infer default locators and
         # formatters from the input scale (if it was passed) or the parent scale. Use
         # case for latter is e.g. logarithmic scale with linear transformation.
+        if 'functions' in kwargs:  # matplotlib compatibility (critical for >= 3.5)
+            if transform is None:
+                transform = kwargs.pop('functions')
+            else:
+                warnings._warn_proplot("Ignoring keyword argument 'functions'.")
+                del kwargs['functions']
         super().__init__()
         from .constructor import Formatter, Locator, Scale
         inherit_scale = None  # scale for inheriting properties
@@ -352,7 +358,6 @@ class FuncScale(_Scale, mscale.ScaleBase):
                         continue  # revert to defaults
                 ticker = parser(ticker)
                 setattr(self, attr, copy.copy(ticker))
-
         if kwargs:
             raise TypeError(f'FuncScale got unexpected arguments: {kwargs}')
 

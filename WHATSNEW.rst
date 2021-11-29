@@ -90,6 +90,8 @@ Features
 Bug fixes
 ---------
 
+* Fix issue preventing basic usage of `proplot.colors.DiscreteNorm`
+  in matplotlib >= 3.5 (:issue:`302`).
 * Fix issue where silently-deprecated `aspect` parameter passed to
   `proplot.ui.subplots` is not translated to `refaspect` (:commit:`2406a2ae`).
 * Fix issue where `proplot.gridspec.GridSpec.figure` is allowed to change -- instead

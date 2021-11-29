@@ -2453,11 +2453,9 @@ class DiscreteNorm(mcolors.BoundaryNorm):
         self._bins = bins
         self._dest = dest
         self._norm = norm
-        self.vmin = vmin
-        self.vmax = vmax
-        self.boundaries = levels
-        self.clip = clip
         self.N = levels.size
+        self.boundaries = levels
+        mcolors.Normalize.__init__(self, vmin=vmin, vmax=vmax, clip=clip)
 
         # Add special clipping
         # WARNING: For some reason must clip manually for LogNorm, or end
@@ -2553,7 +2551,7 @@ class SegmentedNorm(mcolors.Normalize):
         dest = np.linspace(0, 1, len(levels))
         vmin, vmax = np.min(levels), np.max(levels)
         super().__init__(vmin=vmin, vmax=vmax, clip=clip)
-        self._x = self.boundaries = levels  # we use 'boundaries' in plot wrapper
+        self._x = self.boundaries = levels  # 'boundaries' are used in PlotAxes
         self._y = dest
 
     def __call__(self, value, clip=None):
