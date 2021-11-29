@@ -295,33 +295,27 @@ class FuncScale(_Scale, mscale.ScaleBase):
         # formatters from the input scale (if it was passed) or the parent scale. Use
         # case for latter is e.g. logarithmic scale with linear transformation.
         if 'functions' in kwargs:  # matplotlib compatibility (critical for >= 3.5)
+            functions = kwargs.pop('functions', None)
             if transform is None:
-                transform = kwargs.pop('functions')
+                transform = functions
             else:
                 warnings._warn_proplot("Ignoring keyword argument 'functions'.")
-                del kwargs['functions']
-        super().__init__()
         from .constructor import Formatter, Locator, Scale
-        inherit_scale = None  # scale for inheriting properties
+        super().__init__()
         if callable(transform):
-            forward = inverse = transform
-        elif (
-            np.iterable(transform)
-            and len(transform) == 2
-            and all(map(callable, transform))
-        ):
-            forward, inverse = transform
+            forward, inverse, inherit_scale = transform, transform, None
+        elif np.iterable(transform) and len(transform) == 2 and all(map(callable, transform)):  # noqa: E501
+            forward, inverse, inherit_scale = *transform, None
         else:
             try:
-                inherit_scale = Scale(transform)
+                transform = Scale(transform).get_transform()
             except ValueError:
                 raise ValueError(
                     'Expected a function, 2-tuple of forward and and inverse '
                     f'functions, or an axis scale specification. Got {transform!r}.'
                 )
-            t = inherit_scale.get_transform()
-            forward = t.transform
-            inverse = t.inverted().transform
+            else:
+                forward, inverse = transform.transform, transform.inverted().transform
 
         # Create the transform
         # NOTE: Linear scale is always identity transform (no-op).
