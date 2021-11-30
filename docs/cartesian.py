@@ -504,6 +504,16 @@ ax.format(ymin=0.05, yscale=('power', 0.5), title=title)
 # this context is redundant, just ``ax.alty(color='red')``). They also enforce
 # sensible default locations for the spines, ticks, and labels, and disable
 # the twin axes background patch and gridlines by default.
+#
+# .. note::
+#
+#    Unlike matplotlib, proplot adds alternate axes as :ref:`children
+#    <https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.add_child_axes.html>`__
+#    of the original axes. This considerably simplifies the :ref:`tight layout algorithm
+#    <ug_tight>` but means that the drawing order is controlled by the difference
+#    between the zorders of the alternate axes and the content *inside* the original
+#    axes rather than the zorder of the original axes itself (see `this issue page
+#    <https://github.com/lukelbd/proplot/issues/303>`__ for details).
 
 # %%
 import proplot as pplt

@@ -20,8 +20,8 @@
 #
 # This section documents a variety of features related to proplot subplots,
 # including a-b-c subplot labels, axis sharing between subplots, automatic
-# spacing between subplots, and a unique feature where the figure size is
-# automatically determined from a reference subplot and the subplot geometry.
+# "tight layout" spacing between subplots, and a unique feature where the
+# figure size is automatically determined from the subplot geometry.
 #
 # .. note::
 #
@@ -29,9 +29,9 @@
 #    (see the section on :ref:`adding subplots <ug_subplot>`), and proplot
 #    does not officially support the "nested" matplotlib structures
 #    `~matplotlib.gridspec.GridSpecFromSubplotSpec` and `~matplotlib.figure.SubFigure`.
-#    These restrictions have the advantage of 1) considerably simplifying the algorithm
-#    used to calculate :ref:`figure sizes <ug_autosize>` and :ref:`subplot spaces
-#    <ug_tight>` and 2) making the default :ref:`a-b-c label assignment <ug_abc>` and
+#    These restrictions have the advantage of 1) considerably simplifying the
+#    :ref:`auto figure size <ug_autosize>` and :ref:`tight layout <ug_tight>`
+#    algorithms and 2) making the default :ref:`a-b-c label assignment <ug_abc>` and
 #    :ref:`axis sharing between subplots <ug_share>` less ambiguous. If you need the
 #    features associated with "nested" matplotlib structures, some are reproducible with
 #    proplot -- including :ref:`different spaces <ug_tight>` between distinct subplot
@@ -108,14 +108,14 @@ axs.format(
 # Figure sizes
 # ------------
 #
-# Depending on the keyword arguments passed to `~proplot.figure.Figure`, proplot
-# figure sizes may be flexible. By default, the figure size is calculated
+# Depending on the keyword arguments passed to `~proplot.figure.Figure`, the
+# dimensions of proplot figures are flexible. By default, the figure size is calculated
 # automatically from the `~proplot.figure.Figure.gridspec` geometry and the physical
 # size of a "reference" subplot. This subplot has a `~proplot.axes.Axes.number`
 # matching the `~proplot.figure.Figure` keyword `refnum` (the default value ``1``
 # usually corresponds to the subplot in the upper-left corner -- see :ref:`this
-# section <ug_abc>` for more on subplot numbers). Alternatively, the figure
-# height (width) may be calculated automatically from the
+# section <ug_abc>` for more on subplot numbers). Alternatively, the
+# figure height (width) can be calculated automatically from the
 # `~proplot.figure.Figure.gridspec` geometry and a user-input figure width (height).
 #
 # The figure size ultimately depends on the following `~proplot.figure.Figure`
@@ -205,15 +205,15 @@ pplt.rc.reset()
 # %% [raw] raw_mimetype="text/restructuredtext"
 # .. _ug_tight:
 #
-# Subplot spaces
-# --------------
+# Subplot spacing
+# ---------------
 #
 # Depending on the keyword arguments passed to `~proplot.figure.Figure` and
-# `~proplot.gridspec.GridSpec`, the spaces between proplot subplots may be flexible.
+# `~proplot.gridspec.GridSpec`, the spacing between proplot subplots is flexible.
 # By default, the spaces are calculated automatically to accomadate text labels using
 # a custom "tight layout" algorithm. This algorithm can be disabled by passing
 # ``tight=False`` to `~proplot.figure.Figure` or by setting :rcraw:`subplots.tight`
-# to ``False``. In contrast to `matplotlib's tight layout algorithm
+# to ``False``. In contrast with `matplotlib's tight layout algorithm
 # <https://matplotlib.org/stable/tutorials/intermediate/tight_layout_guide.html>`__,
 # proplot's algorithm may :ref:`change the figure size <ug_autosize>`
 # and permits variable spacing between each subplot row and column
