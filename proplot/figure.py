@@ -1278,8 +1278,9 @@ class Figure(mfigure.Figure):
 
     @docstring._snippet_manager
     def add_subplots(
-        self, *args, nrows=1, ncols=1, order='C', proj=None, projection=None,
-        proj_kw=None, projection_kw=None, basemap=None, **kwargs
+        self, *args, nrows=1, ncols=1, order='C',
+        proj=None, projection=None, proj_kw=None, projection_kw=None,
+        basemap=None, **kwargs
     ):
         """
         %(figure.subplots)s
