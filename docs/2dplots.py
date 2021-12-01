@@ -442,12 +442,12 @@ for data, mode, fair in zip(
 # To explicitly toggle discrete levels on or off, change :rcraw:`cmap.discrete`
 # or pass ``discrete=False`` or ``discrete=True`` to any plotting command
 # that accepts a `cmap` argument. The level edges or centers used with
-# `~proplot.colors.DiscreteNorm` can be explicitly specified using the `levels` and
-# `values` keywords (the `~proplot.utils.arange` and `~proplot.utils.edges` commands
-# are useful for generating level lists). You can also pass an integer to these
-# keywords (or to the `N` keyword) to automatically generate approximately that many
-# level edges or centers at "nice" intervals. The algorithm used to generate levels
-# is similar to matplotlib's algorithm for selecting contour levels. The default
+# `~proplot.colors.DiscreteNorm` can be explicitly specified using the `levels` or
+# `values` keywords, respectively (`~proplot.utils.arange` and `~proplot.utils.edges`
+# are useful for generating `levels` and `values` lists). You can also pass an integer
+# to these keywords (or to the `N` keyword) to automatically generate approximately this
+# many level edges or centers at "nice" intervals. The algorithm used to generate levels
+# is similar to matplotlib's algorithm for generarting contour levels. The default
 # number of levels is controlled by :rcraw:`cmap.levels`, and the level selection
 # is constrainted by the keywords `vmin`, `vmax`, `locator`, and `locator_kw` -- for
 # example, ``vmin=100`` ensures the minimum level is greater than or equal to ``100``,

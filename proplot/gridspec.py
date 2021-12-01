@@ -232,7 +232,7 @@ class GridSpec(mgridspec.GridSpec):
         manually and want the same geometry for multiple figures, you must create
         a copy with `GridSpec.copy` before working on the subsequent figure).
         """
-        # Gridspec properties
+        # Fundamental GridSpec properties
         self._nrows_total = nrows
         self._ncols_total = ncols
         self._left = None

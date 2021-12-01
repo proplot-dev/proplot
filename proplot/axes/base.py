@@ -652,18 +652,18 @@ class Axes(maxes.Axes):
     def __repr__(self):
         # Show the position in the geometry excluding panels. Panels are
         # indicated by showing their parent geometry plus a 'side' argument.
-        # WARNING: This will not get used in matplotlib 3.3.0 (and probably next
+        # WARNING: This will not be used in matplotlib 3.3.0 (and probably next
         # minor releases) because native __repr__ is defined in SubplotBase.
         ax = self._get_topmost_axes()
-        try:
-            nrows, ncols, num1, num2 = ax.get_subplotspec()._get_geometry()
-            params = {'index': (num1, num2)}
-        except (IndexError, ValueError, AttributeError):  # e.g. a loose axes
-            left, bottom, width, height = np.round(self._position.bounds, 2)
-            params = {'left': left, 'bottom': bottom, 'size': (width, height)}
-        if ax.number:
-            params['number'] = ax.number
         name = type(self).__name__
+        prefix = '' if ax is self else 'parent_'
+        params = {}
+        if self._name in ('cartopy', 'basemap'):
+            name = name.replace('_' + self._name.title(), 'Geo')
+            params['backend'] = self._name
+        if self._colorbar_fill:
+            name = re.sub('Axes(Subplot)?', 'AxesColorbar', name)
+            params['orientation'] = self._colorbar_fill.orientation
         if self._inset_parent:
             name = re.sub('Axes(Subplot)?', 'AxesInset', name)
             params['bounds'] = tuple(np.round(self._inset_bounds, 2))
@@ -673,9 +673,14 @@ class Axes(maxes.Axes):
         if self._panel_side:
             name = re.sub('Axes(Subplot)?', 'AxesPanel', name)
             params['side'] = self._panel_side
-        if self._name in ('cartopy', 'basemap'):
-            name = name.replace('_' + self._name.title(), 'Geo')
-            params['backend'] = self._name
+        try:
+            nrows, ncols, num1, num2 = ax.get_subplotspec()._get_geometry()
+            params[prefix + 'index'] = (num1, num2)
+        except (IndexError, ValueError, AttributeError):  # e.g. a loose axes
+            left, bottom, width, height = np.round(self._position.bounds, 2)
+            params['left'], params['bottom'], params['size'] = (left, bottom, (width, bottom))  # noqa: E501
+        if ax.number:
+            params[prefix + 'number'] = ax.number
         params = ', '.join(f'{key}={value!r}' for key, value in params.items())
         return f'{name}({params})'
 
@@ -851,14 +856,12 @@ class Axes(maxes.Axes):
 
     def _get_topmost_axes(self):
         """
-        Return the "main" subplot associated with this axes. Try a few levels.
+        Return the "main" subplot associated with this axes.
         """
-        # NOTE: Not trivial because panels can't be children of their 'main'
+        # NOTE: Non trivial because panels can't be children of their 'main'
         # subplots. So have to loop to parent of panel, then main subplot, etc.
         for _ in range(5):
             self = self._axes or self
-            self = self._altx_parent or self
-            self = self._inset_parent or self
             self = self._panel_parent or self
         return self
 
@@ -1683,7 +1686,7 @@ class Axes(maxes.Axes):
         label = kwargs.pop('label', 'inset_axes')
         zorder = _not_none(zorder, 4)
 
-        # Get projection, inherit from current axes by default
+        # Parse projection and inherit from the current axes by default
         # NOTE: The _parse_proj method also accepts axes classes.
         proj = _not_none(proj=proj, projection=projection)
         if proj is None:
@@ -1692,10 +1695,10 @@ class Axes(maxes.Axes):
             else:
                 proj = self._name
         kwargs = self.figure._parse_proj(proj, **kwargs)
-        cls = mprojections.get_projection_class(kwargs.pop('projection'))
 
         # Create axes and apply locator. The locator lets the axes adjust
         # automatically if we used data coords. Called by ax.apply_aspect()
+        cls = mprojections.get_projection_class(kwargs.pop('projection'))
         ax = cls(self.figure, bb.bounds, zorder=zorder, label=label, **kwargs)
         ax.set_axes_locator(locator)
         ax._inset_parent = self
@@ -1886,25 +1889,25 @@ class Axes(maxes.Axes):
         kw_frame['shadow'] = _not_none(shadow, rc[f'{guide}.shadow'])
         return kw_frame, kwargs
 
-    def _parse_outer_colorbar(
+    def _parse_fill_colorbar(
         self, length=None, shrink=None, align=None,
         tickloc=None, ticklocation=None, orientation=None, **kwargs
     ):
         """
         Return the axes and adjusted keyword args for a panel-filling colorbar.
         """
+        # Parse input arguments
         side = self._panel_side
         side = _not_none(side, 'left' if orientation == 'vertical' else 'bottom')
         align = _not_none(align, 'center')
         length = _not_none(length=length, shrink=shrink, default=rc['colorbar.length'])
         ticklocation = _not_none(tickloc=tickloc, ticklocation=ticklocation)
         if not 0 < length <= 1:
-            raise ValueError('Panel colorbar length must satisfy 0 < length <= 1.')
+            raise ValueError('Filled colorbar length must satisfy 0 < length <= 1.')
         if not isinstance(self, maxes.SubplotBase):
-            raise RuntimeError('Axes must be a subplot.')
+            raise RuntimeError('Filled colorbar axes must be a Subplot instance.')
 
-        # Draw colorbar axes within this one
-        # WARNING: Use internal keyword arg '_child'
+        # Generate a SubplotSpec for the colorbar
         ss = self.get_subplotspec()
         main = length
         delta = 0.5 * (1 - length)
@@ -2003,12 +2006,11 @@ class Axes(maxes.Axes):
         ibounds = (*ibounds, length, width)  # inset axes
         fbounds = (*fbounds, 2 * xpad + length, 2 * ypad + width + labspace)
 
-        # Make axes and frame
-        from .cartesian import CartesianAxes
+        # Make axes and frame with zorder matching default legend zorder
+        cls = mprojections.get_projection_class('proplot_cartesian')
         locator = self._make_inset_locator(ibounds, self.transAxes)
-        zorder = 5  # NOTE: this is identical to legend zorder
-        bbox = locator(None, None)
-        ax = CartesianAxes(self.figure, bbox.bounds, zorder=zorder)
+        bbox = locator(None, None)  # default bounding box
+        ax = cls(self.figure, bbox.bounds, zorder=5)
         ax.patch.set_visible(False)
         ax.set_axes_locator(locator)
         self.add_child_axes(ax)
@@ -2016,7 +2018,7 @@ class Axes(maxes.Axes):
         if frame:
             frame = self._add_frame(*fbounds, fontsize=fontsize, **kw_frame)
 
-        # Default keyword args
+        # Handle default keyword args
         if orientation is not None and orientation != 'horizontal':
             warnings._warn_proplot(
                 f'Orientation for inset colorbars must be horizontal, '
@@ -2150,14 +2152,8 @@ class Axes(maxes.Axes):
         The driver function for adding axes colorbars.
         """
         # Parse input args
-        # TODO: Get the 'best' inset colorbar location using the legend algorithm.
-        # NOTE: There is a weird problem with colorbars when simultaneously
-        # passing levels and norm object to a mappable; fixed by passing vmin/vmax
-        # instead of levels. (see: https://stackoverflow.com/q/40116968/4970632).
-        # NOTE: Often want levels instead of vmin/vmax, while simultaneously
-        # using a Normalize (for example) to determine colors between the levels
-        # (see: https://stackoverflow.com/q/42723538/4970632). Workaround makes
-        # sure locators are in vmin/vmax range exclusively; cannot match values.
+        # TODO: Get the 'best' inset colorbar location using the legend algorithm
+        # and implement inset colorbars the same as inset legends.
         grid = _not_none(grid=grid, edges=edges, drawedges=drawedges, default=rc['colorbar.grid'])  # noqa: E501
         align = _translate_loc(align, 'panel', default='center', c='center', center='center')  # noqa: E501
         label = _not_none(title=title, label=label)
@@ -2206,22 +2202,21 @@ class Axes(maxes.Axes):
             if value is not None:
                 kw_ticklabels[key] = value
 
-        # Generate an axes panel
+        # Generate the colorbar axes
         # NOTE: The inset axes function needs 'label' to know how to pad the box
         # TODO: Use seperate keywords for frame properties vs. colorbar edge properties?
+        width = kwargs.pop('width', None)
         if loc in ('left', 'right', 'top', 'bottom'):
-            width = kwargs.pop('width', None)
             self = self.panel_axes(loc, width=width, space=space, pad=pad, filled=True)
             loc = 'fill'
         if loc == 'fill':
-            kwargs.pop('width', None)
             kwargs['align'] = align
             extendsize = _not_none(extendsize, rc['colorbar.extend'])
-            cax, kwargs = self._parse_outer_colorbar(**kwargs)
+            cax, kwargs = self._parse_fill_colorbar(**kwargs)
         else:
             kwargs['label'] = label  # for frame calculations
             extendsize = _not_none(extendsize, rc['colorbar.insetextend'])
-            cax, kwargs = self._parse_inset_colorbar(loc=loc, pad=pad, **kwargs)
+            cax, kwargs = self._parse_inset_colorbar(loc=loc, pad=pad, width=width, **kwargs)  # noqa: E501
 
         # Parse the colorbar mappable
         # NOTE: Account for special case where auto colorbar is generated from 1D
