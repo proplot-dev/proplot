@@ -1110,7 +1110,6 @@ def Formatter(formatter, *args, date=False, index=False, **kwargs):
         ``'dmslat'``            `~proplot.ticker.LatitudeFormatter`             Latitude labels with degree/minute/second support
         ======================  ==============================================  =================================================================
 
-
     date : bool, optional
         Toggles the behavior when `formatter` contains a ``'%'`` sign
         (see above).
