@@ -406,18 +406,23 @@ class CartesianAxes(shared._SharedAxes, plot.PlotAxes):
         kwargs.setdefault(f'autoscale{sy}_on', getattr(self, f'get_autoscale{sy}_on')())
         kwargs.setdefault(f'share{sy}', self)
 
-        # Initialize axes
+        # Initialize child axes
         kwargs.setdefault('grid', False)  # note xgrid=True would override this
         kwargs.setdefault('zorder', 4)  # increased default zorder
         kwargs.setdefault('number', None)
         kwargs.setdefault('autoshare', False)
-        kwargs.setdefault('projection', 'cartesian')
-        ax = self._make_twin_axes(**kwargs)
-
-        # Parent and child defaults
-        self.format(**{f'{sx}loc': REVERSE_SIDE.get(kwargs[f'{sx}loc'], None)})
+        if 'sharex' in kwargs and 'sharey' in kwargs:
+            raise ValueError('Twinned axes may share only one axis.')
+        locator = self._make_inset_locator([0, 0, 1, 1], self.transAxes)
+        ax = CartesianAxes(self.figure, self.get_position(True), **kwargs)
+        ax.set_axes_locator(locator)
+        ax.set_adjustable('datalim')
         self.add_child_axes(ax)  # to facilitate tight layout
-        self.figure._axstack.remove(ax)  # or gets drawn twice!
+        self.set_adjustable('datalim')
+        self._twinned_axes.join(self, ax)
+
+        # Format parent and child axes
+        self.format(**{f'{sx}loc': REVERSE_SIDE.get(kwargs[f'{sx}loc'], None)})
         setattr(ax, f'_alt{sx}_parent', self)
         getattr(ax, f'{sy}axis').set_visible(False)
         getattr(ax, 'patch').set_visible(False)
