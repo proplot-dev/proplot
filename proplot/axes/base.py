@@ -13,7 +13,6 @@ import matplotlib.cm as mcm
 import matplotlib.colors as mcolors
 import matplotlib.container as mcontainer
 import matplotlib.contour as mcontour
-import matplotlib.gridspec as mgridspec
 import matplotlib.legend as mlegend
 import matplotlib.patches as mpatches
 import matplotlib.projections as mprojections
@@ -1077,7 +1076,7 @@ class Axes(maxes.Axes):
 
     def _make_inset_locator(self, bounds, trans):
         """
-        Return a locator that determines inset axes bounds.
+        Return a locator that determines child axes bounds.
         """
         def _inset_locator(ax, renderer):
             bbox = mtransforms.Bbox.from_bounds(*bounds)
@@ -1902,48 +1901,36 @@ class Axes(maxes.Axes):
         align = _not_none(align, 'center')
         length = _not_none(length=length, shrink=shrink, default=rc['colorbar.length'])
         ticklocation = _not_none(tickloc=tickloc, ticklocation=ticklocation)
-        if not 0 < length <= 1:
-            raise ValueError('Filled colorbar length must satisfy 0 < length <= 1.')
-        if not isinstance(self, maxes.SubplotBase):
-            raise RuntimeError('Filled colorbar axes must be a Subplot instance.')
 
-        # Generate a SubplotSpec for the colorbar
-        ss = self.get_subplotspec()
-        main = length
+        # Calculate inset bounds for the colorbar
         delta = 0.5 * (1 - length)
         if side in ('bottom', 'top'):
-            nrows, ncols = (1, 3)
-            if align == 'center':
-                wratios = (delta, main, delta)
-            elif align == 'left':
-                wratios = (main, delta, delta)
+            if align == 'left':
+                bounds = (0, 0, length, 1)
+            elif align == 'center':
+                bounds = (delta, 0, length, 1)
             elif align == 'right':
-                wratios = (delta, delta, main)
+                bounds = (2 * delta, 0, length, 1)
             else:
                 raise ValueError(f'Invalid align={align!r} for colorbar loc={side!r}.')
-            hratios = (1,)
-            idx = ('left', 'center', 'right').index(align)
         else:
-            nrows, ncols = (3, 1)
-            if align == 'center':
-                hratios = (delta, main, delta)
+            if align == 'bottom':
+                bounds = (0, 0, 1, length)
+            elif align == 'center':
+                bounds = (0, delta, 1, length)
             elif align == 'top':
-                hratios = (main, delta, delta)
-            elif align == 'bottom':
-                hratios = (delta, delta, main)
+                bounds = (0, 2 * delta, 1, length)
             else:
                 raise ValueError(f'Invalid align={align!r} for colorbar loc={side!r}.')
-            wratios = (1,)
-            idx = ('top', 'center', 'bottom').index(align)
-        gs = mgridspec.GridSpecFromSubplotSpec(
-            nrows, ncols, ss,
-            height_ratios=hratios, width_ratios=wratios, hspace=0.0, wspace=0.0,
-        )
-        ss = type(ss)(gs, idx, idx)
-        self._hide_panel()
-        ax = self.figure.add_subplot(ss, autoshare=False, number=False)
-        ax.patch.set_facecolor('none')  # ignore axes.alpha application
+
+        # Add the axes as a child of the original axes
+        cls = mprojections.get_projection_class('proplot_cartesian')
+        locator = self._make_inset_locator(bounds, self.transAxes)
+        ax = cls(self.figure, locator(None, None).bounds, zorder=5)
         self.add_child_axes(ax)
+        self._hide_panel()
+        ax.set_axes_locator(locator)
+        ax.patch.set_facecolor('none')  # ignore axes.alpha application
 
         # Handle default keyword args
         if side in ('bottom', 'top'):
@@ -1992,31 +1979,30 @@ class Axes(maxes.Axes):
         # Location in axes-relative coordinates
         # Bounds are x0, y0, width, height in axes-relative coordinates
         if loc == 'upper right':
-            ibounds = (1 - xpad - length, 1 - ypad - width)
-            fbounds = (1 - 2 * xpad - length, 1 - 2 * ypad - width - labspace)
+            bounds_inset = (1 - xpad - length, 1 - ypad - width)
+            bounds_frame = (1 - 2 * xpad - length, 1 - 2 * ypad - width - labspace)
         elif loc == 'upper left':
-            ibounds = (xpad, 1 - ypad - width)
-            fbounds = (0, 1 - 2 * ypad - width - labspace)
+            bounds_inset = (xpad, 1 - ypad - width)
+            bounds_frame = (0, 1 - 2 * ypad - width - labspace)
         elif loc == 'lower left':
-            ibounds = (xpad, ypad + labspace)
-            fbounds = (0, 0)
+            bounds_inset = (xpad, ypad + labspace)
+            bounds_frame = (0, 0)
         else:
-            ibounds = (1 - xpad - length, ypad + labspace)
-            fbounds = (1 - 2 * xpad - length, 0)
-        ibounds = (*ibounds, length, width)  # inset axes
-        fbounds = (*fbounds, 2 * xpad + length, 2 * ypad + width + labspace)
+            bounds_inset = (1 - xpad - length, ypad + labspace)
+            bounds_frame = (1 - 2 * xpad - length, 0)
+        bounds_inset = (*bounds_inset, length, width)  # inset axes
+        bounds_frame = (*bounds_frame, 2 * xpad + length, 2 * ypad + width + labspace)
 
         # Make axes and frame with zorder matching default legend zorder
         cls = mprojections.get_projection_class('proplot_cartesian')
-        locator = self._make_inset_locator(ibounds, self.transAxes)
-        bbox = locator(None, None)  # default bounding box
-        ax = cls(self.figure, bbox.bounds, zorder=5)
-        ax.patch.set_visible(False)
+        locator = self._make_inset_locator(bounds_inset, self.transAxes)
+        ax = cls(self.figure, locator(None, None).bounds, zorder=5)
+        ax.patch.set_facecolor('none')
         ax.set_axes_locator(locator)
         self.add_child_axes(ax)
         kw_frame, kwargs = self._parse_frame('colorbar', **kwargs)
         if frame:
-            frame = self._add_frame(*fbounds, fontsize=fontsize, **kw_frame)
+            frame = self._add_frame(*bounds_frame, fontsize=fontsize, **kw_frame)
 
         # Handle default keyword args
         if orientation is not None and orientation != 'horizontal':
@@ -2202,7 +2188,7 @@ class Axes(maxes.Axes):
             if value is not None:
                 kw_ticklabels[key] = value
 
-        # Generate the colorbar axes
+        # Generate and prepare the colorbar axes
         # NOTE: The inset axes function needs 'label' to know how to pad the box
         # TODO: Use seperate keywords for frame properties vs. colorbar edge properties?
         width = kwargs.pop('width', None)
@@ -2711,28 +2697,28 @@ class Axes(maxes.Axes):
             if value is not None:
                 kwargs[key] = value
 
-        # Generate and fill panel axes
+        # Generate and prepare the legend axes
         # NOTE: Important to remove None valued args above for these setdefault calls
         lax = self
+        kwargs['loc'] = loc  # location passed to legend
         if loc in ('left', 'right', 'top', 'bottom'):
             lax = self.panel_axes(loc, width=width, space=space, pad=pad, filled=True)
             loc = 'fill'
         if loc == 'fill':
             lax._hide_panel()
+            opts = ALIGN_OPTS[lax._panel_side]
+            if align in opts:
+                kwargs['loc'] = opts[align]
+            else:
+                raise ValueError(f'Invalid align={align!r} for legend loc={loc!r}.')
             kwargs.setdefault('borderaxespad', 0)
             if not frameon:
                 kwargs.setdefault('borderpad', 0)
-            opts = ALIGN_OPTS[lax._panel_side]
-            if align not in opts:
-                raise ValueError(f'Invalid align={align!r} for legend loc={loc!r}.')
-            loc_legend = opts[align]
-        else:
-            if pad is not None:  # interpret 'pad' as 'borderaxespad'
-                kwargs['borderaxespad'] = _not_none(
-                    borderaxespad=kwargs.pop('borderaxespad', None),
-                    pad=units(pad, 'em', fontsize=fontsize)
-                )
-            loc_legend = loc  # location passed to legend
+        elif pad is not None:  # interpret 'pad' as 'borderaxespad'
+            kwargs['borderaxespad'] = _not_none(
+                borderaxespad=kwargs.pop('borderaxespad', None),
+                pad=units(pad, 'em', fontsize=fontsize)
+            )
 
         # Handle and text properties that are applied after-the-fact
         # NOTE: Set solid_capstyle to 'butt' so line does not extend past error bounds
@@ -2770,7 +2756,6 @@ class Axes(maxes.Axes):
         )
 
         # Add the legend and update patch properties
-        kwargs['loc'] = loc_legend
         if multi:
             objs = lax._parse_centered_legend(pairs, kw_frame=kw_frame, **kwargs)
         else:
