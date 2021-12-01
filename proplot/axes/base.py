@@ -1080,10 +1080,9 @@ class Axes(maxes.Axes):
         """
         def _inset_locator(ax, renderer):
             bbox = mtransforms.Bbox.from_bounds(*bounds)
-            bb = mtransforms.TransformedBbox(bbox, trans)
-            tr = self.figure.transFigure.inverted()
-            bb = mtransforms.TransformedBbox(bb, tr)
-            return bb
+            bbox = mtransforms.TransformedBbox(bbox, trans)
+            bbox = mtransforms.TransformedBbox(bbox, self.figure.transFigure.inverted())
+            return bbox
         return _inset_locator
 
     def _range_subplotspec(self, s):
@@ -1681,7 +1680,7 @@ class Axes(maxes.Axes):
         # Converting transform to figure-relative coordinates
         transform = self._get_transform(transform, 'axes')
         locator = self._make_inset_locator(bounds, transform)
-        bb = locator(None, None)
+        bbox = locator(None, None)
         label = kwargs.pop('label', 'inset_axes')
         zorder = _not_none(zorder, 4)
 
@@ -1698,7 +1697,7 @@ class Axes(maxes.Axes):
         # Create axes and apply locator. The locator lets the axes adjust
         # automatically if we used data coords. Called by ax.apply_aspect()
         cls = mprojections.get_projection_class(kwargs.pop('projection'))
-        ax = cls(self.figure, bb.bounds, zorder=zorder, label=label, **kwargs)
+        ax = cls(self.figure, bbox.bounds, zorder=zorder, label=label, **kwargs)
         ax.set_axes_locator(locator)
         ax._inset_parent = self
         ax._inset_bounds = bounds
