@@ -50,24 +50,21 @@ Features
 
 * Add top-level `~proplot.ui.subplot` command that returns a figure and a single
   subplot, analogous to `~proplot.ui.subplots` (:commit:`8459c24c`).
-* Add `~proplot.gridspec.GridSpec.copy` method to re-use the same gridspec geometry
-  for multiple figures (re-using an existing gridspec is otherwise not possible)
-  (:commit:`8dc7fe3e`, :commit:`be410341`, :commit:`a82a512c`).
+* Add modifiable `proplot.figure.Figure.tight` property to retrieve/change the
+  "tight layout" setting (:commit:`46f46c26`).
 * Permit passing `~proplot.gridspec.GridSpec` instances to
   `~proplot.figure.Figure.add_subplots` to quickly draw a subplot
   inside each gridspec slot in row or column-major order (:commit:`a9ad7429`).
-* Add modifiable `proplot.figure.Figure.tight` property to retrieve/change the
-  "tight layout" setting (:commit:`46f46c26`). Useful for debugging/inspection.
+* Add `~proplot.gridspec.GridSpec.copy` method to re-use the same gridspec geometry
+  for multiple figures (re-using an existing gridspec is otherwise not possible)
+  (:commit:`8dc7fe3e`, :commit:`be410341`, :commit:`a82a512c`).
+* Permit adding "filled" colorbars to non-subplots and specifying
+  `length` larger than one by implementing as plain axes whose bounds
+  are specified by the hidden parent axes (:commit:`9fc94d21`).
 * Permit adding additional panels (or outer legends or colorbars) by calling
-  from the current subplot (:commit:`cfaeb177`).
+  from the panel rather than the main subplot (:commit:`cfaeb177`).
 * Permit disabling a-b-c labels for a particular subplot by passing e.g.
   ``number=None`` instead of ``number=False`` (:commit:`f7308cbe`).
-* Automatically load from "local" folders named ``proplot_cmaps``, ``proplot_cycles``,
-  ``proplot_colors``, and ``proplot_fonts`` in current or parent directories,
-  analogous to "local" ``proplotrc`` (:commit:`a3a7bb33`).
-* Add the `proplot.config.Configurator.local_folders` function, analogous to
-  `~proplot.config.Configurator.local_files`, and add a `local` keyword to
-  each ``register`` function (:commit:`a3a7bb33`).
 * Use custom locator `proplot.ticker.DiscreteLocator` for major/minor discrete colorbar
   ticks to auto-select subset of levels depending on axis length (:commit:`b94a9b1e`).
 * Refresh major/minor discrete colorbar ticks when the associated axis is drawn to
@@ -86,12 +83,26 @@ Features
   are passed to `~proplot.axes.Axes.colorbar` (:commit:`503af4be`).
 * Disable automatic reversal of dependent variable coordinates when axis limits
   are fixed, and add documentation for this feature (:issue:`300`).
+* Automatically load from "local" folders named ``proplot_cmaps``, ``proplot_cycles``,
+  ``proplot_colors``, and ``proplot_fonts`` in current or parent directories,
+  analogous to "local" ``proplotrc`` files (:commit:`a3a7bb33`).
+* Add the `proplot.config.Configurator.local_folders` function, analogous to
+  `~proplot.config.Configurator.local_files`, and add a `local` keyword to
+  each ``register`` function (:commit:`a3a7bb33`).
 
 Bug fixes
 ---------
 
-* Fix issue preventing basic usage of `proplot.colors.DiscreteNorm`
-  in matplotlib >= 3.5 (:issue:`302`).
+* Fix matplotlib >= 3.5 issue preventing basic application of "shared"
+  axes with `share`, `sharex`, `sharey` (:issue:`305`).
+* Fix matplotlib >= 3.5 issue preventing basic usage of `proplot.colors.DiscreteNorm`
+  and colorbars scaled by `proplot.colors.DiscreteNorm` (:issue:`302`).
+* Fix matplotlib >= 3.4 issue where alternate axes are drawn twice
+  due to using `~matplotlib.figure.Figure.add_child_axes` and failing to
+  remove axes from the ``fig._localaxes`` stack (:issue:`303`).
+* Fix issue where outer colorbars are drawn twice
+  due to using both `~matplotlib.figure.Figure.add_subplot` and
+  `~matplotlib.axes.Axes.add_child_axes` (:issue:`304`).
 * Fix issue where silently-deprecated `aspect` parameter passed to
   `proplot.ui.subplots` is not translated to `refaspect` (:commit:`2406a2ae`).
 * Fix issue where `proplot.gridspec.GridSpec.figure` is allowed to change -- instead
