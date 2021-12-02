@@ -34,6 +34,8 @@ Version 0.10.0 (2021-XX-XX)
 Deprecated
 ----------
 
+* Rename `rasterize` and :rcraw:`colorbar.rasterize` to `rasterized`,
+  consistent with existing matplotlib ``rasterized`` property (:commit:`31efafea`).
 * Deprecate passing `array` to `~proplot.figure.Figure.add_subplots` as a
   keyword argument rather than positional argument (:commit:`3d64a449`).
 * Deprecate `maxn` and `maxn_minor` passed to `~proplot.axes.Axes.colorbar`,
