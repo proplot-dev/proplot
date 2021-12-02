@@ -549,7 +549,7 @@ class CartesianAxes(shared._SharedAxes, plot.PlotAxes):
             if ax1.get_autoscalex_on() and not ax2.get_autoscalex_on():
                 ax1.set_xlim(ax2.get_xlim())  # non-default limits
         # Copy non-default locators and formatters
-        self._shared_x_axes.join(self, sharex)  # share limit/scale changes
+        self.get_shared_x_axes().join(self, sharex)  # share limit/scale changes
         if sharex.xaxis.isDefault_majloc and not self.xaxis.isDefault_majloc:
             sharex.xaxis.set_major_locator(self.xaxis.get_major_locator())
         if sharex.xaxis.isDefault_minloc and not self.xaxis.isDefault_minloc:
@@ -571,7 +571,7 @@ class CartesianAxes(shared._SharedAxes, plot.PlotAxes):
                 ax1.set_yscale(ax2.get_yscale())
             if ax1.get_autoscaley_on() and not ax2.get_autoscaley_on():
                 ax1.set_ylim(ax2.get_ylim())
-        self._shared_y_axes.join(self, sharey)  # share limit/scale changes
+        self.get_shared_y_axes().join(self, sharey)  # share limit/scale changes
         if sharey.yaxis.isDefault_majloc and not self.yaxis.isDefault_majloc:
             sharey.yaxis.set_major_locator(self.yaxis.get_major_locator())
         if sharey.yaxis.isDefault_minloc and not self.yaxis.isDefault_minloc:
@@ -601,7 +601,7 @@ class CartesianAxes(shared._SharedAxes, plot.PlotAxes):
             return
         # Share future axis label changes. Implemented in _apply_axis_sharing().
         # Matplotlib only uses these attributes in __init__() and cla() to share
-        # tickers -- all other builtin sharing features derives from _shared_x_axes
+        # tickers -- all other builtin sharing features derives from shared x axes
         if level > 0 and labels:
             self._sharex = sharex
         # Share future axis tickers, limits, and scales
