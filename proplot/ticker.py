@@ -23,10 +23,8 @@ except ModuleNotFoundError:
     ccrs = None
     _PlateCarreeFormatter = LatitudeFormatter = LongitudeFormatter = object
 
-# NOTE: Keep IndexFormatter out of __all__ since we don't want it documented
-# on website. Just represents a matplotlib replacement. However *do* keep
-# it public so people can access it from module like all other classes.
 __all__ = [
+    'IndexLocator',
     'DiscreteLocator',
     'DegreeLocator',
     'LongitudeLocator',
@@ -102,6 +100,35 @@ def _default_precision_zerotrim(precision=None, zerotrim=None):
     if precision is None:
         precision = 6 if zerotrim else 2
     return precision, zerotrim
+
+
+class IndexLocator(mticker.Locator):
+    """
+    Format numbers by assigning fixed strings to non-negative indices.
+    """
+    def __init__(self, base=1, offset=0):
+        self._base = base
+        self._offset = offset
+
+    def set_params(self, base=None, offset=None):
+        if base is not None:
+            self._base = base
+        if offset is not None:
+            self._offset = offset
+
+    def __call__(self):
+        # NOTE: Unlike matplotlib version we start from zero rather than the data
+        # location minimum. Otherwise data *must* be present or we get an error.
+        # This approach is more intuitive and consistent with other locators.
+        vmin, vmax = self.axis.get_view_interval()
+        return self.tick_values(vmin, vmax)
+
+    def tick_values(self, vmin, vmax):
+        base, offset = self._base, self._offset
+        vmin = max(base * np.ceil(vmin / base), offset)
+        vmax = max(base * np.floor(vmax / base), offset)
+        locs = np.arange(vmin, vmax + 0.5 * base, base)
+        return self.raise_if_exceeds(locs)
 
 
 class DiscreteLocator(mticker.Locator):

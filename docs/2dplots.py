@@ -53,7 +53,7 @@
 # *y* coordinates, in which case they are inferred from the data
 # (see :ref:`xarray and pandas integration <ug_2dintegration>`). If coordinates
 # are string labels, they are converted to indices and tick labels using
-# `~matplotlib.ticker.FixedLocator` and `~matplotlib.ticker.IndexFormatter`.
+# `~proplot.ticker.IndexLocator` and `~matplotlib.ticker.IndexFormatter`.
 # If coordinates are descending and the axis limits are unset, the axis
 # direction is automatically reversed. If coordinate *centers* are passed to commands
 # like `~proplot.axes.PlotAxes.pcolor` and `~proplot.axes.PlotAxes.pcolormesh`, they

@@ -77,6 +77,8 @@ if hasattr(mcolors, 'TwoSlopeNorm'):
     NORMS['twoslope'] = mcolors.TwoSlopeNorm
 
 # Locator registry
+# NOTE: Will raise error when you try to use degree-minute-second
+# locators with cartopy < 0.18.
 LOCATORS = {
     'none': mticker.NullLocator,
     'null': mticker.NullLocator,
@@ -86,9 +88,9 @@ LOCATORS = {
     'linear': mticker.LinearLocator,
     'multiple': mticker.MultipleLocator,
     'fixed': mticker.FixedLocator,
+    'index': pticker.IndexLocator,
     'discrete': pticker.DiscreteLocator,
     'discreteminor': partial(pticker.DiscreteLocator, minor=True),
-    'index': mticker.IndexLocator,
     'symlog': mticker.SymmetricalLogLocator,
     'logit': mticker.LogitLocator,
     'minor': mticker.AutoMinorLocator,
@@ -106,38 +108,40 @@ LOCATORS = {
     'deglon': partial(pticker.LongitudeLocator, dms=False),
     'deglat': partial(pticker.LatitudeLocator, dms=False),
 }
+if hasattr(mproj.polar, 'ThetaLocator'):
+    LOCATORS['theta'] = mproj.polar.ThetaLocator
 if dependencies._version_cartopy >= 0.18:
-    # NOTE: This only makes sense when paired with degree-minute-second formatter
     LOCATORS['dms'] = partial(pticker.DegreeLocator, dms=True)
     LOCATORS['dmslon'] = partial(pticker.LongitudeLocator, dms=True)
     LOCATORS['dmslat'] = partial(pticker.LatitudeLocator, dms=True)
-if hasattr(mproj.polar, 'ThetaLocator'):
-    LOCATORS['theta'] = mproj.polar.ThetaLocator
 
 # Formatter registry
 # NOTE: Critical to use SimpleFormatter for cardinal formatters rather than
 # AutoFormatter because latter fails with Basemap formatting.
 # NOTE: Define cartopy longitude/latitude formatters with dms=True because that
 # is their distinguishing feature relative to proplot formatter.
+# NOTE: Will raise error when you try to use degree-minute-second
+# formatters with cartopy < 0.18.
 FORMATTERS = {  # note default LogFormatter uses ugly e+00 notation
-    'auto': pticker.AutoFormatter,
-    'frac': pticker.FracFormatter,
-    'sci': pticker.SciFormatter,
-    'sigfig': pticker.SigFigFormatter,
-    'simple': pticker.SimpleFormatter,
-    'date': mdates.AutoDateFormatter,
-    'datestr': mdates.DateFormatter,
-    'scalar': mticker.ScalarFormatter,
     'none': mticker.NullFormatter,
     'null': mticker.NullFormatter,
+    'auto': pticker.AutoFormatter,
+    'date': mdates.AutoDateFormatter,
+    'scalar': mticker.ScalarFormatter,
+    'simple': pticker.SimpleFormatter,
+    'fixed': mticker.FixedLocator,
+    'index': pticker.IndexFormatter,
+    'sci': pticker.SciFormatter,
+    'sigfig': pticker.SigFigFormatter,
+    'frac': pticker.FracFormatter,
     'func': mticker.FuncFormatter,
     'strmethod': mticker.StrMethodFormatter,
     'formatstr': mticker.FormatStrFormatter,
+    'datestr': mdates.DateFormatter,
     'log': mticker.LogFormatterSciNotation,  # NOTE: this is subclass of Mathtext class
     'logit': mticker.LogitFormatter,
     'eng': mticker.EngFormatter,
     'percent': mticker.PercentFormatter,
-    'index': pticker.IndexFormatter,
     'e': partial(pticker.FracFormatter, symbol=r'$e$', number=np.e),
     'pi': partial(pticker.FracFormatter, symbol=r'$\pi$', number=np.pi),
     'tau': partial(pticker.FracFormatter, symbol=r'$\tau$', number=2 * np.pi),
@@ -148,15 +152,14 @@ FORMATTERS = {  # note default LogFormatter uses ugly e+00 notation
     'deglon': partial(pticker.SimpleFormatter, suffix='\N{DEGREE SIGN}', negpos='WE', wraprange=(-180, 180)),  # noqa: E501
     'math': mticker.LogFormatterMathtext,  # deprecated (use SciNotation subclass)
 }
-if dependencies._version_cartopy >= 0.18:
-    # NOTE: Will raise error when you try to use these without cartopy >= 0.18
-    FORMATTERS['dms'] = partial(pticker.DegreeFormatter, dms=True)
-    FORMATTERS['dmslon'] = partial(pticker.LongitudeFormatter, dms=True)
-    FORMATTERS['dmslat'] = partial(pticker.LatitudeFormatter, dms=True)
 if hasattr(mproj.polar, 'ThetaFormatter'):
     FORMATTERS['theta'] = mproj.polar.ThetaFormatter
 if hasattr(mdates, 'ConciseDateFormatter'):
     FORMATTERS['concise'] = mdates.ConciseDateFormatter
+if dependencies._version_cartopy >= 0.18:
+    FORMATTERS['dms'] = partial(pticker.DegreeFormatter, dms=True)
+    FORMATTERS['dmslon'] = partial(pticker.LongitudeFormatter, dms=True)
+    FORMATTERS['dmslat'] = partial(pticker.LatitudeFormatter, dms=True)
 
 # Scale registry and presets
 SCALES = mscale._scale_mapping
@@ -924,9 +927,9 @@ def Locator(locator, *args, index=False, discrete=False, **kwargs):
 
         * If a `~matplotlib.ticker.Locator` instance already, the input
           argument is simply returned.
-        * If a sequence of numbers, these points are ticked. Returns a
-          `~matplotlib.ticker.FixedLocator` by default, a
-          `~matplotlib.ticker.IndexLocator` if `index` is ``True``, or
+        * If a sequence of numbers, these points are ticked. Returns
+          a `~matplotlib.ticker.FixedLocator` by default,
+          a `~proplot.ticker.IndexLocator` if `index` is ``True``, or
           a `~proplot.ticker.DiscreteLocator` if `discrete` is ``True``.
         * If number, this specifies the *step size* between tick locations.
           Returns a `~matplotlib.ticker.MultipleLocator`.
@@ -950,7 +953,7 @@ def Locator(locator, *args, index=False, discrete=False, **kwargs):
         ``'fixed'``              `~matplotlib.ticker.FixedLocator`             Ticks at these exact locations
         ``'discrete'``           `~proplot.ticker.DiscreteLocator`             Major ticks restricted to these locations but subsampled depending on the axis length
         ``'discreteminor'``      `~proplot.ticker.DiscreteLocator`             Minor ticks restricted to these locations but subsampled depending on the axis length
-        ``'index'``              `~matplotlib.ticker.IndexLocator`             Ticks on the non-negative integers
+        ``'index'``              `~proplot.ticker.IndexLocator`                Ticks on the non-negative integers
         ``'linear'``             `~matplotlib.ticker.LinearLocator`            Exactly ``N`` ticks encompassing axis limits, spaced as ``numpy.linspace(lo, hi, N)``
         ``'log'``                `~matplotlib.ticker.LogLocator`               For log-scale axes
         ``'logminor'``           `~matplotlib.ticker.LogLocator`               For log-scale axes on the 1st through 9th multiples of each power of the base
@@ -1024,7 +1027,7 @@ def Locator(locator, *args, index=False, discrete=False, **kwargs):
         locator = mticker.MultipleLocator(locator, *args, **kwargs)
     elif np.iterable(locator):
         if index:
-            locator = mticker.IndexLocator(locator, *args, **kwargs)
+            locator = pticker.IndexLocator(locator, *args, **kwargs)
         elif discrete:
             locator = pticker.DiscreteLocator(locator, *args, **kwargs)
         else:
@@ -1045,9 +1048,9 @@ def Formatter(formatter, *args, date=False, index=False, **kwargs):
 
         * If a `~matplotlib.ticker.Formatter` instance already, the input
           argument is simply returned.
-        * If sequence of strings, the ticks are labeled with these strings. Returns
-          a `~matplotlib.ticker.FixedFormatter` by default or an
-          `~matplotlib.ticker.IndexFormatter` if `index` is ``True``.
+        * If sequence of strings, the ticks are labeled with these strings.
+          Returns a `~matplotlib.ticker.FixedFormatter` by default or
+          an `~proplot.ticker.IndexFormatter` if `index` is ``True``.
         * If a function, the labels will be generated using this function.
           Returns a `~matplotlib.ticker.FuncFormatter`.
         * If a string containing ``{x}`` or ``{x:...}``, ticks will be
@@ -1090,7 +1093,7 @@ def Formatter(formatter, *args, date=False, index=False, **kwargs):
         ``'fixed'``             `~matplotlib.ticker.FixedFormatter`             List of strings
         ``'formatstr'``         `~matplotlib.ticker.FormatStrFormatter`         From C-style ``string % format`` notation
         ``'func'``              `~matplotlib.ticker.FuncFormatter`              Use an arbitrary function
-        ``'index'``             `~matplotlib.ticker.IndexFormatter`             List of strings corresponding to non-negative integer positions
+        ``'index'``             `~proplot.ticker.IndexFormatter`                List of strings corresponding to non-negative integer positions
         ``'log'``               `~matplotlib.ticker.LogFormatterSciNotation`    For log-scale axes with scientific notation
         ``'logit'``             `~matplotlib.ticker.LogitFormatter`             For logistic-scale axes
         ``'percent'``           `~matplotlib.ticker.PercentFormatter`           Trailing percent sign

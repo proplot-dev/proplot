@@ -46,7 +46,7 @@
 # 2D dependent or independent variable coordinates, in which case the
 # plotting command is called for each column of the 2D array(s). If coordinates
 # are string labels, they are converted to indices and tick labels using
-# `~matplotlib.ticker.FixedLocator` and `~matplotlib.ticker.IndexFormatter`.
+# `~proplot.ticker.IndexLocator` and `~proplot.ticker.IndexFormatter`.
 # If coordinates are descending and the axis limits are unset, the axis
 # direction is automatically reversed. All positional arguments can also be
 # specified as keyword arguments (see the documentation for each plotting command).
