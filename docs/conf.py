@@ -12,39 +12,42 @@
 
 # -- Path setup --------------------------------------------------------------
 
-import datetime
-import os
-import subprocess
-import sys
-
 # Add proplot to path for sphinx-automodapi
+# Add docs folder to PATH for local 'sphinxext' extensions
+import os
+import sys
+sys.path.append(os.path.abspath('.'))
 sys.path.insert(0, os.path.abspath('..'))
 
-# Add docs folder to PATH for local 'sphinxext' extensions
-sys.path.append(os.path.abspath('.'))
+# Other imports
+import datetime
+import subprocess
+from proplot.config import rc
+from proplot.internals.dependencies import _version_mpl
+from pygments.formatters import HtmlFormatter
+from pygments.styles import get_all_styles  # noqa: F401
 
 # Hack to get basemap to work
 # See: https://github.com/readthedocs/readthedocs.org/issues/5339
 if os.environ.get('READTHEDOCS', None) == 'True':
-    os.environ['GEOS_DIR'] = os.path.join(
-        os.environ['CONDA_ENVS_PATH'], os.environ['CONDA_DEFAULT_ENV']
-    )
-    os.environ['PROJ_LIB'] = os.path.join(
-        os.environ['CONDA_ENVS_PATH'], os.environ['CONDA_DEFAULT_ENV'], 'share', 'proj'
-    )
+    conda = os.path.join(os.environ['CONDA_ENVS_PATH'], os.environ['CONDA_DEFAULT_ENV'])
 else:
-    os.environ['GEOS_DIR'] = os.environ['CONDA_PREFIX']
-    os.environ['PROJ_LIB'] = os.path.join(os.environ['CONDA_PREFIX'], 'share', 'proj')
+    conda = os.environ['CONDA_PREFIX']
+os.environ['GEOS_DIR'] = conda
+os.environ['PROJ_LIB'] = os.path.join(conda, 'share', 'proj')
 
 # Install basemap if does not exist
 # Extremely ugly but impossible to install in environment.yml. Must set
 # GEOS_DIR before installing so cannot install with pip and basemap conflicts
 # with conda > 0.19 so cannot install with conda in environment.yml.
-try:
-    import mpl_toolkits.basemap  # noqa: F401
-except ImportError:
-    cmd = ['pip', 'install', 'git+https://github.com/matplotlib/basemap@v1.2.2rel']
-    subprocess.check_call(cmd)
+if _version_mpl > '3.2':
+    pass
+else:
+    try:
+        import mpl_toolkits.basemap  # noqa: F401
+    except ImportError:
+        cmd = ['pip', 'install', 'git+https://github.com/matplotlib/basemap@v1.2.2rel']
+        subprocess.check_call(cmd)
 
 
 # -- Project information -----------------------------------------------------
@@ -233,15 +236,11 @@ exclude_patterns = [
 pygments_style = 'none'
 
 # Create local pygments copies
-# Previously used: https://github.com/richleland/pygments-css
-# But do not want to depend on some random repository
-# from pygments.styles import get_all_styles  # noqa: E402
-from pygments.formatters import HtmlFormatter  # noqa: E402
+# WARNING: Must update these files whenever _static/custom.js changes
 path = os.path.join('_static', 'pygments')
 if not os.path.isdir(path):
     os.mkdir(path)
-# for style in get_all_styles():
-for style in ('pastie', 'monokai'):  # WARNING: update when _static/custom.js changes
+for style in ('pastie', 'monokai'):  # or get_all_styles()
     path = os.path.join('_static', 'pygments', style + '.css')
     if os.path.isfile(path):
         continue
@@ -249,12 +248,10 @@ for style in ('pastie', 'monokai'):  # WARNING: update when _static/custom.js ch
         f.write(HtmlFormatter(style=style).get_style_defs('.highlight'))
 
 # Create RST table and sample proplotrc file
-from proplot.config import rc
 rc._save_rst(os.path.join('_static', 'rctable.rst'))
 rc._save_yaml(os.path.join('_static', 'proplotrc'))
 
-# Role
-# default family is py, but can also set default role so don't need
+# Role. Default family is py but can also set default role so don't need
 # :func:`name`, :module:`name`, etc.
 default_role = 'py:obj'
 
