@@ -34,13 +34,13 @@
 #
 # .. important::
 #
-#    By default, proplot automatically adjusts the line width of patch edges to
-#    eliminate the appearance of `"white lines" in saved vector graphic files
-#    <https://github.com/jklymak/contourfIssues>`__. However, this behavior
-#    can significantly slow down the drawing and saving time for large datasets.
-#    To disable this behavior, pass ``edgefix=False`` to `~proplot.axes.PlotAxes`
-#    commands like `~proplot.axes.PlotAxes.pcolor`, or set :rcraw:`edgefix`
-#    to ``False`` to disable globally.
+#    By default, proplot automatically adjusts the width of
+#    `~proplot.axes.PlotAxes.contourf` and `~proplot.axes.PlotAxes.pcolor` edges
+#    to eliminate the appearance of `"white lines" in saved vector graphic files
+#    <https://github.com/jklymak/contourfIssues>`__. However, this can significantly
+#    slow down the drawing time for large datasets. To disable this feature,
+#    pass ``edgefix=False`` to the relevant `~proplot.axes.PlotAxes` command,
+#    or set :rcraw:`edgefix` to ``False`` to disable globally.
 
 # %% [raw] raw_mimetype="text/restructuredtext"
 # .. _ug_2dstd:
@@ -48,7 +48,7 @@
 # Standardized arguments
 # ----------------------
 #
-# Data arguments passed to 2D plot commands are now uniformly
+# Data arguments passed to 2D `~proplot.axes.PlotAxes` commands are uniformly
 # standardized. For each command, you can optionally omit the *x* and
 # *y* coordinates, in which case they are inferred from the data
 # (see :ref:`xarray and pandas integration <ug_2dintegration>`). If coordinates
@@ -66,15 +66,15 @@
 #
 # .. note::
 #
-#    By default, when proplot selects the default colormap :ref:`normalization
-#    range <ug_apply_cmap>`, it ignores data outside the *x* or *y* axis limits
-#    if they were previously fixed by `~matplotlib.axes.Axes.set_xlim` or
+#    By default, when choosing a default colormap :ref:`normalization
+#    range <ug_apply_cmap>`, proplot ignores data outside the *x* or *y* axis
+#    limits if they were previously fixed by `~matplotlib.axes.Axes.set_xlim` or
 #    `~matplotlib.axes.Axes.set_ylim` (or, equivalently, by passing `xlim` or
 #    `ylim` to `proplot.axes.CartesianAxes.format`). This can be useful if you
-#    wish to restrict the view within a large dataset. To disable this feature,
-#    pass ``inbounds=False`` to the plotting command or set :rcraw:`cmap.inbounds`
-#    to ``False`` (see also the :rcraw:`axes.inbounds` setting and the
-#    :ref:`user guide <ug_1dstd>`).
+#    wish to restrict the view along the *x* or *y* axis within a large dataset.
+#    To disable this feature, pass ``inbounds=False`` to the plotting command or
+#    set :rcraw:`cmap.inbounds` to ``False`` (see also the :rcraw:`axes.inbounds`
+#    setting and the :ref:`user guide <ug_1dstd>`).
 
 # %%
 import proplot as pplt
@@ -146,13 +146,13 @@ fig.format(
 # Pandas and xarray integration
 # -----------------------------
 #
-# The `~proplot.axes.PlotAxes` plotting commands recognize `pandas`_
+# The 2D `~proplot.axes.PlotAxes` commands recognize `pandas`_
 # and `xarray`_ data structures. If you omit *x* and *y* coordinates,
-# the plotting commands try to infer them from the `pandas.DataFrame` or
+# the commands try to infer them from the `pandas.DataFrame` or
 # `xarray.DataArray`. If you did not explicitly set the *x* or *y* axis label
-# or :ref:`legend or colorbar <ug_guides_loc>` label(s), the plotting commands
+# or :ref:`legend or colorbar <ug_guides_loc>` label(s), the commands
 # try to retrieve them from the `pandas.DataFrame` or `xarray.DataArray`.
-# The plotting commands also recognize `pint.Quantity` structures and apply
+# The commands also recognize `pint.Quantity` structures and apply
 # unit string labels with formatting specified by :rc:`unitformat`.
 #
 # These features restore some of the convenience you get with the builtin
@@ -324,7 +324,7 @@ fig.format(xlabel='xlabel', ylabel='ylabel', suptitle='On-the-fly colormaps')
 # you can select the normalizer from its "registered" name using the
 # `~proplot.constructor.Norm` :ref:`constructor function <why_constructor>`. You
 # can also build a normalizer on-the-fly using the `norm` and `norm_kw` keywords,
-# available with most `~proplot.axes.PlotAxes` 2D plot commands.
+# available with most 2D `~proplot.axes.PlotAxes` commands.
 # If you want to work with the normalizer classes directly, they are available in
 # the top-level namespace (e.g., ``norm=pplt.LogNorm(...)`` is allowed). To
 # explicitly set the normalization range, you can pass the usual `vmin` and `vmax`
@@ -435,8 +435,8 @@ for data, mode, fair in zip(
 # ---------------
 #
 # By default, proplot uses `~proplot.colors.DiscreteNorm` to "discretize"
-# the possible colormap colors for contour and pseudocolor plotting commands
-# (e.g., `~proplot.axes.PlotAxes.contourf`, `~proplot.axes.PlotAxes.pcolor`).
+# the possible colormap colors for contour and pseudocolor `~proplot.axes.PlotAxes`
+# commands (e.g., `~proplot.axes.PlotAxes.contourf`, `~proplot.axes.PlotAxes.pcolor`).
 # This is analogous to `matplotlib.colors.BoundaryNorm`, except
 # `~proplot.colors.DiscreteNorm` can be paired with arbitrary
 # continuous normalizers specified by `norm` (see :ref:`above <ug_norm>`).
@@ -542,8 +542,8 @@ for i, extend in enumerate(('min', 'max', 'neither', 'both')):
 #
 # Additionally, `similar to xarray
 # <http://xarray.pydata.org/en/stable/user-guide/plotting.html#colormaps>`__,
-# proplot can automatically detect "diverging" datasets. By default, the
-# `~proplot.axes.PlotAxes` 2D plot commands will apply the diverging colormap
+# proplot can automatically detect "diverging" datasets. By default,
+# the 2D `~proplot.axes.PlotAxes` commands will apply the diverging colormap
 # :rc:`cmap.diverging` (rather than :rc:`cmap.sequential`) and the diverging
 # normalizer `~proplot.colors.DivergingNorm` (rather than `~matplotlib.colors.Normalize`
 # -- see :ref:`above <ug_norm>`) if the following conditions are met:

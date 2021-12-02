@@ -147,7 +147,9 @@ def figure(**kwargs):
 @docstring._snippet_manager
 def subplot(**kwargs):
     """
-    Create a figure with a single subplot.
+    Return a figure and a single subplot.
+    This command is analogous to `matplotlib.pyplot.subplot`,
+    except the figure instance is also returned.
 
     Other parameters
     ----------------
@@ -185,9 +187,9 @@ def subplot(**kwargs):
 @docstring._snippet_manager
 def subplots(*args, **kwargs):
     """
-    Create a figure with an arbitrary grid of subplots. Uses `figure`
-    and `proplot.figure.Figure.subplots`. This command is analogous
-    to `matplotlib.pyplot.subplots`.
+    Return a figure and an arbitrary grid of subplots.
+    This command is analogous to `matplotlib.pyplot.subplots`,
+    except the subplots are stored in a `~proplot.gridspec.SubplotGrid`.
 
     Parameters
     ----------

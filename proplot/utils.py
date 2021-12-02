@@ -172,9 +172,9 @@ def arange(min_, *args):
 @_keep_units
 def edges(z, axis=-1):
     """
-    Calculate the approximate "edge" values along an axis given "center" values. The
-    size of the axis is increased by one. This is used internally to calculate graticule
-    edges when you supply centers to pseudocolor commands.
+    Calculate the approximate "edge" values along an axis given "center" values.
+    The size of the axis is increased by one. This is used internally to calculate
+    coordinate edges when you supply coordinate centers to pseudocolor commands.
 
     Parameters
     ----------
@@ -214,10 +214,9 @@ def edges(z, axis=-1):
 @_keep_units
 def edges2d(z):
     """
-    Calculate the approximate "edge" values given a 2D grid of "center"
-    values. The size of both axes is increased by one. This is used
-    internally to calculate graticule edges when you supply centers
-    to pseudocolor plot commands.
+    Calculate the approximate "edge" values given a 2D grid of "center" values.
+    The size of both axes is increased by one. This is used internally to calculate
+    coordinate edges when you supply coordinate to pseudocolor commands.
 
     Parameters
     ----------

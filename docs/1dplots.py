@@ -39,7 +39,7 @@
 # Standardized arguments
 # ----------------------
 #
-# Data arguments passed to 1D plot commands are now uniformly
+# Data arguments passed to 1D `~proplot.axes.PlotAxes` commands are uniformly
 # standardized. For each command, you can optionally omit the dependent
 # variable coordinates, in which case they are inferred from the data
 # (see :ref:`xarray and pandas integration <ug_1dintegration>`), or pass
@@ -53,15 +53,14 @@
 #
 # .. note::
 #
-#    By default, when just the *x* or *y* axis was explicitly fixed by
-#    `~matplotlib.axes.Axes.set_xlim` or `~matplotlib.axes.Axes.set_ylim`
-#    (or, equivalently, by passing `xlim` or `ylim` to
-#    `proplot.axes.CartesianAxes.format`), proplot ignores the out of bounds
-#    data when determining the other axis limits. This can be useful if
-#    you wish to restrict the view within a large dataset. To disable
-#    this feature, pass ``inbounds=False`` to the plotting command or set
-#    :rcraw:`axes.inbounds` to ``False`` (see also the :rcraw:`cmap.inbounds`
-#    setting and the :ref:`user guide <ug_2dstd>`).
+#    By default, when choosing default values for the *x* or *y* axis limits,
+#    proplot ignores out-of-bounds data along the other axis if it was explicitly
+#    fixed by `~matplotlib.axes.Axes.set_xlim` or `~matplotlib.axes.Axes.set_ylim` (or,
+#    equivalently, by passing `xlim` or `ylim` to `proplot.axes.CartesianAxes.format`).
+#    This can be useful if you wish to restrict the view along a "dependent" variable
+#    axis within a large dataset. To disable this feature, pass ``inbounds=False`` to
+#    the plotting command or set :rcraw:`axes.inbounds` to ``False`` (see also
+#    the :rcraw:`cmap.inbounds` setting and the :ref:`user guide <ug_2dstd>`).
 
 # %%
 import proplot as pplt
@@ -132,13 +131,13 @@ fig.format(
 # Pandas and xarray integration
 # -----------------------------
 #
-# The `~proplot.axes.PlotAxes` plotting commands recognize `pandas`_
+# The 1D `~proplot.axes.PlotAxes` commands recognize `pandas`_
 # and `xarray`_ data structures. If you omit dependent variable coordinates,
-# the plotting commands try to infer them from the `pandas.Series`, `pandas.DataFrame`,
+# the commands try to infer them from the `pandas.Series`, `pandas.DataFrame`,
 # or `xarray.DataArray`. If you did not explicitly set the *x* or *y* axis label
-# or :ref:`legend or colorbar <ug_guides_loc>` label(s), the plotting commands
+# or :ref:`legend or colorbar <ug_guides_loc>` label(s), the commands
 # try to retrieve them from the `pandas.DataFrame` or `xarray.DataArray`.
-# The plotting commands also recognize `pint.Quantity` structures and apply
+# The commands also recognize `pint.Quantity` structures and apply
 # unit string labels with formatting specified by :rc:`unitformat`.
 #
 # These features restore some of the convenience you get with the builtin
@@ -220,7 +219,7 @@ ax.plot(df, cycle=cycle, lw=3, legend='t', legend_kw={'frame': False})
 # <https://matplotlib.org/stable/tutorials/intermediate/color_cycle.html#sphx-glr-tutorials-intermediate-color-cycle-py>`__
 # on-the-fly and use different property cycles for different plot elements.
 # You can do so using the `cycle` and `cycle_kw` keywords, available
-# with most `~proplot.axes.PlotAxes` 1D plot commands. `cycle` and `cycle_kw` are
+# with most 1D `~proplot.axes.PlotAxes` commands. `cycle` and `cycle_kw` are
 # passed to the `~proplot.constructor.Cycle` :ref:`constructor function
 # <why_constructor>`, and the resulting property cycle is used for the plot. You
 # can specify `cycle` once with 2D input data (in which case each column is
@@ -572,10 +571,10 @@ pplt.rc.reset()
 # `~proplot.axes.PlotAxes.fill_between`, `~proplot.axes.PlotAxes.fill_betweenx`
 # (shorthands `~proplot.axes.PlotAxes.area`, `~proplot.axes.PlotAxes.areax`),
 # `~proplot.axes.PlotAxes.vlines`, `~proplot.axes.PlotAxes.hlines`,
-# `~proplot.axes.PlotAxes.bar`, or `~proplot.axes.PlotAxes.barh` plotting commands.
-# The default negative and positive colors are controlled with :rcraw:`negcolor`
-# and :rcraw:`poscolor` but the colors can be modified for particular plots by
-# passing ``negcolor=color`` and ``poscolor=color`` to the plotting commands.
+# `~proplot.axes.PlotAxes.bar`, or `~proplot.axes.PlotAxes.barh` commands.
+# The default negative and positive colors are controlled with :rcraw:`negcolor` and
+# :rcraw:`poscolor` but the colors can be modified for particular plots by passing
+# ``negcolor=color`` and ``poscolor=color`` to the `~proplot.axes.PlotAxes` commands.
 
 # %%
 import proplot as pplt

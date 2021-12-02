@@ -318,8 +318,8 @@ discrete : bool, default: :rc:`cmap.discrete`
     colormap. Instead, for non-contour plots, the number of levels will be
     roughly controlled by :rcraw:`cmap.lut`. This has a similar effect to
     using `levels=large_number` but it may improve rendering speed. Default is
-    ``True`` for only contour-plotting commands like `~proplot.axes.Axes.contourf`
-    and pseudocolor-plotting commands like `~proplot.axes.Axes.pcolor`.
+    ``True`` only for contouring commands like `~proplot.axes.Axes.contourf`
+    and pseudocolor commands like `~proplot.axes.Axes.pcolor`.
 sequential, diverging, cyclic, qualitative : bool, default: None
     Boolean arguments used if `cmap` is not passed. Set these to ``True``
     to use the default :rcraw:`cmap.sequential`, :rcraw:`cmap.diverging`,
@@ -1932,7 +1932,7 @@ class PlotAxes(base.Axes):
 
     def _parse_plot1d(self, x, *ys, **kwargs):
         """
-        Interpret positional arguments for all "1D" plotting commands.
+        Interpret positional arguments for all 1D plotting commands.
         """
         # Standardize values
         zerox = not ys
@@ -2025,7 +2025,7 @@ class PlotAxes(base.Axes):
         transpose=None, order=None, **kwargs
     ):
         """
-        Interpret positional arguments for all "2D" plotting commands.
+        Interpret positional arguments for all 2D plotting commands.
         """
         # Standardize values
         # NOTE: Functions pass two 'zs' at most right now

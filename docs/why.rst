@@ -184,9 +184,9 @@ Function                          Return type                                   
 `~proplot.constructor.Locator`    `~matplotlib.ticker.Locator`                                  `~proplot.axes.Axes.format` and `~proplot.axes.Axes.colorbar`                   ``locator=``, ``xlocator=``, ``ylocator=``, ``minorlocator=``, ``xminorlocator=``, ``yminorlocator=``, ``ticks=``, ``xticks=``, ``yticks=``, ``minorticks=``, ``xminorticks=``, ``yminorticks=``
 `~proplot.constructor.Formatter`  `~matplotlib.ticker.Formatter`                                `~proplot.axes.Axes.format` and `~proplot.axes.Axes.colorbar`                   ``formatter=``, ``xformatter=``, ``yformatter=``, ``ticklabels=``, ``xticklabels=``, ``yticklabels=``
 `~proplot.constructor.Scale`      `~matplotlib.scale.ScaleBase`                                 `~proplot.axes.Axes.format`                                                     ``xscale=``, ``yscale=``
-`~proplot.constructor.Colormap`   `~matplotlib.colors.Colormap`                                 :ref:`2D plotting commands <ug_2dplots>`                                        ``cmap=``
-`~proplot.constructor.Norm`       `~matplotlib.colors.Normalize`                                :ref:`2D plotting commands <ug_2dplots>`                                        ``norm=``
-`~proplot.constructor.Cycle`      `~cycler.Cycler`                                              :ref:`1D plotting commands <ug_1dplots>`                                        ``cycle=``
+`~proplot.constructor.Colormap`   `~matplotlib.colors.Colormap`                                 2D `~proplot.axes.PlotAxes` commands                                            ``cmap=``
+`~proplot.constructor.Norm`       `~matplotlib.colors.Normalize`                                2D `~proplot.axes.PlotAxes` commands                                            ``norm=``
+`~proplot.constructor.Cycle`      `~cycler.Cycler`                                              1D `~proplot.axes.PlotAxes` commands                                            ``cycle=``
 ================================  ============================================================  ==============================================================================  ================================================================================================================================================================================================
 
 Links
@@ -423,8 +423,8 @@ Proplot uses the `~proplot.axes.PlotAxes` subclass to add various `seaborn`_,
 `xarray`_, and `pandas`_ features to existing matplotlib plotting commands
 along with several additional features designed to make things easier.
 
-The following features are relevant for "1D" plotting commands like
-`~proplot.axes.PlotAxes.line` (equivalent to `~proplot.axes.PlotAxes.plot`)
+The following features are relevant for "1D" `~proplot.axes.PlotAxes` commands
+like `~proplot.axes.PlotAxes.line` (equivalent to `~proplot.axes.PlotAxes.plot`)
 and `~proplot.axes.PlotAxes.scatter`:
 
 * The `cycle` keyword is interpreted by the `~proplot.constructor.Cycle`
@@ -432,12 +432,12 @@ and `~proplot.axes.PlotAxes.scatter`:
   :ref:`property cyclers <ug_apply_cycle>` on-the-fly. This permits succinct
   and flexible property cycler declaration.
 * The `legend` and `colorbar` keywords draw :ref:`on-the-fly legends and colorbars
-  <ug_guides_plot>` using the result of the plotting command. Note that colorbars can be
-  drawn from :ref:`lists of artists <ug_colorbars>` (see `~proplot.axes.Axes.legend`).
+  <ug_guides_plot>` using the result of the `~proplot.axes.PlotAxes` command.
+  Note that colorbars can be drawn from :ref:`lists of artists <ug_colorbars>`.
 * The default `ylim` (`xlim`) in the presence of a fixed `xlim` (`ylim`) is now
   adjusted to exclude out-of-bounds data. This can be useful when "zooming in" on
   a dependent variable axis but can be disabled by setting :rcraw:`axes.inbounds`
-  to ``False`` or passing ``inbounds=False`` to plot commands.
+  to ``False`` or passing ``inbounds=False`` to `~proplot.axes.PlotAxes` commands.
 * The `~proplot.axes.PlotAxes.bar` and `~proplot.axes.PlotAxes.barh` commands accept 2D
   arrays and can :ref:`stack or group <ug_bar>` successive columns. Likewise, the
   `~proplot.axes.PlotAxes.area` and `~proplot.axes.PlotAxes.areax` commands (shorthands
@@ -465,8 +465,8 @@ and `~proplot.axes.PlotAxes.scatter`:
   :ref:`parametric lines <ug_parametric>` by encoding the parametric
   coordinate using colormap colors rather than text annotations.
 
-The following features are relevant for "2D" plotting commands like
-`~proplot.axes.PlotAxes.pcolor` and `~proplot.axes.PlotAxes.contour`:
+The following features are relevant for "2D" `~proplot.axes.PlotAxes` commands
+like `~proplot.axes.PlotAxes.pcolor` and `~proplot.axes.PlotAxes.contour`:
 
 * The `cmap` and `norm` :ref:`keyword arguments <ug_apply_cmap>` are interpreted
   by the `~proplot.constructor.Colormap` and `~proplot.constructor.Norm`
@@ -483,11 +483,11 @@ The following features are relevant for "2D" plotting commands like
 * The default `vmin` and `vmax` used to normalize colormaps now excludes data
   outside the *x* and *y* axis bounds `xlim` and `ylim` if they were explicitly
   fixed. This can be disabled by setting :rcraw:`cmap.inbounds` to ``False``
-  or by passing ``inbounds=False`` to plot commands.
+  or by passing ``inbounds=False`` to `~proplot.axes.PlotAxes` commands.
 * The `~proplot.colors.DiscreteNorm` normalizer is paired with most colormaps by
   default. It can easily divide colormaps into distinct levels, similar to contour
   plots. This can be disabled by setting :rcraw:`cmap.discrete` to ``False`` or
-  by passing ``discrete=False`` to plot commands.
+  by passing ``discrete=False`` to `~proplot.axes.PlotAxes` commands.
 * The `~proplot.colors.DivergingNorm` normalizer is perfect for data with a
   :ref:`natural midpoint <ug_norm>` and offers both "fair" and "unfair" scaling.
   The `~proplot.colors.SegmentedNorm` normalizer can generate
@@ -507,7 +507,7 @@ The following features are relevant for "2D" plotting commands like
   <https://stackoverflow.com/q/8263769/4970632>`__, `grid boxes
   <https://stackoverflow.com/q/27092991/4970632>`__, and `colorbar segments
   <https://stackoverflow.com/q/15003353/4970632>`__. This can be disabled by
-  passing ``edgefix=False`` to plot commands.
+  passing ``edgefix=False`` to `~proplot.axes.PlotAxes` commands.
 
 Links
 -----
@@ -563,10 +563,10 @@ syntax used for `proplot.axes.CartesianAxes.format` and `proplot.axes.PolarAxes.
 
 The `~proplot.axes.GeoAxes` subclass also makes longitude-latitude coordinates
 the "default" coordinate system by passing ``transform=ccrs.PlateCarree()``
-or ``latlon=True`` to plotting commands (depending on whether cartopy or basemap
-is the backend). And to enforce global coverage over the poles and across longitude
-seams, you can pass ``globe=True`` to 2D plotting commands like
-`~proplot.axes.PlotAxes.contour` and `~proplot.axes.PlotAxes.pcolormesh`.
+or ``latlon=True`` to `~proplot.axes.PlotAxes` commands (depending on whether cartopy
+or basemap is the backend). And to enforce global coverage over the poles and across
+longitude seams, you can pass ``globe=True`` to 2D `~proplot.axes.PlotAxes` commands
+like `~proplot.axes.PlotAxes.contour` and `~proplot.axes.PlotAxes.pcolormesh`.
 
 Links
 -----
@@ -608,7 +608,7 @@ Solution
 
 Proplot reproduces many of the `xarray.DataArray.plot`,
 `pandas.DataFrame.plot`, and `pandas.Series.plot`
-features directly on the axes plotting commands themselves.
+features directly on the `~proplot.axes.PlotAxes` commands.
 This includes :ref:`grouped or stacked <ug_bar>` bar plots
 and :ref:`layered or stacked <ug_bar>` area plots from two-dimensional
 input data, auto-detection of :ref:`diverging datasets <ug_autonorm>` for
@@ -631,9 +631,9 @@ or passing ``autoformat=False`` to any plotting command.
 Links
 -----
 
-* For integration with 1D plotting commands,
+* For integration with 1D `~proplot.axes.PlotAxes` commands,
   see :ref:`this page <ug_1dintegration>`.
-* For integration with 2D plotting commands,
+* For integration with 2D `~proplot.axes.PlotAxes` commands,
   see :ref:`this page <ug_2dintegration>`.
 * For bar and area plots,
   see :ref:`this page <ug_bar>`.

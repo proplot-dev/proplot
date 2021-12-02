@@ -222,7 +222,7 @@ Bug fixes
 * Fix issue where `vmin` and `vmax` are ignored when making plots
   with discrete levels (:issue:`276`).
 * Fix issue where `autodiverging` is disabled even when known diverging colormaps
-  are passed to plotting commands (:commit:`2eca2198`).
+  are passed to `~proplot.axes.PlotAxes` commands (:commit:`2eca2198`).
 * Fix issue where colormaps made with `~proplot.constructor.Colormap` with unspecified
   `name` cannot be assigned as `~proplot.config.rc` defaults (:commit:`0e93b7fa`).
 * Fix issue where registered colormaps with trailing ``_r`` or ``_s`` cannot be

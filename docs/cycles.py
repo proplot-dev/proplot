@@ -24,7 +24,7 @@
 # used with distinct plot elements like lines and bars. Occasionally,
 # they are used with categorical data as "qualitative" colormaps. Proplot's
 # color cycles are registered as `~proplot.colors.DiscreteColormap`\ s,
-# and can be converted into `property cyclers
+# and can be easily converted into `property cyclers
 # <https://matplotlib.org/stable/tutorials/intermediate/color_cycle.html>`__
 # for use with distinct plot elements using the `~proplot.constructor.Cycle`
 # constructor function. `~proplot.constructor.Cycle` can also
@@ -60,13 +60,13 @@ fig, axs = pplt.show_cycles(rasterized=True)
 # Changing the color cycle
 # ------------------------
 #
-# Various plotting commands like `~proplot.axes.PlotAxes.line` and
-# `~proplot.axes.PlotAxes.scatter` now accept a `cycle` keyword
-# passed to the `~proplot.constructor.Cycle` constructor function
-# (see the :ref:`1D plotting section <ug_apply_cycle>`). To save
-# your color cycle data and use it every time proplot is imported, simply pass
-# ``save=True`` to `~proplot.constructor.Cycle`. If you want to change the global
-# property cycler, pass a `~proplot.colors.DiscreteColormap` or colormap name
+# Most 1D `~proplot.axes.PlotAxes` commands like `~proplot.axes.PlotAxes.line`
+# and `~proplot.axes.PlotAxes.scatter` accept a `cycle` keyword (see the
+# :ref:`1D plotting section <ug_apply_cycle>`). This can be used to change the
+# color cycle on-the-fly, whether plotting with successive calls to
+# `~proplot.axes.PlotAxes` commands or a single call using 2D array(s) (see
+# the :ref:`1D plotting section <ug_1dstd>`). To change the global property
+# cycler, pass a `~proplot.colors.DiscreteColormap` or cycle name
 # to :rcraw:`cycle` or pass the result of `~proplot.constructor.Cycle`
 # to :rcraw:`axes.prop_cycle` (see the :ref:`configuration guide <ug_config>`).
 
@@ -107,23 +107,31 @@ for i in range(data.shape[1]):
 # Making color cycles
 # -------------------
 #
-# You can make new color cycles with the `~proplot.constructor.Cycle`
-# :ref:`constructor function <why_constructor>`. One great way to make cycles is by
-# sampling colormaps! Just pass the colormap name to `~proplot.constructor.Cycle`,
-# and optionally specify the number of samples you want to draw as the last
-# positional argument -- e.g. ``pplt.Cycle('Blues', 5)``. Calling e.g.
-# ``ax.plot(data, cycle='Blues')`` where ``data`` is a 2D array will automatically
-# use the same number of samples as the number of columns in the array.
-#
+# Proplot includes tools for merging color cycles, modifying existing color
+# cycles, making new color cycles, and saving color cycles for future use.
+# Most of these features can be accessed via the `~proplot.constructor.Cycle`
+# :ref:`constructor function <why_constructor>`. This command returns
+# `~cycler.Cycler` instances whose `color` properties are determined by the
+# positional arguments (see :ref:`below <ug_cycles_other>` for changing other
+# properties). Note that every `~proplot.axes.PlotAxes` command that accepts a
+# `cycle` keyword passes it through this function (see the :ref:`1D plotting
+# section <ug_apply_cycle>`).
+
 # Positional arguments passed to `~proplot.constructor.Cycle` are interpreted
-# by the `~proplot.constructor.Colormap` constructor function, and the resulting
-# colormap is sampled at discrete values. To exclude near-white colors on the
-# end of a colormap, pass e.g. ``left=x`` to `~proplot.constructor.Cycle`, or
-# supply a plotting command with e.g. ``cycle_kw={'left': x}``. See
-# the :ref:`colormaps section <ug_cmaps>` for details.
+# by the `~proplot.constructor.Colormap` constructor function. If the result
+# is a `~proplot.colors.DiscreteColormap`, those colors are used for the resulting
+# `~cycler.Cycler`. If the result is a `~proplot.colors.ContinuousColormap`, the
+# colormap is sampled at `N` discrete values -- for example, ``pplt.Cycle('Blues', 5)``
+# selects 5 evenly-spaced values. When building color cycles on-the-fly, for example
+# with ``ax.plot(data, cycle='Blues')``, proplot automatically selects as many colors
+# as there are columns in the 2D array (i.e., if we are drawing 10 lines using an array
+# with 10 columns, proplot will select 10 evenly-spaced values from the colormap).
+# To exclude near-white colors on the end of a colormap, pass e.g. ``left=x``
+# to `~proplot.constructor.Cycle`, or supply a plotting command with e.g.
+# ``cycle_kw={'left': x}``. See the :ref:`colormaps section <ug_cmaps>` for details.
 #
-# In the below example, several cycles are constructed from scratch, and the
-# lines are referenced with colorbars and legends. Note that proplot permits
+# In the below example, several color cycles are constructed from scratch, and
+# the lines are referenced with colorbars and legends. Note that proplot permits
 # generating colorbars from :ref:`lists of artists <ug_colorbars>`.
 
 # %%
@@ -155,10 +163,13 @@ ax.format(title='Cycle from merged colormaps', suptitle='Color cycles from color
 # Cycles of other properties
 # --------------------------
 #
-# `~proplot.constructor.Cycle` can also generate cyclers that change
-# properties other than color. Below, a single-color dash style cycler is
-# constructed and applied to the axes locally. To apply it globally, simply
-# use ``pplt.rc['axes.prop_cycle'] = cycle``.
+# `~proplot.constructor.Cycle` can generate `~cycler.Cycler` instances that
+# change `~proplot.axes.PlotAxes.line` and `~proplot.axes.PlotAxes.scatter`
+# properties other than `color`. In the below example, a single-color line
+# property cycler is constructed and applied to the axes locally using the
+# line properties `lw` and `dashes` (the aliases `linewidth` or `linewidths`
+# would also work). The resulting property cycle can be applied globally
+# using ``pplt.rc['axes.prop_cycle'] = cycle``.
 
 # %%
 import proplot as pplt

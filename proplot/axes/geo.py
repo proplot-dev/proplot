@@ -384,10 +384,10 @@ class GeoAxes(plot.PlotAxes):
     Note
     ----
     This subclass uses longitude and latitude as the default coordinate system for all
-    plotting commands by passing ``transform=cartopy.crs.PlateCarree()`` to cartopy
-    commands and ``latlon=True`` to basemap commands. Also, when using basemap as the
-    "backend", plotting is still done "cartopy-style" by calling methods from the axes
-    instance rather than the `~mpl_toolkits.basemap.Basemap` instance.
+    plotting commands by internally passing ``transform=cartopy.crs.PlateCarree()`` to
+    cartopy commands and ``latlon=True`` to basemap commands. Also, when using basemap
+    as the "backend", plotting is still done "cartopy-style" by calling methods from
+    the axes instance rather than the `~mpl_toolkits.basemap.Basemap` instance.
 
     Important
     ---------

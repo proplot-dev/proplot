@@ -25,11 +25,12 @@
 # ====================
 #
 # This section documents a few basic additions to matplotlib's plotting commands
-# that can be useful for statistical analysis. The :ref:`1D plotting <ug_1dplots>`
-# section should be read before this section. Some of these tools will be
-# expanded in the future, but for a more comprehensive suite of statistical
-# plotting utilities, you may be interested in `seaborn`_ (we try to ensure
-# that seaborn plotting commands are compatible with proplot figures and axes).
+# that can be useful for statistical analysis. These features are implemented
+# using the intermediate `~proplot.axes.PlotAxes` subclass (see the :ref:`1D plotting
+# <ug_1dplots>` section for details). Some of these tools will be expanded in the
+# future, but for a more comprehensive suite of statistical plotting utilities, you
+# may be interested in `seaborn`_ (we try to ensure that seaborn plotting commands
+# are compatible with proplot figures and axes).
 
 # %% [raw] raw_mimetype="text/restructuredtext"
 # .. _ug_errorbars:
@@ -53,8 +54,8 @@
 # style thin error bars (the ``bar`` keywords), thick "boxes" overlaid on top of
 # these bars (the ``box`` keywords; think of them as miniature boxplots), a
 # transparent primary shading region (the ``shade`` keywords), and a more
-# transparent secondary shading region (the ``fade`` keywords). See the documentation
-# on the plotting commands for details.
+# transparent secondary shading region (the ``fade`` keywords). See the
+# documentation on the `~proplot.axes.PlotAxes` commands for details.
 
 
 # %%
@@ -192,8 +193,8 @@ ax.format(title='Multiple colors', ymargin=0.15)
 #
 # Vertical and horizontal histograms can be drawn with
 # `~proplot.axes.PlotAxes.hist` and `~proplot.axes.PlotAxes.histh`.
-# As with the other plotting commands, multiple histograms can be
-# drawn by passing 2D arrays instead of 1D arrays, and the color
+# As with the other 1D `~proplot.axes.PlotAxes` commands, multiple histograms
+# can be drawn by passing 2D arrays instead of 1D arrays, and the color
 # cycle used to color histograms can be changed on-the-fly using
 # the `cycle` and `cycle_kw` keywords. Likewise, 2D histograms can
 # be drawn with the `~proplot.axes.PlotAxes.hist2d`

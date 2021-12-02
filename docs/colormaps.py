@@ -153,12 +153,11 @@ for cmaps in (('magma', 'rocket'), ('fire', 'dusk')):
 # Making colormaps
 # ----------------
 #
-# Proplot doesn't just include new colormaps -- it provides tools
-# for merging colormaps, modifying existing colormaps, making new
-# :ref:`perceptually uniform colormaps <ug_perceptual>`, and saving colormaps
-# for future use. Most of these features can be accessed via the
+# Proplot includes tools for merging colormaps, modifying existing colormaps,
+# making new :ref:`perceptually uniform colormaps <ug_perceptual>`, and
+# saving colormaps for future use. Most of these features can be accessed via the
 # `~proplot.constructor.Colormap` :ref:`constructor function <why_constructor>`.
-# Note that every plotting command that accepts a `cmap` keyword passes
+# Note that every `~proplot.axes.PlotAxes` command that accepts a `cmap` keyword passes
 # it through this function (see the :ref:`2D plotting section <ug_apply_cmap>`).
 #
 # To make `~proplot.colors.PerceptualColormap`\ s from
@@ -270,7 +269,7 @@ fig, axs = pplt.show_channels(cmap3, cmap4, refwidth=1.5, rgb=False)
 # In the below example, we create a new divering colormap and
 # reconstruct the colormap from `this SciVisColor example
 # <https://sciviscolor.org/media/filer_public/c7/27/c727e638-82eb-445b-bc96-e7b64c13efa2/colormoves.png>`__.
-# We also *save* the results for future use by passing ``save=True`` to
+# We also save the results for future use by passing ``save=True`` to
 # `~proplot.constructor.Colormap`.
 
 # %%
