@@ -1555,10 +1555,10 @@ class Axes(maxes.Axes):
         self.figure.format(rc_kw=rc_kw, rc_mode=rc_mode, skip_axes=True, **params)
 
     def draw(self, renderer=None, *args, **kwargs):
-        # Perform extra post-processing step
-        # NOTE: In *principle* these steps go here. But should already be
-        # complete because auto_layout() (called by figure pre-processor) has
-        # to run them before aligning labels. So these are harmless no-ops.
+        # Perform extra post-processing steps
+        # NOTE: In *principle* these steps go here but should already be complete
+        # because auto_layout() (called by figure pre-processor) has to run them
+        # before aligning labels. So these are harmless no-ops.
         self._draw_guides()
         self._apply_title_above()
         if self._colorbar_fill:
@@ -1568,14 +1568,39 @@ class Axes(maxes.Axes):
         super().draw(renderer, *args, **kwargs)
 
     def get_tightbbox(self, renderer, *args, **kwargs):
-        # Perform extra post-processing steps and cache the bounding box
+        # Perform extra post-processing steps
+        # NOTE: This should be updated alongside draw(). We also cache the resulting
+        # bounding box to speed up tight layout calculations (see _range_tightbbox).
         self._draw_guides()
         self._apply_title_above()
+        if self._colorbar_fill:
+            self._colorbar_fill.update_ticks(manual_only=True)  # only update if needed!
         if self._inset_parent is not None and self._inset_zoom:
             self.indicate_inset_zoom()
-        bbox = super().get_tightbbox(renderer, *args, **kwargs)
-        self._tight_bbox = bbox
-        return bbox
+        self._tight_bbox = super().get_tightbbox(renderer, *args, **kwargs)
+        return self._tight_bbox
+
+    def get_default_bbox_extra_artists(self):
+        # Further restrict artists to those with disabled clipping or
+        # use the axes bounding box or patch path for clipping.
+        # NOTE: Native transforms and bounding boxes have no equality tests
+        # so have to do this manually (inspired by Affine2D equality tests).
+        # Matplotlib almost always uses clip paths rather than boxes, which copies
+        # the background patch CompositeGenericTransform as a hidden property on
+        # TransformedPatchPath, from which the Affine2D transform is built.
+        # Try to avoid using private '_patch' and '_transform' attributes.
+        artists = [
+            artist for artist in super().get_default_bbox_extra_artists()
+            if not artist.get_clip_on()
+            or artist.get_clip_box() is not None and not np.all(
+                artist.get_clip_box().get_points() == self.bbox.get_points()
+            )
+            or artist.get_clip_path() is not None and not np.all(
+                artist.get_clip_path().get_affine().get_matrix()
+                == self.patch.get_transform().get_affine().get_matrix()
+            )
+        ]
+        return artists
 
     @docstring._snippet_manager
     def inset(self, *args, **kwargs):
