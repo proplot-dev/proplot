@@ -38,22 +38,28 @@ Deprecated
   consistent with existing matplotlib ``rasterized`` property (:commit:`31efafea`).
 * Deprecate passing `array` to `~proplot.figure.Figure.add_subplots` as a
   keyword argument rather than positional argument (:commit:`3d64a449`).
-* Deprecate `maxn` and `maxn_minor` passed to `~proplot.axes.Axes.colorbar`,
-  recommend alternative ``locator_kw={'nbins': n}`` (:commit:`b94a9b1e`). Improved
-  colorbar locator means these should not need to be used as much (see below).
+* Deprecate `maxn` and `maxn_minor` passed to `~proplot.axes.Axes.colorbar` and
+  recommend alternative ``locator_kw={'nbins': n}`` (:commit:`b94a9b1e`).
+  The new default locator `~proplot.ticker.DiscreteLocator` means these
+  settings should not need to be used as much (see below).
 * Improve the `~proplot.gridspec.GridSpec` "panel" obfuscation by
   renaming `~proplot.gridspec.GridSpec.get_subplot_geometry` to
   `~proplot.gridspec.GridSpec.get_geometry`, `~proplot.gridspec.GridSpec.get_geometry`
-  to `~proplot.gridspec.GridSpec.get_total_geometry`, and having ``gs.nrows`` and
-  ``gs.ncols`` refer to the reduced non-panel geometry (:commit:`52f57094`).
+  to `~proplot.gridspec.GridSpec.get_total_geometry` (:commit:`52f57094`).
+* Improve the `~proplot.gridspec.GridSpec` "panel" obfuscation by having the
+  `~proplot.gridspec.GridSpec` properties ``gs.nrows``, ``gs.ncols``, ``gs.wratios``,
+  ``gs.hratios``, ``gs.wspace``, ``gs.hspace``, ``gs.wpad``, and ``gs.hpad`` refer to
+  the reduced non-panel geometry (:commit:`52f57094`).
 
 Features
 --------
 
-* Add top-level `~proplot.ui.subplot` command that returns a figure and a single
-  subplot, analogous to `~proplot.ui.subplots` (:commit:`8459c24c`).
+* Significantly improve "tight layout" performance by skipping artists with clipping
+  enabled and clipping paths/boxes derived from the subplot edge (:commit:`f891e4f0`).
 * Add modifiable `proplot.figure.Figure.tight` property to retrieve/change the
   "tight layout" setting (:commit:`46f46c26`).
+* Add top-level `~proplot.ui.subplot` command that returns a figure and a single
+  subplot, analogous to `~proplot.ui.subplots` (:commit:`8459c24c`).
 * Permit passing `~proplot.gridspec.GridSpec` instances to
   `~proplot.figure.Figure.add_subplots` to quickly draw a subplot
   inside each gridspec slot in row or column-major order (:commit:`a9ad7429`).
@@ -67,10 +73,16 @@ Features
   from the panel rather than the main subplot (:commit:`cfaeb177`).
 * Permit disabling a-b-c labels for a particular subplot by passing e.g.
   ``number=None`` instead of ``number=False`` (:commit:`f7308cbe`).
-* Use custom locator `proplot.ticker.DiscreteLocator` for major/minor discrete colorbar
-  ticks to auto-select subset of levels depending on axis length (:commit:`b94a9b1e`).
+* Make proplot `~proplot.ticker.IndexFormatter` public, since the matplotlib
+  version was entirely removed in version 3.5 (:commit:`c2dd8b2e`).
+* Replace matplotlib `~proplot.ticker.IndexLocator` with custom version,
+  consistent with `~proplot.ticker.IndexFormatter`, and prevent the odd
+  matplotlib limitation requiring lines to be present (:commit:`c2dd8b2e`).
+* Use custom locator `proplot.ticker.DiscreteLocator` for major/minor discrete
+  colorbar ticks instead of `~matplotlib.ticker.FixedLocator` (:commit:`b94a9b1e`).
+  This auto-selects ticks from a subset of levels depending on the axis length.
 * Refresh major/minor discrete colorbar ticks when the associated axis is drawn to
-  update the ticked levels (:commit:`92bb937e`, :commit:`302c239e`).
+  update the tick selection (:commit:`92bb937e`, :commit:`302c239e`).
 * Register `proplot.ticker.DiscreteLocator` as ``'discrete'`` and add keywords `index`
   and `discrete` to the constructor `~proplot.constructor.Locator` (:commit:`b94a9b1e`).
 * Auto disable minor colorbar and axis ticks when major ticks have non-numeric
@@ -346,8 +358,8 @@ Features
 * Ensure contour `labels` appear on top of inner titles/a-b-c labels by decreasing
   default `zorder` from ``cntr_zorder + 2`` to ``cntr_zorder + 1`` (:commit:`59222164`).
 * Implement "descending level" support directly inside `~proplot.colors.DiscreteNorm`
-  rather than cmap parser in plotting commands, and auto-reverse descending
-  levels passed to `~proplot.colors.SegmentedNorm` (:commit:`46d8bedc`).
+  rather than cmap parser in `~proplot.axes.PlotAxes` commands, and auto-reverse
+  descending levels passed to `~proplot.colors.SegmentedNorm` (:commit:`46d8bedc`).
 * Improve ``show_cmaps`` and ``show_cycles``: Stop passing arguments through
   constructor functions, preserve case for user colormap labels, and avoid
   showing leading ``_`` and trailing ``_copy`` in labels (:commit:`c41db8d8`).
@@ -484,8 +496,8 @@ Features
 * Add `align` keyword with options ``'bottom'``, ``'top'``, ``'left'``, ``'right'``,
   or ``'center'`` (with optional single-char shorthands) to change alignment for
   outer legends/colorbars (:commit:`4a50b4b2`). Previously they had to be centered.
-* Add `transpose` keyword as alternative to `order` for 2d plotting commands
-  (:issue:`72`). ``transpose=True`` is equivalent to ``order='F'``.
+* Add `transpose` keyword as alternative to `order` for 2D `~proplot.axes.PlotAxes`
+  commands (:issue:`72`). ``transpose=True`` is equivalent to ``order='F'``.
 * Return homogeneous groupings of matplotlib artists in `~matplotlib.cbook.silent_list`
   objects to simplify repr (:commit:`d59f9c40`, :commit:`667cc068`,
   :commit:`240f0b31`, :commit:`0a6d74b7`).
@@ -590,7 +602,7 @@ Documentation
 * Update napoleon type aliases and specifiers (:commit:`c20ed1d1`). Use `sequence`
   instead of `list` wherever params accept arbitrary sequences (:commit:`e627e95b`).
 * Improve documentation of style-type arguments like `lw`, `linewidth`,
-  etc. on plotting commands (:commit:`cc602349`).
+  etc. on `~proplot.axes.PlotAxes` commands (:commit:`cc602349`).
 * Improve documentation of `proplot.gridspec.SubplotGrid` methods
   (:commit:`902502cc`). Docstrings are no longer stubs.
 
@@ -888,8 +900,8 @@ Features
   `~proplot.axes.PlotAxes.boxploth` (shorthand `~proplot.axes.PlotAxes.boxh`),
   and `~proplot.axes.PlotAxes.violinploth` (shorthand `~proplot.axes.PlotAxes.violinh`)
   commands analogous to `~proplot.axes.PlotAxes.barh` (:commit:`6382cf91`).
-* Let 1D plotting commands iterate over columns of 2D *x* and *y* coordinate arrays
-  instead of only 2D *y* coordinate arrays (:commit:`6382cf91`.)
+* Let 1D `~proplot.axes.PlotAxes` commands iterate over columns of 2D *x* and *y*
+  coordinate arrays instead of only 2D *y* coordinate arrays (:commit:`6382cf91`.)
 * Support expanded and consistent artist synonyms throughout plotting overrides,
   e.g. ``ec`` for `edgecolor`, `lw` for `linewidth`, `fc` and `fillcolor` for
   `facecolor` (:commit:`6382cf91`). This is a superset of matplotlib.
@@ -1171,9 +1183,9 @@ Features
   `~proplot.axes.Axes.areax` (:pr:`258`).
 * Add support for `~proplot.axes.indicate_error` *horizontal* error bars and shading
   for *horizontal* plotting commands `barh`, `plotx`, and `scatterx` (:pr:`258`).
-* Add support for ``ax.plot_command('x_key', 'y_key', data=dataset)`` for
-  virtually all plotting commands using `standardize_1d` and `standardize_2d`
-  (:pr:`258`). This was an existing `~matplotlib.axes.Axes.plot` feature.
+* Add support for ``ax.plot_command('x_key', 'y_key', data=dataset)`` for virtually
+  all plotting commands using `standardize_1d` and `standardize_2d` (:pr:`258`).
+  This was an existing `~matplotlib.axes.Axes.plot` feature.
 * Add support for the plotting style ``ax.plot(x1, y1, fmt1, x2, y2, fmt2, ...)``
   as allowed by matplotlib (:pr:`258`).
 * Add `absolute_width` keyword to `~proplot.plot.bar_extras` to make `width`
