@@ -308,14 +308,14 @@ class FuncScale(_Scale, mscale.ScaleBase):
             forward, inverse, inherit_scale = *transform, None
         else:
             try:
-                transform = Scale(transform).get_transform()
+                inherit_scale = Scale(transform)
             except ValueError:
                 raise ValueError(
-                    'Expected a function, 2-tuple of forward and and inverse '
-                    f'functions, or an axis scale specification. Got {transform!r}.'
+                    'Expected a function, 2-tuple of forward and inverse functions, '
+                    f'or an axis scale specification. Got {transform!r}.'
                 )
-            else:
-                forward, inverse = transform.transform, transform.inverted().transform
+            transform = inherit_scale.get_transform()
+            forward, inverse = transform.transform, transform.inverted().transform
 
         # Create the transform
         # NOTE: Linear scale is always identity transform (no-op).
