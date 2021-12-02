@@ -179,7 +179,7 @@ length : unit-spec, optional
 width : float or str, optional
     The width of each colorbar.
     %(units.in)s
-rasterize : bool, default: :rc:`colorbar.rasterize`
+rasterized : bool, default: :rc:`colorbar.rasterized`
     Whether to rasterize the colorbar solids. This increases rendering
     time and decreases file sizes for vector graphics.
 """
@@ -409,9 +409,10 @@ def show_colorspaces(*, luminance=None, saturation=None, hue=None, refwidth=2):
 
 
 @warnings._rename_kwargs('0.8', categories='include')
+@warnings._rename_kwargs('0.10', rasterize='rasterized')
 def _draw_bars(
     cmaps, *, source, unknown='User', include=None, ignore=None,
-    length=4.0, width=0.2, N=None, rasterize=None,
+    length=4.0, width=0.2, N=None, rasterized=None,
 ):
     """
     Draw colorbars for "colormaps" and "color cycles". This is called by
@@ -482,7 +483,7 @@ def _draw_bars(
             label = re.sub(r'(_copy)*\Z', '', label)
             ax.colorbar(
                 cmap, loc='fill', orientation='horizontal',
-                locator='null', linewidth=0, rasterize=rasterize,
+                locator='null', linewidth=0, rasterized=rasterized,
             )
             ax.text(
                 0 - (rc['axes.labelpad'] / 72) / length, 0.45, label,

@@ -51,7 +51,7 @@
 
 # %%
 import proplot as pplt
-fig, axs = pplt.show_cycles(rasterize=True)
+fig, axs = pplt.show_cycles(rasterized=True)
 
 
 # %% [raw] raw_mimetype="text/restructuredtext"

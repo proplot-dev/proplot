@@ -2117,6 +2117,7 @@ class Axes(maxes.Axes):
         mappable = mcm.ScalarMappable(norm, cmap)
         return mappable, locator, formatter, kwargs
 
+    @warnings._rename_kwargs('0.10', rasterize='rasterized')
     def _draw_colorbar(
         self, mappable, values=None, *,
         loc=None, space=None, pad=None, align=None,
@@ -2131,7 +2132,7 @@ class Axes(maxes.Axes):
         ticklabelsize=None, ticklabelweight=None, ticklabelcolor=None,
         labelloc=None, labellocation=None, labelsize=None, labelweight=None,
         labelcolor=None, c=None, color=None, lw=None, linewidth=None,
-        edgefix=None, rasterize=None, **kwargs
+        edgefix=None, rasterized=None, **kwargs
     ):
         """
         The driver function for adding axes colorbars.
@@ -2154,7 +2155,7 @@ class Axes(maxes.Axes):
         linewidth = units(_not_none(linewidth, default=rc['axes.linewidth']), 'pt')
         ticklenratio = _not_none(ticklenratio, rc['tick.lenratio'])
         tickwidthratio = _not_none(tickwidthratio, rc['tick.widthratio'])
-        rasterize = _not_none(rasterize, rc['colorbar.rasterize'])
+        rasterized = _not_none(rasterized, rc['colorbar.rasterized'])
         locator_kw = locator_kw or {}
         formatter_kw = formatter_kw or {}
         minorlocator_kw = minorlocator_kw or {}
@@ -2313,7 +2314,7 @@ class Axes(maxes.Axes):
             obj.dividers.update(kw_outline)
         if obj.solids:
             cax._apply_edgefix(obj.solids, edgefix=edgefix)
-            obj.solids.set_rasterized(rasterize)
+            obj.solids.set_rasterized(rasterized)
 
         # Return after registering location
         self._register_guide('colorbar', obj, loc)  # possibly replace another

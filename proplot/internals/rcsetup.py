@@ -969,10 +969,10 @@ _rc_proplot_table = {
         _validate_in,
         'Width of outer colorbars.' + _addendum_in
     ),
-    'colorbar.rasterize': (
+    'colorbar.rasterized': (
         False,
         _validate_bool,
-        'Whether to rasterize colorbar solids.'
+        'Whether to use rasterization for colorbar solids.'
     ),
     'colorbar.shadow': (
         False,
@@ -1920,10 +1920,11 @@ _rc_renamed = {  # {old_key: (new_key, version)} dictionary
     'grid.loninline': ('grid.inlinelabels', '0.8'),
     'grid.latinline': ('grid.inlinelabels', '0.8'),
     'cmap.edgefix': ('edgefix', '0.9'),
+    'colorbar.rasterize': ('colorbar.rasterized', '0.10'),
 }
-for _key, (_key_new, _) in _rc_renamed.items():
+for _key_old, (_key_new, _) in _rc_renamed.items():
     if _key_new in _rc_children:
-        _rc_children[_key] = _rc_children[_key_new]
+        _rc_children[_key_old] = _rc_children[_key_new]
 
 # The default settings dictionary. Analogous to matplotlib's rcParamsDefault
 # Also surreptitiously add font keys (boolean always evaluates to True)
