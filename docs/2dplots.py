@@ -31,6 +31,16 @@
 # have. This section documents the features added for 2D plotting commands
 # like `~proplot.axes.PlotAxes.contour`, `~proplot.axes.PlotAxes.pcolor`,
 # and `~proplot.axes.PlotAxes.imshow`.
+#
+# .. important::
+#
+#    By default, proplot automatically adjusts the line width of patch edges to
+#    eliminate the appearance of `"white lines" in saved vector graphic files
+#    <https://github.com/jklymak/contourfIssues>`__. However, this behavior
+#    can significantly slow down the drawing and saving time for large datasets.
+#    To disable this behavior, pass ``edgefix=False`` to `~proplot.axes.PlotAxes`
+#    commands like `~proplot.axes.PlotAxes.pcolor`, or set :rcraw:`edgefix`
+#    to ``False`` to disable globally.
 
 # %% [raw] raw_mimetype="text/restructuredtext"
 # .. _ug_2dstd:
