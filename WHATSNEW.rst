@@ -125,6 +125,8 @@ Documentation
 
 * Indicate default values in type-specification rather than
   parameter descriptions (:commit:`50546dee`).
+* Improve colorbar and legend documentation, expound
+  added features more carefully (:commit:`43631840`).
 
 Version 0.9.5 (2021-10-19)
 ==========================
