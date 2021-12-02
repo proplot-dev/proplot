@@ -218,7 +218,7 @@ def subplots(*args, **kwargs):
     _parse_figsize(kwargs)
     rc_kw, rc_mode = _pop_rc(kwargs)
     kwsubs = _pop_props(kwargs, 'patch')  # e.g. 'color'
-    kwsubs.update(_pop_params(kwargs, pfigure.Figure._parse_proj))
+    kwsubs.update(_pop_params(kwargs, pfigure.Figure.add_subplots))
     kwsubs.update(_pop_params(kwargs, pgridspec.GridSpec._update_params))
     for sig in paxes.Axes._format_signatures.values():
         kwsubs.update(_pop_params(kwargs, sig))
