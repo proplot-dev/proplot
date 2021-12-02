@@ -9,6 +9,7 @@ import re
 import sys
 from numbers import Integral
 
+import matplotlib.artist as martist
 import matplotlib.axes as maxes
 import matplotlib.cbook as cbook
 import matplotlib.cm as mcm
@@ -2811,6 +2812,9 @@ class PlotAxes(base.Axes):
             return
         keys = ('linewidth', 'linestyle', 'edgecolor')  # patches and collections
         if any(key + suffix in kwargs for key in keys for suffix in ('', 's')):
+            return
+        rasterized = obj.get_rasterized() if isinstance(obj, martist.Artist) else False
+        if rasterized:
             return
 
         # Skip when cmap has transparency
