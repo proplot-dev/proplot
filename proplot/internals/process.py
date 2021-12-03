@@ -519,8 +519,8 @@ def _meta_coords(*args, which='x', **kwargs):
     # lines or else an error is raised... very strange.
     # NOTE: Why IndexFormatter and not FixedFormatter? The former ensures labels
     # correspond to indices while the latter can mysteriously truncate labels.
-    from matplotlib.ticker import FixedLocator, NullLocator
-    from ..ticker import IndexFormatter
+    from matplotlib.ticker import NullLocator
+    from ..ticker import IndexLocator, IndexFormatter
     res = []
     for data in args:
         data = _to_duck_array(data)
@@ -531,7 +531,7 @@ def _meta_coords(*args, which='x', **kwargs):
             raise ValueError('Non-1D string coordinate input is unsupported.')
         idx = np.arange(len(data))
         data = list(map(str, data))  # ensure all are strings
-        kwargs.setdefault(which + 'locator', FixedLocator(idx))
+        kwargs.setdefault(which + 'locator', IndexLocator(1, 0))
         kwargs.setdefault(which + 'formatter', IndexFormatter(data))
         kwargs.setdefault(which + 'minorlocator', NullLocator())
         res.append(idx)
