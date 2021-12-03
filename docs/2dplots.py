@@ -473,21 +473,20 @@ import numpy as np
 
 # Sample data
 state = np.random.RandomState(51423)
-data = 10 + (state.normal(0, 1, size=(33, 33))).cumsum(axis=0).cumsum(axis=1)
+data = 10 + state.normal(0, 1, size=(33, 33)).cumsum(axis=0).cumsum(axis=1)
 
 # Figure
 fig, axs = pplt.subplots([[1, 1, 2, 2], [0, 3, 3, 0]], ref=3, refwidth=2.3)
 axs.format(yformatter='none', suptitle='Discrete vs. smooth colormap levels')
 
 # Pcolor
-axs[0].pcolor(data, cmap='oslo', norm='div', colorbar='l')
+axs[0].pcolor(data, cmap='viridis', colorbar='l')
 axs[0].set_title('Pcolor plot\ndiscrete=True (default)')
-axs[1].pcolor(data, discrete=False, cmap='oslo', norm='div', colorbar='r')
+axs[1].pcolor(data, discrete=False, cmap='viridis', colorbar='r')
 axs[1].set_title('Pcolor plot\ndiscrete=False')
 
 # Imshow
-data = 100 - data
-m = axs[2].imshow(data, cmap='viridis', colorbar='b')
+m = axs[2].imshow(data, cmap='oslo', colorbar='b')
 axs[2].format(title='Imshow plot\ndiscrete=False (default)', yformatter='auto')
 
 # %%

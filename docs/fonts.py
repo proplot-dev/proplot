@@ -89,7 +89,11 @@
 
 # %%
 import proplot as pplt
-fig, axs = pplt.show_fonts()
+fig, axs = pplt.show_fonts(family='sans-serif')
+
+# %%
+import proplot as pplt
+fig, axs = pplt.show_fonts(family='tex-gyre')
 
 
 # %% [raw] raw_mimetype="text/restructuredtext"
