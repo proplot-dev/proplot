@@ -117,11 +117,15 @@ class IndexLocator(mticker.Locator):
             self._offset = offset
 
     def __call__(self):
-        # NOTE: Unlike matplotlib version we start from zero rather than the data
-        # location minimum. Otherwise data *must* be present or we get an error.
-        # This approach is more intuitive and consistent with other locators.
+        # NOTE: We adapt matplotlib IndexLocator to support case where
+        # the data interval is empty. Only restrict after data is plotted.
+        dmin, dmax = self.axis.get_data_interval()
         vmin, vmax = self.axis.get_view_interval()
-        return self.tick_values(vmin, vmax)
+        if dmin == -np.inf:
+            dmin = vmin
+        if dmax == np.inf:
+            dmax = vmax
+        return self.tick_values(dmin, dmax)
 
     def tick_values(self, vmin, vmax):
         base, offset = self._base, self._offset
