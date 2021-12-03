@@ -20,6 +20,11 @@ from . import plot, shared
 __all__ = ['CartesianAxes']
 
 
+# Tuple of date converters
+DATE_CONVERTERS = (mdates.DateConverter,)
+if hasattr(mdates, '_SwitchableDateConverter'):
+    DATE_CONVERTERS += (mdates._SwitchableDateConverter,)
+
 # Dictionary to reverse side keywords
 REVERSE_SIDE = {
     'left': 'right',
@@ -641,7 +646,7 @@ class CartesianAxes(shared._SharedAxes, plot.PlotAxes):
         # See: https://matplotlib.org/api/units_api.html
         # And: https://matplotlib.org/api/dates_api.html
         axis = getattr(self, f'{s}axis')
-        date = isinstance(axis.converter, mdates.DateConverter)
+        date = isinstance(axis.converter, DATE_CONVERTERS)
 
         # Major formatter
         # NOTE: The default axis formatter accepts lots of keywords. So unlike
@@ -775,7 +780,7 @@ class CartesianAxes(shared._SharedAxes, plot.PlotAxes):
             setattr(self, default, False)
         elif not getattr(self, default):
             return  # do not rotate
-        elif s == 'x' and isinstance(axis.converter, mdates.DateConverter):
+        elif s == 'x' and isinstance(axis.converter, DATE_CONVERTERS):
             rotation = rc['formatter.timerotation']
         else:
             rotation = 'horizontal'
