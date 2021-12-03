@@ -109,6 +109,8 @@ Bug fixes
   axes with `share`, `sharex`, `sharey` (:issue:`305`).
 * Fix matplotlib >= 3.5 issue preventing basic usage of `proplot.colors.DiscreteNorm`
   and colorbars scaled by `proplot.colors.DiscreteNorm` (:issue:`302`).
+* Fix matplotlib >= 3.5 issue where date axes are not correctly detected
+  due to new date converters (:commit:`63deee21`).
 * Fix matplotlib >= 3.4 issue where alternate axes are drawn twice
   due to using `~matplotlib.figure.Figure.add_child_axes` and failing to
   remove axes from the ``fig._localaxes`` stack (:issue:`303`).
