@@ -179,7 +179,7 @@ ix = ax.inset(
     zoom_kw={'ec': 'blush', 'ls': '--', 'lw': 2}
 )
 ix.format(
-    xlim=(2, 4), ylim=(2, 4), color='maroon',
+    xlim=(2, 4), ylim=(2, 4), color='red8',
     linewidth=1.5, ticklabelweight='bold'
 )
 ix.pcolormesh(data, cmap='Grays', levels=N, inbounds=False)

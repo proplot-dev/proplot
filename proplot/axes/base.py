@@ -9,6 +9,7 @@ import re
 from numbers import Integral
 
 import matplotlib.axes as maxes
+import matplotlib.axis as maxis
 import matplotlib.cm as mcm
 import matplotlib.colors as mcolors
 import matplotlib.container as mcontainer
@@ -16,6 +17,7 @@ import matplotlib.contour as mcontour
 import matplotlib.legend as mlegend
 import matplotlib.patches as mpatches
 import matplotlib.projections as mprojections
+import matplotlib.spines as mspines
 import matplotlib.text as mtext
 import matplotlib.ticker as mticker
 import matplotlib.transforms as mtransforms
@@ -661,7 +663,7 @@ class Axes(maxes.Axes):
             name = name.replace('_' + self._name.title(), 'Geo')
             params['backend'] = self._name
         if self._colorbar_fill:
-            name = re.sub('Axes(Subplot)?', 'AxesColorbar', name)
+            name = re.sub('Axes(Subplot)?', 'AxesFill', name)
             params['orientation'] = self._colorbar_fill.orientation
         if self._inset_parent:
             name = re.sub('Axes(Subplot)?', 'AxesInset', name)
@@ -1583,6 +1585,8 @@ class Axes(maxes.Axes):
     def get_default_bbox_extra_artists(self):
         # Further restrict artists to those with disabled clipping or
         # use the axes bounding box or patch path for clipping.
+        # NOTE: Critical to ignore child axes like insets, alternates, and colorbars.
+        # For some reason these have clipping 'enabled' but it is not respected.
         # NOTE: Native transforms and bounding boxes have no equality tests
         # so have to do this manually (inspired by Affine2D equality tests).
         # Matplotlib almost always uses clip paths rather than boxes, which copies
@@ -1591,7 +1595,8 @@ class Axes(maxes.Axes):
         # Try to avoid using private '_patch' and '_transform' attributes.
         artists = [
             artist for artist in super().get_default_bbox_extra_artists()
-            if not artist.get_clip_on()
+            if isinstance(artist, (maxes.Axes, maxis.Axis, mspines.Spine))
+            or not artist.get_clip_on()
             or artist.get_clip_box() is not None and not np.all(
                 artist.get_clip_box().get_points() == self.bbox.get_points()
             )
