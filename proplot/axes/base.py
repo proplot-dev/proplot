@@ -1583,9 +1583,9 @@ class Axes(maxes.Axes):
         return self._tight_bbox
 
     def get_default_bbox_extra_artists(self):
-        # Further restrict artists to those with disabled clipping or
-        # use the axes bounding box or patch path for clipping.
-        # NOTE: Critical to ignore child axes like insets, alternates, and colorbars.
+        # Further restrict artists to those with disabled clipping
+        # or use the axes bounding box or patch path for clipping.
+        # NOTE: Critical to ignore x and y axis, spines, and all child axes.
         # For some reason these have clipping 'enabled' but it is not respected.
         # NOTE: Native transforms and bounding boxes have no equality tests
         # so have to do this manually (inspired by Affine2D equality tests).

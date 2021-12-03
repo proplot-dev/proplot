@@ -224,7 +224,7 @@ def subplots(*args, **kwargs):
     kwsubs.update(_pop_params(kwargs, pgridspec.GridSpec._update_params))
     for sig in paxes.Axes._format_signatures.values():
         kwsubs.update(_pop_params(kwargs, sig))
-    for key in ('array', 'subplot_kw', 'gridspec_kw'):  # deprecated args
+    for key in ('subplot_kw', 'gridspec_kw'):  # deprecated args
         if key in kwargs:
             kwsubs[key] = kwargs.pop(key)
     kwargs['aspect'] = kwsubs.pop('aspect', None)  # keyword conflict

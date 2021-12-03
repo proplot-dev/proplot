@@ -176,7 +176,7 @@ docstring._snippet_manager['figure.figure'] = _figure_docstring
 
 # Multiple subplots
 _subplots_params_docstring = """
-*args : `proplot.gridspec.GridSpec` or array-like of int, optional
+array : `proplot.gridspec.GridSpec` or array-like of int, optional
     The subplot grid specifier. If a `~proplot.gridspec.GridSpec`, one subplot is
     drawn for each unique `~proplot.gridspec.GridSpec` slot. If a 2D array of integers,
     one subplot is drawn for each unique integer in the array. Think of this array as
@@ -1278,7 +1278,7 @@ class Figure(mfigure.Figure):
 
     @docstring._snippet_manager
     def add_subplots(
-        self, *args, nrows=1, ncols=1, order='C',
+        self, array=None, nrows=1, ncols=1, order='C',
         proj=None, projection=None, proj_kw=None, projection_kw=None,
         basemap=None, **kwargs
     ):
@@ -1321,25 +1321,16 @@ class Figure(mfigure.Figure):
 
         # Build the subplot array
         # NOTE: Currently this may ignore user-input nrows/ncols without warning
-        if len(args) > 1:
-            raise TypeError(f'Figure.add_subplots() expected 0 or 1 positional arguments. Got {len(args)}.')  # noqa: E501
         if order not in ('C', 'F'):  # better error message
             raise ValueError(f"Invalid order={order!r}. Options are 'C' or 'F'.")
-        if 'array' in kwargs:
-            args = (kwargs.pop('array'),)
-            warnings._warn_proplot(
-                "Passing 'array' as a keyword argument was deprecated in v0.10. "
-                'Please pass as a positional argument.'
-            )
         gs = None
-        arg = args[0] if args else None
-        if arg is None or isinstance(arg, mgridspec.GridSpec):
-            if arg is not None:
-                gs, nrows, ncols = arg, arg.nrows, arg.ncols
+        if array is None or isinstance(array, mgridspec.GridSpec):
+            if array is not None:
+                gs, nrows, ncols = array, array.nrows, array.ncols
             array = np.arange(1, nrows * ncols + 1)[..., None]
             array = array.reshape((nrows, ncols), order=order)
         else:
-            array = np.atleast_1d(arg)
+            array = np.atleast_1d(array)
             array[array == None] = 0  # None or 0 both valid placeholders  # noqa: E711
             array = array.astype(np.int)
             if array.ndim == 1:  # interpret as single row or column

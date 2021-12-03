@@ -36,12 +36,6 @@ Deprecated
 
 * Rename `rasterize` and :rcraw:`colorbar.rasterize` to `rasterized`,
   consistent with existing matplotlib ``rasterized`` property (:commit:`31efafea`).
-* Deprecate passing `array` to `~proplot.figure.Figure.add_subplots` as a
-  keyword argument rather than positional argument (:commit:`3d64a449`).
-* Deprecate `maxn` and `maxn_minor` passed to `~proplot.axes.Axes.colorbar` and
-  recommend alternative ``locator_kw={'nbins': n}`` (:commit:`b94a9b1e`).
-  The new default locator `~proplot.ticker.DiscreteLocator` means these
-  settings should not need to be used as much (see below).
 * Improve the `~proplot.gridspec.GridSpec` "panel" obfuscation by
   renaming `~proplot.gridspec.GridSpec.get_subplot_geometry` to
   `~proplot.gridspec.GridSpec.get_geometry`, `~proplot.gridspec.GridSpec.get_geometry`
@@ -50,6 +44,10 @@ Deprecated
   `~proplot.gridspec.GridSpec` properties ``gs.nrows``, ``gs.ncols``, ``gs.wratios``,
   ``gs.hratios``, ``gs.wspace``, ``gs.hspace``, ``gs.wpad``, and ``gs.hpad`` refer to
   the reduced non-panel geometry (:commit:`52f57094`).
+* Deprecate `maxn` and `maxn_minor` passed to `~proplot.axes.Axes.colorbar` and
+  recommend alternative ``locator_kw={'nbins': n}`` (:commit:`b94a9b1e`).
+  The new default locator `~proplot.ticker.DiscreteLocator` means these
+  settings should not need to be used as much (see below).
 
 Features
 --------
