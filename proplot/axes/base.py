@@ -1828,7 +1828,7 @@ class Axes(maxes.Axes):
             if not isinstance(colorbar, tuple):
                 continue
             handles, labels, kwargs = colorbar
-            cb = self._draw_colorbar(handles, labels, loc=loc, **kwargs)
+            cb = self._add_colorbar(handles, labels, loc=loc, **kwargs)
             self._colorbar_dict[loc] = cb
 
         # Draw queued legends
@@ -1838,7 +1838,7 @@ class Axes(maxes.Axes):
             if not isinstance(legend, tuple) or any(isinstance(_, mlegend.Legend) for _ in legend):  # noqa: E501
                 continue
             handles, labels, kwargs = legend
-            leg = self._draw_legend(handles, labels, loc=loc, **kwargs)
+            leg = self._add_legend(handles, labels, loc=loc, **kwargs)
             self._legend_dict[loc] = leg
 
     def _register_guide(self, guide, obj, loc, **kwargs):
@@ -2143,7 +2143,7 @@ class Axes(maxes.Axes):
         return mappable, locator, formatter, kwargs
 
     @warnings._rename_kwargs('0.10', rasterize='rasterized')
-    def _draw_colorbar(
+    def _add_colorbar(
         self, mappable, values=None, *,
         loc=None, space=None, pad=None, align=None,
         label=None, title=None, reverse=False,
@@ -2338,8 +2338,8 @@ class Axes(maxes.Axes):
         if obj.dividers is not None:
             obj.dividers.update(kw_outline)
         if obj.solids:
-            cax._apply_edgefix(obj.solids, edgefix=edgefix)
             obj.solids.set_rasterized(rasterized)
+            cax._apply_edgefix(obj.solids, edgefix=edgefix)
 
         # Return after registering location
         self._register_guide('colorbar', obj, loc)  # possibly replace another
@@ -2411,7 +2411,7 @@ class Axes(maxes.Axes):
         if queue:
             self._register_guide('colorbar', (mappable, values), loc, **kwargs)
         else:
-            cb = self._draw_colorbar(mappable, values, loc=loc, **kwargs)
+            cb = self._add_colorbar(mappable, values, loc=loc, **kwargs)
             return cb
 
     def _get_legend_handles(self, handler_map=None):
@@ -2679,7 +2679,7 @@ class Axes(maxes.Axes):
             self._add_frame(xmin, ymin, xmax - xmin, ymax - ymin, **kw_frame)
         return objs
 
-    def _draw_legend(
+    def _add_legend(
         self, handles=None, labels=None, *,
         loc=None, width=None, pad=None, space=None, align=None,
         frame=None, frameon=None, ncol=None, ncols=None,
@@ -2880,7 +2880,7 @@ class Axes(maxes.Axes):
         if queue:
             self._register_guide('legend', (handles, labels), loc, **kwargs)
         else:
-            leg = self._draw_legend(handles, labels, loc=loc, **kwargs)
+            leg = self._add_legend(handles, labels, loc=loc, **kwargs)
             return leg
 
     @docstring._concatenate_inherited
