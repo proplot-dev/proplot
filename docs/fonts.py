@@ -43,10 +43,10 @@
 # Matplotlib uses DejaVu Sans in part because it includes glyphs for a very wide
 # range of symbols, especially mathematical symbols. However in our opinion,
 # DejaVu Sans is not very aesthetically pleasing. To improve the font selection while
-# keeping things consistent across different workstations, proplot comes packaged
-# with several open source sans-serif fonts. It also includes the `TeX Gyre font
-# series <https://ctan.org/pkg/tex-gyre?lang=en>`__ and adds them as the default
-# entries for all of matplotlib's font famlies:
+# keeping things consistent across different workstations, proplot is packaged
+# the open source `TeX Gyre fonts <https://ctan.org/pkg/tex-gyre?lang=en>`__
+# and a few additional open source sans-serif fonts. Proplot also uses the TeX
+# Gyre fonts as default entries for each of matplotlib's font families:
 #
 # * The `Century <https://en.wikipedia.org/wiki/Century_type_family>`__ lookalike
 #   :rcraw:`font.serif` = ``'TeX Gyre Schola'``.
@@ -66,15 +66,14 @@
 # full font priority lists for each family are displayed in the
 # :ref:`default proplotrc file <ug_proplotrc>`.
 #
-# To compare different fonts, use the `~proplot.demos.show_fonts` command. By
-# default, this displays the sans-serif fonts available on your system and
-# packaged with proplot. The default table on the RTD server is shown
-# below. The "¤" symbol appears where characters for a particular font are
-# unavailable (when making plots, "¤" is replaced with the character from
-# a fallback font). Since most TeX Gyre fonts have limited
-# character sets, if your plots contain lots of mathematical symbols,
-# you may want to set :rcraw:`font.family` to the matplotlib-supplied
-# font ``'DejaVu Sans'`` or the proplot-supplied font ``'Fira Math'``
+# To compare different fonts, use the `~proplot.demos.show_fonts` command with the
+# `family` keyword (default behavior is ``family='sans-serif'``). Tables of the
+# TeX Gyre and sans-serif fonts packaged with proplot are shown below. The "¤" symbol
+# appears where characters for a particular font are unavailable (when making plots,
+# "¤" is replaced with the character from a fallback font). Since most TeX Gyre fonts
+# have limited character sets, if your plots contain lots of mathematical symbols,
+# you may want to set :rcraw:`font.family` to the matplotlib-packaged
+# font ``'DejaVu Sans'`` or the proplot-packaged font ``'Fira Math'``
 # (see `this page <https://github.com/firamath/firamath>`__ for more on Fira Math).
 #
 # .. note::
