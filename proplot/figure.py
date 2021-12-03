@@ -763,8 +763,9 @@ class Figure(mfigure.Figure):
         return context._state_context(self, _is_authorized=True)
 
     def _parse_proj(
-        self, proj=None, projection=None, proj_kw=None, projection_kw=None,
-        basemap=None, **kwargs
+        self, proj=None, projection=None,
+        proj_kw=None, projection_kw=None, basemap=None,
+        **kwargs
     ):
         """
         Translate the user-input projection into a registered matplotlib
@@ -967,6 +968,202 @@ class Figure(mfigure.Figure):
         pax._panel_share = False
         pax._panel_parent = None
         return pax
+
+    def _add_subplot(self, *args, **kwargs):
+        """
+        The driver function for adding single subplots.
+        """
+        # Parse arguments
+        kwargs = self._parse_proj(**kwargs)
+        args = args or (1, 1, 1)
+        gs = self.gridspec
+
+        # Integer arg
+        if len(args) == 1 and isinstance(args[0], Integral):
+            if not 111 <= args[0] <= 999:
+                raise ValueError(f'Input {args[0]} must fall between 111 and 999.')
+            args = tuple(map(int, str(args[0])))
+
+        # Subplot spec
+        if (
+            len(args) == 1
+            and isinstance(args[0], (maxes.SubplotBase, mgridspec.SubplotSpec))
+        ):
+            ss = args[0]
+            if isinstance(ss, maxes.SubplotBase):
+                ss = ss.get_subplotspec()
+            if gs is None:
+                gs = ss.get_topmost_subplotspec().get_gridspec()
+            if not isinstance(gs, pgridspec.GridSpec):
+                raise ValueError(
+                    'Input subplotspec must be derived from a proplot.GridSpec.'
+                )
+            if ss.get_topmost_subplotspec().get_gridspec() is not gs:
+                raise ValueError(
+                    'Input subplotspec must be derived from the active figure gridspec.'
+                )
+
+        # Row and column spec
+        # TODO: How to pass spacing parameters to gridspec? Consider overriding
+        # subplots adjust? Or require using gridspec manually?
+        elif (
+            len(args) == 3
+            and all(isinstance(arg, Integral) for arg in args[:2])
+            and all(isinstance(arg, Integral) for arg in np.atleast_1d(args[2]))
+        ):
+            nrows, ncols, num = args
+            i, j = np.resize(num, 2)
+            if gs is None:
+                gs = pgridspec.GridSpec(nrows, ncols)
+            orows, ocols = gs.get_geometry()
+            if orows % nrows:
+                raise ValueError(
+                    f'The input number of rows {nrows} does not divide the '
+                    f'figure gridspec number of rows {orows}.'
+                )
+            if ocols % ncols:
+                raise ValueError(
+                    f'The input number of columns {ncols} does not divide the '
+                    f'figure gridspec number of columns {ocols}.'
+                )
+            if any(_ < 1 or _ > nrows * ncols for _ in (i, j)):
+                raise ValueError(
+                    'The input subplot indices must fall between '
+                    f'1 and {nrows * ncols}. Instead got {i} and {j}.'
+                )
+            rowfact, colfact = orows // nrows, ocols // ncols
+            irow, icol = divmod(i - 1, ncols)  # convert to zero-based
+            jrow, jcol = divmod(j - 1, ncols)
+            irow, icol = irow * rowfact, icol * colfact
+            jrow, jcol = (jrow + 1) * rowfact - 1, (jcol + 1) * colfact - 1
+            ss = gs[irow:jrow + 1, icol:jcol + 1]
+
+        # Otherwise
+        else:
+            raise ValueError(f'Invalid add_subplot positional arguments {args!r}.')
+
+        # Add the subplot
+        # NOTE: Pass subplotspec as keyword arg for mpl >= 3.4 workaround
+        # NOTE: Must assign unique label to each subplot or else subsequent calls
+        # to add_subplot() in mpl < 3.4 may return an already-drawn subplot in the
+        # wrong location due to gridspec override. Is against OO package design.
+        self.gridspec = gs  # trigger layout adjustment
+        self._subplot_counter += 1  # unique label for each subplot
+        kwargs.setdefault('label', f'subplot_{self._subplot_counter}')
+        kwargs.setdefault('number', 1 + max(self._subplot_dict, default=0))
+        ax = super().add_subplot(ss, _subplot_spec=ss, **kwargs)
+        if ax.number:
+            self._subplot_dict[ax.number] = ax
+        return ax
+
+    def _add_subplots(
+        self, array=None, nrows=1, ncols=1, order='C',
+        proj=None, projection=None, proj_kw=None, projection_kw=None, basemap=None,
+        **kwargs
+    ):
+        """
+        The driver function for adding multiple subplots.
+        """
+        # Clunky helper function
+        # TODO: Consider deprecating and asking users to use add_subplot()
+        def _axes_dict(naxs, input, kw=False, default=None):
+            # First build up dictionary
+            # 1. 'string' or {1: 'string1', (2, 3): 'string2'}
+            if not kw:
+                if np.iterable(input) and not isinstance(input, (str, dict)):
+                    input = {num + 1: item for num, item in enumerate(input)}
+                elif not isinstance(input, dict):
+                    input = {range(1, naxs + 1): input}
+            # 2. {'prop': value} or {1: {'prop': value1}, (2, 3): {'prop': value2}}
+            else:
+                nested = [isinstance(_, dict) for _ in input.values()]
+                if not any(nested):  # any([]) == False
+                    input = {range(1, naxs + 1): input.copy()}
+                elif not all(nested):
+                    raise ValueError(f'Invalid input {input!r}.')
+            # Unfurl keys that contain multiple axes numbers
+            output = {}
+            for nums, item in input.items():
+                nums = np.atleast_1d(nums)
+                for num in nums.flat:
+                    output[num] = item.copy() if kw else item
+            # Fill with default values
+            for num in range(1, naxs + 1):
+                if num not in output:
+                    output[num] = {} if kw else default
+            if output.keys() != set(range(1, naxs + 1)):
+                raise ValueError(
+                    f'Have {naxs} axes, but {input!r} includes props for the axes: '
+                    + ', '.join(map(repr, sorted(output))) + '.'
+                )
+            return output
+
+        # Build the subplot array
+        # NOTE: Currently this may ignore user-input nrows/ncols without warning
+        if order not in ('C', 'F'):  # better error message
+            raise ValueError(f"Invalid order={order!r}. Options are 'C' or 'F'.")
+        gs = None
+        if array is None or isinstance(array, mgridspec.GridSpec):
+            if array is not None:
+                gs, nrows, ncols = array, array.nrows, array.ncols
+            array = np.arange(1, nrows * ncols + 1)[..., None]
+            array = array.reshape((nrows, ncols), order=order)
+        else:
+            array = np.atleast_1d(array)
+            array[array == None] = 0  # None or 0 both valid placeholders  # noqa: E711
+            array = array.astype(np.int)
+            if array.ndim == 1:  # interpret as single row or column
+                array = array[None, :] if order == 'C' else array[:, None]
+            elif array.ndim != 2:
+                raise ValueError(f'Expected 1D or 2D array of integers. Got {array}.')
+
+        # Parse input format, gridspec, and projection arguments
+        # NOTE: Permit figure format keywords for e.g. 'collabels' (more intuitive)
+        nums = np.unique(array[array != 0])
+        naxs = len(nums)
+        if any(num < 0 or not isinstance(num, Integral) for num in nums.flat):
+            raise ValueError(f'Expected array of positive integers. Got {array}.')
+        proj = _not_none(projection=projection, proj=proj)
+        proj = _axes_dict(naxs, proj, kw=False, default='cartesian')
+        proj_kw = _not_none(projection_kw=projection_kw, proj_kw=proj_kw) or {}
+        proj_kw = _axes_dict(naxs, proj_kw, kw=True)
+        basemap = _axes_dict(naxs, basemap, kw=False)
+        axes_kw = {
+            num: {'proj': proj[num], 'proj_kw': proj_kw[num], 'basemap': basemap[num]}
+            for num in proj
+        }
+        for key in ('gridspec_kw', 'subplot_kw'):
+            kw = kwargs.pop(key, None)
+            if not kw:
+                continue
+            warnings._warn_proplot(
+                f'{key!r} is not necessary in proplot. Pass the '
+                'parameters as keyword arguments instead.'
+            )
+            kwargs.update(kw or {})
+        figure_kw = _pop_params(kwargs, self._format_signature)
+        gridspec_kw = _pop_params(kwargs, pgridspec.GridSpec._update_params)
+
+        # Create or update the gridspec and add subplots with subplotspecs
+        # NOTE: The gridspec is added to the figure when we pass the subplotspec
+        if gs is None:
+            gs = pgridspec.GridSpec(*array.shape, **gridspec_kw)
+        else:
+            gs.update(**gridspec_kw)
+        axs = naxs * [None]  # list of axes
+        axids = [np.where(array == i) for i in np.sort(np.unique(array)) if i > 0]
+        axcols = np.array([[x.min(), x.max()] for _, x in axids])
+        axrows = np.array([[y.min(), y.max()] for y, _ in axids])
+        for idx in range(naxs):
+            num = idx + 1
+            x0, x1 = axcols[idx, 0], axcols[idx, 1]
+            y0, y1 = axrows[idx, 0], axrows[idx, 1]
+            ss = gs[y0:y1 + 1, x0:x1 + 1]
+            kw = {**kwargs, **axes_kw[num], 'number': num}
+            axs[idx] = self.add_subplot(ss, **kw)
+
+        self.format(skip_axes=True, **figure_kw)
+        return pgridspec.SubplotGrid(axs)
 
     def _align_axis_label(self, x):
         """
@@ -1185,213 +1382,28 @@ class Figure(mfigure.Figure):
         """
         %(figure.subplot)s
         """
-        # Parse arguments
-        kwargs = self._parse_proj(**kwargs)
-        args = args or (1, 1, 1)
-        gs = self.gridspec
-
-        # Integer arg
-        if len(args) == 1 and isinstance(args[0], Integral):
-            if not 111 <= args[0] <= 999:
-                raise ValueError(f'Input {args[0]} must fall between 111 and 999.')
-            args = tuple(map(int, str(args[0])))
-
-        # Subplot spec
-        if (
-            len(args) == 1
-            and isinstance(args[0], (maxes.SubplotBase, mgridspec.SubplotSpec))
-        ):
-            ss = args[0]
-            if isinstance(ss, maxes.SubplotBase):
-                ss = ss.get_subplotspec()
-            if gs is None:
-                gs = ss.get_topmost_subplotspec().get_gridspec()
-            if not isinstance(gs, pgridspec.GridSpec):
-                raise ValueError(
-                    'Input subplotspec must be derived from a proplot.GridSpec.'
-                )
-            if ss.get_topmost_subplotspec().get_gridspec() is not gs:
-                raise ValueError(
-                    'Input subplotspec must be derived from the active figure gridspec.'
-                )
-
-        # Row and column spec
-        # TODO: How to pass spacing parameters to gridspec? Consider overriding
-        # subplots adjust? Or require using gridspec manually?
-        elif (
-            len(args) == 3
-            and all(isinstance(arg, Integral) for arg in args[:2])
-            and all(isinstance(arg, Integral) for arg in np.atleast_1d(args[2]))
-        ):
-            nrows, ncols, num = args
-            i, j = np.resize(num, 2)
-            if gs is None:
-                gs = pgridspec.GridSpec(nrows, ncols)
-            orows, ocols = gs.get_geometry()
-            if orows % nrows:
-                raise ValueError(
-                    f'The input number of rows {nrows} does not divide the '
-                    f'figure gridspec number of rows {orows}.'
-                )
-            if ocols % ncols:
-                raise ValueError(
-                    f'The input number of columns {ncols} does not divide the '
-                    f'figure gridspec number of columns {ocols}.'
-                )
-            if any(_ < 1 or _ > nrows * ncols for _ in (i, j)):
-                raise ValueError(
-                    'The input subplot indices must fall between '
-                    f'1 and {nrows * ncols}. Instead got {i} and {j}.'
-                )
-            rowfact, colfact = orows // nrows, ocols // ncols
-            irow, icol = divmod(i - 1, ncols)  # convert to zero-based
-            jrow, jcol = divmod(j - 1, ncols)
-            irow, icol = irow * rowfact, icol * colfact
-            jrow, jcol = (jrow + 1) * rowfact - 1, (jcol + 1) * colfact - 1
-            ss = gs[irow:jrow + 1, icol:jcol + 1]
-
-        # Otherwise
-        else:
-            raise ValueError(f'Invalid add_subplot positional arguments {args!r}.')
-
-        # Add the subplot
-        # NOTE: Pass subplotspec as keyword arg for mpl >= 3.4 workaround
-        # NOTE: Must assign unique label to each subplot or else subsequent calls
-        # to add_subplot() in mpl < 3.4 may return an already-drawn subplot in the
-        # wrong location due to gridspec override. Is against OO package design.
-        self.gridspec = gs  # trigger layout adjustment
-        self._subplot_counter += 1  # unique label for each subplot
-        kwargs.setdefault('label', f'subplot_{self._subplot_counter}')
-        kwargs.setdefault('number', 1 + max(self._subplot_dict, default=0))
-        ax = super().add_subplot(ss, _subplot_spec=ss, **kwargs)
-        if ax.number:
-            self._subplot_dict[ax.number] = ax
-
-        return ax
+        return self._add_subplot(*args, **kwargs)
 
     @docstring._snippet_manager
     def subplot(self, *args, **kwargs):  # shorthand
         """
         %(figure.subplot)s
         """
-        return self.add_subplot(*args, **kwargs)
+        return self._add_subplot(*args, **kwargs)
 
     @docstring._snippet_manager
-    def add_subplots(
-        self, array=None, nrows=1, ncols=1, order='C',
-        proj=None, projection=None, proj_kw=None, projection_kw=None,
-        basemap=None, **kwargs
-    ):
+    def add_subplots(self, *args, **kwargs):
         """
         %(figure.subplots)s
         """
-        # Clunky helper function
-        # TODO: Consider deprecating and asking users to use add_subplot()
-        def _axes_dict(naxs, input, kw=False, default=None):
-            # First build up dictionary
-            # 1. 'string' or {1: 'string1', (2, 3): 'string2'}
-            if not kw:
-                if np.iterable(input) and not isinstance(input, (str, dict)):
-                    input = {num + 1: item for num, item in enumerate(input)}
-                elif not isinstance(input, dict):
-                    input = {range(1, naxs + 1): input}
-            # 2. {'prop': value} or {1: {'prop': value1}, (2, 3): {'prop': value2}}
-            else:
-                nested = [isinstance(_, dict) for _ in input.values()]
-                if not any(nested):  # any([]) == False
-                    input = {range(1, naxs + 1): input.copy()}
-                elif not all(nested):
-                    raise ValueError(f'Invalid input {input!r}.')
-            # Unfurl keys that contain multiple axes numbers
-            output = {}
-            for nums, item in input.items():
-                nums = np.atleast_1d(nums)
-                for num in nums.flat:
-                    output[num] = item.copy() if kw else item
-            # Fill with default values
-            for num in range(1, naxs + 1):
-                if num not in output:
-                    output[num] = {} if kw else default
-            if output.keys() != set(range(1, naxs + 1)):
-                raise ValueError(
-                    f'Have {naxs} axes, but {input!r} includes props for the axes: '
-                    + ', '.join(map(repr, sorted(output))) + '.'
-                )
-            return output
-
-        # Build the subplot array
-        # NOTE: Currently this may ignore user-input nrows/ncols without warning
-        if order not in ('C', 'F'):  # better error message
-            raise ValueError(f"Invalid order={order!r}. Options are 'C' or 'F'.")
-        gs = None
-        if array is None or isinstance(array, mgridspec.GridSpec):
-            if array is not None:
-                gs, nrows, ncols = array, array.nrows, array.ncols
-            array = np.arange(1, nrows * ncols + 1)[..., None]
-            array = array.reshape((nrows, ncols), order=order)
-        else:
-            array = np.atleast_1d(array)
-            array[array == None] = 0  # None or 0 both valid placeholders  # noqa: E711
-            array = array.astype(np.int)
-            if array.ndim == 1:  # interpret as single row or column
-                array = array[None, :] if order == 'C' else array[:, None]
-            elif array.ndim != 2:
-                raise ValueError(f'Expected 1D or 2D array of integers. Got {array}.')
-
-        # Parse input format, gridspec, and projection arguments
-        # NOTE: Permit figure format keywords for e.g. 'collabels' (more intuitive)
-        nums = np.unique(array[array != 0])
-        naxs = len(nums)
-        if any(num < 0 or not isinstance(num, Integral) for num in nums.flat):
-            raise ValueError(f'Expected array of positive integers. Got {array}.')
-        proj = _not_none(projection=projection, proj=proj)
-        proj = _axes_dict(naxs, proj, kw=False, default='cartesian')
-        proj_kw = _not_none(projection_kw=projection_kw, proj_kw=proj_kw) or {}
-        proj_kw = _axes_dict(naxs, proj_kw, kw=True)
-        basemap = _axes_dict(naxs, basemap, kw=False)
-        axes_kw = {
-            num: {'proj': proj[num], 'proj_kw': proj_kw[num], 'basemap': basemap[num]}
-            for num in proj
-        }
-        for key in ('gridspec_kw', 'subplot_kw'):
-            kw = kwargs.pop(key, None)
-            if not kw:
-                continue
-            warnings._warn_proplot(
-                f'{key!r} is not necessary in proplot. Pass the '
-                'parameters as keyword arguments instead.'
-            )
-            kwargs.update(kw or {})
-        figure_kw = _pop_params(kwargs, self._format_signature)
-        gridspec_kw = _pop_params(kwargs, pgridspec.GridSpec._update_params)
-
-        # Create or update the gridspec and add subplots with subplotspecs
-        # NOTE: The gridspec is added to the figure when we pass the subplotspec
-        if gs is None:
-            gs = pgridspec.GridSpec(*array.shape, **gridspec_kw)
-        else:
-            gs.update(**gridspec_kw)
-        axs = naxs * [None]  # list of axes
-        axids = [np.where(array == i) for i in np.sort(np.unique(array)) if i > 0]
-        axcols = np.array([[x.min(), x.max()] for _, x in axids])
-        axrows = np.array([[y.min(), y.max()] for y, _ in axids])
-        for idx in range(naxs):
-            num = idx + 1
-            x0, x1 = axcols[idx, 0], axcols[idx, 1]
-            y0, y1 = axrows[idx, 0], axrows[idx, 1]
-            ss = gs[y0:y1 + 1, x0:x1 + 1]
-            kw = {**kwargs, **axes_kw[num], 'number': num}
-            axs[idx] = self.add_subplot(ss, **kw)
-
-        self.format(skip_axes=True, **figure_kw)
-        return pgridspec.SubplotGrid(axs)
+        return self._add_subplots(*args, **kwargs)
 
     @docstring._snippet_manager
-    def subplots(self, *args, **kwargs):  # shorthand
+    def subplots(self, *args, **kwargs):
         """
         %(figure.subplots)s
         """
-        return self.add_subplots(*args, **kwargs)
+        return self._add_subplots(*args, **kwargs)
 
     def auto_layout(self, renderer=None, aspect=None, tight=None, resize=None):
         """

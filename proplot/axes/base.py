@@ -1705,7 +1705,7 @@ class Axes(maxes.Axes):
         zoom=None, zoom_kw=None, zorder=None, **kwargs
     ):
         """
-        Add an inset axes.
+        Add an inset axes using arbitrary projection.
         """
         # Converting transform to figure-relative coordinates
         transform = self._get_transform(transform, 'axes')
