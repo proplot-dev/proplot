@@ -20,8 +20,9 @@
 #
 # Proplot includes some useful improvements to the matplotlib API that make
 # working with colorbars and legends :ref:`easier <why_colorbars_legends>`.
-# Three notable features are "inset" colorbars, "outer" legends, and
-# on-the-fly colorbars and legends (see below for details).
+# Notable features include "inset" colorbars, "outer" legends,
+# on-the-fly colorbars and legends, colorbars built from artists,
+# and row-major and centered-row legends.
 
 
 # %% [raw] raw_mimetype="text/restructuredtext"

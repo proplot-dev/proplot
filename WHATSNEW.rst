@@ -53,7 +53,7 @@ Features
 --------
 
 * Significantly improve "tight layout" performance by skipping artists with clipping
-  enabled and clipping paths/boxes derived from the subplot edge (:commit:`f891e4f0`).
+  enabled and clipping paths/boxes equivalent to the subplot edge (:commit:`f891e4f0`).
 * Add modifiable `proplot.figure.Figure.tight` property to retrieve/change the
   "tight layout" setting (:commit:`46f46c26`).
 * Add top-level `~proplot.ui.subplot` command that returns a figure and a single
@@ -74,7 +74,7 @@ Features
 * Make proplot `~proplot.ticker.IndexFormatter` public, since the matplotlib
   version was entirely removed in version 3.5 (:commit:`c2dd8b2e`).
 * Replace matplotlib `~proplot.ticker.IndexLocator` with custom version,
-  consistent with `~proplot.ticker.IndexFormatter`, and prevent the odd
+  consistent with `~proplot.ticker.IndexFormatter`, and prevent the
   matplotlib limitation requiring lines to be present (:commit:`c2dd8b2e`).
 * Use custom locator `proplot.ticker.DiscreteLocator` for major/minor discrete
   colorbar ticks instead of `~matplotlib.ticker.FixedLocator` (:commit:`b94a9b1e`).
@@ -97,7 +97,7 @@ Features
   are fixed, and add documentation for this feature (:issue:`300`).
 * Automatically load from "local" folders named ``proplot_cmaps``, ``proplot_cycles``,
   ``proplot_colors``, and ``proplot_fonts`` in current or parent directories,
-  analogous to "local" ``proplotrc`` files (:commit:`a3a7bb33`).
+  consistent with "local" ``proplotrc`` files (:commit:`a3a7bb33`).
 * Add the `proplot.config.Configurator.local_folders` function, analogous to
   `~proplot.config.Configurator.local_files`, and add a `local` keyword to
   each ``register`` function (:commit:`a3a7bb33`).
@@ -110,7 +110,7 @@ Bug fixes
 * Fix matplotlib >= 3.5 issue preventing basic usage of `proplot.colors.DiscreteNorm`
   and colorbars scaled by `proplot.colors.DiscreteNorm` (:issue:`302`).
 * Fix matplotlib >= 3.5 issue where date axes are not correctly detected
-  due to new date converters (:commit:`63deee21`).
+  due to a new default date converter (:commit:`63deee21`).
 * Fix matplotlib >= 3.4 issue where alternate axes are drawn twice
   due to using `~matplotlib.figure.Figure.add_child_axes` and failing to
   remove axes from the ``fig._localaxes`` stack (:issue:`303`).
