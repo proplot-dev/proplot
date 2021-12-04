@@ -711,7 +711,7 @@ class CartesianAxes(shared._SharedAxes, plot.PlotAxes):
         if locator is not None:
             locator = constructor.Locator(locator, **locator_kw)
             axis.set_major_locator(locator)
-            if isinstance(locator, mticker.IndexLocator):
+            if isinstance(locator, (mticker.IndexLocator, pticker.IndexLocator)):
                 tickminor = _not_none(tickminor, False)  # disable 'index' minor ticks
 
         # Apply input or default minor locator
