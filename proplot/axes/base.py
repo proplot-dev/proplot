@@ -155,11 +155,13 @@ docstring._snippet_manager['axes.colorbar_space'] = _space_docstring.format(
 # Transform docstring
 # Used for text and add_axes
 _transform_docstring = """
-transform : {'data', 'axes', 'figure'} or `~matplotlib.transforms.Transform`, optional
+transform : {'data', 'axes', 'figure', 'subfigure'} \
+or `~matplotlib.transforms.Transform`, optional
     The transform used to interpret the bounds. Can be a
     `~matplotlib.transforms.Transform` instance or a string representing
     the `~matplotlib.axes.Axes.transData`, `~matplotlib.axes.Axes.transAxes`,
-    or `~matplotlib.figure.Figure.transFigure` transforms.
+    `~matplotlib.figure.Figure.transFigure`, or
+    `~matplotlib.figure.Figure.transSubfigure`, transforms.
 """
 docstring._snippet_manager['axes.transform'] = _transform_docstring
 
@@ -1625,12 +1627,14 @@ class Axes(maxes.Axes):
             return transform
         elif PlateCarree is not object and transform == 'map':
             return PlateCarree()
-        elif transform == 'figure':
-            return self.figure.transFigure
-        elif transform == 'axes':
-            return self.transAxes
         elif transform == 'data':
             return self.transData
+        elif transform == 'axes':
+            return self.transAxes
+        elif transform == 'figure':
+            return self.figure.transFigure
+        elif transform == 'subfigure':
+            return self.figure.transSubfigure
         else:
             raise ValueError(f'Unknown transform {transform!r}.')
 
