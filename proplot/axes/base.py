@@ -2803,11 +2803,10 @@ class Axes(maxes.Axes):
             if isinstance(artist, (maxes.Axes, maxis.Axis, mspines.Spine))
             or not artist.get_clip_on()
             or artist.get_clip_box() is not None and not np.all(
-                artist.get_clip_box().get_points() == self.bbox.get_points()
+                np.array(artist.get_clip_box()) == np.array(self.bbox)
             )
             or artist.get_clip_path() is not None and not np.all(
-                artist.get_clip_path().get_affine().get_matrix()
-                == self.patch.get_transform().get_affine().get_matrix()
+                np.array(artist.get_clip_path()) == np.array(self.patch.get_transform())
             )
         ]
         return artists
