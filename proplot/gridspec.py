@@ -468,8 +468,7 @@ class GridSpec(mgridspec.GridSpec):
             array = self._fpanels[side]
             nacross = self._ncols_total if side in ('left', 'right') else self._nrows_total  # noqa: E501
             npanels, nalong = array.shape
-            arg = _not_none(arg, (1, nalong))
-            arg = np.atleast_1d(arg)
+            arg = np.atleast_1d(_not_none(arg, (1, nalong)))
             if arg.size not in (1, 2):
                 raise ValueError(f'Invalid span={arg!r}. Must be scalar or 2-tuple of coordinates.')  # noqa: E501
             if any(s < 1 or s > nalong for s in arg):
@@ -477,14 +476,13 @@ class GridSpec(mgridspec.GridSpec):
             start, stop = arg[0] - 1, arg[-1]  # non-inclusive starting at zero
             iratio = -1 if side in ('left', 'top') else nacross  # default values
             for i in range(npanels):  # possibly use existing panel slot
-                if any(array[i, start:stop]):  # filled
-                    continue
-                array[i, start:stop] = True
-                if side in ('left', 'top'):  # descending moves us closer to 0
-                    iratio = npanels - 1 - i  # index in ratios array
-                else:  # descending array moves us closer to nacross - 1
-                    iratio = nacross - (npanels - i)  # index in ratios array
-                break
+                if not any(array[i, start:stop]):
+                    array[i, start:stop] = True
+                    if side in ('left', 'top'):  # descending moves us closer to 0
+                        iratio = npanels - 1 - i  # index in ratios array
+                    else:  # descending array moves us closer to nacross - 1
+                        iratio = nacross - (npanels - i)  # index in ratios array
+                    break
             if iratio == -1 or iratio == nacross:  # no slots so we must add to array
                 iarray = np.zeros((1, nalong), dtype=bool)
                 iarray[0, start:stop] = True

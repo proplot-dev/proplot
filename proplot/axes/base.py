@@ -646,6 +646,21 @@ docstring._snippet_manager['axes.legend_args'] = _legend_args_docstring
 docstring._snippet_manager['axes.legend_kwargs'] = _legend_kwargs_docstring
 
 
+def _align_bbox(align, length):
+    """
+    Return a simple alignment bounding box for intersection calculations.
+    """
+    if align in ('left', 'bottom'):
+        bounds = [[0, 0], [length, 0]]
+    elif align in ('top', 'right'):
+        bounds = [[1 - length, 0], [1, 0]]
+    elif align == 'center':
+        bounds = [[0.5 * (1 - length), 0], [0.5 * (1 + length), 0]]
+    else:
+        raise ValueError(f'Invalid align {align!r}.')
+    return mtransforms.Bbox(bounds)
+
+
 class _TransformedBoundsLocator:
     """
     Axes locator for `~Axes.inset_axes` and other axes.
@@ -856,15 +871,6 @@ class Axes(maxes.Axes):
         """
         Add a panel to be filled by an "outer" colorbar or legend.
         """
-        # Helper function: Return bounds inferred from given align setting.
-        def _align_bbox(align, length):
-            if align in ('left', 'bottom'):
-                bounds = [[0, 0], [length, 0]]
-            elif align in ('top', 'right'):
-                bounds = [[1 - length, 0], [1, 0]]
-            else:
-                bounds = [[0.5 * (1 - length), 0], [0.5 * (1 + length), 0]]
-            return mtransforms.Bbox(bounds)
         # NOTE: For colorbars we include 'length' when determining whether to allocate
         # new panel but for legend just test whether that 'align' position was filled.
         # WARNING: Hide content but 1) do not use ax.set_visible(False) so that
@@ -878,7 +884,7 @@ class Axes(maxes.Axes):
             for pax in self._panel_dict[loc]:
                 if not pax._panel_hidden or align in pax._panel_align:
                     continue
-                if not any(bbox.overlaps(_align_bbox(a, l)) for a, l in pax._panel_align.items()):  # noqa: E501
+                if not any(bbox.overlaps(b) for b in pax._panel_align.values()):
                     ax = pax
                     break
             if ax is None:
@@ -891,7 +897,7 @@ class Axes(maxes.Axes):
         ax.yaxis.set_visible(False)
         ax.patch.set_facecolor('none')
         ax._panel_hidden = True
-        ax._panel_align[align] = length
+        ax._panel_align[align] = bbox
         return ax
 
     def _add_inset_axes(
