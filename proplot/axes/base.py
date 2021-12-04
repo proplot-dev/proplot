@@ -938,7 +938,7 @@ class Axes(maxes.Axes):
     @warnings._rename_kwargs('0.10', rasterize='rasterized')
     def _add_colorbar(
         self, mappable, values=None, *,
-        loc=None, space=None, pad=None, align=None,
+        loc=None, align=None, space=None, pad=None,
         width=None, length=None, shrink=None,
         label=None, title=None, reverse=False,
         rotation=None, grid=None, edges=None, drawedges=None,
@@ -960,7 +960,6 @@ class Axes(maxes.Axes):
         # TODO: Get the 'best' inset colorbar location using the legend algorithm
         # and implement inset colorbars the same as inset legends.
         grid = _not_none(grid=grid, edges=edges, drawedges=drawedges, default=rc['colorbar.grid'])  # noqa: E501
-        align = _translate_loc(align, 'panel', default='center', c='center', center='center')  # noqa: E501
         length = _not_none(length=length, shrink=shrink)
         label = _not_none(title=title, label=label)
         labelloc = _not_none(labelloc=labelloc, labellocation=labellocation)
@@ -1012,7 +1011,7 @@ class Axes(maxes.Axes):
         # NOTE: The inset axes function needs 'label' to know how to pad the box
         # TODO: Use seperate keywords for frame properties vs. colorbar edge properties?
         if loc in ('fill', 'left', 'right', 'top', 'bottom'):
-            length = _not_none(length, rc['colorbar.length'])
+            length = _not_none(length, rc['colorbar.length'])  # for _add_guide_panel
             kwargs.update({'align': align, 'length': length})
             extendsize = _not_none(extendsize, rc['colorbar.extend'])
             ax = self._add_guide_panel(loc, align, length=length, width=width, space=space, pad=pad)  # noqa: E501
@@ -1134,12 +1133,12 @@ class Axes(maxes.Axes):
             cax._add_edge_fix(obj.solids, edgefix=edgefix)
 
         # Return after registering location
-        self._register_guide('colorbar', obj, loc)  # possibly replace another
+        self._register_guide('colorbar', obj, (loc, align))  # possibly replace another
         return obj
 
     def _add_legend(
         self, handles=None, labels=None, *,
-        loc=None, width=None, pad=None, space=None, align=None,
+        loc=None, align=None, width=None, pad=None, space=None,
         frame=None, frameon=None, ncol=None, ncols=None,
         alphabetize=False, center=None, order=None, label=None, title=None,
         fontsize=None, fontweight=None, fontcolor=None,
@@ -1152,7 +1151,6 @@ class Axes(maxes.Axes):
         # Parse input argument units
         ncol = _not_none(ncols=ncols, ncol=ncol)
         order = _not_none(order, 'C')
-        align = _translate_loc(align, 'panel', default='center', c='center', center='center')  # noqa: E501
         frameon = _not_none(frame=frame, frameon=frameon, default=rc['legend.frameon'])
         fontsize = _not_none(kwargs.pop('fontsize', None), rc['legend.fontsize'])
         titlefontsize = _not_none(
@@ -1267,7 +1265,7 @@ class Axes(maxes.Axes):
         if isinstance(objs[0], mpatches.FancyBboxPatch):
             objs = objs[1:]
         obj = objs[0] if len(objs) == 1 else tuple(objs)
-        self._register_guide('legend', obj, loc)  # possibly replace another
+        self._register_guide('legend', obj, (loc, align))  # possibly replace another
         return obj
 
     def _apply_title_above(self):
@@ -1358,22 +1356,22 @@ class Axes(maxes.Axes):
         user add handles to location lists with successive calls.
         """
         # Draw queued colorbars
-        for loc, colorbar in tuple(self._colorbar_dict.items()):
+        for (loc, align), colorbar in tuple(self._colorbar_dict.items()):
             if not isinstance(colorbar, tuple):
                 continue
             handles, labels, kwargs = colorbar
-            cb = self._add_colorbar(handles, labels, loc=loc, **kwargs)
-            self._colorbar_dict[loc] = cb
+            cb = self._add_colorbar(handles, labels, loc=loc, align=align, **kwargs)
+            self._colorbar_dict[(loc, align)] = cb
 
         # Draw queued legends
         # WARNING: Passing empty list labels=[] to legend causes matplotlib
         # _parse_legend_args to search for everything. Ensure None if empty.
-        for loc, legend in tuple(self._legend_dict.items()):
+        for (loc, align), legend in tuple(self._legend_dict.items()):
             if not isinstance(legend, tuple) or any(isinstance(_, mlegend.Legend) for _ in legend):  # noqa: E501
                 continue
             handles, labels, kwargs = legend
-            leg = self._add_legend(handles, labels, loc=loc, **kwargs)
-            self._legend_dict[loc] = leg
+            leg = self._add_legend(handles, labels, loc=loc, align=align, **kwargs)
+            self._legend_dict[(loc, align)] = leg
 
     def _get_topmost_axes(self):
         """
@@ -1661,7 +1659,7 @@ class Axes(maxes.Axes):
         else:
             raise ValueError(f'Unknown transform {transform!r}.')
 
-    def _register_guide(self, guide, obj, loc, **kwargs):
+    def _register_guide(self, guide, obj, key, **kwargs):
         """
         Queue up or replace objects for legends and list-of-artist style colorbars.
         """
@@ -1669,16 +1667,12 @@ class Axes(maxes.Axes):
         if guide not in ('legend', 'colorbar'):
             raise TypeError(f'Invalid type {guide!r}.')
         dict_ = self._legend_dict if guide == 'legend' else self._colorbar_dict
-        if loc == 'fill':
-            loc = self._panel_side
-            if loc is None:  # cannot register 'filled' non panels
-                return
 
         # Remove previous instances
         # NOTE: No good way to remove inset colorbars right now until the bounding
         # box and axes are merged into some kind of subclass. Just fine for now.
-        if loc in dict_ and not isinstance(dict_[loc], tuple):
-            prev = dict_.pop(loc)  # possibly pop a queued object
+        if key in dict_ and not isinstance(dict_[key], tuple):
+            prev = dict_.pop(key)  # possibly pop a queued object
             if guide == 'colorbar':
                 pass
             elif hasattr(self, 'legend_') and prev.axes.legend_ is prev:
@@ -1689,7 +1683,7 @@ class Axes(maxes.Axes):
         # Replace with instance or update the queue
         # NOTE: This is valid for both mappable-values pairs and handles-labels pairs
         if not isinstance(obj, tuple) or any(isinstance(_, mlegend.Legend) for _ in obj):  # noqa: E501
-            dict_[loc] = obj
+            dict_[key] = obj
         else:
             handles, labels = obj
             if not np.iterable(handles) or type(handles) is tuple:
@@ -1697,7 +1691,7 @@ class Axes(maxes.Axes):
             if not np.iterable(labels) or isinstance(labels, str):
                 labels = [labels] * len(handles)
             length = min(len(handles), len(labels))  # mimics 'zip' behavior
-            handles_full, labels_full, kwargs_full = dict_.setdefault(loc, ([], [], {}))
+            handles_full, labels_full, kwargs_full = dict_.setdefault(key, ([], [], {}))
             handles_full.extend(handles[:length])
             labels_full.extend(labels[:length])
             kwargs_full.update(kwargs)
@@ -2920,7 +2914,8 @@ class Axes(maxes.Axes):
     @docstring._obfuscate_params
     @docstring._snippet_manager
     def colorbar(
-        self, mappable, values=None, loc=None, location=None, queue=False, **kwargs
+        self, mappable, values=None,
+        loc=None, location=None, align=None, queue=False, **kwargs
     ):
         """
         Add an inset colorbar or an outer colorbar along the edge of the axes.
@@ -2979,17 +2974,19 @@ class Axes(maxes.Axes):
         # to a list later used for colorbar levels. Same as legend.
         loc = _not_none(loc=loc, location=location)
         loc = _translate_loc(loc, 'colorbar', default=rc['colorbar.loc'])
+        align = _translate_loc(align, 'panel', default='center', c='center', center='center')  # noqa: E501
         kwargs = guides._guide_kw_from_obj(mappable, 'colorbar', kwargs)
         if queue:
-            self._register_guide('colorbar', (mappable, values), loc, **kwargs)
+            self._register_guide('colorbar', (mappable, values), (loc, align), **kwargs)
         else:
-            cb = self._add_colorbar(mappable, values, loc=loc, **kwargs)
+            cb = self._add_colorbar(mappable, values, loc=loc, align=align, **kwargs)
             return cb
 
     @docstring._concatenate_inherited  # also obfuscates params
     @docstring._snippet_manager
     def legend(
-        self, handles=None, labels=None, loc=None, location=None, queue=False, **kwargs
+        self, handles=None, labels=None,
+        loc=None, location=None, align=None, queue=False, **kwargs
     ):
         """
         Add an *inset* legend or *outer* legend along the edge of the axes.
@@ -3043,11 +3040,12 @@ class Axes(maxes.Axes):
         # is used internally for on-the-fly legends.
         loc = _not_none(loc=loc, location=location)
         loc = _translate_loc(loc, 'legend', default=rc['legend.loc'])
+        align = _translate_loc(align, 'panel', default='center', c='center', center='center')  # noqa: E501
         kwargs = guides._guide_kw_from_obj(handles, 'legend', kwargs)
         if queue:
-            self._register_guide('legend', (handles, labels), loc, **kwargs)
+            self._register_guide('legend', (handles, labels), (loc, align), **kwargs)
         else:
-            leg = self._add_legend(handles, labels, loc=loc, **kwargs)
+            leg = self._add_legend(handles, labels, loc=loc, align=align, **kwargs)
             return leg
 
     @docstring._concatenate_inherited
