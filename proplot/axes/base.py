@@ -2813,10 +2813,13 @@ class Axes(maxes.Axes):
         return artists
 
     def set_prop_cycle(self, *args, **kwargs):
-        # Silent override. This is a strict superset of matplotlib functionality
-        # with one exception: you cannot use e.g. set_prop_cycle('color', color_list).
-        # Instead keyword args are required (but note naked positional arguments
-        # are assumed color arguments). Cycles are still validated in rcsetup.cycler()
+        # Silent override. This is a strict superset of matplotlib functionality.
+        # Includes both proplot syntax with positional arguments interpreted as
+        # color arguments and oldschool matplotlib cycler(key, value) syntax.
+        if len(args) == 2 and isinstance(args[0], str) and np.iterable(args[1]):
+            if _pop_props({args[0]: object()}, 'line'):
+                kwargs = {args[0]: args[1]}
+                args = ()
         cycle = self._active_cycle = constructor.Cycle(*args, **kwargs)
         return super().set_prop_cycle(cycle)  # set the property cycler after validation
 
