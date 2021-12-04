@@ -769,7 +769,7 @@ class Axes(maxes.Axes):
         self._inset_zoom = False
         self._inset_zoom_artists = None
         self._panel_hidden = False  # True when "filled" with cbar/legend
-        self._panel_align = set()  # store align values for "filled" cbar/legend
+        self._panel_align = {}  # store 'align' and 'length' for "filled" cbar/legend
         self._panel_parent = None
         self._panel_share = False
         self._panel_sharex_group = False
@@ -852,17 +852,37 @@ class Axes(maxes.Axes):
         self.add_artist(patch)
         return patch
 
-    def _add_guide_panel(self, loc='fill', align='center', **kwargs):
+    def _add_guide_panel(self, loc='fill', align='center', length=0, **kwargs):
         """
         Add a panel to be filled by an "outer" colorbar or legend.
         """
+        # Helper function: Return bounds inferred from given align setting.
+        def _align_bbox(align, length):
+            if align in ('left', 'bottom'):
+                bounds = [[0, 0], [length, 0]]
+            elif align in ('top', 'right'):
+                bounds = [[1 - length, 0], [1, 0]]
+            else:
+                bounds = [[0.5 * (1 - length), 0], [0.5 * (1 + length), 0]]
+            return mtransforms.Bbox(bounds)
+        # NOTE: For colorbars we include 'length' when determining whether to allocate
+        # new panel but for legend just test whether that 'align' position was filled.
         # WARNING: Hide content but 1) do not use ax.set_visible(False) so that
         # tight layout will include legend and colorbar and 2) do not use
         # ax.clear() so that top panel title and a-b-c label can remain.
-        if loc in ('left', 'right', 'top', 'bottom'):
-            ax = self.panel_axes(loc, filled=True, **kwargs)
-        elif loc == 'fill':
+        if loc == 'fill':
             ax = self
+        elif loc in ('left', 'right', 'top', 'bottom'):
+            ax = None
+            bbox = _align_bbox(align, length)
+            for pax in self._panel_dict[loc]:
+                if not pax._panel_hidden or align in pax._panel_align:
+                    continue
+                if not any(bbox.overlaps(_align_bbox(a, l)) for a, l in pax._panel_align.items()):  # noqa: E501
+                    ax = pax
+                    break
+            if ax is None:
+                ax = self.panel_axes(loc, filled=True, **kwargs)
         else:
             raise ValueError(f'Invalid filled panel location {loc!r}.')
         for s in ax.spines.values():
@@ -871,7 +891,7 @@ class Axes(maxes.Axes):
         ax.yaxis.set_visible(False)
         ax.patch.set_facecolor('none')
         ax._panel_hidden = True
-        ax._panel_align.add(align)
+        ax._panel_align[align] = length
         return ax
 
     def _add_inset_axes(
@@ -919,6 +939,7 @@ class Axes(maxes.Axes):
     def _add_colorbar(
         self, mappable, values=None, *,
         loc=None, space=None, pad=None, align=None,
+        width=None, length=None, shrink=None,
         label=None, title=None, reverse=False,
         rotation=None, grid=None, edges=None, drawedges=None,
         extend=None, extendsize=None, extendfrac=None,
@@ -940,6 +961,7 @@ class Axes(maxes.Axes):
         # and implement inset colorbars the same as inset legends.
         grid = _not_none(grid=grid, edges=edges, drawedges=drawedges, default=rc['colorbar.grid'])  # noqa: E501
         align = _translate_loc(align, 'panel', default='center', c='center', center='center')  # noqa: E501
+        length = _not_none(length=length, shrink=shrink)
         label = _not_none(title=title, label=label)
         labelloc = _not_none(labelloc=labelloc, labellocation=labellocation)
         locator = _not_none(ticks=ticks, locator=locator)
@@ -989,16 +1011,16 @@ class Axes(maxes.Axes):
         # Generate and prepare the colorbar axes
         # NOTE: The inset axes function needs 'label' to know how to pad the box
         # TODO: Use seperate keywords for frame properties vs. colorbar edge properties?
-        width = kwargs.pop('width', None)
         if loc in ('fill', 'left', 'right', 'top', 'bottom'):
-            kwargs['align'] = align
+            length = _not_none(length, rc['colorbar.length'])
+            kwargs.update({'align': align, 'length': length})
             extendsize = _not_none(extendsize, rc['colorbar.extend'])
-            ax = self._add_guide_panel(loc, width=width, space=space, pad=pad)
+            ax = self._add_guide_panel(loc, align, length=length, width=width, space=space, pad=pad)  # noqa: E501
             cax, kwargs = ax._parse_colorbar_filled(**kwargs)
         else:
-            kwargs['label'] = label  # for frame calculations
+            kwargs.update({'label': label, 'length': length, 'width': width})
             extendsize = _not_none(extendsize, rc['colorbar.insetextend'])
-            cax, kwargs = self._parse_colorbar_inset(loc=loc, pad=pad, width=width, **kwargs)  # noqa: E501
+            cax, kwargs = self._parse_colorbar_inset(loc=loc, pad=pad, **kwargs)  # noqa: E501
 
         # Parse the colorbar mappable
         # NOTE: Account for special case where auto colorbar is generated from 1D
@@ -1160,7 +1182,7 @@ class Axes(maxes.Axes):
 
         # Generate and prepare the legend axes
         if loc in ('fill', 'left', 'right', 'top', 'bottom'):
-            lax = self._add_guide_panel(loc, width=width, space=space, pad=pad)
+            lax = self._add_guide_panel(loc, align, width=width, space=space, pad=pad)
             kwargs.setdefault('borderaxespad', 0)
             if not frameon:
                 kwargs.setdefault('borderpad', 0)
@@ -1837,8 +1859,8 @@ class Axes(maxes.Axes):
         return mappable, locator, formatter, kwargs
 
     def _parse_colorbar_filled(
-        self, length=None, shrink=None, align=None,
-        tickloc=None, ticklocation=None, orientation=None, **kwargs
+        self, length=None, align=None, tickloc=None, ticklocation=None,
+        orientation=None, **kwargs
     ):
         """
         Return the axes and adjusted keyword args for a panel-filling colorbar.
@@ -1847,7 +1869,7 @@ class Axes(maxes.Axes):
         side = self._panel_side
         side = _not_none(side, 'left' if orientation == 'vertical' else 'bottom')
         align = _not_none(align, 'center')
-        length = _not_none(length=length, shrink=shrink, default=rc['colorbar.length'])
+        length = _not_none(length=length, default=rc['colorbar.length'])
         ticklocation = _not_none(tickloc=tickloc, ticklocation=ticklocation)
 
         # Calculate inset bounds for the colorbar
