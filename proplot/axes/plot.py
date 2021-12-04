@@ -4,7 +4,6 @@ The second-level axes subclass used for all proplot figures.
 Implements plotting method overrides.
 """
 import inspect
-import itertools
 import re
 import sys
 from numbers import Integral
@@ -1225,8 +1224,7 @@ def _get_vert(vert=None, orientation=None, **kwargs):
 
 
 def _parse_vert(
-    vert=None, orientation=None, default_vert=None, default_orientation=None,
-    **kwargs
+    vert=None, orientation=None, default_vert=None, default_orientation=None, **kwargs
 ):
     """
     Interpret both 'vert' and 'orientation' and add to outgoing keyword args
@@ -1276,8 +1274,7 @@ class PlotAxes(base.Axes):
 
     def _plot_native(self, name, *args, **kwargs):
         """
-        Call the plotting method and use context object to redirect internal
-        calls to native methods. Finally add attributes to outgoing methods.
+        Call the plotting method and redirect internal calls to native methods.
         """
         # NOTE: Previously allowed internal matplotlib plotting function calls to run
         # through proplot overrides then avoided awkward conflicts in piecemeal fashion.
@@ -1290,27 +1287,12 @@ class PlotAxes(base.Axes):
                 obj = getattr(super(), name)(*args, **kwargs)
         return obj
 
-    def _plot_contour_edge(self, method, *args, **kwargs):
-        """
-        Call the contour method to add "edges" to filled contours.
-        """
-        # NOTE: This is used to provide an object that can be used by 'clabel' for
-        # auto-labels. Filled contours create strange artifacts.
-        # NOTE: Make the default 'line width' identical to one used for pcolor plots
-        # rather than rc['contour.linewidth']. See mpl pcolor() source code
-        if not any(key in kwargs for key in ('linewidths', 'linestyles', 'edgecolors')):
-            kwargs['linewidths'] = 0  # for clabel
-        kwargs.setdefault('linewidths', EDGEWIDTH)
-        kwargs.pop('cmap', None)
-        kwargs['colors'] = kwargs.pop('edgecolors', 'k')
-        return self._plot_native(method, *args, **kwargs)
-
-    def _plot_negpos_objs(
+    def _plot_negpos(
         self, name, x, *ys, negcolor=None, poscolor=None, colorkey='facecolor',
         use_where=False, use_zero=False, **kwargs
     ):
         """
-        Call the plot method separately for "negative" and "positive" data.
+        Call the plotting method separately for "negative" and "positive" data.
         """
         if use_where:
             kwargs.setdefault('interpolate', True)  # see fill_between docs
@@ -1342,7 +1324,143 @@ class PlotAxes(base.Axes):
         posobj = self._plot_native(name, x, *ypos, **kwargs)
         return cbook.silent_list(type(negobj).__name__, (negobj, posobj))
 
-    def _plot_errorbars(
+    def _add_auto_labels(
+        self, obj, cobj=None, labels=False, labels_kw=None,
+        fmt=None, formatter=None, formatter_kw=None, precision=None,
+    ):
+        """
+        Add number labels. Default formatter is `~proplot.ticker.SimpleFormatter`
+        with a default maximum precision of ``3`` decimal places.
+        """
+        # TODO: Add quiverkey to this!
+        if not labels:
+            return
+        labels_kw = labels_kw or {}
+        formatter_kw = formatter_kw or {}
+        formatter = _not_none(
+            fmt_labels_kw=labels_kw.pop('fmt', None),
+            formatter_labels_kw=labels_kw.pop('formatter', None),
+            fmt=fmt,
+            formatter=formatter,
+            default='simple'
+        )
+        precision = _not_none(
+            formatter_kw_precision=formatter_kw.pop('precision', None),
+            precision=precision,
+            default=3,  # should be lower than the default intended for tick labels
+        )
+        formatter = constructor.Formatter(formatter, precision=precision, **formatter_kw)  # noqa: E501
+        if isinstance(obj, mcontour.ContourSet):
+            self._add_contour_labels(obj, cobj, formatter, **labels_kw)
+        elif isinstance(obj, mcollections.Collection):
+            self._add_collection_labels(obj, formatter, **labels_kw)
+        else:
+            raise RuntimeError(f'Not possible to add labels to object {obj!r}.')
+
+    def _add_collection_labels(
+        self, obj, fmt, *, c=None, color=None, colors=None,
+        size=None, fontsize=None, **kwargs
+    ):
+        """
+        Add labels to pcolor boxes with support for shade-dependent text colors.
+        Values are inferred from the unnormalized grid box color.
+        """
+        # Parse input args
+        # NOTE: This function also hides grid boxes filled with NaNs to avoid ugly
+        # issue where edge colors surround NaNs. Should maybe move this somewhere else.
+        obj.update_scalarmappable()  # update 'edgecolors' list
+        color = _not_none(c=c, color=color, colors=colors)
+        fontsize = _not_none(size=size, fontsize=fontsize, default=rc['font.smallsize'])
+        kwargs.setdefault('ha', 'center')
+        kwargs.setdefault('va', 'center')
+
+        # Apply colors and hide edge colors for empty grids
+        labs = []
+        array = obj.get_array()
+        paths = obj.get_paths()
+        edgecolors = process._to_numpy_array(obj.get_edgecolors())
+        if len(edgecolors) == 1:
+            edgecolors = np.repeat(edgecolors, len(array), axis=0)
+        for i, (path, value) in enumerate(zip(paths, array)):
+            # Round to the number corresponding to the *color* rather than
+            # the exact data value. Similar to contour label numbering.
+            if value is ma.masked or not np.isfinite(value):
+                edgecolors[i, :] = 0
+                continue
+            if isinstance(obj.norm, pcolors.DiscreteNorm):
+                value = obj.norm._norm.inverse(obj.norm(value))
+            icolor = color
+            if color is None:
+                _, _, lum = utils.to_xyz(obj.cmap(obj.norm(value)), 'hcl')
+                icolor = 'w' if lum < 50 else 'k'
+            bbox = path.get_extents()
+            x = (bbox.xmin + bbox.xmax) / 2
+            y = (bbox.ymin + bbox.ymax) / 2
+            lab = self.text(x, y, fmt(value), color=icolor, size=fontsize, **kwargs)
+            labs.append(lab)
+
+        obj.set_edgecolors(edgecolors)
+        return labs
+
+    def _add_contour_edge(self, method, *args, **kwargs):
+        """
+        Call the contour method to add "edges" to filled contours.
+        """
+        # NOTE: This is used to provide an object that can be used by 'clabel' for
+        # auto-labels. Filled contours create strange artifacts.
+        # NOTE: Make the default 'line width' identical to one used for pcolor plots
+        # rather than rc['contour.linewidth']. See mpl pcolor() source code
+        if not any(key in kwargs for key in ('linewidths', 'linestyles', 'edgecolors')):
+            kwargs['linewidths'] = 0  # for clabel
+        kwargs.setdefault('linewidths', EDGEWIDTH)
+        kwargs.pop('cmap', None)
+        kwargs['colors'] = kwargs.pop('edgecolors', 'k')
+        return self._plot_native(method, *args, **kwargs)
+
+    def _add_contour_labels(
+        self, obj, cobj, fmt, *, c=None, color=None, colors=None,
+        size=None, fontsize=None, inline_spacing=None, **kwargs
+    ):
+        """
+        Add labels to contours with support for shade-dependent filled contour labels.
+        Text color is inferred from filled contour object and labels are always drawn
+        on unfilled contour object (otherwise errors crop up).
+        """
+        # Parse input args
+        zorder = max((h.get_zorder() for h in obj.collections), default=3)
+        zorder = max(3, zorder + 1)
+        kwargs.setdefault('zorder', zorder)
+        colors = _not_none(c=c, color=color, colors=colors)
+        fontsize = _not_none(size=size, fontsize=fontsize, default=rc['font.smallsize'])
+        inline_spacing = _not_none(inline_spacing, 2.5)
+
+        # Separate clabel args from text Artist args
+        text_kw = {}
+        clabel_keys = ('levels', 'inline', 'manual', 'rightside_up', 'use_clabeltext')
+        for key in tuple(kwargs):  # allow dict to change size
+            if key not in clabel_keys:
+                text_kw[key] = kwargs.pop(key)
+
+        # Draw hidden additional contour for filled contour labels
+        cobj = _not_none(cobj, obj)
+        if obj.filled and colors is None:
+            colors = []
+            for level in obj.levels:
+                _, _, lum = utils.to_xyz(obj.cmap(obj.norm(level)))
+                colors.append('w' if lum < 50 else 'k')
+
+        # Draw the labels
+        labs = cobj.clabel(
+            fmt=fmt, colors=colors, fontsize=fontsize,
+            inline_spacing=inline_spacing, **kwargs
+        )
+        if labs is not None:  # returns None if no contours
+            for lab in labs:
+                lab.update(text_kw)
+
+        return labs
+
+    def _add_error_bars(
         self, x, y, *_, distribution=None,
         default_barstds=False, default_boxstds=False,
         default_barpctiles=False, default_boxpctiles=False, default_marker=False,
@@ -1356,7 +1474,7 @@ class PlotAxes(base.Axes):
         keywords toggle default range indicators when distributions are passed.
         """
         # Parse input args
-        # NOTE: Want to keep _plot_errorbars() and _plot_errorshading() separate.
+        # NOTE: Want to keep _add_error_bars() and _add_error_shading() separate.
         # But also want default behavior where some default error indicator is shown
         # if user requests means/medians only. Result is the below kludge.
         kwargs, vert = _get_vert(**kwargs)
@@ -1439,7 +1557,7 @@ class PlotAxes(base.Axes):
         kwargs['distribution'] = distribution
         return (*eobjs, kwargs)
 
-    def _plot_errorshading(
+    def _add_error_shading(
         self, x, y, *_, distribution=None, color_key='color',
         shade=None, shadestd=None, shadestds=None,
         shadepctile=None, shadepctiles=None, shadedata=None,
@@ -1516,6 +1634,59 @@ class PlotAxes(base.Axes):
         kwargs['distribution'] = distribution
         return (*eobjs, kwargs)
 
+    def _add_edge_fix(self, obj, edgefix=None, **kwargs):
+        """
+        Fix white lines between between filled contours and mesh and fix issues
+        with colormaps that are transparent. If keyword args passed by user
+        include explicit edge properties then we skip this step.
+        """
+        # See: https://github.com/jklymak/contourfIssues
+        # See: https://stackoverflow.com/q/15003353/4970632
+        # NOTE: Use default edge width used for pcolor grid box edges. This is thick
+        # enough to hide lines but thin enough to not add 'dots' to corners of boxes.
+        edgefix = _not_none(edgefix, rc.edgefix, True)
+        linewidth = EDGEWIDTH if edgefix is True else 0 if edgefix is False else edgefix
+        if not linewidth:
+            return
+        keys = ('linewidth', 'linestyle', 'edgecolor')  # patches and collections
+        if any(key + suffix in kwargs for key in keys for suffix in ('', 's')):
+            return
+        rasterized = obj.get_rasterized() if isinstance(obj, martist.Artist) else False
+        if rasterized:
+            return
+
+        # Skip when cmap has transparency
+        if hasattr(obj, 'get_alpha'):  # collections and contour sets use singular
+            alpha = obj.get_alpha()
+            if alpha is not None and alpha < 1:
+                return
+        if isinstance(obj, mcm.ScalarMappable):
+            cmap = obj.cmap
+            if not cmap._isinit:
+                cmap._init()
+            if not all(cmap._lut[:-1, 3] == 1):  # skip for cmaps with transparency
+                return
+
+        # Apply fixes
+        # NOTE: This also covers TriContourSet returned by tricontour
+        if isinstance(obj, mcontour.ContourSet):
+            if obj.filled:
+                for contour in obj.collections:
+                    contour.set_linestyle('-')
+                    contour.set_linewidth(linewidth)
+                    contour.set_edgecolor('face')
+        elif isinstance(obj, mcollections.Collection):  # e.g. QuadMesh, PolyCollection
+            obj.set_linewidth(linewidth)
+            obj.set_edgecolor('face')
+        elif isinstance(obj, mpatches.Patch):  # e.g. Rectangle
+            obj.set_linewidth(linewidth)
+            obj.set_edgecolor(obj.get_facecolor())
+        elif np.iterable(obj):  # e.g. silent_list of BarContainer
+            for element in obj:
+                self._add_edge_fix(element, edgefix=edgefix)
+        else:
+            warnings._warn_proplot(f'Unexpected object {obj} passed to _add_edge_fix.')
+
     def _add_sticky_edges(self, objs, axis, *args, only=None):
         """
         Add sticky edges to the input artists using the minimum and maximum of the
@@ -1532,177 +1703,17 @@ class PlotAxes(base.Axes):
                 edges = getattr(obj.sticky_edges, axis)
                 edges.extend(convert((min_, max_)))
 
-    def _add_contour_labels(
-        self, obj, cobj, fmt, *, c=None, color=None, colors=None,
-        size=None, fontsize=None, inline_spacing=None, **kwargs
-    ):
+    def _inbounds_extent(self, *, inbounds=None, **kwargs):
         """
-        Add labels to contours with support for shade-dependent filled contour labels.
-        Text color is inferred from filled contour object and labels are always drawn
-        on unfilled contour object (otherwise errors crop up).
+        Capture the `inbounds` keyword arg and return data limit
+        extents if it is ``True``. Otherwise return ``None``. When
+        ``_inbounds_xylim`` gets ``None`` it will silently exit.
         """
-        # Parse input args
-        zorder = max((h.get_zorder() for h in obj.collections), default=3)
-        zorder = max(3, zorder + 1)
-        kwargs.setdefault('zorder', zorder)
-        colors = _not_none(c=c, color=color, colors=colors)
-        fontsize = _not_none(size=size, fontsize=fontsize, default=rc['font.smallsize'])
-        inline_spacing = _not_none(inline_spacing, 2.5)
-
-        # Separate clabel args from text Artist args
-        text_kw = {}
-        clabel_keys = ('levels', 'inline', 'manual', 'rightside_up', 'use_clabeltext')
-        for key in tuple(kwargs):  # allow dict to change size
-            if key not in clabel_keys:
-                text_kw[key] = kwargs.pop(key)
-
-        # Draw hidden additional contour for filled contour labels
-        cobj = _not_none(cobj, obj)
-        if obj.filled and colors is None:
-            colors = []
-            for level in obj.levels:
-                _, _, lum = utils.to_xyz(obj.cmap(obj.norm(level)))
-                colors.append('w' if lum < 50 else 'k')
-
-        # Draw the labels
-        labs = cobj.clabel(
-            fmt=fmt, colors=colors, fontsize=fontsize,
-            inline_spacing=inline_spacing, **kwargs
-        )
-        if labs is not None:  # returns None if no contours
-            for lab in labs:
-                lab.update(text_kw)
-
-        return labs
-
-    def _add_gridbox_labels(
-        self, obj, fmt, *, c=None, color=None, colors=None,
-        size=None, fontsize=None, **kwargs
-    ):
-        """
-        Add labels to pcolor boxes with support for shade-dependent text colors.
-        Values are inferred from the unnormalized grid box color.
-        """
-        # Parse input args
-        # NOTE: This function also hides grid boxes filled with NaNs to avoid ugly
-        # issue where edge colors surround NaNs. Should maybe move this somewhere else.
-        obj.update_scalarmappable()  # update 'edgecolors' list
-        color = _not_none(c=c, color=color, colors=colors)
-        fontsize = _not_none(size=size, fontsize=fontsize, default=rc['font.smallsize'])
-        kwargs.setdefault('ha', 'center')
-        kwargs.setdefault('va', 'center')
-
-        # Apply colors and hide edge colors for empty grids
-        labs = []
-        array = obj.get_array()
-        paths = obj.get_paths()
-        edgecolors = process._to_numpy_array(obj.get_edgecolors())
-        if len(edgecolors) == 1:
-            edgecolors = np.repeat(edgecolors, len(array), axis=0)
-        for i, (path, value) in enumerate(zip(paths, array)):
-            # Round to the number corresponding to the *color* rather than
-            # the exact data value. Similar to contour label numbering.
-            if value is ma.masked or not np.isfinite(value):
-                edgecolors[i, :] = 0
-                continue
-            if isinstance(obj.norm, pcolors.DiscreteNorm):
-                value = obj.norm._norm.inverse(obj.norm(value))
-            icolor = color
-            if color is None:
-                _, _, lum = utils.to_xyz(obj.cmap(obj.norm(value)), 'hcl')
-                icolor = 'w' if lum < 50 else 'k'
-            bbox = path.get_extents()
-            x = (bbox.xmin + bbox.xmax) / 2
-            y = (bbox.ymin + bbox.ymax) / 2
-            lab = self.text(x, y, fmt(value), color=icolor, size=fontsize, **kwargs)
-            labs.append(lab)
-
-        obj.set_edgecolors(edgecolors)
-        return labs
-
-    def _add_auto_labels(
-        self, obj, cobj=None, labels=False, labels_kw=None,
-        fmt=None, formatter=None, formatter_kw=None, precision=None,
-    ):
-        """
-        Add number labels. Default formatter is `~proplot.ticker.SimpleFormatter`
-        with a default maximum precision of ``3`` decimal places.
-        """
-        # TODO: Add quiverkey to this!
-        if not labels:
-            return
-        labels_kw = labels_kw or {}
-        formatter_kw = formatter_kw or {}
-        formatter = _not_none(
-            fmt_labels_kw=labels_kw.pop('fmt', None),
-            formatter_labels_kw=labels_kw.pop('formatter', None),
-            fmt=fmt,
-            formatter=formatter,
-            default='simple'
-        )
-        precision = _not_none(
-            formatter_kw_precision=formatter_kw.pop('precision', None),
-            precision=precision,
-            default=3,  # should be lower than the default intended for tick labels
-        )
-        formatter = constructor.Formatter(formatter, precision=precision, **formatter_kw)  # noqa: E501
-        if isinstance(obj, mcontour.ContourSet):
-            self._add_contour_labels(obj, cobj, formatter, **labels_kw)
-        elif isinstance(obj, mcollections.Collection):
-            self._add_gridbox_labels(obj, formatter, **labels_kw)
-        else:
-            raise RuntimeError(f'Not possible to add labels to object {obj!r}.')
-
-    def _iter_arg_pairs(self, *args):
-        """
-        Iterate over ``[x1,] y1, [fmt1,] [x2,] y2, [fmt2,] ...`` input.
-        """
-        # NOTE: This is copied from _process_plot_var_args.__call__ to avoid relying
-        # on private API. We emulate this input style with successive plot() calls.
-        args = list(args)
-        while args:  # this permits empty input
-            x, y, *args = args
-            if args and isinstance(args[0], str):  # format string detected!
-                fmt, *args = args
-            elif isinstance(y, str):  # omits some of matplotlib's rigor but whatevs
-                x, y, fmt = None, x, y
-            else:
-                fmt = None
-            yield x, y, fmt
-
-    def _iter_arg_cols(self, *args, label=None, labels=None, values=None, **kwargs):
-        """
-        Iterate over columns of positional arguments and add successive ``'label'``
-        keyword arguments using the input label-list ``'labels'``.
-        """
-        # Handle cycle args and label lists
-        # NOTE: Arrays here should have had metadata stripped by _parse_plot1d
-        # but could still be pint quantities that get processed by axis converter.
-        n = max(
-            1 if not process._is_array(a) or a.ndim < 2 else a.shape[-1]
-            for a in args
-        )
-        labels = _not_none(label=label, values=values, labels=labels)
-        if not np.iterable(labels) or isinstance(labels, str):
-            labels = n * [labels]
-        if len(labels) != n:
-            raise ValueError(f'Array has {n} columns but got {len(labels)} labels.')
-        if labels is not None:
-            labels = [
-                str(_not_none(label, ''))
-                for label in process._to_numpy_array(labels)
-            ]
-        else:
-            labels = n * [None]
-
-        # Yield successive columns
-        for i in range(n):
-            kw = kwargs.copy()
-            kw['label'] = labels[i] or None
-            a = tuple(
-                a if not process._is_array(a) or a.ndim < 2 else a[..., i] for a in args
-            )
-            yield (i, n, *a, kw)
+        extents = None
+        inbounds = _not_none(inbounds, rc['axes.inbounds'])
+        if inbounds:
+            extents = list(self.dataLim.extents)  # ensure modifiable
+        return kwargs, extents
 
     def _inbounds_vlim(self, x, y, z, *, to_centers=False):
         """
@@ -1792,33 +1803,7 @@ class PlotAxes(base.Axes):
                 f'data within locked x (y) limits only. Error message: {err}'
             )
 
-    def _update_guide(
-        self, objs, colorbar=None, colorbar_kw=None, queue_colorbar=True,
-        legend=None, legend_kw=None,
-    ):
-        """
-        Update the queued artists for an on-the-fly legends and colorbars or track
-        the input keyword arguments on the artists for retrieval later on. The
-        `queue` argument indicates whether to draw colorbars immediately.
-        """
-        # TODO: Support auto-splitting artists passed to legend into
-        # their legend elements. Play with this.
-        # WARNING: This should generally be last in the pipeline before calling
-        # the plot function or looping over data columns. The colormap parser
-        # and standardize functions both modify colorbar_kw and legend_kw.
-        if colorbar:
-            colorbar_kw = colorbar_kw or {}
-            colorbar_kw.setdefault('queue', queue_colorbar)
-            self.colorbar(objs, loc=colorbar, **colorbar_kw)
-        else:
-            guides._guide_kw_to_obj(objs, 'colorbar', colorbar_kw)  # save for later
-        if legend:
-            legend_kw = legend_kw or {}
-            self.legend(objs, loc=legend, queue=True, **legend_kw)
-        else:
-            guides._guide_kw_to_obj(objs, 'legend', legend_kw)  # save for later
-
-    def _parse_format1d(
+    def _parse_1d_format(
         self, x, *ys, zerox=False, autox=True, autoy=True, autoformat=None,
         autoreverse=True, autolabels=True, autovalues=False, autoguide=True,
         label=None, labels=None, value=None, values=None, **kwargs
@@ -1930,7 +1915,7 @@ class PlotAxes(base.Axes):
             x = process._to_numpy_array(x)
         return (x, *ys, kwargs)
 
-    def _parse_plot1d(self, x, *ys, **kwargs):
+    def _parse_1d_plot(self, x, *ys, **kwargs):
         """
         Interpret positional arguments for all 1D plotting commands.
         """
@@ -1948,7 +1933,7 @@ class PlotAxes(base.Axes):
         ys = tuple(map(process._to_duck_array, ys))
         if x is not None:
             x = process._to_duck_array(x)
-        x, *ys, kwargs = self._parse_format1d(x, *ys, zerox=zerox, **kwargs)
+        x, *ys, kwargs = self._parse_1d_format(x, *ys, zerox=zerox, **kwargs)
 
         # Geographic corrections
         if self._name == 'cartopy' and isinstance(kwargs.get('transform'), PlateCarree):  # noqa: E501
@@ -1959,7 +1944,7 @@ class PlotAxes(base.Axes):
 
         return (x, *ys, kwargs)
 
-    def _parse_format2d(
+    def _parse_2d_format(
         self, x, y, *zs, autoformat=None, autoguide=True, autoreverse=True, **kwargs
     ):
         """
@@ -2020,7 +2005,7 @@ class PlotAxes(base.Axes):
         zs = tuple(map(process._to_numpy_array, zs))
         return (x, y, *zs, kwargs)
 
-    def _parse_plot2d(
+    def _parse_2d_plot(
         self, x, y, *zs, globe=False, edges=False, allow1d=False,
         transpose=None, order=None, **kwargs
     ):
@@ -2050,7 +2035,7 @@ class PlotAxes(base.Axes):
                 x = x.T
             if y is not None:
                 y = y.T
-        x, y, *zs, kwargs = self._parse_format2d(x, y, *zs, **kwargs)
+        x, y, *zs, kwargs = self._parse_2d_format(x, y, *zs, **kwargs)
         if edges:
             # NOTE: These functions quitely pass through 1D inputs, e.g. barb data
             x, y = process._to_edges(x, y, zs[0])
@@ -2069,18 +2054,6 @@ class PlotAxes(base.Axes):
 
         return (x, y, *zs, kwargs)
 
-    def _parse_inbounds(self, *, inbounds=None, **kwargs):
-        """
-        Capture the `inbounds` keyword arg and return data limit
-        extents if it is ``True``. Otherwise return ``None``. When
-        ``_inbounds_xylim`` gets ``None`` it will silently exit.
-        """
-        extents = None
-        inbounds = _not_none(inbounds, rc['axes.inbounds'])
-        if inbounds:
-            extents = list(self.dataLim.extents)  # ensure modifiable
-        return kwargs, extents
-
     def _parse_color(self, x, y, c, *, apply_cycle=True, infer_rgb=False, **kwargs):
         """
         Parse either a colormap or color cycler. Colormap will be discrete and fade
@@ -2089,7 +2062,7 @@ class PlotAxes(base.Axes):
         """
         # NOTE: This function is positioned above the _parse_cmap and _parse_cycle
         # functions and helper functions.
-        methods = (self._parse_cmap, self._parse_levels, self._parse_autolev, self._parse_vlim)  # noqa: E501
+        parsers = (self._parse_cmap, *self._level_parsers)
         if c is None or mcolors.is_color_like(c):
             if infer_rgb and c is not None:
                 c = pcolors.to_hex(c)  # avoid scatter() ambiguous color warning
@@ -2100,126 +2073,238 @@ class PlotAxes(base.Axes):
             if infer_rgb and c.ndim == 2 and c.shape[1] in (3, 4):
                 c = list(map(pcolors.to_hex, c))  # avoid iterating over columns
             else:
-                kwargs = self._parse_cmap(
-                    x, y, c, plot_lines=True, default_discrete=False, **kwargs
-                )
-                methods = (self._parse_cycle,)
-        pop = _pop_params(kwargs, *methods, ignore_internal=True)
+                kwargs = self._parse_cmap(x, y, c, plot_lines=True, default_discrete=False, **kwargs)  # noqa: E501
+                parsers = (self._parse_cycle,)
+        pop = _pop_params(kwargs, *parsers, ignore_internal=True)
         if pop:
             warnings._warn_proplot(f'Ignoring unused keyword arg(s): {pop}')
         return (c, kwargs)
 
-    def _parse_vlim(
+    @warnings._rename_kwargs('0.6', centers='values')
+    def _parse_cmap(
         self, *args,
-        vmin=None, vmax=None, robust=None, inbounds=None,
-        negative=None, positive=None, symmetric=None, to_centers=False, **kwargs
+        cmap=None, cmap_kw=None, c=None, color=None, colors=None, default_cmap=None,
+        norm=None, norm_kw=None, extend=None, vmin=None, vmax=None,
+        discrete=None, default_discrete=True, skip_autolev=False,
+        plot_lines=False, plot_contours=False, min_levels=None, **kwargs
     ):
         """
-        Return a suitable vmin and vmax based on the input data.
+        Parse colormap and normalizer arguments.
 
         Parameters
         ----------
-        *args
-            The sample data.
-        vmin, vmax : float, optional
-            The user input minimum and maximum.
-        robust : bool, optional
-            Whether to limit the default range to exclude outliers.
-        inbounds : bool, optional
-            Whether to filter to in-bounds data.
-        to_centers : bool, optional
-            Whether to convert coordinates to 'centers'.
-
-        Returns
-        -------
-        vmin, vmax : float
-            The minimum and maximum.
-        kwargs
-            Unused arguemnts.
+        c, color, colors : sequence of color-spec, optional
+            Build a `DiscreteColormap` from the input color(s).
+        cmap, cmap_kw : optional
+            Colormap specs.
+        norm, norm_kw : optional
+            Normalize specs.
+        extend : optional
+            The colormap extend setting.
+        vmin, vmax : flaot, optional
+            The normalization range.
+        plot_lines : bool, optional
+            Whether these are lines. If so the default monorhcomarit luminance is 90.
+        plot_contours : bool, optional
+            Whether these are contours. If so then discrete is required.
+        min_levels : int, optional
+            The minimum number of valid levels. 1 for line contour plots 2 otherwise.
+        sequential, diverging, cyclic, qualitative : bool, optional
+            Toggle various colormap types.
         """
-        # Parse vmin and vmax
-        automin = vmin is None
-        automax = vmax is None
-        if not automin and not automax:
-            return vmin, vmax, kwargs
+        # Parse keyword args
+        cmap_kw = cmap_kw or {}
+        norm_kw = norm_kw or {}
+        vmin = _not_none(vmin=vmin, norm_kw_vmin=norm_kw.pop('vmin', None))
+        vmax = _not_none(vmax=vmax, norm_kw_vmax=norm_kw.pop('vmax', None))
+        extend = _not_none(extend, 'neither')
+        colors = _not_none(c=c, color=color, colors=colors)  # in case untranslated
+        modes = {key: kwargs.pop(key, None) for key in ('sequential', 'diverging', 'cyclic', 'qualitative')}  # noqa: E501
+        trues = {key: b for key, b in modes.items() if b}
+        if len(trues) > 1:  # noqa: E501
+            warnings._warn_proplot(
+                f'Conflicting colormap arguments: {trues!r}. Using the first one.'
+            )
+            for key in tuple(trues)[1:]:
+                del trues[key]
+                modes[key] = None
 
-        # Parse input args
-        inbounds = _not_none(inbounds, rc['cmap.inbounds'])
-        robust = _not_none(robust, rc['cmap.robust'], False)
-        robust = 96 if robust is True else 100 if robust is False else robust
-        robust = np.atleast_1d(robust)
-        if robust.size == 1:
-            pmin, pmax = 50 + 0.5 * np.array([-robust.item(), robust.item()])
-        elif robust.size == 2:
-            pmin, pmax = robust.flat  # pull out of array
+        # Create user-input colormap and potentially disable autodiverging
+        # NOTE: Let people use diverging=False with diverging cmaps because some
+        # use them (wrongly IMO but to each their own) for increased color contrast.
+        # WARNING: Previously 'colors' set the edgecolors. To avoid all-black
+        # colormap make sure to ignore 'colors' if 'cmap' was also passed.
+        # WARNING: Previously tried setting number of levels to len(colors), but this
+        # makes single-level single-color contour plots, and since _parse_level_count is
+        # only generates approximate level counts, the idea failed anyway. Users should
+        # pass their own levels to avoid truncation/cycling in these very special cases.
+        autodiverging = rc['cmap.autodiverging']
+        if colors is not None:
+            if cmap is not None:
+                warnings._warn_proplot(
+                    f'you specified both cmap={cmap!s} and the qualitative-colormap '
+                    f"colors={colors!r}. Ignoring 'colors'. If you meant to specify "
+                    f'the edge color please use e.g. edgecolor={colors!r} instead.'
+                )
+            else:
+                if mcolors.is_color_like(colors):
+                    colors = [colors]  # RGB[A] tuple possibly
+                cmap = colors = np.atleast_1d(colors)
+                cmap_kw['listmode'] = 'discrete'
+        if cmap is not None:
+            if plot_lines:
+                cmap_kw['default_luminance'] = constructor.DEFAULT_CYCLE_LUMINANCE
+            cmap = constructor.Colormap(cmap, **cmap_kw)
+            name = re.sub(r'\A_*(.*?)(?:_r|_s|_copy)*\Z', r'\1', cmap.name.lower())
+            if not any(name in opts for opts in pcolors.CMAPS_DIVERGING.items()):
+                autodiverging = False  # avoid auto-truncation of sequential colormaps
+
+        # Force default options in special cases
+        # NOTE: Delay application of 'sequential', 'diverging', 'cyclic', 'qualitative'
+        # until after level generation so 'diverging' can be automatically applied.
+        if 'cyclic' in trues or getattr(cmap, '_cyclic', None):
+            if extend is not None and extend != 'neither':
+                warnings._warn_proplot(
+                    f"Cyclic colormaps require extend='neither'. Ignoring extend={extend!r}"  # noqa: E501
+                )
+            extend = 'neither'
+        if 'qualitative' in trues or isinstance(cmap, pcolors.DiscreteColormap):
+            if discrete is not None and not discrete:  # noqa: E501
+                warnings._warn_proplot(
+                    'Qualitative colormaps require discrete=True. Ignoring discrete=False.'  # noqa: E501
+                )
+            discrete = True
+        if plot_contours:
+            if discrete is not None and not discrete:
+                warnings._warn_proplot(
+                    'Contoured plots require discrete=True. Ignoring discrete=False.'
+                )
+            discrete = True
+        keys = ('levels', 'values', 'locator', 'negative', 'positive', 'symmetric')
+        if any(key in kwargs for key in keys):  # override
+            discrete = _not_none(discrete, True)
+        else:  # use global boolean rc['cmap.discrete'] or command-specific default
+            discrete = _not_none(discrete, rc['cmap.discrete'], default_discrete)
+
+        # Determine the appropriate 'vmin', 'vmax', and/or 'levels'
+        # NOTE: Unlike xarray, but like matplotlib, vmin and vmax only approximately
+        # determine level range. Levels are selected with Locator.tick_values().
+        levels = None  # unused
+        isdiverging = False
+        if not discrete and not skip_autolev:
+            vmin, vmax, kwargs = self._parse_level_lim(
+                *args, vmin=vmin, vmax=vmax, **kwargs
+            )
+            if autodiverging and vmin is not None and vmax is not None:
+                if abs(np.sign(vmax) - np.sign(vmin)) == 2:
+                    isdiverging = True
+        if discrete:
+            levels, vmin, vmax, norm, norm_kw, kwargs = self._parse_level_list(
+                *args, vmin=vmin, vmax=vmax, norm=norm, norm_kw=norm_kw, extend=extend,
+                min_levels=min_levels, skip_autolev=skip_autolev, **kwargs
+            )
+            if autodiverging and levels is not None:
+                _, counts = np.unique(np.sign(levels), return_counts=True)
+                if counts[counts > 1].size > 1:
+                    isdiverging = True
+        if not trues and isdiverging and modes['diverging'] is None:
+            trues['diverging'] = modes['diverging'] = True
+
+        # Create the continuous normalizer.
+        norm = _not_none(norm, 'div' if 'diverging' in trues else 'linear')
+        if isinstance(norm, mcolors.Normalize):
+            norm.vmin, norm.vmax = vmin, vmax
         else:
-            raise ValueError(f'Unexpected robust={robust!r}. Must be bool, float, or 2-tuple.')  # noqa: E501
+            norm = constructor.Norm(norm, vmin=vmin, vmax=vmax, **norm_kw)
+        isdiverging = autodiverging and isinstance(norm, pcolors.DivergingNorm)
+        if not trues and isdiverging and modes['diverging'] is None:
+            trues['diverging'] = modes['diverging'] = True
 
-        # Get sample data
-        # NOTE: Critical to use _to_numpy_array here because some
-        # commands are unstandardized.
-        # NOTE: Try to get reasonable *count* levels for hexbin/hist2d, but in general
-        # have no way to select nice ones a priori (why we disable discretenorm).
-        # NOTE: Currently we only ever use this function with *single* array input
-        # but in future could make this public as a way for users (me) to get
-        # automatic synced contours for a bunch of arrays in a grid.
-        vmins, vmaxs = [], []
-        if len(args) > 2:
-            x, y, *zs = args
+        # Create the final colormap
+        if cmap is None:
+            if default_cmap is not None:  # used internally
+                cmap = default_cmap
+            elif trues:
+                cmap = rc['cmap.' + tuple(trues)[0]]
+            else:
+                cmap = rc['image.cmap']
+            cmap = constructor.Colormap(cmap, **cmap_kw)
+
+        # Create the discrete normalizer
+        # Then finally warn and remove unused args
+        if levels is not None:
+            norm, cmap, kwargs = self._parse_discrete_norm(
+                levels, norm, cmap, extend=extend, min_levels=min_levels, **kwargs
+            )
+        params = _pop_params(kwargs, *self._level_parsers, ignore_internal=True)
+        if 'N' in params:  # use this for lookup table N instead of levels N
+            cmap = cmap.copy(N=params.pop('N'))
+        if params:
+            warnings._warn_proplot(f'Ignoring unused keyword args(s): {params}')
+
+        # Update outgoing args
+        # NOTE: With contour(..., discrete=False, levels=levels) users can bypass
+        # proplot's level selection and use native matplotlib level selection
+        if plot_contours:
+            kwargs['levels'] = levels
+            kwargs['extend'] = extend
+        kwargs.update({'cmap': cmap, 'norm': norm})
+        guides._guide_kw_to_arg('colorbar', kwargs, extend=extend)
+
+        return kwargs
+
+    def _parse_cycle(
+        self, ncycle=None, *,
+        cycle=None, cycle_kw=None, cycle_manually=None, return_cycle=False, **kwargs
+    ):
+        """
+        Parse property cycle-related arguments.
+        """
+        # Create the property cycler and update it if necessary
+        # NOTE: Matplotlib Cycler() objects have built-in __eq__ operator
+        # so really easy to check if the cycler has changed!
+        if cycle is not None or cycle_kw:
+            cycle_kw = cycle_kw or {}
+            if ncycle != 1:  # ignore for column-by-column plotting commands
+                cycle_kw.setdefault('N', ncycle)  # if None then filled in Colormap()
+            if isinstance(cycle, str) and cycle.lower() == 'none':
+                cycle = False
+            if not cycle:
+                args = ()
+            elif cycle is True:  # consistency with 'False' ('reactivate' the cycler)
+                args = (rc['axes.prop_cycle'],)
+            else:
+                args = (cycle,)
+            cycle = constructor.Cycle(*args, **cycle_kw)
+            with warnings.catch_warnings():  # hide 'elementwise-comparison failed'
+                warnings.simplefilter('ignore', FutureWarning)
+                if return_cycle:
+                    pass
+                elif cycle != self._active_cycle:
+                    self.set_prop_cycle(cycle)
+
+        # Manually extract and apply settings to outgoing keyword arguments
+        # if native matplotlib function does not include desired properties
+        cycle_manually = cycle_manually or {}
+        parser = self._get_lines  # the _process_plot_var_args instance
+        props = {}  # which keys to apply from property cycler
+        for prop, key in cycle_manually.items():
+            if kwargs.get(key, None) is None and prop in parser._prop_keys:
+                props[prop] = key
+        if props:
+            dict_ = next(parser.prop_cycler)
+            for prop, key in props.items():
+                value = dict_[prop]
+                if key == 'c':  # special case: scatter() color must be converted to hex
+                    value = pcolors.to_hex(value)
+                kwargs[key] = value
+
+        if return_cycle:
+            return cycle, kwargs  # needed for stem() to apply in a context()
         else:
-            x, y, *zs = None, None, *args
-        for z in zs:
-            if z is None:  # e.g. empty scatter color
-                continue
-            if z.ndim > 2:  # e.g. imshow data
-                continue
-            z = process._to_numpy_array(z)
-            if inbounds and x is not None and y is not None:  # ignore if None coords
-                z = self._inbounds_vlim(x, y, z, to_centers=to_centers)
-            imin, imax = process._safe_range(z, pmin, pmax)
-            if automin and imin is not None:
-                vmins.append(imin)
-            if automax and imax is not None:
-                vmaxs.append(imax)
-        if automin:
-            vmin = min(vmins, default=0)
-        if automax:
-            vmax = max(vmaxs, default=1)
+            return kwargs
 
-        # Apply modifications
-        # NOTE: This used to be applied in _parse_levels
-        if negative:
-            if automax:
-                vmax = 0
-            else:
-                warnings._warn_proplot(
-                    f'Incompatible arguments vmax={vmax!r} and negative=True. '
-                    'Ignoring the latter.'
-                )
-        if positive:
-            if automin:
-                vmin = 0
-            else:
-                warnings._warn_proplot(
-                    f'Incompatible arguments vmin={vmin!r} and positive=True. '
-                    'Ignoring the latter.'
-                )
-        if symmetric:
-            if automin and not automax:
-                vmin = -vmax
-            elif automax and not automin:
-                vmax = -vmin
-            elif automin and automax:
-                vmin, vmax = -np.max(np.abs((vmin, vmax))), np.max(np.abs((vmin, vmax)))
-            else:
-                warnings._warn_proplot(
-                    f'Incompatible arguments vmin={vmin!r}, vmax={vmax!r}, and '
-                    'symmetric=True. Ignoring the latter.'
-                )
-
-        return vmin, vmax, kwargs
-
-    def _parse_autolev(
+    def _parse_level_count(
         self, *args, levels=None,
         extend=None, norm=None, norm_kw=None, vmin=None, vmax=None,
         locator=None, locator_kw=None, symmetric=None, **kwargs
@@ -2231,7 +2316,7 @@ class PlotAxes(base.Axes):
         Parameters
         ----------
         *args
-            The sample data. Passed to `_parse_vlim`.
+            The sample data. Passed to `_parse_level_lim`.
         levels : int
             The approximate number of levels.
         vmin, vmax : float, optional
@@ -2289,7 +2374,7 @@ class PlotAxes(base.Axes):
         nlevs = levels
         automin = vmin is None
         automax = vmax is None
-        vmin, vmax, kwargs = self._parse_vlim(
+        vmin, vmax, kwargs = self._parse_level_lim(
             *args, vmin=vmin, vmax=vmax, symmetric=symmetric, **kwargs
         )
         try:
@@ -2330,7 +2415,7 @@ class PlotAxes(base.Axes):
 
         return levels, kwargs
 
-    def _parse_levels(
+    def _parse_level_list(
         self, *args, N=None, levels=None, values=None, extend=None,
         positive=False, negative=False, nozero=False, norm=None, norm_kw=None,
         skip_autolev=False, min_levels=None, **kwargs,
@@ -2341,7 +2426,7 @@ class PlotAxes(base.Axes):
         Parameters
         ----------
         *args
-            The sample data. Passed to `_parse_vlim`.
+            The sample data. Passed to `_parse_level_lim`.
         N
             Shorthand for `levels`.
         levels : int or sequence of float, optional
@@ -2435,11 +2520,11 @@ class PlotAxes(base.Axes):
         # this function reverses them and adds special attribute to the normalizer.
         # Then colorbar() reads this attr and flips the axis and the colormap direction
         if np.iterable(levels):
-            pop = _pop_params(kwargs, self._parse_autolev, ignore_internal=True)
+            pop = _pop_params(kwargs, self._parse_level_count, ignore_internal=True)
             if pop:
                 warnings._warn_proplot(f'Ignoring unused keyword arg(s): {pop}')
         elif not skip_autolev:
-            levels, kwargs = self._parse_autolev(
+            levels, kwargs = self._parse_level_count(
                 *args, levels=levels, norm=norm, norm_kw=norm_kw, extend=extend,
                 negative=negative, positive=positive, **kwargs
             )
@@ -2479,375 +2564,115 @@ class PlotAxes(base.Axes):
                 levels = levels[levels <= 0]
         return levels, vmin, vmax, norm, norm_kw, kwargs
 
-    def _parse_discrete(
-        self, levels, norm, cmap, *, extend=None, min_levels=None, **kwargs,
+    def _parse_level_lim(
+        self, *args,
+        vmin=None, vmax=None, robust=None, inbounds=None,
+        negative=None, positive=None, symmetric=None, to_centers=False, **kwargs
     ):
         """
-        Create a `~proplot.colors.DiscreteNorm` or `~proplot.colors.BoundaryNorm`
-        from the input colormap and normalizer.
+        Return a suitable vmin and vmax based on the input data.
 
         Parameters
         ----------
-        levels : sequence of float
-            The level boundaries.
-        norm : `~matplotlib.colors.Normalize`
-            The continuous normalizer.
-        cmap : `~matplotlib.colors.Colormap`
-            The colormap.
-        extend : str, optional
-            The extend setting.
-        min_levels : int, optional
-            The minimum number of levels.
+        *args
+            The sample data.
+        vmin, vmax : float, optional
+            The user input minimum and maximum.
+        robust : bool, optional
+            Whether to limit the default range to exclude outliers.
+        inbounds : bool, optional
+            Whether to filter to in-bounds data.
+        to_centers : bool, optional
+            Whether to convert coordinates to 'centers'.
 
         Returns
         -------
-        norm : `~proplot.colors.DiscreteNorm`
-            The discrete normalizer.
-        cmap : `~matplotlib.colors.Colormap`
-            The possibly-modified colormap.
+        vmin, vmax : float
+            The minimum and maximum.
         kwargs
-            Unused arguments.
+            Unused arguemnts.
         """
-        # Reverse the colormap if input levels or values were descending
-        # See _parse_levels for details
-        min_levels = _not_none(min_levels, 2)  # 1 for contour plots
-        unique = extend = _not_none(extend, 'neither')
-        under = cmap._rgba_under
-        over = cmap._rgba_over
-        cyclic = getattr(cmap, '_cyclic', None)
-        qualitative = isinstance(cmap, pcolors.DiscreteColormap)  # see _parse_cmap
-        if len(levels) < min_levels:
-            raise ValueError(
-                f'Invalid levels={levels!r}. Must be at least length {min_levels}.'
-            )
+        # Parse vmin and vmax
+        automin = vmin is None
+        automax = vmax is None
+        if not automin and not automax:
+            return vmin, vmax, kwargs
 
-        # Ensure end colors are unique by scaling colors as if extend='both'
-        # NOTE: Inside _parse_cmap should have enforced extend='neither'
-        if cyclic:
-            step = 0.5  # try to allocate space for unique end colors
-            unique = 'both'
-
-        # Ensure color list length matches level list length using rotation
-        # NOTE: No harm if not enough colors, we just end up with the same
-        # color for out-of-bounds extensions. This is a gentle failure
-        elif qualitative:
-            step = 0.5  # try to sample the central index for safety
-            unique = 'both'
-            auto_under = under is None and extend in ('min', 'both')
-            auto_over = over is None and extend in ('max', 'both')
-            ncolors = len(levels) - min_levels + 1 + auto_under + auto_over
-            colors = list(itertools.islice(itertools.cycle(cmap.colors), ncolors))
-            if auto_under and len(colors) > 1:
-                under, *colors = colors
-            if auto_over and len(colors) > 1:
-                *colors, over = colors
-            cmap = cmap.copy(colors, N=len(colors))
-            if under is not None:
-                cmap.set_under(under)
-            if over is not None:
-                cmap.set_over(over)
-
-        # Ensure middle colors sample full range when extreme colors are present
-        # by scaling colors as if extend='neither'
+        # Parse input args
+        inbounds = _not_none(inbounds, rc['cmap.inbounds'])
+        robust = _not_none(robust, rc['cmap.robust'], False)
+        robust = 96 if robust is True else 100 if robust is False else robust
+        robust = np.atleast_1d(robust)
+        if robust.size == 1:
+            pmin, pmax = 50 + 0.5 * np.array([-robust.item(), robust.item()])
+        elif robust.size == 2:
+            pmin, pmax = robust.flat  # pull out of array
         else:
-            step = 1.0
-            if over is not None and under is not None:
-                unique = 'neither'
-            elif over is not None:  # turn off over-bounds unique bin
-                if extend == 'both':
-                    unique = 'min'
-                elif extend == 'max':
-                    unique = 'neither'
-            elif under is not None:  # turn off under-bounds unique bin
-                if extend == 'both':
-                    unique = 'min'
-                elif extend == 'max':
-                    unique = 'neither'
+            raise ValueError(f'Unexpected robust={robust!r}. Must be bool, float, or 2-tuple.')  # noqa: E501
 
-        # Generate DiscreteNorm and update "child" norm with vmin and vmax from
-        # levels. This lets the colorbar set tick locations properly!
-        if not isinstance(norm, mcolors.BoundaryNorm) and len(levels) > 1:
-            norm = pcolors.DiscreteNorm(levels, norm=norm, unique=unique, step=step)
+        # Get sample data
+        # NOTE: Critical to use _to_numpy_array here because some
+        # commands are unstandardized.
+        # NOTE: Try to get reasonable *count* levels for hexbin/hist2d, but in general
+        # have no way to select nice ones a priori (why we disable discretenorm).
+        # NOTE: Currently we only ever use this function with *single* array input
+        # but in future could make this public as a way for users (me) to get
+        # automatic synced contours for a bunch of arrays in a grid.
+        vmins, vmaxs = [], []
+        if len(args) > 2:
+            x, y, *zs = args
+        else:
+            x, y, *zs = None, None, *args
+        for z in zs:
+            if z is None:  # e.g. empty scatter color
+                continue
+            if z.ndim > 2:  # e.g. imshow data
+                continue
+            z = process._to_numpy_array(z)
+            if inbounds and x is not None and y is not None:  # ignore if None coords
+                z = self._inbounds_vlim(x, y, z, to_centers=to_centers)
+            imin, imax = process._safe_range(z, pmin, pmax)
+            if automin and imin is not None:
+                vmins.append(imin)
+            if automax and imax is not None:
+                vmaxs.append(imax)
+        if automin:
+            vmin = min(vmins, default=0)
+        if automax:
+            vmax = max(vmaxs, default=1)
 
-        return norm, cmap, kwargs
-
-    @warnings._rename_kwargs('0.6', centers='values')
-    def _parse_cmap(
-        self, *args,
-        cmap=None, cmap_kw=None, c=None, color=None, colors=None, default_cmap=None,
-        norm=None, norm_kw=None, extend=None, vmin=None, vmax=None,
-        discrete=None, default_discrete=True, skip_autolev=False,
-        plot_lines=False, plot_contours=False, min_levels=None, **kwargs
-    ):
-        """
-        Parse colormap and normalizer arguments.
-
-        Parameters
-        ----------
-        c, color, colors : sequence of color-spec, optional
-            Build a `DiscreteColormap` from the input color(s).
-        cmap, cmap_kw : optional
-            Colormap specs.
-        norm, norm_kw : optional
-            Normalize specs.
-        extend : optional
-            The colormap extend setting.
-        vmin, vmax : flaot, optional
-            The normalization range.
-        plot_lines : bool, optional
-            Whether these are lines. If so the default monorhcomarit luminance is 90.
-        plot_contours : bool, optional
-            Whether these are contours. If so then discrete is required.
-        min_levels : int, optional
-            The minimum number of valid levels. 1 for line contour plots 2 otherwise.
-        sequential, diverging, cyclic, qualitative : bool, optional
-            Toggle various colormap types.
-        """
-        # Parse keyword args
-        cmap_kw = cmap_kw or {}
-        norm_kw = norm_kw or {}
-        vmin = _not_none(vmin=vmin, norm_kw_vmin=norm_kw.pop('vmin', None))
-        vmax = _not_none(vmax=vmax, norm_kw_vmax=norm_kw.pop('vmax', None))
-        extend = _not_none(extend, 'neither')
-        colors = _not_none(c=c, color=color, colors=colors)  # in case untranslated
-        modes = {key: kwargs.pop(key, None) for key in ('sequential', 'diverging', 'cyclic', 'qualitative')}  # noqa: E501
-        trues = {key: b for key, b in modes.items() if b}
-        if len(trues) > 1:  # noqa: E501
-            warnings._warn_proplot(
-                f'Conflicting colormap arguments: {trues!r}. Using the first one.'
-            )
-            for key in tuple(trues)[1:]:
-                del trues[key]
-                modes[key] = None
-
-        # Create user-input colormap and potentially disable autodiverging
-        # NOTE: Let people use diverging=False with diverging cmaps because some
-        # use them (wrongly IMO but to each their own) for increased color contrast.
-        # WARNING: Previously 'colors' set the edgecolors. To avoid all-black
-        # colormap make sure to ignore 'colors' if 'cmap' was also passed.
-        # WARNING: Previously tried setting number of levels to len(colors), but this
-        # makes single-level single-color contour plots, and since _parse_autolev is
-        # only generates approximate level counts, the idea failed anyway. Users should
-        # pass their own levels to avoid truncation/cycling in these very special cases.
-        autodiverging = rc['cmap.autodiverging']
-        if colors is not None:
-            if cmap is not None:
-                warnings._warn_proplot(
-                    f'you specified both cmap={cmap!s} and the qualitative-colormap '
-                    f"colors={colors!r}. Ignoring 'colors'. If you meant to specify "
-                    f'the edge color please use e.g. edgecolor={colors!r} instead.'
-                )
+        # Apply modifications
+        # NOTE: This used to be applied in _parse_level_list
+        if negative:
+            if automax:
+                vmax = 0
             else:
-                if mcolors.is_color_like(colors):
-                    colors = [colors]  # RGB[A] tuple possibly
-                cmap = colors = np.atleast_1d(colors)
-                cmap_kw['listmode'] = 'discrete'
-        if cmap is not None:
-            if plot_lines:
-                cmap_kw['default_luminance'] = constructor.DEFAULT_CYCLE_LUMINANCE
-            cmap = constructor.Colormap(cmap, **cmap_kw)
-            name = re.sub(r'\A_*(.*?)(?:_r|_s|_copy)*\Z', r'\1', cmap.name.lower())
-            if not any(name in opts for opts in pcolors.CMAPS_DIVERGING.items()):
-                autodiverging = False  # avoid auto-truncation of sequential colormaps
-
-        # Force default options in special cases
-        # NOTE: Delay application of 'sequential', 'diverging', 'cyclic', 'qualitative'
-        # until after level generation so 'diverging' can be automatically applied.
-        if 'cyclic' in trues or getattr(cmap, '_cyclic', None):
-            if extend is not None and extend != 'neither':
                 warnings._warn_proplot(
-                    f"Cyclic colormaps require extend='neither'. Ignoring extend={extend!r}"  # noqa: E501
+                    f'Incompatible arguments vmax={vmax!r} and negative=True. '
+                    'Ignoring the latter.'
                 )
-            extend = 'neither'
-        if 'qualitative' in trues or isinstance(cmap, pcolors.DiscreteColormap):
-            if discrete is not None and not discrete:  # noqa: E501
-                warnings._warn_proplot(
-                    'Qualitative colormaps require discrete=True. Ignoring discrete=False.'  # noqa: E501
-                )
-            discrete = True
-        if plot_contours:
-            if discrete is not None and not discrete:
-                warnings._warn_proplot(
-                    'Contoured plots require discrete=True. Ignoring discrete=False.'
-                )
-            discrete = True
-        keys = ('levels', 'values', 'locator', 'negative', 'positive', 'symmetric')
-        if any(key in kwargs for key in keys):  # override
-            discrete = _not_none(discrete, True)
-        else:  # use global boolean rc['cmap.discrete'] or command-specific default
-            discrete = _not_none(discrete, rc['cmap.discrete'], default_discrete)
-
-        # Determine the appropriate 'vmin', 'vmax', and/or 'levels'
-        # NOTE: Unlike xarray, but like matplotlib, vmin and vmax only approximately
-        # determine level range. Levels are selected with Locator.tick_values().
-        levels = None  # unused
-        isdiverging = False
-        if not discrete and not skip_autolev:
-            vmin, vmax, kwargs = self._parse_vlim(
-                *args, vmin=vmin, vmax=vmax, **kwargs
-            )
-            if autodiverging and vmin is not None and vmax is not None:
-                if abs(np.sign(vmax) - np.sign(vmin)) == 2:
-                    isdiverging = True
-        if discrete:
-            levels, vmin, vmax, norm, norm_kw, kwargs = self._parse_levels(
-                *args, vmin=vmin, vmax=vmax, norm=norm, norm_kw=norm_kw, extend=extend,
-                min_levels=min_levels, skip_autolev=skip_autolev, **kwargs
-            )
-            if autodiverging and levels is not None:
-                _, counts = np.unique(np.sign(levels), return_counts=True)
-                if counts[counts > 1].size > 1:
-                    isdiverging = True
-        if not trues and isdiverging and modes['diverging'] is None:
-            trues['diverging'] = modes['diverging'] = True
-
-        # Create the continuous normalizer.
-        norm = _not_none(norm, 'div' if 'diverging' in trues else 'linear')
-        if isinstance(norm, mcolors.Normalize):
-            norm.vmin, norm.vmax = vmin, vmax
-        else:
-            norm = constructor.Norm(norm, vmin=vmin, vmax=vmax, **norm_kw)
-        isdiverging = autodiverging and isinstance(norm, pcolors.DivergingNorm)
-        if not trues and isdiverging and modes['diverging'] is None:
-            trues['diverging'] = modes['diverging'] = True
-
-        # Create the final colormap
-        if cmap is None:
-            if default_cmap is not None:  # used internally
-                cmap = default_cmap
-            elif trues:
-                cmap = rc['cmap.' + tuple(trues)[0]]
+        if positive:
+            if automin:
+                vmin = 0
             else:
-                cmap = rc['image.cmap']
-            cmap = constructor.Colormap(cmap, **cmap_kw)
-
-        # Create the discrete normalizer
-        # Then finally warn and remove unused args
-        if levels is not None:
-            norm, cmap, kwargs = self._parse_discrete(
-                levels, norm, cmap, extend=extend, min_levels=min_levels, **kwargs
-            )
-        methods = (self._parse_levels, self._parse_autolev, self._parse_vlim)
-        params = _pop_params(kwargs, *methods, ignore_internal=True)
-        if 'N' in params:  # use this for lookup table N instead of levels N
-            cmap = cmap.copy(N=params.pop('N'))
-        if params:
-            warnings._warn_proplot(f'Ignoring unused keyword args(s): {params}')
-
-        # Update outgoing args
-        # NOTE: With contour(..., discrete=False, levels=levels) users can bypass
-        # proplot's level selection and use native matplotlib level selection
-        if plot_contours:
-            kwargs['levels'] = levels
-            kwargs['extend'] = extend
-        kwargs.update({'cmap': cmap, 'norm': norm})
-        guides._guide_kw_to_arg('colorbar', kwargs, extend=extend)
-
-        return kwargs
-
-    def _parse_cycle(
-        self, ncycle=None, *,
-        cycle=None, cycle_kw=None, cycle_manually=None, return_cycle=False, **kwargs
-    ):
-        """
-        Parse property cycle-related arguments.
-        """
-        # Create the property cycler and update it if necessary
-        # NOTE: Matplotlib Cycler() objects have built-in __eq__ operator
-        # so really easy to check if the cycler has changed!
-        if cycle is not None or cycle_kw:
-            cycle_kw = cycle_kw or {}
-            if ncycle != 1:  # ignore for column-by-column plotting commands
-                cycle_kw.setdefault('N', ncycle)  # if None then filled in Colormap()
-            if isinstance(cycle, str) and cycle.lower() == 'none':
-                cycle = False
-            if not cycle:
-                args = ()
-            elif cycle is True:  # consistency with 'False' ('reactivate' the cycler)
-                args = (rc['axes.prop_cycle'],)
+                warnings._warn_proplot(
+                    f'Incompatible arguments vmin={vmin!r} and positive=True. '
+                    'Ignoring the latter.'
+                )
+        if symmetric:
+            if automin and not automax:
+                vmin = -vmax
+            elif automax and not automin:
+                vmax = -vmin
+            elif automin and automax:
+                vmin, vmax = -np.max(np.abs((vmin, vmax))), np.max(np.abs((vmin, vmax)))
             else:
-                args = (cycle,)
-            cycle = constructor.Cycle(*args, **cycle_kw)
-            with warnings.catch_warnings():  # hide 'elementwise-comparison failed'
-                warnings.simplefilter('ignore', FutureWarning)
-                if return_cycle:
-                    pass
-                elif cycle != self._active_cycle:
-                    self.set_prop_cycle(cycle)
+                warnings._warn_proplot(
+                    f'Incompatible arguments vmin={vmin!r}, vmax={vmax!r}, and '
+                    'symmetric=True. Ignoring the latter.'
+                )
 
-        # Manually extract and apply settings to outgoing keyword arguments
-        # if native matplotlib function does not include desired properties
-        cycle_manually = cycle_manually or {}
-        parser = self._get_lines  # the _process_plot_var_args instance
-        props = {}  # which keys to apply from property cycler
-        for prop, key in cycle_manually.items():
-            if kwargs.get(key, None) is None and prop in parser._prop_keys:
-                props[prop] = key
-        if props:
-            dict_ = next(parser.prop_cycler)
-            for prop, key in props.items():
-                value = dict_[prop]
-                if key == 'c':  # special case: scatter() color must be converted to hex
-                    value = pcolors.to_hex(value)
-                kwargs[key] = value
-
-        if return_cycle:
-            return cycle, kwargs  # needed for stem() to apply in a context()
-        else:
-            return kwargs
-
-    def _apply_edgefix(self, obj, edgefix=None, **kwargs):
-        """
-        Fix white lines between between filled contours and mesh and fix issues
-        with colormaps that are transparent. If keyword args passed by user
-        include explicit edge properties then we skip this step.
-        """
-        # See: https://github.com/jklymak/contourfIssues
-        # See: https://stackoverflow.com/q/15003353/4970632
-        # NOTE: Use default edge width used for pcolor grid box edges. This is thick
-        # enough to hide lines but thin enough to not add 'dots' to corners of boxes.
-        edgefix = _not_none(edgefix, rc.edgefix, True)
-        linewidth = EDGEWIDTH if edgefix is True else 0 if edgefix is False else edgefix
-        if not linewidth:
-            return
-        keys = ('linewidth', 'linestyle', 'edgecolor')  # patches and collections
-        if any(key + suffix in kwargs for key in keys for suffix in ('', 's')):
-            return
-        rasterized = obj.get_rasterized() if isinstance(obj, martist.Artist) else False
-        if rasterized:
-            return
-
-        # Skip when cmap has transparency
-        if hasattr(obj, 'get_alpha'):  # collections and contour sets use singular
-            alpha = obj.get_alpha()
-            if alpha is not None and alpha < 1:
-                return
-        if isinstance(obj, mcm.ScalarMappable):
-            cmap = obj.cmap
-            if not cmap._isinit:
-                cmap._init()
-            if not all(cmap._lut[:-1, 3] == 1):  # skip for cmaps with transparency
-                return
-
-        # Apply fixes
-        # NOTE: This also covers TriContourSet returned by tricontour
-        if isinstance(obj, mcontour.ContourSet):
-            if obj.filled:
-                for contour in obj.collections:
-                    contour.set_linestyle('-')
-                    contour.set_linewidth(linewidth)
-                    contour.set_edgecolor('face')
-        elif isinstance(obj, mcollections.Collection):  # e.g. QuadMesh, PolyCollection
-            obj.set_linewidth(linewidth)
-            obj.set_edgecolor('face')
-        elif isinstance(obj, mpatches.Patch):  # e.g. Rectangle
-            obj.set_linewidth(linewidth)
-            obj.set_edgecolor(obj.get_facecolor())
-        elif np.iterable(obj):  # e.g. silent_list of BarContainer
-            for element in obj:
-                self._apply_edgefix(element, edgefix=edgefix)
-        else:
-            warnings._warn_proplot(f'Unexpected object {obj} passed to _apply_edgefix.')
+        return vmin, vmax, kwargs
 
     def _apply_plot(self, *pairs, vert=True, **kwargs):
         """
@@ -2857,15 +2682,15 @@ class PlotAxes(base.Axes):
         objs, xsides = [], []
         kws = kwargs.copy()
         kws.update(_pop_props(kws, 'line'))
-        kws, extents = self._parse_inbounds(**kws)
+        kws, extents = self._inbounds_extent(**kws)
         for xs, ys, fmt in self._iter_arg_pairs(*pairs):
-            xs, ys, kw = self._parse_plot1d(xs, ys, vert=vert, **kws)
+            xs, ys, kw = self._parse_1d_plot(xs, ys, vert=vert, **kws)
             ys, kw = process._dist_reduce(ys, **kw)
             guide_kw = _pop_params(kw, self._update_guide)  # after standardize
             for _, n, x, y, kw in self._iter_arg_cols(xs, ys, **kw):
                 kw = self._parse_cycle(n, **kw)
-                *eb, kw = self._plot_errorbars(x, y, vert=vert, default_barstds=True, **kw)  # noqa: E501
-                *es, kw = self._plot_errorshading(x, y, vert=vert, **kw)
+                *eb, kw = self._add_error_bars(x, y, vert=vert, default_barstds=True, **kw)  # noqa: E501
+                *es, kw = self._add_error_shading(x, y, vert=vert, **kw)
                 xsides.append(x)
                 if not vert:
                     x, y = y, x
@@ -2928,10 +2753,10 @@ class PlotAxes(base.Axes):
             raise ValueError(f'Invalid where={where!r}. Options are {opts!r}.')
         kws.update(_pop_props(kws, 'line'))
         kws.setdefault('drawstyle', 'steps-' + where)
-        kws, extents = self._parse_inbounds(**kws)
+        kws, extents = self._inbounds_extent(**kws)
         objs = []
         for xs, ys, fmt in self._iter_arg_pairs(*pairs):
-            xs, ys, kw = self._parse_plot1d(xs, ys, vert=vert, **kws)
+            xs, ys, kw = self._parse_1d_plot(xs, ys, vert=vert, **kws)
             guide_kw = _pop_params(kw, self._update_guide)  # after standardize
             if fmt is not None:
                 kw['fmt'] = fmt
@@ -2974,8 +2799,8 @@ class PlotAxes(base.Axes):
         """
         # Parse input
         kw = kwargs.copy()
-        kw, extents = self._parse_inbounds(**kw)
-        x, y, kw = self._parse_plot1d(x, y, **kw)
+        kw, extents = self._inbounds_extent(**kw)
+        x, y, kw = self._parse_1d_plot(x, y, **kw)
         guide_kw = _pop_params(kw, self._update_guide)
 
         # Set default colors
@@ -3043,9 +2868,9 @@ class PlotAxes(base.Axes):
         # as a colormap color list. Try to support that here.
         kw = kwargs.copy()
         kw.update(_pop_props(kw, 'collection'))
-        kw, extents = self._parse_inbounds(**kw)
+        kw, extents = self._inbounds_extent(**kw)
         label = _not_none(**{key: kw.pop(key, None) for key in ('label', 'value')})
-        x, y, kw = self._parse_plot1d(x, y, values=c, autovalues=True, autoreverse=False, **kw)  # noqa: E501
+        x, y, kw = self._parse_1d_plot(x, y, values=c, autovalues=True, autoreverse=False, **kw)  # noqa: E501
         c = kw.pop('values', None)  # permits auto-inferring values
         c = np.arange(y.size) if c is None else process._to_numpy_array(c)
         if (
@@ -3128,9 +2953,9 @@ class PlotAxes(base.Axes):
         if colors is not None:
             kw['colors'] = colors
         kw.update(_pop_props(kw, 'collection'))
-        kw, extents = self._parse_inbounds(**kw)
+        kw, extents = self._inbounds_extent(**kw)
         stack = _not_none(stack=stack, stacked=stacked)
-        xs, ys1, ys2, kw = self._parse_plot1d(xs, ys1, ys2, vert=vert, **kw)
+        xs, ys1, ys2, kw = self._parse_1d_plot(xs, ys1, ys2, vert=vert, **kw)
         guide_kw = _pop_params(kw, self._update_guide)
 
         # Support "negative" and "positive" lines
@@ -3145,7 +2970,7 @@ class PlotAxes(base.Axes):
                 y2 = y2 + y0
                 y0 = y0 + y2 - y1  # irrelevant that we added y0 to both
             if negpos:
-                obj = self._plot_negpos_objs(name, x, y1, y2, colorkey='colors', **kw)
+                obj = self._plot_negpos(name, x, y1, y2, colorkey='colors', **kw)
             else:
                 obj = self._plot_native(name, x, y1, y2, **kw)
             for y in (y1, y2):
@@ -3232,8 +3057,8 @@ class PlotAxes(base.Axes):
         kw = kwargs.copy()
         inbounds = kw.pop('inbounds', None)
         kw.update(_pop_props(kw, 'collection'))
-        kw, extents = self._parse_inbounds(inbounds=inbounds, **kw)
-        xs, ys, kw = self._parse_plot1d(xs, ys, vert=vert, autoreverse=False, **kw)
+        kw, extents = self._inbounds_extent(inbounds=inbounds, **kw)
+        xs, ys, kw = self._parse_1d_plot(xs, ys, vert=vert, autoreverse=False, **kw)
         ys, kw = process._dist_reduce(ys, **kw)
         ss, kw = self._parse_markersize(ss, **kw)  # parse 's'
         infer_rgb = True
@@ -3252,8 +3077,8 @@ class PlotAxes(base.Axes):
         for _, n, x, y, s, c, kw in self._iter_arg_cols(xs, ys, ss, cc, **kw):
             kw['s'], kw['c'] = s, c  # make _parse_cycle() detect these
             kw = self._parse_cycle(n, cycle_manually=cycle_manually, **kw)
-            *eb, kw = self._plot_errorbars(x, y, vert=vert, default_barstds=True, **kw)
-            *es, kw = self._plot_errorshading(x, y, vert=vert, color_key='c', **kw)
+            *eb, kw = self._add_error_bars(x, y, vert=vert, default_barstds=True, **kw)
+            *es, kw = self._add_error_shading(x, y, vert=vert, color_key='c', **kw)
             if not vert:
                 x, y = y, x
             obj = self._plot_native('scatter', x, y, **kw)
@@ -3310,11 +3135,11 @@ class PlotAxes(base.Axes):
         # Parse input arguments
         kw = kwargs.copy()
         kw.update(_pop_props(kw, 'patch'))
-        kw, extents = self._parse_inbounds(**kw)
+        kw, extents = self._inbounds_extent(**kw)
         name = 'fill_between' if vert else 'fill_betweenx'
         stack = _not_none(stack=stack, stacked=stacked)
-        xs, ys1, ys2, kw = self._parse_plot1d(xs, ys1, ys2, vert=vert, **kw)
-        edgefix_kw = _pop_params(kw, self._apply_edgefix)
+        xs, ys1, ys2, kw = self._parse_1d_plot(xs, ys1, ys2, vert=vert, **kw)
+        edgefix_kw = _pop_params(kw, self._add_edge_fix)
 
         # Draw patches with default edge width zero
         y0 = 0
@@ -3327,10 +3152,10 @@ class PlotAxes(base.Axes):
                 y2 = y2 + y0
                 y0 = y0 + y2 - y1  # irrelevant that we added y0 to both
             if negpos:  # NOTE: if user passes 'where' will issue a warning
-                obj = self._plot_negpos_objs(name, x, y1, y2, where=w, use_where=True, **kw)  # noqa: E501
+                obj = self._plot_negpos(name, x, y1, y2, where=w, use_where=True, **kw)  # noqa: E501
             else:
                 obj = self._plot_native(name, x, y1, y2, where=w, **kw)
-            self._apply_edgefix(obj, **edgefix_kw, **kw)
+            self._add_edge_fix(obj, **edgefix_kw, **kw)
             xsides.append(x)
             for y in (y1, y2):
                 self._inbounds_xylim(extents, x, y, vert=vert)
@@ -3413,11 +3238,11 @@ class PlotAxes(base.Axes):
         """
         # Parse args
         kw = kwargs.copy()
-        kw, extents = self._parse_inbounds(**kw)
+        kw, extents = self._inbounds_extent(**kw)
         name = 'barh' if orientation == 'horizontal' else 'bar'
         stack = _not_none(stack=stack, stacked=stacked)
-        xs, hs, kw = self._parse_plot1d(xs, hs, orientation=orientation, **kw)
-        edgefix_kw = _pop_params(kw, self._apply_edgefix)
+        xs, hs, kw = self._parse_1d_plot(xs, hs, orientation=orientation, **kw)
+        edgefix_kw = _pop_params(kw, self._add_edge_fix)
         if absolute_width is None:
             absolute_width = _default_absolute()
 
@@ -3442,12 +3267,12 @@ class PlotAxes(base.Axes):
                 o = 0.5 * (n - 1)  # center coordinate
                 x = x + w * (i - o)  # += may cause integer/float casting issue
             # Draw simple bars
-            *eb, kw = self._plot_errorbars(x, b + h, default_barstds=True, orientation=orientation, **kw)  # noqa: E501
+            *eb, kw = self._add_error_bars(x, b + h, default_barstds=True, orientation=orientation, **kw)  # noqa: E501
             if negpos:
-                obj = self._plot_negpos_objs(name, x, h, w, b, use_zero=True, **kw)
+                obj = self._plot_negpos(name, x, h, w, b, use_zero=True, **kw)
             else:
                 obj = self._plot_native(name, x, h, w, b, **kw)
-            self._apply_edgefix(obj, **edgefix_kw, **kw)
+            self._add_edge_fix(obj, **edgefix_kw, **kw)
             for y in (b, b + h):
                 self._inbounds_xylim(extents, x, y, orientation=orientation)
             objs.append((*eb, obj) if eb else obj)
@@ -3492,13 +3317,13 @@ class PlotAxes(base.Axes):
         kw = kwargs.copy()
         pad = _not_none(labeldistance=labeldistance, labelpad=labelpad, default=1.15)
         props = _pop_props(kw, 'patch')
-        edgefix_kw = _pop_params(kw, self._apply_edgefix)
-        _, x, kw = self._parse_plot1d(x, autox=False, autoy=False, **kw)
+        edgefix_kw = _pop_params(kw, self._add_edge_fix)
+        _, x, kw = self._parse_1d_plot(x, autox=False, autoy=False, **kw)
         kw = self._parse_cycle(x.size, **kw)
         kw['labeldistance'] = pad
         objs = self._plot_native('pie', x, explode, wedgeprops=props, **kw)
         objs = tuple(cbook.silent_list(type(seq[0]).__name__, seq) for seq in objs)
-        self._apply_edgefix(objs[0], **edgefix_kw, **props)
+        self._add_edge_fix(objs[0], **edgefix_kw, **props)
         return objs
 
     @staticmethod
@@ -3561,7 +3386,7 @@ class PlotAxes(base.Axes):
             iprops.setdefault('markeredgecolor', edgecolor)
 
         # Parse color properties
-        x, y, kw = self._parse_plot1d(
+        x, y, kw = self._parse_1d_plot(
             x, y, autoy=False, autoguide=False, vert=vert, **kw
         )
         kw = self._parse_cycle(x.size, **kw)  # possibly apply cycle
@@ -3679,7 +3504,7 @@ class PlotAxes(base.Axes):
         )
 
         # Parse color properties
-        x, y, kw = self._parse_plot1d(
+        x, y, kw = self._parse_1d_plot(
             x, y, autoy=False, autoguide=False, vert=vert, **kw
         )
         kw = self._parse_cycle(x.size, **kw)
@@ -3691,8 +3516,8 @@ class PlotAxes(base.Axes):
 
         # Plot violins
         y, kw = process._dist_reduce(y, means=means, medians=medians, **kw)
-        *eb, kw = self._plot_errorbars(x, y, vert=vert, default_boxstds=True, default_marker=True, **kw)  # noqa: E501
-        kw.pop('labels', None)  # already applied in _parse_plot1d
+        *eb, kw = self._add_error_bars(x, y, vert=vert, default_boxstds=True, default_marker=True, **kw)  # noqa: E501
+        kw.pop('labels', None)  # already applied in _parse_1d_plot
         kw.setdefault('positions', x)  # coordinates passed as keyword
         y = _not_none(kw.pop('distribution'), y)  # i.e. was reduced
         y = process._dist_clean(y)
@@ -3768,7 +3593,7 @@ class PlotAxes(base.Axes):
         # adds them to the first elements in the container for each column
         # of the input data. Make sure that legend() will read both containers
         # and individual items inside those containers.
-        _, xs, kw = self._parse_plot1d(xs, orientation=orientation, **kwargs)
+        _, xs, kw = self._parse_1d_plot(xs, orientation=orientation, **kwargs)
         fill = _not_none(fill=fill, filled=filled)
         stack = _not_none(stack=stack, stacked=stacked)
         if fill is not None:
@@ -3780,13 +3605,13 @@ class PlotAxes(base.Axes):
         kw['rwidth'] = _not_none(width=width, rwidth=rwidth)  # latter is native
         kw['histtype'] = histtype = _not_none(histtype, 'bar')
         kw.update(_pop_props(kw, 'patch'))
-        edgefix_kw = _pop_params(kw, self._apply_edgefix)
+        edgefix_kw = _pop_params(kw, self._add_edge_fix)
         guide_kw = _pop_params(kw, self._update_guide)
         n = xs.shape[1] if xs.ndim > 1 else 1
         kw = self._parse_cycle(n, **kw)
         obj = self._plot_native('hist', xs, orientation=orientation, **kw)
         if histtype.startswith('bar'):
-            self._apply_edgefix(obj[2], **edgefix_kw, **kw)
+            self._add_edge_fix(obj[2], **edgefix_kw, **kw)
         # Revert to mpl < 3.3 behavior where silent_list was always returned for
         # non-bar-type histograms. Because consistency.
         res = obj[2]
@@ -3840,9 +3665,9 @@ class PlotAxes(base.Axes):
         %(plot.hexbin)s
         """
         # WARNING: Cannot use automatic level generation here until counts are
-        # estimated. Inside _parse_levels if no manual levels were provided then
-        # _parse_autolev is skipped and args like levels=10 or locator=5 are ignored
-        x, y, kw = self._parse_plot1d(x, y, autovalues=True, **kwargs)
+        # estimated. Inside _parse_level_list if no manual levels were provided then
+        # _parse_level_count is skipped and args like levels=10 or locator=5 are ignored
+        x, y, kw = self._parse_1d_plot(x, y, autovalues=True, **kwargs)
         kw.update(_pop_props(kw, 'collection'))  # takes LineCollection props
         kw = self._parse_cmap(x, y, y, skip_autolev=True, default_discrete=False, **kw)
         norm = kw.get('norm', None)
@@ -3862,7 +3687,7 @@ class PlotAxes(base.Axes):
         """
         %(plot.contour)s
         """
-        x, y, z, kw = self._parse_plot2d(x, y, z, **kwargs)
+        x, y, z, kw = self._parse_2d_plot(x, y, z, **kwargs)
         kw.update(_pop_props(kw, 'collection'))
         kw = self._parse_cmap(
             x, y, z, min_levels=1, plot_lines=True, plot_contours=True, **kw
@@ -3883,19 +3708,19 @@ class PlotAxes(base.Axes):
         """
         %(plot.contourf)s
         """
-        x, y, z, kw = self._parse_plot2d(x, y, z, **kwargs)
+        x, y, z, kw = self._parse_2d_plot(x, y, z, **kwargs)
         kw.update(_pop_props(kw, 'collection'))
         kw = self._parse_cmap(x, y, z, plot_contours=True, **kw)
         contour_kw = _pop_kwargs(kw, 'edgecolors', 'linewidths', 'linestyles')
-        edgefix_kw = _pop_params(kw, self._apply_edgefix)
+        edgefix_kw = _pop_params(kw, self._add_edge_fix)
         labels_kw = _pop_params(kw, self._add_auto_labels)
         guide_kw = _pop_params(kw, self._update_guide)
         label = kw.pop('label', None)
         m = cm = self._plot_native('contourf', x, y, z, **kw)
         m._legend_label = label
-        self._apply_edgefix(m, **edgefix_kw, **contour_kw)  # skipped if not contour_kw
+        self._add_edge_fix(m, **edgefix_kw, **contour_kw)  # skipped if not contour_kw
         if contour_kw or labels_kw:
-            cm = self._plot_contour_edge('contour', x, y, z, **kw, **contour_kw)
+            cm = self._add_contour_edge('contour', x, y, z, **kw, **contour_kw)
         self._add_auto_labels(m, cm, **labels_kw)
         self._update_guide(m, queue_colorbar=False, **guide_kw)
         return m
@@ -3907,14 +3732,14 @@ class PlotAxes(base.Axes):
         """
         %(plot.pcolor)s
         """
-        x, y, z, kw = self._parse_plot2d(x, y, z, edges=True, **kwargs)
+        x, y, z, kw = self._parse_2d_plot(x, y, z, edges=True, **kwargs)
         kw.update(_pop_props(kw, 'collection'))
         kw = self._parse_cmap(x, y, z, to_centers=True, **kw)
-        edgefix_kw = _pop_params(kw, self._apply_edgefix)
+        edgefix_kw = _pop_params(kw, self._add_edge_fix)
         labels_kw = _pop_params(kw, self._add_auto_labels)
         guide_kw = _pop_params(kw, self._update_guide)
         m = self._plot_native('pcolor', x, y, z, **kw)
-        self._apply_edgefix(m, **edgefix_kw, **kw)
+        self._add_edge_fix(m, **edgefix_kw, **kw)
         self._add_auto_labels(m, **labels_kw)
         self._update_guide(m, queue_colorbar=False, **guide_kw)
         return m
@@ -3926,14 +3751,14 @@ class PlotAxes(base.Axes):
         """
         %(plot.pcolormesh)s
         """
-        x, y, z, kw = self._parse_plot2d(x, y, z, edges=True, **kwargs)
+        x, y, z, kw = self._parse_2d_plot(x, y, z, edges=True, **kwargs)
         kw.update(_pop_props(kw, 'collection'))
         kw = self._parse_cmap(x, y, z, to_centers=True, **kw)
-        edgefix_kw = _pop_params(kw, self._apply_edgefix)
+        edgefix_kw = _pop_params(kw, self._add_edge_fix)
         labels_kw = _pop_params(kw, self._add_auto_labels)
         guide_kw = _pop_params(kw, self._update_guide)
         m = self._plot_native('pcolormesh', x, y, z, **kw)
-        self._apply_edgefix(m, **edgefix_kw, **kw)
+        self._add_edge_fix(m, **edgefix_kw, **kw)
         self._add_auto_labels(m, **labels_kw)
         self._update_guide(m, queue_colorbar=False, **guide_kw)
         return m
@@ -3945,15 +3770,15 @@ class PlotAxes(base.Axes):
         """
         %(plot.pcolorfast)s
         """
-        x, y, z, kw = self._parse_plot2d(x, y, z, edges=True, **kwargs)
+        x, y, z, kw = self._parse_2d_plot(x, y, z, edges=True, **kwargs)
         kw.update(_pop_props(kw, 'collection'))
         kw = self._parse_cmap(x, y, z, to_centers=True, **kw)
-        edgefix_kw = _pop_params(kw, self._apply_edgefix)
+        edgefix_kw = _pop_params(kw, self._add_edge_fix)
         labels_kw = _pop_params(kw, self._add_auto_labels)
         guide_kw = _pop_params(kw, self._update_guide)
         m = self._plot_native('pcolorfast', x, y, z, **kw)
         if not isinstance(m, mimage.AxesImage):  # NOTE: PcolorImage is derivative
-            self._apply_edgefix(m, **edgefix_kw, **kw)
+            self._add_edge_fix(m, **edgefix_kw, **kw)
             self._add_auto_labels(m, **labels_kw)
         elif edgefix_kw or labels_kw:
             kw = {**edgefix_kw, **labels_kw}
@@ -4002,7 +3827,7 @@ class PlotAxes(base.Axes):
         """
         %(plot.barbs)s
         """
-        x, y, u, v, kw = self._parse_plot2d(x, y, u, v, allow1d=True, autoguide=False, **kwargs)  # noqa: E501
+        x, y, u, v, kw = self._parse_2d_plot(x, y, u, v, allow1d=True, autoguide=False, **kwargs)  # noqa: E501
         kw.update(_pop_props(kw, 'line'))  # applied to barbs
         c, kw = self._parse_color(x, y, c, **kw)
         if mcolors.is_color_like(c):
@@ -4021,7 +3846,7 @@ class PlotAxes(base.Axes):
         """
         %(plot.quiver)s
         """
-        x, y, u, v, kw = self._parse_plot2d(x, y, u, v, allow1d=True, autoguide=False, **kwargs)  # noqa: E501
+        x, y, u, v, kw = self._parse_2d_plot(x, y, u, v, allow1d=True, autoguide=False, **kwargs)  # noqa: E501
         kw.update(_pop_props(kw, 'line'))  # applied to arrow outline
         c, kw = self._parse_color(x, y, c, **kw)
         color = None
@@ -4053,7 +3878,7 @@ class PlotAxes(base.Axes):
         """
         %(plot.stream)s
         """
-        x, y, u, v, kw = self._parse_plot2d(x, y, u, v, **kwargs)
+        x, y, u, v, kw = self._parse_2d_plot(x, y, u, v, **kwargs)
         kw.update(_pop_props(kw, 'line'))  # applied to lines
         c, kw = self._parse_color(x, y, c, **kw)
         if c is None:  # throws an error if color not provided
@@ -4102,15 +3927,15 @@ class PlotAxes(base.Axes):
         kw.update(_pop_props(kw, 'collection'))
         contour_kw = _pop_kwargs(kw, 'edgecolors', 'linewidths', 'linestyles')
         kw = self._parse_cmap(x, y, z, plot_contours=True, **kw)
-        edgefix_kw = _pop_params(kw, self._apply_edgefix)
+        edgefix_kw = _pop_params(kw, self._add_edge_fix)
         labels_kw = _pop_params(kw, self._add_auto_labels)
         guide_kw = _pop_params(kw, self._update_guide)
         label = kw.pop('label', None)
         m = cm = self._plot_native('tricontourf', x, y, z, **kw)
         m._legend_label = label
-        self._apply_edgefix(m, **edgefix_kw, **contour_kw)  # skipped if not contour_kw
+        self._add_edge_fix(m, **edgefix_kw, **contour_kw)  # skipped if not contour_kw
         if contour_kw or labels_kw:
-            cm = self._plot_contour_edge('tricontour', x, y, z, **kw, **contour_kw)
+            cm = self._add_contour_edge('tricontour', x, y, z, **kw, **contour_kw)
         self._add_auto_labels(m, cm, **labels_kw)
         self._update_guide(m, queue_colorbar=False, **guide_kw)
         return m
@@ -4127,11 +3952,11 @@ class PlotAxes(base.Axes):
             raise ValueError('Three input arguments are required.')
         kw.update(_pop_props(kw, 'collection'))
         kw = self._parse_cmap(x, y, z, **kw)
-        edgefix_kw = _pop_params(kw, self._apply_edgefix)
+        edgefix_kw = _pop_params(kw, self._add_edge_fix)
         labels_kw = _pop_params(kw, self._add_auto_labels)
         guide_kw = _pop_params(kw, self._update_guide)
         m = self._plot_native('tripcolor', x, y, z, **kw)
-        self._apply_edgefix(m, **edgefix_kw, **kw)
+        self._add_edge_fix(m, **edgefix_kw, **kw)
         self._add_auto_labels(m, **labels_kw)
         self._update_guide(m, queue_colorbar=False, **guide_kw)
         return m
@@ -4186,6 +4011,59 @@ class PlotAxes(base.Axes):
         # are assumed color arguments). Cycles are still validated in rcsetup.cycler()
         cycle = self._active_cycle = constructor.Cycle(*args, **kwargs)
         return super().set_prop_cycle(cycle)  # set the property cycler after validation
+
+    def _iter_arg_pairs(self, *args):
+        """
+        Iterate over ``[x1,] y1, [fmt1,] [x2,] y2, [fmt2,] ...`` input.
+        """
+        # NOTE: This is copied from _process_plot_var_args.__call__ to avoid relying
+        # on private API. We emulate this input style with successive plot() calls.
+        args = list(args)
+        while args:  # this permits empty input
+            x, y, *args = args
+            if args and isinstance(args[0], str):  # format string detected!
+                fmt, *args = args
+            elif isinstance(y, str):  # omits some of matplotlib's rigor but whatevs
+                x, y, fmt = None, x, y
+            else:
+                fmt = None
+            yield x, y, fmt
+
+    def _iter_arg_cols(self, *args, label=None, labels=None, values=None, **kwargs):
+        """
+        Iterate over columns of positional arguments.
+        """
+        # Handle cycle args and label lists
+        # NOTE: Arrays here should have had metadata stripped by _parse_1d_plot
+        # but could still be pint quantities that get processed by axis converter.
+        n = max(
+            1 if not process._is_array(a) or a.ndim < 2 else a.shape[-1]
+            for a in args
+        )
+        labels = _not_none(label=label, values=values, labels=labels)
+        if not np.iterable(labels) or isinstance(labels, str):
+            labels = n * [labels]
+        if len(labels) != n:
+            raise ValueError(f'Array has {n} columns but got {len(labels)} labels.')
+        if labels is not None:
+            labels = [
+                str(_not_none(label, ''))
+                for label in process._to_numpy_array(labels)
+            ]
+        else:
+            labels = n * [None]
+
+        # Yield successive columns
+        for i in range(n):
+            kw = kwargs.copy()
+            kw['label'] = labels[i] or None
+            a = tuple(
+                a if not process._is_array(a) or a.ndim < 2 else a[..., i] for a in args
+            )
+            yield (i, n, *a, kw)
+
+    # Related parsing functions for warnings
+    _level_parsers = (_parse_level_list, _parse_level_count, _parse_level_lim)
 
     # Rename the shorthands
     boxes = warnings._rename_objs('0.8', boxes=box)
