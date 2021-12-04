@@ -655,9 +655,10 @@ class _TransformedBoundsLocator:
         self._transform = transform
 
     def __call__(self, ax, renderer):  # noqa: U100
+        transfig = getattr(ax.figure, 'transSubfigure', ax.figure.transFigure)
         bbox = mtransforms.Bbox.from_bounds(*self._bounds)
         bbox = mtransforms.TransformedBbox(bbox, self._transform)
-        bbox = mtransforms.TransformedBbox(bbox, ax.figure.transFigure.inverted())
+        bbox = mtransforms.TransformedBbox(bbox, transfig.inverted())
         return bbox
 
 
