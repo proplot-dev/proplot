@@ -419,7 +419,7 @@ class CartesianAxes(shared._SharedAxes, plot.PlotAxes):
         if 'sharex' in kwargs and 'sharey' in kwargs:
             raise ValueError('Twinned axes may share only one axis.')
         locator = self._make_inset_locator([0, 0, 1, 1], self.transAxes)
-        ax = CartesianAxes(self.figure, self.get_position(True), **kwargs)
+        ax = CartesianAxes(self.figure, locator(self, None).bounds, **kwargs)
         ax.set_axes_locator(locator)
         ax.set_adjustable('datalim')
         self.add_child_axes(ax)  # to facilitate tight layout

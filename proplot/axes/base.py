@@ -644,6 +644,21 @@ docstring._snippet_manager['axes.legend_args'] = _legend_args_docstring
 docstring._snippet_manager['axes.legend_kwargs'] = _legend_kwargs_docstring
 
 
+class _TransformedBoundsLocator:
+    """
+    Axes locator for `~Axes.inset_axes` and other axes.
+    """
+    def __init__(self, bounds, transform):
+        self._bounds = bounds
+        self._transform = transform
+
+    def __call__(self, ax, renderer):  # noqa: U100
+        bbox = mtransforms.Bbox.from_bounds(*self._bounds)
+        bbox = mtransforms.TransformedBbox(bbox, self._transform)
+        bbox = mtransforms.TransformedBbox(bbox, ax.figure.transFigure.inverted())
+        return bbox
+
+
 class Axes(maxes.Axes):
     """
     The lowest-level `~matplotlib.axes.Axes` subclass used by proplot.
@@ -651,6 +666,7 @@ class Axes(maxes.Axes):
     """
     _name = None  # derived must override
     _name_aliases = ()
+    _make_inset_locator = _TransformedBoundsLocator
 
     def __repr__(self):
         # Show the position in the geometry excluding panels. Panels are
@@ -664,15 +680,15 @@ class Axes(maxes.Axes):
         if self._name in ('cartopy', 'basemap'):
             name = name.replace('_' + self._name.title(), 'Geo')
             params['backend'] = self._name
-        if self._colorbar_fill:
-            name = re.sub('Axes(Subplot)?', 'AxesFill', name)
-            params['orientation'] = self._colorbar_fill.orientation
         if self._inset_parent:
             name = re.sub('Axes(Subplot)?', 'AxesInset', name)
             params['bounds'] = tuple(np.round(self._inset_bounds, 2))
         if self._altx_parent or self._alty_parent:
             name = re.sub('Axes(Subplot)?', 'AxesTwin', name)
             params['axis'] = 'x' if self._altx_parent else 'y'
+        if self._colorbar_fill:
+            name = re.sub('Axes(Subplot)?', 'AxesFill', name)
+            params['side'] = self._axes._panel_side
         if self._panel_side:
             name = re.sub('Axes(Subplot)?', 'AxesPanel', name)
             params['side'] = self._panel_side
@@ -865,7 +881,7 @@ class Axes(maxes.Axes):
         # Converting transform to figure-relative coordinates
         transform = self._get_transform(transform, 'axes')
         locator = self._make_inset_locator(bounds, transform)
-        bbox = locator(None, None)
+        bounds = locator(self, None).bounds
         label = kwargs.pop('label', 'inset_axes')
         zorder = _not_none(zorder, 4)
 
@@ -882,7 +898,7 @@ class Axes(maxes.Axes):
         # Create axes and apply locator. The locator lets the axes adjust
         # automatically if we used data coords. Called by ax.apply_aspect()
         cls = mprojections.get_projection_class(kwargs.pop('projection'))
-        ax = cls(self.figure, bbox.bounds, zorder=zorder, label=label, **kwargs)
+        ax = cls(self.figure, bounds, zorder=zorder, label=label, **kwargs)
         ax.set_axes_locator(locator)
         ax._inset_parent = self
         ax._inset_bounds = bounds
@@ -1618,17 +1634,6 @@ class Axes(maxes.Axes):
         else:
             raise ValueError(f'Unknown transform {transform!r}.')
 
-    def _make_inset_locator(self, bounds, trans):
-        """
-        Return a locator that determines child axes bounds.
-        """
-        def _inset_locator(ax, renderer):
-            bbox = mtransforms.Bbox.from_bounds(*bounds)
-            bbox = mtransforms.TransformedBbox(bbox, trans)
-            bbox = mtransforms.TransformedBbox(bbox, self.figure.transFigure.inverted())
-            return bbox
-        return _inset_locator
-
     def _register_guide(self, guide, obj, loc, **kwargs):
         """
         Queue up or replace objects for legends and list-of-artist style colorbars.
@@ -1864,7 +1869,7 @@ class Axes(maxes.Axes):
         # Add the axes as a child of the original axes
         cls = mprojections.get_projection_class('proplot_cartesian')
         locator = self._make_inset_locator(bounds, self.transAxes)
-        ax = cls(self.figure, locator(None, None).bounds, zorder=5)
+        ax = cls(self.figure, locator(self, None).bounds, zorder=5)
         self.add_child_axes(ax)
         ax.set_axes_locator(locator)
         ax.patch.set_facecolor('none')  # ignore axes.alpha application
@@ -1933,7 +1938,7 @@ class Axes(maxes.Axes):
         # Make axes and frame with zorder matching default legend zorder
         cls = mprojections.get_projection_class('proplot_cartesian')
         locator = self._make_inset_locator(bounds_inset, self.transAxes)
-        ax = cls(self.figure, locator(None, None).bounds, zorder=5)
+        ax = cls(self.figure, locator(self, None).bounds, zorder=5)
         ax.patch.set_facecolor('none')
         ax.set_axes_locator(locator)
         self.add_child_axes(ax)
