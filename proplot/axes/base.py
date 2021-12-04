@@ -2140,9 +2140,9 @@ class Axes(maxes.Axes):
             else:  # center
                 base, offset = 0.5, 0.5 * (len(pairs) - extra)
             y0, y1 = base + (offset - np.array([i + 1, i])) * height
-            box = mtransforms.Bbox([[0, y0], [1, y1]])
+            bb = mtransforms.Bbox([[0, y0], [1, y1]])
             leg = mlegend.Legend(
-                self, *zip(*ipairs), bbox_to_anchor=box, bbox_transform=self.transAxes,
+                self, *zip(*ipairs), bbox_to_anchor=bb, bbox_transform=self.transAxes,
                 ncol=len(ipairs), title=title if i == 0 else None, **kwargs
             )
             legs.append(leg)
@@ -2157,13 +2157,10 @@ class Axes(maxes.Axes):
         objs = tuple(legs)
         if frameon and legs:
             rend = self.figure._get_renderer()  # arbitrary renderer
-            bbox = mtransforms.Bbox.union(
-                leg.get_window_extent(rend).transformed(self.transAxes.inverted())
-                for leg in legs
-            )
-            bounds = (
-                bbox.xmin, bbox.ymin, bbox.xmax - bbox.xmin, bbox.ymax - bbox.ymin
-            )
+            trans = self.transAxes.inverted()
+            bboxes = [leg.get_window_extent(rend).transformed(trans) for leg in legs]
+            bb = mtransforms.Bbox.union(bboxes)
+            bounds = (bb.xmin, bb.ymin, bb.xmax - bb.xmin, bb.ymax - bb.ymin)
             self._add_guide_frame(*bounds, **kw_frame)
         return objs
 
