@@ -1273,8 +1273,8 @@ class Axes(maxes.Axes):
         Change assignment of outer titles between main subplot and upper panels.
         This is called when a panel is created or `_update_title` is called.
         """
-        # NOTE: Similar to how _align_axis_labels() calls _apply_axis_sharing() this
-        # is called inside _align_super_labels() so we get the right offset.
+        # NOTE: Similar to how _apply_axis_sharing() is called in _align_axis_labels()
+        # this is called in _align_super_labels() so we get the correct offset.
         paxs = self._panel_dict['top']
         if not paxs:
             return
@@ -1282,7 +1282,9 @@ class Axes(maxes.Axes):
         names = ('left', 'center', 'right')
         if self._abc_loc in names:
             names += ('abc',)
-        if not self._title_above or pax._panel_hidden and self._title_above == 'panels':
+        if not self._title_above:
+            return
+        if pax._panel_hidden and self._title_above == 'panels':
             return
         pax._title_pad = self._title_pad
         pax._abc_title_pad = self._abc_title_pad
@@ -1942,19 +1944,19 @@ class Axes(maxes.Axes):
         # Location in axes-relative coordinates
         # Bounds are x0, y0, width, height in axes-relative coordinates
         if loc == 'upper right':
-            bounds_inset = (1 - xpad - length, 1 - ypad - width)
-            bounds_frame = (1 - 2 * xpad - length, 1 - 2 * ypad - width - labspace)
+            bounds_inset = [1 - xpad - length, 1 - ypad - width]
+            bounds_frame = [1 - 2 * xpad - length, 1 - 2 * ypad - width - labspace]
         elif loc == 'upper left':
-            bounds_inset = (xpad, 1 - ypad - width)
-            bounds_frame = (0, 1 - 2 * ypad - width - labspace)
+            bounds_inset = [xpad, 1 - ypad - width]
+            bounds_frame = [0, 1 - 2 * ypad - width - labspace]
         elif loc == 'lower left':
-            bounds_inset = (xpad, ypad + labspace)
-            bounds_frame = (0, 0)
+            bounds_inset = [xpad, ypad + labspace]
+            bounds_frame = [0, 0]
         else:
-            bounds_inset = (1 - xpad - length, ypad + labspace)
-            bounds_frame = (1 - 2 * xpad - length, 0)
-        bounds_inset = (*bounds_inset, length, width)  # inset axes
-        bounds_frame = (*bounds_frame, 2 * xpad + length, 2 * ypad + width + labspace)
+            bounds_inset = [1 - xpad - length, ypad + labspace]
+            bounds_frame = [1 - 2 * xpad - length, 0]
+        bounds_inset.extend((length, width))  # inset axes
+        bounds_frame.extend((2 * xpad + length, 2 * ypad + width + labspace))
 
         # Make axes and frame with zorder matching default legend zorder
         cls = mprojections.get_projection_class('proplot_cartesian')
@@ -2130,7 +2132,6 @@ class Axes(maxes.Axes):
         space = kwargs.get('labelspacing', None) or rc['legend.labelspacing']
         height = (((1 + space * 0.85) * fontsize) / 72) / self._get_size_inches()[1]
         for i, ipairs in enumerate(pairs):
-            ii = np.array((i + 1, i))
             extra = int(i > 0 and title is not None)
             if 'upper' in loc:
                 base, offset = 1, -extra
@@ -2138,8 +2139,8 @@ class Axes(maxes.Axes):
                 base, offset = 0, len(pairs)
             else:  # center
                 base, offset = 0.5, 0.5 * (len(pairs) - extra)
-            y1, y2 = base + (offset - ii) * height
-            box = mtransforms.Bbox([[0, y1], [1, y2]])
+            y0, y1 = base + (offset - np.array([i + 1, i])) * height
+            box = mtransforms.Bbox([[0, y0], [1, y1]])
             leg = mlegend.Legend(
                 self, *zip(*ipairs), bbox_to_anchor=box, bbox_transform=self.transAxes,
                 ncol=len(ipairs), title=title if i == 0 else None, **kwargs
@@ -2155,14 +2156,15 @@ class Axes(maxes.Axes):
         # _legend_box attribute, which is accessed by get_window_extent.
         objs = tuple(legs)
         if frameon and legs:
-            renderer = self.figure._get_renderer()  # arbitrary renderer
-            trans = self.transAxes.inverted()
-            bboxs = [leg.get_window_extent(renderer).transformed(trans) for leg in legs]
-            xmin = min(bbox.xmin for bbox in bboxs)
-            xmax = max(bbox.xmax for bbox in bboxs)
-            ymin = min(bbox.ymin for bbox in bboxs)
-            ymax = max(bbox.ymax for bbox in bboxs)
-            self._add_guide_frame(xmin, ymin, xmax - xmin, ymax - ymin, **kw_frame)
+            rend = self.figure._get_renderer()  # arbitrary renderer
+            bbox = mtransforms.Bbox.union(
+                leg.get_window_extent(rend).transformed(self.transAxes.inverted())
+                for leg in legs
+            )
+            bounds = (
+                bbox.xmin, bbox.ymin, bbox.xmax - bbox.xmin, bbox.ymax - bbox.ymin
+            )
+            self._add_guide_frame(*bounds, **kw_frame)
         return objs
 
     @staticmethod
