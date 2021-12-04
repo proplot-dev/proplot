@@ -2820,22 +2820,13 @@ class Axes(maxes.Axes):
         # or use the axes bounding box or patch path for clipping.
         # NOTE: Critical to ignore x and y axis, spines, and all child axes.
         # For some reason these have clipping 'enabled' but it is not respected.
-        # NOTE: Native transforms and bounding boxes have no equality tests
-        # so have to do this manually (inspired by Affine2D equality tests).
-        # Matplotlib almost always uses clip paths rather than boxes, which copies
-        # the background patch CompositeGenericTransform as a hidden property on
-        # TransformedPatchPath, from which the Affine2D transform is built.
-        # Try to avoid using private '_patch' and '_transform' attributes.
+        # NOTE: Matplotlib already tries to do this inside get_tightbbox() but
+        # their approach fails for cartopy axes clipped by paths and not boxes.
         artists = [
             artist for artist in super().get_default_bbox_extra_artists()
             if isinstance(artist, (maxes.Axes, maxis.Axis, mspines.Spine))
-            or not artist.get_clip_on()
-            or artist.get_clip_box() is not None and not np.all(
-                np.array(artist.get_clip_box()) == np.array(self.bbox)
-            )
-            or artist.get_clip_path() is not None and not np.all(
-                np.array(artist.get_clip_path()) == np.array(self.patch.get_transform())
-            )
+            or not isinstance(artist.get_clip_path(), mtransforms.TransformedPatchPath)
+            or artist.get_clip_path()._patch is not self.patch
         ]
         return artists
 
