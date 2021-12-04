@@ -104,7 +104,8 @@ def _default_precision_zerotrim(precision=None, zerotrim=None):
 
 class IndexLocator(mticker.Locator):
     """
-    Format numbers by assigning fixed strings to non-negative indices.
+    Format numbers by assigning fixed strings to non-negative indices. The ticks
+    are restricted to the extent of plotted content when content is present.
     """
     def __init__(self, base=1, offset=0):
         self._base = base
@@ -121,11 +122,9 @@ class IndexLocator(mticker.Locator):
         # the data interval is empty. Only restrict after data is plotted.
         dmin, dmax = self.axis.get_data_interval()
         vmin, vmax = self.axis.get_view_interval()
-        if dmin == -np.inf:
-            dmin = vmin
-        if dmax == np.inf:
-            dmax = vmax
-        return self.tick_values(dmin, dmax)
+        min_ = max(dmin, vmin)
+        max_ = min(dmax, vmax)
+        return self.tick_values(min_, max_)
 
     def tick_values(self, vmin, vmax):
         base, offset = self._base, self._offset
@@ -137,8 +136,8 @@ class IndexLocator(mticker.Locator):
 
 class DiscreteLocator(mticker.Locator):
     """
-    A tick locator suitable for discretized colorbars. Adds ticks to some
-    subset of the location list depending on the available space determined from
+    A tick locator suitable for discretized colorbars. Adds ticks to some subset
+    of the location list depending on the available space determined from
     `~matplotlib.axis.Axis.get_tick_space`. Zero will be used if it appears in the
     location list, and step sizes along the location list are restricted to "nice"
     intervals by default.
