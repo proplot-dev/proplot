@@ -1646,13 +1646,13 @@ class Axes(maxes.Axes):
         # NOTE: No good way to remove inset colorbars right now until the bounding
         # box and axes are merged into some kind of subclass. Just fine for now.
         if loc in dict_ and not isinstance(dict_[loc], tuple):
-            obj_prev = dict_.pop(loc)  # possibly pop a queued object
+            prev = dict_.pop(loc)  # possibly pop a queued object
             if guide == 'colorbar':
                 pass
-            elif hasattr(self, 'legend_') and self.legend_ is obj_prev:
+            elif hasattr(self, 'legend_') and prev.axes.legend_ is prev:
                 self.legend_ = None  # was never added as artist
             else:
-                obj_prev.remove()  # remove legends and inner colorbars
+                prev.remove()  # remove legends and inner colorbars
 
         # Replace with instance or update the queue
         # NOTE: This is valid for both mappable-values pairs and handles-labels pairs
