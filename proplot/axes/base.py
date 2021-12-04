@@ -803,7 +803,7 @@ class Axes(maxes.Axes):
         # features which is necessary on first run. Default otherwise is mode '2'
         self.format(rc_kw=rc_kw, rc_mode=1, skip_figure=True, **kw_format)
 
-    def _add_frame(
+    def _add_guide_frame(
         self, xmin, ymin, width, height, *, fontsize, fancybox=None, **kwargs
     ):
         """
@@ -833,7 +833,29 @@ class Axes(maxes.Axes):
         self.add_artist(patch)
         return patch
 
-    def _add_inset(
+    def _add_guide_panel(self, loc='fill', align='center', **kwargs):
+        """
+        Add a panel to be filled by an "outer" colorbar or legend.
+        """
+        # WARNING: Hide content but 1) do not use ax.set_visible(False) so that
+        # tight layout will include legend and colorbar and 2) do not use
+        # ax.clear() so that top panel title and a-b-c label can remain.
+        if loc in ('left', 'right', 'top', 'bottom'):
+            ax = self.panel_axes(loc, filled=True, **kwargs)
+        elif loc == 'fill':
+            ax = self
+        else:
+            raise ValueError(f'Invalid filled panel location {loc!r}.')
+        for s in ax.spines.values():
+            s.set_visible(False)
+        ax.xaxis.set_visible(False)
+        ax.yaxis.set_visible(False)
+        ax.patch.set_facecolor('none')
+        ax._panel_hidden = True
+        ax._panel_align.add(align)
+        return ax
+
+    def _add_inset_axes(
         self, bounds, transform=None, *, proj=None, projection=None,
         zoom=None, zoom_kw=None, zorder=None, **kwargs
     ):
@@ -949,13 +971,11 @@ class Axes(maxes.Axes):
         # NOTE: The inset axes function needs 'label' to know how to pad the box
         # TODO: Use seperate keywords for frame properties vs. colorbar edge properties?
         width = kwargs.pop('width', None)
-        if loc in ('left', 'right', 'top', 'bottom'):
-            self = self.panel_axes(loc, width=width, space=space, pad=pad, filled=True)
-            loc = 'fill'
-        if loc == 'fill':
+        if loc in ('fill', 'left', 'right', 'top', 'bottom'):
             kwargs['align'] = align
             extendsize = _not_none(extendsize, rc['colorbar.extend'])
-            cax, kwargs = self._parse_colorbar_filled(**kwargs)
+            ax = self._add_guide_panel(loc, width=width, space=space, pad=pad)
+            cax, kwargs = ax._parse_colorbar_filled(**kwargs)
         else:
             kwargs['label'] = label  # for frame calculations
             extendsize = _not_none(extendsize, rc['colorbar.insetextend'])
@@ -1040,7 +1060,7 @@ class Axes(maxes.Axes):
         # WARNING: Colorbar _ticker() internally makes dummy axis and updates view
         # limits. Here we apply actual axis rather than dummy, otherwise default nbins
         # of DiscreteLocator will not work. Not sure if this has side effects...
-        obj = cax._colorbar_fill = self.figure.colorbar(mappable, **kwargs)
+        obj = cax._colorbar_fill = cax.figure.colorbar(mappable, **kwargs)
         obj.minorlocator = minorlocator  # backwards compatibility
         obj.update_ticks = guides._update_ticks.__get__(obj)  # backwards compatibility
         if minorlocator is not None:
@@ -1120,24 +1140,20 @@ class Axes(maxes.Axes):
                 kwargs[key] = value
 
         # Generate and prepare the legend axes
-        # NOTE: Important to remove None valued args above for these setdefault calls
-        lax = self
-        if loc in ('left', 'right', 'top', 'bottom'):
-            lax = self.panel_axes(loc, width=width, space=space, pad=pad, filled=True)
-            loc = 'fill'
-        if loc == 'fill':
-            lax._hide_panel(align)
+        if loc in ('fill', 'left', 'right', 'top', 'bottom'):
+            lax = self._add_guide_panel(loc, width=width, space=space, pad=pad)
             kwargs.setdefault('borderaxespad', 0)
             if not frameon:
                 kwargs.setdefault('borderpad', 0)
             try:
-                loc = ALIGN_OPTS[lax._panel_side][align]
+                kwargs['loc'] = ALIGN_OPTS[lax._panel_side][align]
             except KeyError:
                 raise ValueError(f'Invalid align={align!r} for legend loc={loc!r}.')
         else:
+            lax = self
             pad = kwargs.pop('borderaxespad', pad)
+            kwargs['loc'] = loc  # simply pass to legend
             kwargs['borderaxespad'] = units(pad, 'em', fontsize=fontsize)
-        kwargs['loc'] = loc  # location passed to legend
 
         # Handle and text properties that are applied after-the-fact
         # NOTE: Set solid_capstyle to 'butt' so line does not extend past error bounds
@@ -1602,22 +1618,6 @@ class Axes(maxes.Axes):
         else:
             raise ValueError(f'Unknown transform {transform!r}.')
 
-    def _hide_panel(self, align='center'):
-        """
-        Hide axes contents but do *not* make the entire axes invisible. This
-        is used to fill "panels" surreptitiously added to the gridspec
-        for the purpose of drawing outer colorbars and legends.
-        """
-        # WARNING: Do not use self.clear in case we want to add a subplot
-        # title or a-b-c label above a colorbar or legend in a top panel
-        for s in self.spines.values():
-            s.set_visible(False)
-        self.xaxis.set_visible(False)
-        self.yaxis.set_visible(False)
-        self.patch.set_facecolor('none')
-        self._panel_hidden = True
-        self._panel_align.add(align)
-
     def _make_inset_locator(self, bounds, trans):
         """
         Return a locator that determines child axes bounds.
@@ -1866,7 +1866,6 @@ class Axes(maxes.Axes):
         locator = self._make_inset_locator(bounds, self.transAxes)
         ax = cls(self.figure, locator(None, None).bounds, zorder=5)
         self.add_child_axes(ax)
-        self._hide_panel(align)
         ax.set_axes_locator(locator)
         ax.patch.set_facecolor('none')  # ignore axes.alpha application
 
@@ -1940,7 +1939,7 @@ class Axes(maxes.Axes):
         self.add_child_axes(ax)
         kw_frame, kwargs = self._parse_frame('colorbar', **kwargs)
         if frame:
-            frame = self._add_frame(*bounds_frame, fontsize=fontsize, **kw_frame)
+            frame = self._add_guide_frame(*bounds_frame, fontsize=fontsize, **kw_frame)
 
         # Handle default keyword args
         if orientation is not None and orientation != 'horizontal':
@@ -2137,7 +2136,7 @@ class Axes(maxes.Axes):
             xmax = max(bbox.xmax for bbox in bboxs)
             ymin = min(bbox.ymin for bbox in bboxs)
             ymax = max(bbox.ymax for bbox in bboxs)
-            self._add_frame(xmin, ymin, xmax - xmin, ymax - ymin, **kw_frame)
+            self._add_guide_frame(xmin, ymin, xmax - xmin, ymax - ymin, **kw_frame)
         return objs
 
     @staticmethod
@@ -2818,14 +2817,14 @@ class Axes(maxes.Axes):
         """
         %(axes.inset)s
         """
-        return self._add_inset(*args, **kwargs)
+        return self._add_inset_axes(*args, **kwargs)
 
     @docstring._snippet_manager
     def inset_axes(self, *args, **kwargs):
         """
         %(axes.inset)s
         """
-        return self._add_inset(*args, **kwargs)
+        return self._add_inset_axes(*args, **kwargs)
 
     @docstring._snippet_manager
     def indicate_inset_zoom(self, **kwargs):
