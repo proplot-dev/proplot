@@ -2812,6 +2812,14 @@ class Axes(maxes.Axes):
         ]
         return artists
 
+    def set_prop_cycle(self, *args, **kwargs):
+        # Silent override. This is a strict superset of matplotlib functionality
+        # with one exception: you cannot use e.g. set_prop_cycle('color', color_list).
+        # Instead keyword args are required (but note naked positional arguments
+        # are assumed color arguments). Cycles are still validated in rcsetup.cycler()
+        cycle = self._active_cycle = constructor.Cycle(*args, **kwargs)
+        return super().set_prop_cycle(cycle)  # set the property cycler after validation
+
     @docstring._snippet_manager
     def inset(self, *args, **kwargs):
         """
