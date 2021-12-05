@@ -876,11 +876,11 @@ class Axes(maxes.Axes):
         # WARNING: Hide content but 1) do not use ax.set_visible(False) so that
         # tight layout will include legend and colorbar and 2) do not use
         # ax.clear() so that top panel title and a-b-c label can remain.
+        bbox = _align_bbox(align, length)
         if loc == 'fill':
             ax = self
         elif loc in ('left', 'right', 'top', 'bottom'):
             ax = None
-            bbox = _align_bbox(align, length)
             for pax in self._panel_dict[loc]:
                 if not pax._panel_hidden or align in pax._panel_align:
                     continue
