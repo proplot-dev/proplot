@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Utilities for processing data passed to plotting commands.
+Utilities for processing input data passed to plotting commands.
 """
 import functools
 import sys

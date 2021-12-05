@@ -37,7 +37,7 @@ from ..internals import (
     context,
     docstring,
     guides,
-    process,
+    inputs,
     warnings,
 )
 from . import base
@@ -1305,21 +1305,21 @@ class PlotAxes(base.Axes):
         # Negative component
         yneg = list(ys)  # copy
         if use_zero:  # filter bar heights
-            yneg[0] = process._safe_mask(ys[0] < 0, ys[0])
+            yneg[0] = inputs._safe_mask(ys[0] < 0, ys[0])
         elif use_where:  # apply fill_between mask
             kwargs['where'] = ys[1] < ys[0]
         else:
-            yneg = process._safe_mask(ys[1] < ys[0], *ys)
+            yneg = inputs._safe_mask(ys[1] < ys[0], *ys)
         kwargs[colorkey] = _not_none(negcolor, rc['negcolor'])
         negobj = self._plot_native(name, x, *yneg, **kwargs)
         # Positive component
         ypos = list(ys)  # copy
         if use_zero:  # filter bar heights
-            ypos[0] = process._safe_mask(ys[0] >= 0, ys[0])
+            ypos[0] = inputs._safe_mask(ys[0] >= 0, ys[0])
         elif use_where:  # apply fill_between mask
             kwargs['where'] = ys[1] >= ys[0]
         else:
-            ypos = process._safe_mask(ys[1] >= ys[0], *ys)
+            ypos = inputs._safe_mask(ys[1] >= ys[0], *ys)
         kwargs[colorkey] = _not_none(poscolor, rc['poscolor'])
         posobj = self._plot_native(name, x, *ypos, **kwargs)
         return cbook.silent_list(type(negobj).__name__, (negobj, posobj))
@@ -1378,7 +1378,7 @@ class PlotAxes(base.Axes):
         labs = []
         array = obj.get_array()
         paths = obj.get_paths()
-        edgecolors = process._to_numpy_array(obj.get_edgecolors())
+        edgecolors = inputs._to_numpy_array(obj.get_edgecolors())
         if len(edgecolors) == 1:
             edgecolors = np.repeat(edgecolors, len(array), axis=0)
         for i, (path, value) in enumerate(zip(paths, array)):
@@ -1534,7 +1534,7 @@ class PlotAxes(base.Axes):
         ex, ey = (x, y) if vert else (y, x)
         eobjs = []
         if showbars:  # noqa: E501
-            edata, _ = process._dist_range(
+            edata, _ = inputs._dist_range(
                 y, distribution,
                 stds=barstds, pctiles=barpctiles, errdata=bardata,
                 stds_default=(-3, 3), pctiles_default=(0, 100),
@@ -1543,7 +1543,7 @@ class PlotAxes(base.Axes):
                 obj = self.errorbar(ex, ey, **barprops, **{sy + 'err': edata})
                 eobjs.append(obj)
         if showboxes:  # noqa: E501
-            edata, _ = process._dist_range(
+            edata, _ = inputs._dist_range(
                 y, distribution,
                 stds=boxstds, pctiles=boxpctiles, errdata=boxdata,
                 stds_default=(-1, 1), pctiles_default=(25, 75),
@@ -1611,7 +1611,7 @@ class PlotAxes(base.Axes):
         eobjs = []
         fill = self.fill_between if vert else self.fill_betweenx
         if drawfade:
-            edata, label = process._dist_range(
+            edata, label = inputs._dist_range(
                 y, distribution,
                 stds=fadestds, pctiles=fadepctiles, errdata=fadedata,
                 stds_default=(-3, 3), pctiles_default=(0, 100),
@@ -1621,7 +1621,7 @@ class PlotAxes(base.Axes):
                 eobj = fill(x, *edata, label=label, **fadeprops)
                 eobjs.append(eobj)
         if drawshade:
-            edata, label = process._dist_range(
+            edata, label = inputs._dist_range(
                 y, distribution,
                 stds=shadestds, pctiles=shadepctiles, errdata=shadedata,
                 stds_default=(-2, 2), pctiles_default=(10, 90),
@@ -1693,7 +1693,7 @@ class PlotAxes(base.Axes):
         input coordinates. This is used to copy `bar` behavior to `area` and `lines`.
         """
         for sides in args:
-            min_, max_ = process._safe_range(sides)
+            min_, max_ = inputs._safe_range(sides)
             if min_ is None or max_ is None:
                 continue
             for obj in guides._iter_iterables(objs):
@@ -1732,7 +1732,7 @@ class PlotAxes(base.Axes):
         try:
             # Get centers and masks
             if to_centers and z.ndim == 2:
-                x, y = process._to_centers(x, y, z)
+                x, y = inputs._to_centers(x, y, z)
             if not self.get_autoscalex_on():
                 xlim = self.get_xlim()
                 xmask = (x >= min(xlim)) & (x <= max(xlim))
@@ -1779,7 +1779,7 @@ class PlotAxes(base.Axes):
                 # Reset the y data limits
                 xmin, xmax = sorted(self.get_xlim())
                 mask = (x >= xmin) & (x <= xmax)
-                ymin, ymax = process._safe_range(process._safe_mask(mask, y))
+                ymin, ymax = inputs._safe_range(inputs._safe_mask(mask, y))
                 convert = self.convert_yunits  # handle datetime, pint units
                 if ymin is not None:
                     trans.y0 = extents[1] = min(convert(ymin), extents[1])
@@ -1790,7 +1790,7 @@ class PlotAxes(base.Axes):
                 # Reset the x data limits
                 ymin, ymax = sorted(self.get_ylim())
                 mask = (y >= ymin) & (y <= ymax)
-                xmin, xmax = process._safe_range(process._safe_mask(mask, x))
+                xmin, xmax = inputs._safe_range(inputs._safe_mask(mask, x))
                 convert = self.convert_xunits  # handle datetime, pint units
                 if xmin is not None:
                     trans.x0 = extents[0] = min(convert(xmin), extents[0])
@@ -1835,7 +1835,7 @@ class PlotAxes(base.Axes):
         raggd = any(getattr(y, 'dtype', None) == 'object' for y in ys)
         xaxis = 0 if raggd else 1 if dists or not autoy else 0
         if autox and x is None:
-            x = process._meta_labels(y, axis=xaxis)  # use the first one
+            x = inputs._meta_labels(y, axis=xaxis)  # use the first one
 
         # Retrieve the labels. We only want default legend labels if this is an
         # object with 'title' metadata and/or the coords are string.
@@ -1844,10 +1844,10 @@ class PlotAxes(base.Axes):
         if autolabels and labels is None:
             laxis = 0 if not autox and not autoy else xaxis if not autoy else xaxis + 1
             if laxis >= y.ndim:
-                labels = process._meta_title(y)
+                labels = inputs._meta_title(y)
             else:
-                labels = process._meta_labels(y, axis=laxis, always=False)
-            notitle = not process._meta_title(labels)
+                labels = inputs._meta_labels(y, axis=laxis, always=False)
+            notitle = not inputs._meta_title(labels)
             if labels is None:
                 pass
             elif notitle and not any(isinstance(_, str) for _ in labels):
@@ -1856,13 +1856,13 @@ class PlotAxes(base.Axes):
         # Apply the labels or values
         if labels is not None:
             if autovalues:
-                kwargs['values'] = process._to_numpy_array(labels)
+                kwargs['values'] = inputs._to_numpy_array(labels)
             elif autolabels:
-                kwargs['labels'] = process._to_numpy_array(labels)
+                kwargs['labels'] = inputs._to_numpy_array(labels)
 
         # Apply title for legend or colorbar that uses the labels or values
         if autoguide and autoformat:
-            title = process._meta_title(labels)
+            title = inputs._meta_title(labels)
             if title:  # safely update legend_kw and colorbar_kw
                 guides._guide_kw_to_arg('legend', kwargs, title=title)
                 guides._guide_kw_to_arg('colorbar', kwargs, label=title)
@@ -1873,14 +1873,14 @@ class PlotAxes(base.Axes):
         sx, sy = 'xy' if vert else 'yx'
         kw_format = {}
         if autox and autoformat:  # 'x' axis
-            title = process._meta_title(x)
+            title = inputs._meta_title(x)
             if title:
                 axis = getattr(self, sx + 'axis')
                 if axis.isDefault_label:
                     kw_format[sx + 'label'] = title
         if autoy and autoformat:  # 'y' axis
             sy = sx if zerox else sy  # hist() 'y' values are along 'x' axis
-            title = process._meta_title(y)
+            title = inputs._meta_title(y)
             if title:
                 axis = getattr(self, sy + 'axis')
                 if axis.isDefault_label:
@@ -1889,15 +1889,15 @@ class PlotAxes(base.Axes):
         # Convert string-type coordinates
         # NOTE: This should even allow qualitative string input to hist()
         if autox:
-            x, kw_format = process._meta_coords(x, which=sx, **kw_format)
+            x, kw_format = inputs._meta_coords(x, which=sx, **kw_format)
         if autoy:
-            *ys, kw_format = process._meta_coords(*ys, which=sy, **kw_format)
+            *ys, kw_format = inputs._meta_coords(*ys, which=sy, **kw_format)
         descending = (
             autox
             and autoreverse
             and x.ndim == 1
             and x.size > 1
-            and np.all(np.sign(np.diff(process._to_numpy_array(x))) == -1)
+            and np.all(np.sign(np.diff(inputs._to_numpy_array(x))) == -1)
         )
         if descending and getattr(self, f'get_autoscale{sx}_on')():
             kw_format[sx + 'reverse'] = True
@@ -1910,9 +1910,9 @@ class PlotAxes(base.Axes):
         # WARNING: Most methods that accept 2D arrays use columns of data, but when
         # pandas DataFrame specifically is passed to hist, boxplot, or violinplot, rows
         # of data assumed! Converting to ndarray necessary.
-        ys = tuple(map(process._to_numpy_array, ys))
+        ys = tuple(map(inputs._to_numpy_array, ys))
         if x is not None:  # pie() and hist()
-            x = process._to_numpy_array(x)
+            x = inputs._to_numpy_array(x)
         return (x, *ys, kwargs)
 
     def _parse_1d_plot(self, x, *ys, **kwargs):
@@ -1930,17 +1930,17 @@ class PlotAxes(base.Axes):
                 ys = (np.array([0.0]), ys[1])  # user input keyword 'y2' but no y1
         if any(y is None for y in ys):
             raise ValueError('Missing required data array argument.')
-        ys = tuple(map(process._to_duck_array, ys))
+        ys = tuple(map(inputs._to_duck_array, ys))
         if x is not None:
-            x = process._to_duck_array(x)
+            x = inputs._to_duck_array(x)
         x, *ys, kwargs = self._parse_1d_format(x, *ys, zerox=zerox, **kwargs)
 
         # Geographic corrections
         if self._name == 'cartopy' and isinstance(kwargs.get('transform'), PlateCarree):  # noqa: E501
-            x, *ys = process._geo_cartopy_1d(x, *ys)
+            x, *ys = inputs._geo_cartopy_1d(x, *ys)
         elif self._name == 'basemap' and kwargs.get('latlon', None):
             xmin, xmax = self._lonaxis.get_view_interval()
-            x, *ys = process._geo_basemap_1d(x, *ys, xmin=xmin, xmax=xmax)
+            x, *ys = inputs._geo_basemap_1d(x, *ys, xmin=xmin, xmax=xmax)
 
         return (x, *ys, kwargs)
 
@@ -1956,11 +1956,11 @@ class PlotAxes(base.Axes):
         if x is None and y is None:
             z = zs[0]
             if z.ndim == 1:
-                x = process._meta_labels(z, axis=0)
+                x = inputs._meta_labels(z, axis=0)
                 y = np.zeros(z.shape)  # default barb() and quiver() behavior in mpl
             else:
-                x = process._meta_labels(z, axis=1)
-                y = process._meta_labels(z, axis=0)
+                x = inputs._meta_labels(z, axis=1)
+                y = inputs._meta_labels(z, axis=0)
 
         # Apply labels and XY axis settings
         if self._name == 'cartesian':
@@ -1969,21 +1969,21 @@ class PlotAxes(base.Axes):
             kw_format = {}
             if autoformat:
                 for s, d in zip('xy', (x, y)):
-                    title = process._meta_title(d)
+                    title = inputs._meta_title(d)
                     if title:
                         axis = getattr(self, s + 'axis')
                         if axis.isDefault_label:
                             kw_format[s + 'label'] = title
 
             # Handle string-type coordinates
-            x, kw_format = process._meta_coords(x, which='x', **kw_format)
-            y, kw_format = process._meta_coords(y, which='y', **kw_format)
+            x, kw_format = inputs._meta_coords(x, which='x', **kw_format)
+            y, kw_format = inputs._meta_coords(y, which='y', **kw_format)
             for s, d in zip('xy', (x, y)):
                 descending = (
                     autoreverse
                     and d.ndim == 1
                     and d.size > 1
-                    and np.all(np.sign(np.diff(process._to_numpy_array(d))) == -1)
+                    and np.all(np.sign(np.diff(inputs._to_numpy_array(d))) == -1)
                 )
                 if descending and getattr(self, f'get_autoscale{s}_on')():
                     kw_format[s + 'reverse'] = True
@@ -1994,15 +1994,15 @@ class PlotAxes(base.Axes):
 
         # Apply title for legend or colorbar
         if autoguide and autoformat:
-            title = process._meta_title(zs[0])
+            title = inputs._meta_title(zs[0])
             if title:  # safely update legend_kw and colorbar_kw
                 guides._guide_kw_to_arg('legend', kwargs, title=title)
                 guides._guide_kw_to_arg('colorbar', kwargs, label=title)
 
         # Finally strip metadata
-        x = process._to_numpy_array(x)
-        y = process._to_numpy_array(y)
-        zs = tuple(map(process._to_numpy_array, zs))
+        x = inputs._to_numpy_array(x)
+        y = inputs._to_numpy_array(y)
+        zs = tuple(map(inputs._to_numpy_array, zs))
         return (x, y, *zs, kwargs)
 
     def _parse_2d_plot(
@@ -2018,11 +2018,11 @@ class PlotAxes(base.Axes):
             x, y, zs = None, None, (x, y)[:len(zs)]
         if any(z is None for z in zs):
             raise ValueError('Missing required data array argument(s).')
-        zs = tuple(process._to_duck_array(z, strip_units=True) for z in zs)
+        zs = tuple(inputs._to_duck_array(z, strip_units=True) for z in zs)
         if x is not None:
-            x = process._to_duck_array(x)
+            x = inputs._to_duck_array(x)
         if y is not None:
-            y = process._to_duck_array(y)
+            y = inputs._to_duck_array(y)
         if order is not None:
             if not isinstance(order, str) or order not in 'CF':
                 raise ValueError(f"Invalid order={order!r}. Options are 'C' or 'F'.")
@@ -2038,18 +2038,18 @@ class PlotAxes(base.Axes):
         x, y, *zs, kwargs = self._parse_2d_format(x, y, *zs, **kwargs)
         if edges:
             # NOTE: These functions quitely pass through 1D inputs, e.g. barb data
-            x, y = process._to_edges(x, y, zs[0])
+            x, y = inputs._to_edges(x, y, zs[0])
         else:
-            x, y = process._to_centers(x, y, zs[0])
+            x, y = inputs._to_centers(x, y, zs[0])
 
         # Geographic corrections
         if allow1d:
             pass
         elif self._name == 'cartopy' and isinstance(kwargs.get('transform'), PlateCarree):  # noqa: E501
-            x, y, *zs = process._geo_cartopy_2d(x, y, *zs, globe=globe)
+            x, y, *zs = inputs._geo_cartopy_2d(x, y, *zs, globe=globe)
         elif self._name == 'basemap' and kwargs.get('latlon', None):
             xmin, xmax = self._lonaxis.get_view_interval()
-            x, y, *zs = process._geo_basemap_2d(x, y, *zs, xmin=xmin, xmax=xmax, globe=globe)  # noqa: E501
+            x, y, *zs = inputs._geo_basemap_2d(x, y, *zs, xmin=xmin, xmax=xmax, globe=globe)  # noqa: E501
             x, y = np.meshgrid(x, y)  # WARNING: required always
 
         return (x, y, *zs, kwargs)
@@ -2628,10 +2628,10 @@ class PlotAxes(base.Axes):
                 continue
             if z.ndim > 2:  # e.g. imshow data
                 continue
-            z = process._to_numpy_array(z)
+            z = inputs._to_numpy_array(z)
             if inbounds and x is not None and y is not None:  # ignore if None coords
                 z = self._inbounds_vlim(x, y, z, to_centers=to_centers)
-            imin, imax = process._safe_range(z, pmin, pmax)
+            imin, imax = inputs._safe_range(z, pmin, pmax)
             if automin and imin is not None:
                 vmins.append(imin)
             if automax and imax is not None:
@@ -2685,7 +2685,7 @@ class PlotAxes(base.Axes):
         kws, extents = self._inbounds_extent(**kws)
         for xs, ys, fmt in self._iter_arg_pairs(*pairs):
             xs, ys, kw = self._parse_1d_plot(xs, ys, vert=vert, **kws)
-            ys, kw = process._dist_reduce(ys, **kw)
+            ys, kw = inputs._dist_reduce(ys, **kw)
             guide_kw = _pop_params(kw, self._update_guide)  # after standardize
             for _, n, x, y, kw in self._iter_arg_cols(xs, ys, **kw):
                 kw = self._parse_cycle(n, **kw)
@@ -2720,7 +2720,7 @@ class PlotAxes(base.Axes):
         """
         return self.plotx(*args, **kwargs)
 
-    @process._preprocess_args('x', 'y', allow_extra=True)
+    @inputs._preprocess_args('x', 'y', allow_extra=True)
     @docstring._concatenate_inherited
     @docstring._snippet_manager
     def plot(self, *args, **kwargs):
@@ -2730,7 +2730,7 @@ class PlotAxes(base.Axes):
         kwargs = _parse_vert(default_vert=True, **kwargs)
         return self._apply_plot(*args, **kwargs)
 
-    @process._preprocess_args('y', 'x', allow_extra=True)
+    @inputs._preprocess_args('y', 'x', allow_extra=True)
     @docstring._snippet_manager
     def plotx(self, *args, **kwargs):
         """
@@ -2771,7 +2771,7 @@ class PlotAxes(base.Axes):
         self._update_guide(objs, **guide_kw)
         return cbook.silent_list('Line2D', objs)  # always return list
 
-    @process._preprocess_args('x', 'y', allow_extra=True)
+    @inputs._preprocess_args('x', 'y', allow_extra=True)
     @docstring._concatenate_inherited
     @docstring._snippet_manager
     def step(self, *args, **kwargs):
@@ -2781,7 +2781,7 @@ class PlotAxes(base.Axes):
         kwargs = _parse_vert(default_vert=True, **kwargs)
         return self._apply_step(*args, **kwargs)
 
-    @process._preprocess_args('y', 'x', allow_extra=True)
+    @inputs._preprocess_args('y', 'x', allow_extra=True)
     @docstring._snippet_manager
     def stepx(self, *args, **kwargs):
         """
@@ -2836,7 +2836,7 @@ class PlotAxes(base.Axes):
         self._update_guide(obj, **guide_kw)
         return obj
 
-    @process._preprocess_args('x', 'y')
+    @inputs._preprocess_args('x', 'y')
     @docstring._concatenate_inherited
     @docstring._snippet_manager
     def stem(self, *args, **kwargs):
@@ -2846,7 +2846,7 @@ class PlotAxes(base.Axes):
         kwargs = _parse_vert(default_orientation='vertical', **kwargs)
         return self._apply_stem(*args, **kwargs)
 
-    @process._preprocess_args('x', 'y')
+    @inputs._preprocess_args('x', 'y')
     @docstring._snippet_manager
     def stemx(self, *args, **kwargs):
         """
@@ -2855,7 +2855,7 @@ class PlotAxes(base.Axes):
         kwargs = _parse_vert(default_orientation='horizontal', **kwargs)
         return self._apply_stem(*args, **kwargs)
 
-    @process._preprocess_args('x', 'y', ('c', 'color', 'colors', 'values'))
+    @inputs._preprocess_args('x', 'y', ('c', 'color', 'colors', 'values'))
     @docstring._snippet_manager
     def parametric(self, x, y, c, *, interp=0, scalex=True, scaley=True, **kwargs):
         """
@@ -2872,7 +2872,7 @@ class PlotAxes(base.Axes):
         label = _not_none(**{key: kw.pop(key, None) for key in ('label', 'value')})
         x, y, kw = self._parse_1d_plot(x, y, values=c, autovalues=True, autoreverse=False, **kw)  # noqa: E501
         c = kw.pop('values', None)  # permits auto-inferring values
-        c = np.arange(y.size) if c is None else process._to_numpy_array(c)
+        c = np.arange(y.size) if c is None else inputs._to_numpy_array(c)
         if (
             c.size in (3, 4)
             and y.size not in (3, 4)
@@ -2883,7 +2883,7 @@ class PlotAxes(base.Axes):
 
         # Interpret color values
         # NOTE: This permits string label input for 'values'
-        c, colorbar_kw = process._meta_coords(c, which='')  # convert string labels
+        c, colorbar_kw = inputs._meta_coords(c, which='')  # convert string labels
         if c.size == 1 and y.size != 1:
             c = np.arange(y.size)  # convert dummy label for single color
         guides._guide_kw_to_arg('colorbar', kw, **colorbar_kw)
@@ -2988,7 +2988,7 @@ class PlotAxes(base.Axes):
         )
 
     # WARNING: breaking change from native 'ymin' and 'ymax'
-    @process._preprocess_args('x', 'y1', 'y2', ('c', 'color', 'colors'))
+    @inputs._preprocess_args('x', 'y1', 'y2', ('c', 'color', 'colors'))
     @docstring._snippet_manager
     def vlines(self, *args, **kwargs):
         """
@@ -2998,7 +2998,7 @@ class PlotAxes(base.Axes):
         return self._apply_lines(*args, **kwargs)
 
     # WARNING: breaking change from native 'xmin' and 'xmax'
-    @process._preprocess_args('y', 'x1', 'x2', ('c', 'color', 'colors'))
+    @inputs._preprocess_args('y', 'x1', 'x2', ('c', 'color', 'colors'))
     @docstring._snippet_manager
     def hlines(self, *args, **kwargs):
         """
@@ -3016,7 +3016,7 @@ class PlotAxes(base.Axes):
         default_size = True
         if np.iterable(s):
             s = np.asarray(s)
-            if not process._is_categorical(s):
+            if not inputs._is_categorical(s):
                 default_size = False
             else:
                 s = s.copy()
@@ -3030,7 +3030,7 @@ class PlotAxes(base.Axes):
         if not absolute_size or smin is not None or smax is not None:
             smin = _not_none(smin, 1)
             smax = _not_none(smax, rc['lines.markersize'] ** 2)
-            smin_true, smax_true = process._safe_range(s)
+            smin_true, smax_true = inputs._safe_range(s)
             smin_true = _not_none(smin_true, smin)  # fallback behavior
             smax_true = _not_none(smax_true, smax)
             s = smin + (smax - smin) * (s - smin_true) / (smax_true - smin_true)
@@ -3059,7 +3059,7 @@ class PlotAxes(base.Axes):
         kw.update(_pop_props(kw, 'collection'))
         kw, extents = self._inbounds_extent(inbounds=inbounds, **kw)
         xs, ys, kw = self._parse_1d_plot(xs, ys, vert=vert, autoreverse=False, **kw)
-        ys, kw = process._dist_reduce(ys, **kw)
+        ys, kw = inputs._dist_reduce(ys, **kw)
         ss, kw = self._parse_markersize(ss, **kw)  # parse 's'
         infer_rgb = True
         if cc is not None and not isinstance(cc, str):
@@ -3094,7 +3094,7 @@ class PlotAxes(base.Axes):
     # NOTE: Matplotlib internally applies scatter 'c' arguments as the
     # 'facecolors' argument to PathCollection. So perfectly reasonable to
     # point both 'color' and 'facecolor' arguments to the 'c' keyword here.
-    @process._preprocess_args(
+    @inputs._preprocess_args(
         'x',
         'y',
         _get_aliases('collection', 'sizes'),
@@ -3110,7 +3110,7 @@ class PlotAxes(base.Axes):
         kwargs = _parse_vert(default_vert=True, **kwargs)
         return self._apply_scatter(*args, **kwargs)
 
-    @process._preprocess_args(
+    @inputs._preprocess_args(
         'y',
         'x',
         _get_aliases('collection', 'sizes'),
@@ -3186,7 +3186,7 @@ class PlotAxes(base.Axes):
         """
         return self.fill_betweenx(*args, **kwargs)
 
-    @process._preprocess_args('x', 'y1', 'y2', 'where')
+    @inputs._preprocess_args('x', 'y1', 'y2', 'where')
     @docstring._concatenate_inherited
     @docstring._snippet_manager
     def fill_between(self, *args, **kwargs):
@@ -3196,7 +3196,7 @@ class PlotAxes(base.Axes):
         kwargs = _parse_vert(default_vert=True, **kwargs)
         return self._apply_fill(*args, **kwargs)
 
-    @process._preprocess_args('y', 'x1', 'x2', 'where')
+    @inputs._preprocess_args('y', 'x1', 'x2', 'where')
     @docstring._concatenate_inherited
     @docstring._snippet_manager
     def fill_betweenx(self, *args, **kwargs):
@@ -3216,7 +3216,7 @@ class PlotAxes(base.Axes):
         """
         # WARNING: This will fail for non-numeric non-datetime64 singleton
         # datatypes but this is good enough for vast majority of cases.
-        x_test = process._to_numpy_array(x)
+        x_test = inputs._to_numpy_array(x)
         if len(x_test) >= 2:
             x_step = x_test[1:] - x_test[:-1]
             x_step = np.concatenate((x_step, x_step[-1:]))
@@ -3250,7 +3250,7 @@ class PlotAxes(base.Axes):
         b0 = 0
         objs = []
         kw.update(_pop_props(kw, 'patch'))
-        hs, kw = process._dist_reduce(hs, **kw)
+        hs, kw = inputs._dist_reduce(hs, **kw)
         guide_kw = _pop_params(kw, self._update_guide)
         for i, n, x, h, w, b, kw in self._iter_arg_cols(xs, hs, ws, bs, **kw):
             kw = self._parse_cycle(n, **kw)
@@ -3283,7 +3283,7 @@ class PlotAxes(base.Axes):
             else cbook.silent_list('BarContainer', objs)
         )
 
-    @process._preprocess_args('x', 'height', 'width', 'bottom')
+    @inputs._preprocess_args('x', 'height', 'width', 'bottom')
     @docstring._concatenate_inherited
     @docstring._snippet_manager
     def bar(self, *args, **kwargs):
@@ -3295,7 +3295,7 @@ class PlotAxes(base.Axes):
 
     # WARNING: Swap 'height' and 'width' here so that they are always relative
     # to the 'tall' axis. This lets people always pass 'width' as keyword
-    @process._preprocess_args('y', 'height', 'width', 'left')
+    @inputs._preprocess_args('y', 'height', 'width', 'left')
     @docstring._concatenate_inherited
     @docstring._snippet_manager
     def barh(self, *args, **kwargs):
@@ -3307,7 +3307,7 @@ class PlotAxes(base.Axes):
 
     # WARNING: 'labels' and 'colors' no longer passed through `data` (seems like
     # extremely niche usage... `data` variables should be data-like)
-    @process._preprocess_args('x', 'explode')
+    @inputs._preprocess_args('x', 'explode')
     @docstring._concatenate_inherited
     @docstring._snippet_manager
     def pie(self, x, explode, *, labelpad=None, labeldistance=None, **kwargs):
@@ -3400,7 +3400,7 @@ class PlotAxes(base.Axes):
         kw.setdefault('positions', x)
         if means:
             kw['showmeans'] = kw['meanline'] = True
-        y = process._dist_clean(y)
+        y = inputs._dist_clean(y)
         artists = self._plot_native('boxplot', y, vert=vert, **kw)
         artists = artists or {}  # necessary?
         artists = {
@@ -3459,7 +3459,7 @@ class PlotAxes(base.Axes):
         """
         return self.boxploth(*args, **kwargs)
 
-    @process._preprocess_args('positions', 'y')
+    @inputs._preprocess_args('positions', 'y')
     @docstring._concatenate_inherited
     @docstring._snippet_manager
     def boxplot(self, *args, **kwargs):
@@ -3469,7 +3469,7 @@ class PlotAxes(base.Axes):
         kwargs = _parse_vert(default_vert=True, **kwargs)
         return self._apply_boxplot(*args, **kwargs)
 
-    @process._preprocess_args('positions', 'x')
+    @inputs._preprocess_args('positions', 'x')
     @docstring._snippet_manager
     def boxploth(self, *args, **kwargs):
         """
@@ -3515,12 +3515,12 @@ class PlotAxes(base.Axes):
             fillcolor = [fillcolor] * x.size
 
         # Plot violins
-        y, kw = process._dist_reduce(y, means=means, medians=medians, **kw)
+        y, kw = inputs._dist_reduce(y, means=means, medians=medians, **kw)
         *eb, kw = self._add_error_bars(x, y, vert=vert, default_boxstds=True, default_marker=True, **kw)  # noqa: E501
         kw.pop('labels', None)  # already applied in _parse_1d_plot
         kw.setdefault('positions', x)  # coordinates passed as keyword
         y = _not_none(kw.pop('distribution'), y)  # i.e. was reduced
-        y = process._dist_clean(y)
+        y = inputs._dist_clean(y)
         artists = self._plot_native(
             'violinplot', y, vert=vert,
             showmeans=False, showmedians=False, showextrema=False, **kw
@@ -3562,7 +3562,7 @@ class PlotAxes(base.Axes):
         """
         return self.violinploth(*args, **kwargs)
 
-    @process._preprocess_args('positions', 'y')
+    @inputs._preprocess_args('positions', 'y')
     @docstring._concatenate_inherited
     @docstring._snippet_manager
     def violinplot(self, *args, **kwargs):
@@ -3572,7 +3572,7 @@ class PlotAxes(base.Axes):
         kwargs = _parse_vert(default_vert=True, **kwargs)
         return self._apply_violinplot(*args, **kwargs)
 
-    @process._preprocess_args('positions', 'x')
+    @inputs._preprocess_args('positions', 'x')
     @docstring._snippet_manager
     def violinploth(self, *args, **kwargs):
         """
@@ -3625,7 +3625,7 @@ class PlotAxes(base.Axes):
         self._update_guide(res, **guide_kw)
         return obj
 
-    @process._preprocess_args('x', 'bins', keywords='weights')
+    @inputs._preprocess_args('x', 'bins', keywords='weights')
     @docstring._concatenate_inherited
     @docstring._snippet_manager
     def hist(self, *args, **kwargs):
@@ -3635,7 +3635,7 @@ class PlotAxes(base.Axes):
         kwargs = _parse_vert(default_orientation='vertical', **kwargs)
         return self._apply_hist(*args, **kwargs)
 
-    @process._preprocess_args('y', 'bins', keywords='weights')
+    @inputs._preprocess_args('y', 'bins', keywords='weights')
     @docstring._snippet_manager
     def histh(self, *args, **kwargs):
         """
@@ -3644,7 +3644,7 @@ class PlotAxes(base.Axes):
         kwargs = _parse_vert(default_orientation='horizontal', **kwargs)
         return self._apply_hist(*args, **kwargs)
 
-    @process._preprocess_args('x', 'y', 'bins', keywords='weights')
+    @inputs._preprocess_args('x', 'y', 'bins', keywords='weights')
     @docstring._concatenate_inherited
     @docstring._snippet_manager
     def hist2d(self, x, y, bins, **kwargs):
@@ -3657,7 +3657,7 @@ class PlotAxes(base.Axes):
         return super().hist2d(x, y, default_discrete=False, **kwargs)
 
     # WARNING: breaking change from native 'C'
-    @process._preprocess_args('x', 'y', 'weights')
+    @inputs._preprocess_args('x', 'y', 'weights')
     @docstring._concatenate_inherited
     @docstring._snippet_manager
     def hexbin(self, x, y, weights, **kwargs):
@@ -3680,7 +3680,7 @@ class PlotAxes(base.Axes):
         self._update_guide(m, queue_colorbar=False, **guide_kw)
         return m
 
-    @process._preprocess_args('x', 'y', 'z')
+    @inputs._preprocess_args('x', 'y', 'z')
     @docstring._concatenate_inherited
     @docstring._snippet_manager
     def contour(self, x, y, z, **kwargs):
@@ -3701,7 +3701,7 @@ class PlotAxes(base.Axes):
         self._update_guide(m, queue_colorbar=False, **guide_kw)
         return m
 
-    @process._preprocess_args('x', 'y', 'z')
+    @inputs._preprocess_args('x', 'y', 'z')
     @docstring._concatenate_inherited
     @docstring._snippet_manager
     def contourf(self, x, y, z, **kwargs):
@@ -3725,7 +3725,7 @@ class PlotAxes(base.Axes):
         self._update_guide(m, queue_colorbar=False, **guide_kw)
         return m
 
-    @process._preprocess_args('x', 'y', 'z')
+    @inputs._preprocess_args('x', 'y', 'z')
     @docstring._concatenate_inherited
     @docstring._snippet_manager
     def pcolor(self, x, y, z, **kwargs):
@@ -3744,7 +3744,7 @@ class PlotAxes(base.Axes):
         self._update_guide(m, queue_colorbar=False, **guide_kw)
         return m
 
-    @process._preprocess_args('x', 'y', 'z')
+    @inputs._preprocess_args('x', 'y', 'z')
     @docstring._concatenate_inherited
     @docstring._snippet_manager
     def pcolormesh(self, x, y, z, **kwargs):
@@ -3763,7 +3763,7 @@ class PlotAxes(base.Axes):
         self._update_guide(m, queue_colorbar=False, **guide_kw)
         return m
 
-    @process._preprocess_args('x', 'y', 'z')
+    @inputs._preprocess_args('x', 'y', 'z')
     @docstring._concatenate_inherited
     @docstring._snippet_manager
     def pcolorfast(self, x, y, z, **kwargs):
@@ -3820,7 +3820,7 @@ class PlotAxes(base.Axes):
             )
         return obj
 
-    @process._preprocess_args('x', 'y', 'u', 'v', ('c', 'color', 'colors'))
+    @inputs._preprocess_args('x', 'y', 'u', 'v', ('c', 'color', 'colors'))
     @docstring._concatenate_inherited
     @docstring._snippet_manager
     def barbs(self, x, y, u, v, c, **kwargs):
@@ -3839,7 +3839,7 @@ class PlotAxes(base.Axes):
         m = self._plot_native('barbs', *a, **kw)
         return m
 
-    @process._preprocess_args('x', 'y', 'u', 'v', ('c', 'color', 'colors'))
+    @inputs._preprocess_args('x', 'y', 'u', 'v', ('c', 'color', 'colors'))
     @docstring._concatenate_inherited
     @docstring._snippet_manager
     def quiver(self, x, y, u, v, c, **kwargs):
@@ -3869,7 +3869,7 @@ class PlotAxes(base.Axes):
         return self.streamplot(*args, **kwargs)
 
     # WARNING: breaking change from native streamplot() fifth positional arg 'density'
-    @process._preprocess_args(
+    @inputs._preprocess_args(
         'x', 'y', 'u', 'v', ('c', 'color', 'colors'), keywords='start_points'
     )
     @docstring._concatenate_inherited
@@ -3891,7 +3891,7 @@ class PlotAxes(base.Axes):
         self._update_guide(m.lines, queue_colorbar=False, **guide_kw)  # use lines
         return m
 
-    @process._preprocess_args('x', 'y', 'z')
+    @inputs._preprocess_args('x', 'y', 'z')
     @docstring._concatenate_inherited
     @docstring._snippet_manager
     def tricontour(self, x, y, z, **kwargs):
@@ -3914,7 +3914,7 @@ class PlotAxes(base.Axes):
         self._update_guide(m, queue_colorbar=False, **guide_kw)
         return m
 
-    @process._preprocess_args('x', 'y', 'z')
+    @inputs._preprocess_args('x', 'y', 'z')
     @docstring._concatenate_inherited
     @docstring._snippet_manager
     def tricontourf(self, x, y, z, **kwargs):
@@ -3940,7 +3940,7 @@ class PlotAxes(base.Axes):
         self._update_guide(m, queue_colorbar=False, **guide_kw)
         return m
 
-    @process._preprocess_args('x', 'y', 'z')
+    @inputs._preprocess_args('x', 'y', 'z')
     @docstring._concatenate_inherited
     @docstring._snippet_manager
     def tripcolor(self, x, y, z, **kwargs):
@@ -3962,7 +3962,7 @@ class PlotAxes(base.Axes):
         return m
 
     # WARNING: breaking change from native 'X'
-    @process._preprocess_args('z')
+    @inputs._preprocess_args('z')
     @docstring._concatenate_inherited
     @docstring._snippet_manager
     def imshow(self, z, **kwargs):
@@ -3977,7 +3977,7 @@ class PlotAxes(base.Axes):
         return m
 
     # WARNING: breaking change from native 'Z'
-    @process._preprocess_args('z')
+    @inputs._preprocess_args('z')
     @docstring._concatenate_inherited
     @docstring._snippet_manager
     def matshow(self, z, **kwargs):
@@ -3988,7 +3988,7 @@ class PlotAxes(base.Axes):
         return super().matshow(z, **kwargs)
 
     # WARNING: breaking change from native 'Z'
-    @process._preprocess_args('z')
+    @inputs._preprocess_args('z')
     @docstring._concatenate_inherited
     @docstring._snippet_manager
     def spy(self, z, **kwargs):
@@ -4029,7 +4029,7 @@ class PlotAxes(base.Axes):
         # NOTE: Arrays here should have had metadata stripped by _parse_1d_plot
         # but could still be pint quantities that get processed by axis converter.
         n = max(
-            1 if not process._is_array(a) or a.ndim < 2 else a.shape[-1]
+            1 if not inputs._is_array(a) or a.ndim < 2 else a.shape[-1]
             for a in args
         )
         labels = _not_none(label=label, values=values, labels=labels)
@@ -4040,7 +4040,7 @@ class PlotAxes(base.Axes):
         if labels is not None:
             labels = [
                 str(_not_none(label, ''))
-                for label in process._to_numpy_array(labels)
+                for label in inputs._to_numpy_array(labels)
             ]
         else:
             labels = n * [None]
@@ -4050,7 +4050,7 @@ class PlotAxes(base.Axes):
             kw = kwargs.copy()
             kw['label'] = labels[i] or None
             a = tuple(
-                a if not process._is_array(a) or a.ndim < 2 else a[..., i] for a in args
+                a if not inputs._is_array(a) or a.ndim < 2 else a[..., i] for a in args
             )
             yield (i, n, *a, kw)
 

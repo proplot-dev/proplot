@@ -19,7 +19,7 @@ from . import (  # noqa: F401
     dependencies,
     docstring,
     guides,
-    process,
+    inputs,
     rcsetup,
     texts,
     warnings
