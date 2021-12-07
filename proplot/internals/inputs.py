@@ -515,12 +515,11 @@ def _meta_coords(*args, which='x', **kwargs):
     Return the index arrays associated with string coordinates and
     keyword arguments updated with index locators and formatters.
     """
-    # NOTE: Why FixedLocator and not IndexLocator? The latter requires plotting
-    # lines or else an error is raised... very strange.
+    # NOTE: Why FixedLocator and not IndexLocator? The ticks chosen by the latter
+    # depend on other plotted content.
     # NOTE: Why IndexFormatter and not FixedFormatter? The former ensures labels
     # correspond to indices while the latter can mysteriously truncate labels.
-    from matplotlib.ticker import NullLocator
-    from ..ticker import IndexLocator, IndexFormatter
+    from ..constuctor import Locator, Formatter
     res = []
     for data in args:
         data = _to_duck_array(data)
@@ -529,12 +528,12 @@ def _meta_coords(*args, which='x', **kwargs):
             continue
         if data.ndim > 1:
             raise ValueError('Non-1D string coordinate input is unsupported.')
-        idx = np.arange(len(data))
-        data = list(map(str, data))  # ensure all are strings
-        kwargs.setdefault(which + 'locator', IndexLocator(1, 0))
-        kwargs.setdefault(which + 'formatter', IndexFormatter(data))
-        kwargs.setdefault(which + 'minorlocator', NullLocator())
-        res.append(idx)
+        ticks = np.arange(len(data))
+        labels = list(map(str, data))
+        kwargs.setdefault(which + 'locator', Locator(ticks, index=False))
+        kwargs.setdefault(which + 'formatter', Formatter(labels, index=True))
+        kwargs.setdefault(which + 'minorlocator', Locator('null'))
+        res.append(ticks)  # use these as data coordinates
     return (*res, kwargs)
 
 
