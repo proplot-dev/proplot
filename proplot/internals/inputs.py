@@ -9,6 +9,7 @@ import numpy as np
 import numpy.ma as ma
 
 from . import ic  # noqa: F401
+from . import _not_none, warnings
 
 try:
     from cartopy.crs import PlateCarree
@@ -246,18 +247,15 @@ def _preprocess_args(*keys, keywords=None, allow_extra=True):
                 return func_native(*args, **kwargs)
             else:
                 # Impose default coordinate system
-                if (
-                    self._name == 'basemap'
-                    and name in BASEMAP_FUNCS
-                    and kwargs.get('latlon', None) is None
-                ):
-                    kwargs['latlon'] = True
-                if (
-                    self._name == 'cartopy'
-                    and name in CARTOPY_FUNCS
-                    and kwargs.get('transform', None) is None
-                ):
-                    kwargs['transform'] = PlateCarree()
+                from ..constructor import Proj
+                if self._name == 'basemap' and name in BASEMAP_FUNCS:
+                    if kwargs.get('latlon', None) is None:
+                        kwargs['latlon'] = True
+                if self._name == 'cartopy' and name in CARTOPY_FUNCS:
+                    if kwargs.get('transform', None) is None:
+                        kwargs['transform'] = PlateCarree()
+                    else:
+                        kwargs['transform'] = Proj(kwargs['transform'])
 
                 # Process data args
                 # NOTE: Raises error if there are more args than keys
@@ -310,7 +308,6 @@ def _dist_reduce(data, *, mean=None, means=None, median=None, medians=None, **kw
     distribution keyword argument for processing down the line.
     """
     # TODO: Permit 3D array with error dimension coming first
-    from . import _not_none, warnings
     means = _not_none(mean=mean, means=means)
     medians = _not_none(median=median, medians=medians)
     if means and medians:
@@ -347,7 +344,6 @@ def _dist_range(
     """
     # Parse stds arguments
     # NOTE: Have to guard against "truth value of an array is ambiguous" errors
-    from . import warnings
     if stds is True:
         stds = stds_default
     elif stds is False or stds is None:
@@ -624,8 +620,6 @@ def _meta_units(data):
     `pint.Quantity`. Format the latter with :rcraw:`unitformat`.
     """
     _load_objects()
-    from ..config import rc
-    from . import warnings
     # Get units from the attributes
     if ndarray is not DataArray and isinstance(data, DataArray):
         units = data.attrs.get('units', None)
@@ -634,6 +628,7 @@ def _meta_units(data):
             return units
     # Get units from the quantity
     if ndarray is not Quantity and isinstance(data, Quantity):
+        from ..config import rc
         fmt = rc.unitformat
         try:
             units = format(data.units, fmt)
