@@ -40,11 +40,11 @@ Write tests
 
 Most modern python packages have ``test_*.py`` scripts that are run by `pytest`
 via the `Travis Continuous Integration <https://travis-ci.com>`__ service
-whenever commits are pushed to the repository. Currently, proplot only tests
-the examples that appear on the website User Guide (see `.travis.yml`). While we
-try to make the examples comprehensive, this approach leaves out a lot of use
-cases and leaves the project more vulnerable to bugs. Adding tests is a
-*critical* item on our to-do list.
+whenever commits are pushed to the repository. Currently, automatic testing only
+includes the examples that appear on the website User Guide (see `.travis.yml`),
+and `Luke Davis <https://github.com/lukelbd>` runs additional tests manually on
+his machine. This approach leaves out many use cases and leaves the project more
+vulnerable to bugs. Adding tests is a *critical* item on our to-do list.
 
 If you can think of a useful test for proplot, feel free to submit a pull request.
 Your test will be used in the future.

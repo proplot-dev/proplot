@@ -31,10 +31,10 @@
 # Outer and inset locations
 # -------------------------
 #
-# Matplotlib supports drawing "inset" legends and "outer" colorbars using
-# the `loc` and `location` keyword arguments. However, "outer" legends are
-# only posssible using the somewhat counterintuitive `bbox_to_anchor` keyword
-# (see `this stackoverflow post <https://stackoverflow.com/q/4700614/4970632>`__)
+# Matplotlib supports drawing "inset" legends and "outer" colorbars using the `loc`
+# and `location` keyword arguments. However, "outer" legends are only posssible using
+# the somewhat counterintuitive `bbox_to_anchor` keyword (see `here
+# <https://matplotlib.org/stable/tutorials/intermediate/legend_guide.html#legend-location>`__)
 # and "inset" colorbars are not possible without manually creating and positioning
 # the associated axes. Proplot tries to improve this behavior:
 #
@@ -54,6 +54,7 @@
 #   (e.g., ``loc='upper right'`` or the shorthand ``loc='ur'``). Inset
 #   colorbars have optional background "frames" that can be configured
 #   with various `~proplot.axes.Axes.colorbar` keywords.
+# * Outer colorbars and legends can be aligned using the `align` keyword.
 
 # `~proplot.axes.Axes.colorbar` and `~proplot.axes.Axes.legend` also both accept
 # `space` and `pad` keywords. `space` controls the absolute separation of the
@@ -139,13 +140,13 @@ fig = pplt.figure(share=0, refwidth=2.3, suptitle='On-the-fly colorbar and legen
 data = (state.rand(30, 10) - 0.5).cumsum(axis=0)
 ax = fig.subplot(121, title='On-the-fly legend')
 ax.plot(  # add all at once
-    data[:, :5], lw=2, cycle='Blues1', cycle_kw={'ls': ('-', '--'), 'left': 0.1},
-    labels=labels, legend='l', legend_kw={'frame': False, 'ncols': 1}
+    data[:, :5], lw=2, cycle='Reds1', cycle_kw={'ls': ('-', '--'), 'left': 0.1},
+    labels=labels, legend='b', legend_kw={'title': 'legend title'}
 )
 for i in range(5):
     ax.plot(  # add one-by-one
-        data[:, 5 + i], lw=2, cycle='Reds1', cycle_kw={'ls': ('-', '--'), 'left': 0.1},
-        label=labels[i], legend='b', legend_kw={'title': 'legend title'},
+        data[:, 5 + i], label=labels[i], linewidth=2,
+        cycle='Blues1', cycle_kw={'N': 5, 'ls': ('-', '--'), 'left': 0.1},
         colorbar='ul', colorbar_kw={'label': 'colorbar from lines'}
     )
 
@@ -157,9 +158,8 @@ ax.contourf(
     colorbar_kw={'length': 0.8, 'label': 'colorbar label'},
 )
 ax.contour(
-    data, cmap='Mono_r', cmap_kw={'left': 0.05}, lw=1.5,
-    colorbar='r', colorbar_kw={'label': 'colorbar label', 'length': 0.7},
-    label='contour', legend='ul', legend_kw={'label': 'legend from mappable'},
+    data, color='gray7', lw=1.5,
+    label='contour', legend='ul', legend_kw={'label': 'legend from contours'},
 )
 
 # %%
