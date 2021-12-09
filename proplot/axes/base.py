@@ -2828,6 +2828,7 @@ class Axes(maxes.Axes):
         artists = [
             artist for artist in super().get_default_bbox_extra_artists()
             if isinstance(artist, (maxes.Axes, maxis.Axis, mspines.Spine))
+            or not artist.get_clip_on()
             or not isinstance(artist.get_clip_path(), mtransforms.TransformedPatchPath)
             or artist.get_clip_path()._patch is not self.patch
         ]
