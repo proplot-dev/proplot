@@ -515,7 +515,7 @@ def _meta_coords(*args, which='x', **kwargs):
     # depend on other plotted content.
     # NOTE: Why IndexFormatter and not FixedFormatter? The former ensures labels
     # correspond to indices while the latter can mysteriously truncate labels.
-    from ..constuctor import Locator, Formatter
+    from ..constructor import Locator, Formatter
     res = []
     for data in args:
         data = _to_duck_array(data)
