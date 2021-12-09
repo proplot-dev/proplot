@@ -2,17 +2,48 @@
 """
 Internal utilities.
 """
-try:  # print debugging (used with internal modules)
-    from icecream import ic
-except ImportError:  # graceful fallback if IceCream isn't installed
-    ic = lambda *args: print(*args)  # noqa: E731
-
+# Import statements
 import inspect
 from numbers import Integral, Real
 
 import numpy as np
 from matplotlib import rcParams as rc_matplotlib
 
+try:  # print debugging (used with internal modules)
+    from icecream import ic
+except ImportError:  # graceful fallback if IceCream isn't installed
+    ic = lambda *args: print(*args)  # noqa: E731
+
+
+def _not_none(*args, default=None, **kwargs):
+    """
+    Return the first non-``None`` value. This is used with keyword arg aliases and
+    for setting default values. Use `kwargs` to issue warnings when multiple passed.
+    """
+    first = default
+    if args and kwargs:
+        raise ValueError('_not_none can only be used with args or kwargs.')
+    elif args:
+        for arg in args:
+            if arg is not None:
+                first = arg
+                break
+    elif kwargs:
+        for name, arg in list(kwargs.items()):
+            if arg is not None:
+                first = arg
+                break
+        kwargs = {name: arg for name, arg in kwargs.items() if arg is not None}
+        if len(kwargs) > 1:
+            warnings._warn_proplot(
+                f'Got conflicting or duplicate keyword arguments: {kwargs}. '
+                'Using the first keyword argument.'
+            )
+    return first
+
+
+# Internal import statements
+# WARNING: Must come after _not_none because this is leveraged inside other funcs
 from . import (  # noqa: F401
     benchmarks,
     context,
@@ -29,7 +60,7 @@ from . import (  # noqa: F401
 # Style aliases. We use this rather than matplotlib's normalize_kwargs and _alias_maps.
 # NOTE: We add aliases 'edgewidth' and 'fillcolor' for patch edges and faces
 # NOTE: Alias cannot appear as key or else _translate_kwargs will overwrite with None!
-ALIAS_MAPS = {
+_alias_maps = {
     'rgba': {
         'red': ('r',),
         'green': ('g',),
@@ -201,7 +232,7 @@ def _get_aliases(category, *keys):
     aliases = []
     for key in keys:
         aliases.append(key)
-        aliases.extend(ALIAS_MAPS[category][key])
+        aliases.extend(_alias_maps[category][key])
     return tuple(aliases)
 
 
@@ -213,7 +244,7 @@ def _kwargs_to_args(options, *args, allow_extra=False, **kwargs):
     nargs, nopts = len(args), len(options)
     if nargs > nopts and not allow_extra:
         raise ValueError(f'Expected up to {nopts} positional arguments. Got {nargs}.')
-    args = list(args)
+    args = list(args)  # WARNING: Axes.text() expects return type of list
     args.extend(None for _ in range(nopts - nargs))  # fill missing args
     for idx, keys in enumerate(options):
         if isinstance(keys, str):
@@ -225,33 +256,6 @@ def _kwargs_to_args(options, *args, allow_extra=False, **kwargs):
             opts[key] = kwargs.pop(key, None)
         args[idx] = _not_none(**opts)  # may reassign None
     return args, kwargs
-
-
-def _not_none(*args, default=None, **kwargs):
-    """
-    Return the first non-``None`` value. This is used with keyword arg aliases and
-    for setting default values. Use `kwargs` to issue warnings when multiple passed.
-    """
-    first = default
-    if args and kwargs:
-        raise ValueError('_not_none can only be used with args or kwargs.')
-    elif args:
-        for arg in args:
-            if arg is not None:
-                first = arg
-                break
-    elif kwargs:
-        for name, arg in list(kwargs.items()):
-            if arg is not None:
-                first = arg
-                break
-        kwargs = {name: arg for name, arg in kwargs.items() if arg is not None}
-        if len(kwargs) > 1:
-            warnings._warn_proplot(
-                f'Got conflicting or duplicate keyword args: {kwargs}. '
-                'Using the first one.'
-            )
-    return first
 
 
 def _pop_kwargs(kwargs, *keys, **aliases):
@@ -314,7 +318,7 @@ def _pop_props(input, *categories, prefix=None, ignore=None, skip=None):
         ignore = (ignore,)
     prefix = prefix or ''  # e.g. 'box' for boxlw, boxlinewidth, etc.
     for category in categories:
-        for key, aliases in ALIAS_MAPS[category].items():
+        for key, aliases in _alias_maps[category].items():
             if isinstance(aliases, str):
                 aliases = (aliases,)
             opts = {
