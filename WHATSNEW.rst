@@ -40,7 +40,7 @@ Deprecated
   renaming `~proplot.gridspec.GridSpec.get_subplot_geometry` to
   `~proplot.gridspec.GridSpec.get_geometry`, `~proplot.gridspec.GridSpec.get_geometry`
   to `~proplot.gridspec.GridSpec.get_total_geometry` (:commit:`52f57094`).
-* Improve the `~proplot.gridspec.GridSpec` "panel" obfuscation by having the
+* Improve the `~proplot.gridspec.GridSpec` "panel" obfuscation by having the public
   `~proplot.gridspec.GridSpec` properties ``gs.nrows``, ``gs.ncols``, ``gs.wratios``,
   ``gs.hratios``, ``gs.wspace``, ``gs.hspace``, ``gs.wpad``, and ``gs.hpad`` refer to
   the reduced non-panel geometry (:commit:`52f57094`).
@@ -49,52 +49,59 @@ Deprecated
   The new default locator `~proplot.ticker.DiscreteLocator` means these
   settings should not need to be used as much (see below).
 
+Style changes
+-------------
+
+* Disable automatic reversal of dependent variable coordinates when axis limits
+  are fixed, and add documentation for this feature (:issue:`300`).
+* Use `~proplot.ticker.DiscreteLocator` for major/minor discrete colorbar ticks instead
+  of `~matplotlib.ticker.FixedLocator` and auto-update the tick selection whenever
+  the axes is drawn (:commit:`b94a9b1e`, :commit:`92bb937e`, :commit:`302c239e`).
+* Put outer legends or colorbars on the same panel axes if their `align` values
+  differ and (for colorbars only) their `length`\ s do not overlap (:commit:`91ac49b7`).
+  This permits e.g. aligned "bottom left" and "bottom right" outer legends.
+
 Features
 --------
 
-* Significantly improve "tight layout" performance by skipping artists with clipping
-  enabled and clipping paths/boxes equivalent to the subplot edge (:commit:`f891e4f0`).
+* Significantly improve "tight layout" performance in geographic plots by skipping
+  artists with clipping paths/boxes set to the subplot bounds (:commit:`f891e4f0`).
 * Add modifiable `proplot.figure.Figure.tight` property to retrieve/change the
-  "tight layout" setting (:commit:`46f46c26`).
+  tight layout setting (:commit:`46f46c26`).
 * Add top-level `~proplot.ui.subplot` command that returns a figure and a single
   subplot, analogous to `~proplot.ui.subplots` (:commit:`8459c24c`).
+* Support specifying `transform` keyword arguments as registered cartopy
+  projections rather than `~cartopy.crs.CRS` instances (:commit:`c7a9fc95`).
 * Permit passing `~proplot.gridspec.GridSpec` instances to
   `~proplot.figure.Figure.add_subplots` to quickly draw a subplot
   inside each gridspec slot in row or column-major order (:commit:`a9ad7429`).
 * Add `~proplot.gridspec.GridSpec.copy` method to re-use the same gridspec geometry
   for multiple figures (re-using an existing gridspec is otherwise not possible)
   (:commit:`8dc7fe3e`, :commit:`be410341`, :commit:`a82a512c`).
-* Permit adding "filled" colorbars to non-subplots and specifying
-  `length` larger than one by implementing as plain axes whose bounds
-  are specified by the hidden parent axes (:commit:`9fc94d21`).
+* Permit adding "filled" colorbars to non-subplots and `length` greater than one
+  by implementing with a non-subplot child axes and inset locator (:commit:`9fc94d21`).
 * Permit adding additional panels (or outer legends or colorbars) by calling
   from the panel rather than the main subplot (:commit:`cfaeb177`).
 * Permit disabling a-b-c labels for a particular subplot by passing e.g.
   ``number=None`` instead of ``number=False`` (:commit:`f7308cbe`).
-* Make proplot `~proplot.ticker.IndexFormatter` public, since the matplotlib
-  version was entirely removed in version 3.5 (:commit:`c2dd8b2e`).
-* Replace matplotlib `~proplot.ticker.IndexLocator` with custom version,
-  consistent with `~proplot.ticker.IndexFormatter`, and prevent the
-  matplotlib limitation requiring lines to be present (:commit:`c2dd8b2e`).
-* Use custom locator `proplot.ticker.DiscreteLocator` for major/minor discrete
-  colorbar ticks instead of `~matplotlib.ticker.FixedLocator` (:commit:`b94a9b1e`).
-  This auto-selects ticks from a subset of levels depending on the axis length.
-* Refresh major/minor discrete colorbar ticks when the associated axis is drawn to
-  update the tick selection (:commit:`92bb937e`, :commit:`302c239e`).
-* Register `proplot.ticker.DiscreteLocator` as ``'discrete'`` and add keywords `index`
-  and `discrete` to the constructor `~proplot.constructor.Locator` (:commit:`b94a9b1e`).
+* Make `proplot.ticker.IndexFormatter` public, since the matplotlib version
+  was entirely removed in version 3.5 (:commit:`c2dd8b2e`).
+* Replace `matplotlib.ticker.IndexLocator` with `proplot.ticker.IndexLocator`,
+  consistent with `~proplot.ticker.IndexFormatter`, and remove the limitation
+  requiring data to be plotted on the axis (:commit:`c2dd8b2e`).
+* Add `proplot.ticker.DiscreteLocator` analogous to `~matplotlib.ticker.FixedLocator`
+  that ticks from a subset of fixed values, and add a `discrete` keyword and register
+  as ``'discrete'`` in `proplot.constructor.Locator` (:commit:`b94a9b1e`).
 * Auto disable minor colorbar and axis ticks when major ticks have non-numeric
   labels set by `~matplotlib.ticker.FixedFormatter` (:commit:`c747ae44`).
 * Permit passing `vmin` and `vmax` to `proplot.axes.Axes.colorbar`, as quick
   alternative to using `norm_kw` (:commit:`eb9565bd`).
 * Permit discretizing continuous colormaps passed to `~proplot.axes.Axes.colorbar` using
   `values`, instead of ignoring `values` when colormaps are passed (:commit:`503af4be`).
-* Ensure the default ticks are aligned with levels when passing discrete colormaps
-  to `~proplot.axes.Axes.colorbar` (:commit:`503af4be`).
+* Ensure the default ticks are aligned with levels when passing discrete colormap
+  instances to `~proplot.axes.Axes.colorbar` (:commit:`503af4be`).
 * Emit warning when both a scalar mappable and `vmin`, `vmax`, `norm`, or `values`
   are passed to `~proplot.axes.Axes.colorbar` (:commit:`503af4be`).
-* Disable automatic reversal of dependent variable coordinates when axis limits
-  are fixed, and add documentation for this feature (:issue:`300`).
 * Automatically load from "local" folders named ``proplot_cmaps``, ``proplot_cycles``,
   ``proplot_colors``, and ``proplot_fonts`` in current or parent directories,
   consistent with "local" ``proplotrc`` files (:commit:`a3a7bb33`).
@@ -111,6 +118,8 @@ Bug fixes
   and colorbars scaled by `proplot.colors.DiscreteNorm` (:issue:`302`).
 * Fix matplotlib >= 3.5 issue where date axes are not correctly detected
   due to a new default date converter (:commit:`63deee21`).
+* Fix matplotlib >= 3.4 issue where position of child axes in presence of
+  subfigures is incorrect (:commit:`9246835f`).
 * Fix matplotlib >= 3.4 issue where alternate axes are drawn twice
   due to using `~matplotlib.figure.Figure.add_child_axes` and failing to
   remove axes from the ``fig._localaxes`` stack (:issue:`303`).
@@ -251,11 +260,15 @@ Documentation
 Version 0.9.3 (2021-10-09)
 ==========================
 
-Features
---------
+Style changes
+-------------
 
 * Stop changing default background of figure when `~proplot.axes.ThreeAxes` is present
   -- instead just set the default axes background to transparent (:commit:`e933614d`).
+
+Features
+--------
+
 * Permit passing background patch-related ``format`` keywords like
   `facecolor` on axes instantiation (:commit:`f863afd8`).
 * Add :rcraw:`land.alpha`, :rcraw:`ocean.alpha`, :rcraw:`coast.alpha`,
