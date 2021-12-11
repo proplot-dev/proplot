@@ -4,14 +4,23 @@
 API reference
 =============
 
-The comprehensive API reference. All of the below objects are imported
-into the top-level namespace. Use ``help(pplt.object)`` to read
-the docs during a python session.
+Comprehensive documentation of ProPlot functions and classes. All of these
+objects are imported into the top-level namespace, so you can read the
+documentation within python sessions using ``help(pplt.function_or_class)``.
+Please note that the "wrapper" function documentation from proplot < 0.8
+is now located on the individual plotting commands under
+`proplot.axes.PlotAxes`. When calling ``help(axes.command)`` on
+plotting commands during a python session, both the ProPlot
+documentation and the original matplotlib documentation are shown.
 
-Please note that the documentation for "wrapper" functions from
-proplot < 0.8 is now found under the individual `~proplot.axes.PlotAxes`
-plotting commands. Using ``help(ax.command)`` during a python session shows both
-the proplot documentation and the original matplotlib documentation.
+Top-level functions
+===================
+
+.. automodule:: proplot.ui
+
+.. automodsumm:: proplot.ui
+   :toctree: api
+
 
 Figure class
 ============
@@ -20,16 +29,16 @@ Figure class
 
 .. automodsumm:: proplot.figure
    :toctree: api
+   :skip: SubplotsContainer
 
 
-Grid classes
-============
+Gridspec class
+==============
 
 .. automodule:: proplot.gridspec
 
 .. automodsumm:: proplot.gridspec
    :toctree: api
-   :skip: SubplotsContainer
 
 
 Axes classes
@@ -38,15 +47,6 @@ Axes classes
 .. automodule:: proplot.axes
 
 .. automodsumm:: proplot.axes
-   :toctree: api
-
-
-Top-level functions
-===================
-
-.. automodule:: proplot.ui
-
-.. automodsumm:: proplot.ui
    :toctree: api
 
 
@@ -107,6 +107,25 @@ Projection classes
    :toctree: api
 
 
+Artist subclass
+===============
+
+.. automodule:: proplot.artist
+
+.. automodsumm:: proplot.artist
+   :toctree: api
+
+
+Miscellaneous tools
+===================
+
+.. automodule:: proplot.utils
+
+.. automodsumm:: proplot.utils
+   :toctree: api
+   :skip: shade, saturate
+
+
 Demo functions
 ==============
 
@@ -114,13 +133,3 @@ Demo functions
 
 .. automodsumm:: proplot.demos
    :toctree: api
-
-
-Miscellaneous functions
-=======================
-
-.. automodule:: proplot.utils
-
-.. automodsumm:: proplot.utils
-   :toctree: api
-   :skip: shade, saturate
