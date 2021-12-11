@@ -226,10 +226,13 @@ language = None
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
 exclude_patterns = [
-    '.DS_Store',
-    '_build', '_templates', '_themes', 'trash', 'tmp',
-    'conf.py', 'sphinxext', '*.ipynb', '**.ipynb_checkpoints',
+    'conf.py', 'sphinxext',  # sphinx files
+    '_build', '_templates', '_themes',  # build files
+    '*.ipynb', '**.ipynb_checkpoints'  # notebook files
+    '.DS_Store', 'trash', 'tmp',  # local files
 ]
+if _version_mpl > '3.2':
+    exclude_patterns.append('projections.py')  # ignore when building in base
 
 # The name of the Pygments (syntax highlighting) style to use.
 # The light-dark theme toggler overloads this, but set default anyway
