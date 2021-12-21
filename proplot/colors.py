@@ -2270,17 +2270,17 @@ class PerceptualColormap(ContinuousColormap):
     )
 
 
-def _interpolate_basic(x, x0, x1, y0, y1):
+def _interpolate_scalar(x, x0, x1, y0, y1):
     """
-    Basic interpolation between pairs of fixed points.
+    Interpolate between two points.
     """
     return y0 + (y1 - y0) * (x - x0) / (x1 - x0)
 
 
-def _interpolate_extrapolate(xq, x, y):
+def _interpolate_extrapolate_vector(xq, x, y):
     """
-    Efficient vectorized linear interpolation. Similar to `numpy.interp`
-    except this does not truncate out-of-bounds values (i.e. is reversible).
+    Interpolate between two vectors. Similar to `numpy.interp` except this
+    does not truncate out-of-bounds values (i.e. this is reversible).
     """
     # Follow example of _make_lookup_table for efficient, vectorized
     # linear interpolation across multiple segments.
@@ -2428,12 +2428,12 @@ class DiscreteNorm(mcolors.BoundaryNorm):
         if unique in ('max', 'both'):
             mids[-1] += step * (mids[-2] - mids[-3])
         if vcenter is None:
-            mids = _interpolate_basic(mids, np.min(mids), np.max(mids), vmin, vmax)
+            mids = _interpolate_scalar(mids, np.min(mids), np.max(mids), vmin, vmax)
         else:
-            mids[mids < vcenter] = _interpolate_basic(
+            mids[mids < vcenter] = _interpolate_scalar(
                 mids[mids < vcenter], np.min(mids), vcenter, vmin, vcenter
             )
-            mids[mids >= vcenter] = _interpolate_basic(
+            mids[mids >= vcenter] = _interpolate_scalar(
                 mids[mids >= vcenter], vcenter, np.max(mids), vcenter, vmax
             )
 
@@ -2571,7 +2571,7 @@ class SegmentedNorm(mcolors.Normalize):
         if clip:  # numpy.clip can handle masked arrays
             value = np.clip(value, self.vmin, self.vmax)
         xq, is_scalar = self.process_value(value)
-        yq = _interpolate_extrapolate(xq, self._x, self._y)
+        yq = _interpolate_extrapolate_vector(xq, self._x, self._y)
         if is_scalar:
             yq = np.atleast_1d(yq)[0]
         return yq
@@ -2586,7 +2586,7 @@ class SegmentedNorm(mcolors.Normalize):
             The data to be un-normalized.
         """
         yq, is_scalar = self.process_value(value)
-        xq = _interpolate_extrapolate(yq, self._y, self._x)
+        xq = _interpolate_extrapolate_vector(yq, self._y, self._x)
         if is_scalar:
             xq = np.atleast_1d(xq)[0]
         return xq
@@ -2672,7 +2672,7 @@ class DivergingNorm(mcolors.Normalize):
         else:
             x = [self.vmin, self.vcenter, self.vmax]
             y = [0.0, 0.5, 1.0]
-        yq = _interpolate_extrapolate(xq, x, y)
+        yq = _interpolate_extrapolate_vector(xq, x, y)
         if is_scalar:
             yq = np.atleast_1d(yq)[0]
         return yq
