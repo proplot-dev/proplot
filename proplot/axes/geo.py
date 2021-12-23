@@ -221,6 +221,8 @@ class _GeoAxis(object):
     def _pad_ticks(ticks, vmin, vmax):
         # Wrap up to the longitude/latitude range to avoid
         # giant lists of 10,000 gridline locations.
+        if len(ticks) == 0:
+            return ticks
         range_ = max(ticks) - min(ticks)
         vmin = max(vmin, ticks[0] - range_)
         vmax = min(vmax, ticks[-1] + range_)
