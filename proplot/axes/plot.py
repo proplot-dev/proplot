@@ -2070,7 +2070,7 @@ class PlotAxes(base.Axes):
                 kwargs = self._parse_cycle(**kwargs)
         else:
             c = np.atleast_1d(c)  # should only have effect on 'scatter' input
-            if infer_rgb and c.ndim == 2 and c.shape[1] in (3, 4):
+            if infer_rgb and (inputs._is_categorical(c) or c.ndim == 2 and c.shape[1] in (3, 4)):  # noqa: E501
                 c = list(map(pcolors.to_hex, c))  # avoid iterating over columns
             else:
                 kwargs = self._parse_cmap(x, y, c, plot_lines=True, default_discrete=False, **kwargs)  # noqa: E501
