@@ -2083,10 +2083,11 @@ class PlotAxes(base.Axes):
     @warnings._rename_kwargs('0.6', centers='values')
     def _parse_cmap(
         self, *args,
-        cmap=None, cmap_kw=None, c=None, color=None, colors=None, default_cmap=None,
-        norm=None, norm_kw=None, extend=None, vmin=None, vmax=None,
-        discrete=None, default_discrete=True, skip_autolev=False,
-        plot_lines=False, plot_contours=False, min_levels=None, **kwargs
+        cmap=None, cmap_kw=None, c=None, color=None, colors=None,
+        norm=None, norm_kw=None, extend=None, vmin=None, vmax=None, discrete=None,
+        default_cmap=None, default_discrete=True, skip_autolev=False,
+        min_levels=None, plot_lines=False, plot_contours=False,
+        **kwargs
     ):
         """
         Parse colormap and normalizer arguments.
@@ -2103,14 +2104,20 @@ class PlotAxes(base.Axes):
             The colormap extend setting.
         vmin, vmax : flaot, optional
             The normalization range.
-        plot_lines : bool, optional
-            Whether these are lines. If so the default monorhcomarit luminance is 90.
-        plot_contours : bool, optional
-            Whether these are contours. If so then discrete is required.
-        min_levels : int, optional
-            The minimum number of valid levels. 1 for line contour plots 2 otherwise.
         sequential, diverging, cyclic, qualitative : bool, optional
             Toggle various colormap types.
+        discrete : bool, optional
+            Whether to apply `DiscreteNorm` to the colormap.
+        default_discrete : bool, optional
+            The default `discrete`. Depends on plotting method.
+        skip_autolev : bool, optional
+            Whether to skip automatic level generation.
+        min_levels : int, optional
+            The minimum number of valid levels. 1 for line contour plots 2 otherwise.
+        plot_lines : bool, optional
+            Whether these are lines. If so the default monochromatic luminance is 90.
+        plot_contours : bool, optional
+            Whether these are contours. If so then a discrete of `True` is required.
         """
         # Parse keyword args
         cmap_kw = cmap_kw or {}
@@ -2305,9 +2312,8 @@ class PlotAxes(base.Axes):
             return kwargs
 
     def _parse_level_count(
-        self, *args, levels=None,
-        extend=None, norm=None, norm_kw=None, vmin=None, vmax=None,
-        locator=None, locator_kw=None, symmetric=None, **kwargs
+        self, *args, levels=None, locator=None, locator_kw=None, vmin=None, vmax=None,
+        norm=None, norm_kw=None, extend=None, symmetric=None, **kwargs
     ):
         """
         Return a suitable level list given the input data, normalizer,
@@ -2319,16 +2325,16 @@ class PlotAxes(base.Axes):
             The sample data. Passed to `_parse_level_lim`.
         levels : int
             The approximate number of levels.
+        locator, locator_kw
+            The tick locator used to draw levels.
         vmin, vmax : float, optional
-            The approximate minimum and maximum level edges. Passed to the locator.
-        diverging : bool, optional
-            Whether the resulting levels are intended for a diverging normalizer.
+            The minimum and maximum values passed to the tick locator.
+        norm, norm_kw : optional
+            The continuous normalizer. Affects the default locator used to draw levels.
+        extend : str, optional
+            The extend setting. Affects level trimming settings.
         symmetric : bool, optional
             Whether the resulting levels should be symmetric about zero.
-        norm, norm_kw : optional
-            Passed to `~proplot.constructor.Norm`. Used to change the default
-            `locator` (e.g., a `~matplotlib.colors.LogNorm` normalizer will use
-            a `~matplotlib.ticker.LogLocator` to generate levels).
 
         Parameters
         ----------
@@ -2439,7 +2445,7 @@ class PlotAxes(base.Axes):
         norm, norm_kw : optional
             Passed to `Norm`. Used to possbily infer levels or to convert values.
         skip_autolev : bool, optional
-            Whether to skip autolev parsing.
+            Whether to skip automatic level generation.
         min_levels : int, optional
             The minimum number of levels allowed.
 
@@ -2582,6 +2588,8 @@ class PlotAxes(base.Axes):
             Whether to limit the default range to exclude outliers.
         inbounds : bool, optional
             Whether to filter to in-bounds data.
+        negative, positive, symmetric : bool, optional
+            Whether limits should be negative, positive, or symmetric.
         to_centers : bool, optional
             Whether to convert coordinates to 'centers'.
 
