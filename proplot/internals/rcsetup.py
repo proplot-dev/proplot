@@ -181,12 +181,15 @@ def _validate_abc(value):
     Validate a-b-c setting.
     """
     try:
-        return _validate_bool(value)
+        if type(value) is not tuple:
+            return _validate_bool(value)
     except ValueError:
         pass
     if isinstance(value, str) and 'a' in value.lower():
         return value
-    raise ValueError("A-b-c specification must be string containing 'a' or 'A'.")
+    if isinstance(value, tuple):
+        return value
+    raise ValueError("A-b-c specification must be string containing 'a' or 'A'")
 
 
 def _validate_belongs(*options):
