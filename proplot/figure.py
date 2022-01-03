@@ -930,7 +930,7 @@ class Figure(mfigure.Figure):
         pax._panel_share = share
         pax._panel_parent = ax
         ax._panel_dict[side].append(pax)
-        ax._auto_share()
+        ax._apply_auto_share()
         axis = pax.yaxis if side in ('left', 'right') else pax.xaxis
         getattr(axis, 'tick_' + side)()  # set tick and tick label position
         axis.set_label_position(side)  # set label position
@@ -1447,7 +1447,7 @@ class Figure(mfigure.Figure):
         # Also requires another figure resize (which triggers a gridspec update).
         def _draw_content():
             for ax in self._iter_axes(hidden=False, children=True):
-                ax._draw_guides()  # may trigger resizes if panels are added
+                ax._add_queued_guides()  # may trigger resizes if panels are added
         def _align_content():  # noqa: E306
             for axis in 'xy':
                 self._align_axis_label(axis)

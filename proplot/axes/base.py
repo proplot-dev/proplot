@@ -16,9 +16,9 @@ import matplotlib.colors as mcolors
 import matplotlib.container as mcontainer
 import matplotlib.contour as mcontour
 import matplotlib.legend as mlegend
+import matplotlib.offsetbox as moffsetbox
 import matplotlib.patches as mpatches
 import matplotlib.projections as mprojections
-import matplotlib.spines as mspines
 import matplotlib.text as mtext
 import matplotlib.ticker as mticker
 import matplotlib.transforms as mtransforms
@@ -821,7 +821,7 @@ class Axes(maxes.Axes):
         # and for subplots added with add_subplot is incremented automatically
         # WARNING: For mpl>=3.4.0 subplotspec assigned *after* initialization using
         # set_subplotspec. Tried to defer to setter but really messes up both format()
-        # and _auto_share(). Instead use workaround: Have Figure.add_subplot pass
+        # and _apply_auto_share(). Instead use workaround: Have Figure.add_subplot pass
         # subplotspec as a hidden keyword arg. Non-subplots don't need this arg.
         # See: https://github.com/matplotlib/matplotlib/pull/18564
         self._number = None
@@ -830,12 +830,76 @@ class Axes(maxes.Axes):
         if ss is not None:  # always passed from add_subplot
             self.set_subplotspec(ss)
         if autoshare:
-            self._auto_share()
+            self._apply_auto_share()
 
         # Default formatting
         # NOTE: This ignores user-input rc_mode. Mode '1' applies proplot
         # features which is necessary on first run. Default otherwise is mode '2'
         self.format(rc_kw=rc_kw, rc_mode=1, skip_figure=True, **kw_format)
+
+    def _add_inset_axes(
+        self, bounds, transform=None, *, proj=None, projection=None,
+        zoom=None, zoom_kw=None, zorder=None, **kwargs
+    ):
+        """
+        Add an inset axes using arbitrary projection.
+        """
+        # Converting transform to figure-relative coordinates
+        transform = self._get_transform(transform, 'axes')
+        locator = self._make_inset_locator(bounds, transform)
+        bounds = locator(self, None).bounds
+        label = kwargs.pop('label', 'inset_axes')
+        zorder = _not_none(zorder, 4)
+
+        # Parse projection and inherit from the current axes by default
+        # NOTE: The _parse_proj method also accepts axes classes.
+        proj = _not_none(proj=proj, projection=projection)
+        if proj is None:
+            if self._name in ('cartopy', 'basemap'):
+                proj = copy.copy(self.projection)
+            else:
+                proj = self._name
+        kwargs = self.figure._parse_proj(proj, **kwargs)
+
+        # Create axes and apply locator. The locator lets the axes adjust
+        # automatically if we used data coords. Called by ax.apply_aspect()
+        cls = mprojections.get_projection_class(kwargs.pop('projection'))
+        ax = cls(self.figure, bounds, zorder=zorder, label=label, **kwargs)
+        ax.set_axes_locator(locator)
+        ax._inset_parent = self
+        ax._inset_bounds = bounds
+        self.add_child_axes(ax)
+
+        # Add zoom indicator (NOTE: requires matplotlib >= 3.0)
+        zoom = _not_none(zoom, self._name == 'cartesian' and ax._name == 'cartesian')
+        ax._inset_zoom = zoom
+        if zoom:
+            zoom_kw = zoom_kw or {}
+            ax.indicate_inset_zoom(**zoom_kw)
+        return ax
+
+    def _add_queued_guides(self):
+        """
+        Draw the queued-up legends and colorbars. Wrapper funcs and legend func let
+        user add handles to location lists with successive calls.
+        """
+        # Draw queued colorbars
+        for (loc, align), colorbar in tuple(self._colorbar_dict.items()):
+            if not isinstance(colorbar, tuple):
+                continue
+            handles, labels, kwargs = colorbar
+            cb = self._add_colorbar(handles, labels, loc=loc, align=align, **kwargs)
+            self._colorbar_dict[(loc, align)] = cb
+
+        # Draw queued legends
+        # WARNING: Passing empty list labels=[] to legend causes matplotlib
+        # _parse_legend_args to search for everything. Ensure None if empty.
+        for (loc, align), legend in tuple(self._legend_dict.items()):
+            if not isinstance(legend, tuple) or any(isinstance(_, mlegend.Legend) for _ in legend):  # noqa: E501
+                continue
+            handles, labels, kwargs = legend
+            leg = self._add_legend(handles, labels, loc=loc, align=align, **kwargs)
+            self._legend_dict[(loc, align)] = leg
 
     def _add_guide_frame(
         self, xmin, ymin, width, height, *, fontsize, fancybox=None, **kwargs
@@ -898,47 +962,6 @@ class Axes(maxes.Axes):
         ax.patch.set_facecolor('none')
         ax._panel_hidden = True
         ax._panel_align[align] = bbox
-        return ax
-
-    def _add_inset_axes(
-        self, bounds, transform=None, *, proj=None, projection=None,
-        zoom=None, zoom_kw=None, zorder=None, **kwargs
-    ):
-        """
-        Add an inset axes using arbitrary projection.
-        """
-        # Converting transform to figure-relative coordinates
-        transform = self._get_transform(transform, 'axes')
-        locator = self._make_inset_locator(bounds, transform)
-        bounds = locator(self, None).bounds
-        label = kwargs.pop('label', 'inset_axes')
-        zorder = _not_none(zorder, 4)
-
-        # Parse projection and inherit from the current axes by default
-        # NOTE: The _parse_proj method also accepts axes classes.
-        proj = _not_none(proj=proj, projection=projection)
-        if proj is None:
-            if self._name in ('cartopy', 'basemap'):
-                proj = copy.copy(self.projection)
-            else:
-                proj = self._name
-        kwargs = self.figure._parse_proj(proj, **kwargs)
-
-        # Create axes and apply locator. The locator lets the axes adjust
-        # automatically if we used data coords. Called by ax.apply_aspect()
-        cls = mprojections.get_projection_class(kwargs.pop('projection'))
-        ax = cls(self.figure, bounds, zorder=zorder, label=label, **kwargs)
-        ax.set_axes_locator(locator)
-        ax._inset_parent = self
-        ax._inset_bounds = bounds
-        self.add_child_axes(ax)
-
-        # Add zoom indicator (NOTE: requires matplotlib >= 3.0)
-        zoom = _not_none(zoom, self._name == 'cartesian' and ax._name == 'cartesian')
-        ax._inset_zoom = zoom
-        if zoom:
-            zoom_kw = zoom_kw or {}
-            ax.indicate_inset_zoom(**zoom_kw)
         return ax
 
     @warnings._rename_kwargs('0.10', rasterize='rasterized')
@@ -1297,7 +1320,7 @@ class Axes(maxes.Axes):
         for name in names:
             texts._transfer_text(self._title_dict[name], pax._title_dict[name])
 
-    def _auto_share(self):
+    def _apply_auto_share(self):
         """
         Automatically configure axis sharing based on the horizontal and
         vertical extent of subplots in the figure gridspec.
@@ -1358,39 +1381,29 @@ class Axes(maxes.Axes):
             if self.figure._sharey > 3:
                 self._sharey_setup(ref, labels=False)
 
-    def _draw_guides(self):
+    def _artist_fully_clipped(self, artist):
         """
-        Draw the queued-up legends and colorbars. Wrapper funcs and legend func let
-        user add handles to location lists with successive calls.
+        Return a boolean flag, ``True`` if the artist is clipped to the axes
+        and can thus be skipped in layout calculations.
         """
-        # Draw queued colorbars
-        for (loc, align), colorbar in tuple(self._colorbar_dict.items()):
-            if not isinstance(colorbar, tuple):
-                continue
-            handles, labels, kwargs = colorbar
-            cb = self._add_colorbar(handles, labels, loc=loc, align=align, **kwargs)
-            self._colorbar_dict[(loc, align)] = cb
-
-        # Draw queued legends
-        # WARNING: Passing empty list labels=[] to legend causes matplotlib
-        # _parse_legend_args to search for everything. Ensure None if empty.
-        for (loc, align), legend in tuple(self._legend_dict.items()):
-            if not isinstance(legend, tuple) or any(isinstance(_, mlegend.Legend) for _ in legend):  # noqa: E501
-                continue
-            handles, labels, kwargs = legend
-            leg = self._add_legend(handles, labels, loc=loc, align=align, **kwargs)
-            self._legend_dict[(loc, align)] = leg
-
-    def _get_topmost_axes(self):
-        """
-        Return the "main" subplot associated with this axes.
-        """
-        # NOTE: Non trivial because panels can't be children of their 'main'
-        # subplots. So have to loop to parent of panel, then main subplot, etc.
-        for _ in range(5):
-            self = self._axes or self
-            self = self._panel_parent or self
-        return self
+        clip_box = artist.get_clip_box()
+        clip_path = artist.get_clip_path()
+        types_noclip = (
+            maxes.Axes, maxis.Axis, moffsetbox.AnnotationBbox, moffsetbox.OffsetBox
+        )
+        return isinstance(artist, types_noclip) or (
+            artist.get_clip_on()
+            and (clip_box is not None or clip_path is not None)
+            and (
+                clip_box is None
+                or np.all(clip_box.extents == self.bbox.extents)
+            )
+            and (
+                clip_path is None
+                or isinstance(clip_path, mtransforms.TransformedPatchPath)
+                and clip_path._patch is self.patch
+            )
+        )
 
     def _get_share_axes(self, sx, panels=False):
         """
@@ -1431,6 +1444,15 @@ class Axes(maxes.Axes):
                 ax = other
             out.append(ax)
         return out
+
+    def _get_topmost_axes(self):
+        """
+        Return the topmost axes including panels and parents.
+        """
+        for _ in range(5):
+            self = self._axes or self
+            self = self._panel_parent or self
+        return self
 
     @staticmethod
     def _get_axisbelow_zorder(axisbelow):
@@ -2797,7 +2819,7 @@ class Axes(maxes.Axes):
         # NOTE: In *principle* these steps go here but should already be complete
         # because auto_layout() (called by figure pre-processor) has to run them
         # before aligning labels. So these are harmless no-ops.
-        self._draw_guides()
+        self._add_queued_guides()
         self._apply_title_above()
         if self._colorbar_fill:
             self._colorbar_fill.update_ticks(manual_only=True)  # only update if needed!
@@ -2809,7 +2831,7 @@ class Axes(maxes.Axes):
         # Perform extra post-processing steps
         # NOTE: This should be updated alongside draw(). We also cache the resulting
         # bounding box to speed up tight layout calculations (see _range_tightbbox).
-        self._draw_guides()
+        self._add_queued_guides()
         self._apply_title_above()
         if self._colorbar_fill:
             self._colorbar_fill.update_ticks(manual_only=True)  # only update if needed!
@@ -2825,14 +2847,10 @@ class Axes(maxes.Axes):
         # For some reason these have clipping 'enabled' but it is not respected.
         # NOTE: Matplotlib already tries to do this inside get_tightbbox() but
         # their approach fails for cartopy axes clipped by paths and not boxes.
-        artists = [
+        return [
             artist for artist in super().get_default_bbox_extra_artists()
-            if isinstance(artist, (maxes.Axes, maxis.Axis, mspines.Spine))
-            or not artist.get_clip_on()
-            or not isinstance(artist.get_clip_path(), mtransforms.TransformedPatchPath)
-            or artist.get_clip_path()._patch is not self.patch
+            if not self._artist_fully_clipped(artist)
         ]
-        return artists
 
     def set_prop_cycle(self, *args, **kwargs):
         # Silent override. This is a strict superset of matplotlib functionality.
