@@ -687,7 +687,7 @@ class CartesianAxes(shared._SharedAxes, plot.PlotAxes):
         # NOTE: This always updates the *current* labels and sharing is handled
         # later so that labels set with set_xlabel() and set_ylabel() are shared too.
         # See notes in _align_axis_labels() and _apply_axis_sharing().
-        kwargs = self._get_label_props(**kwargs)
+        kwargs = rc._get_label_props(**kwargs)
         no_args = all(a is None for a in args)
         no_kwargs = all(v is None for v in kwargs.values())
         if no_args and no_kwargs:
@@ -1065,10 +1065,10 @@ class CartesianAxes(shared._SharedAxes, plot.PlotAxes):
                 if yticklabelloc in ('left', 'right'):
                     ylabelloc = _not_none(ylabelloc, yticklabelloc)
                     yoffsetloc = _not_none(yoffsetloc, yticklabelloc)
-            xtickloc = _not_none(xtickloc, self._get_loc_string('x', 'xtick'))
-            ytickloc = _not_none(ytickloc, self._get_loc_string('y', 'ytick'))
-            xspineloc = _not_none(xspineloc, self._get_loc_string('x', 'axes.spines'))
-            yspineloc = _not_none(yspineloc, self._get_loc_string('y', 'axes.spines'))
+            xtickloc = _not_none(xtickloc, rc._get_loc_string('x', 'xtick'))
+            ytickloc = _not_none(ytickloc, rc._get_loc_string('y', 'ytick'))
+            xspineloc = _not_none(xspineloc, rc._get_loc_string('x', 'axes.spines'))
+            yspineloc = _not_none(yspineloc, rc._get_loc_string('y', 'axes.spines'))
 
             # Loop over axes
             for (

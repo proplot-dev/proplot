@@ -913,8 +913,7 @@ class _CartopyAxes(GeoAxes, _GeoAxes):
         # format() calls) puts map boundary underneath. Zorder seems to be totally
         # ignored and using spines vs. patch makes no difference.
         # NOTE: outline_patch is redundant, use background_patch instead
-        context = rc._context_mode == 2
-        kw_face, kw_edge = self._get_background_props(context=context, **kwargs)
+        kw_face, kw_edge = rc._get_background_props(native=False, **kwargs)
         kw_face['linewidth'] = 0
         kw_edge['facecolor'] = 'none'
         if dependencies._version_cartopy >= 0.18:
@@ -981,9 +980,8 @@ class _CartopyAxes(GeoAxes, _GeoAxes):
         # Update gridliner collection properties
         # WARNING: Here we use native matplotlib 'grid' rc param for geographic
         # gridlines. If rc mode is 1 (first format call) use context=False
-        ctx = rc._context_mode == 2
-        kwlines = self._get_gridline_props(which=which, context=ctx)
-        kwtext = self._get_ticklabel_props(context=ctx)
+        kwlines = rc._get_gridline_props(which=which, native=False)
+        kwtext = rc._get_ticklabel_props(native=False)
         gl.collection_kwargs.update(kwlines)
         gl.xlabel_style.update(kwtext)
         gl.ylabel_style.update(kwtext)
@@ -995,10 +993,10 @@ class _CartopyAxes(GeoAxes, _GeoAxes):
         latmax = self._lataxis.get_latmax()
         if hasattr(gl, 'ylim'):  # cartopy > 0.19
             gl.ylim = (-latmax, latmax)
-        longrid = self._get_gridline_toggle(longrid, axis='x', which=which, context=ctx)
+        longrid = rc._get_gridline_bool(longrid, axis='x', which=which, native=False)
         if longrid is not None:
             gl.xlines = longrid
-        latgrid = self._get_gridline_toggle(latgrid, axis='y', which=which, context=ctx)
+        latgrid = rc._get_gridline_bool(latgrid, axis='y', which=which, native=False)
         if latgrid is not None:
             gl.ylines = latgrid
         lonlines = self._get_lonticklocs(which=which)
@@ -1253,15 +1251,14 @@ class _BasemapAxes(GeoAxes):
         # Non-rectangular projections
         # WARNING: Map boundary must be drawn before all other tasks. See __init__.
         # WARNING: With clipping on boundary lines are clipped by the axes bbox.
-        ctx = rc._context_mode == 2
         if self.projection.projection in self._proj_non_rectangular:
             self.patch.set_facecolor('none')  # make sure main patch is hidden
-            kw_face, kw_edge = self._get_background_props(context=ctx, **kwargs)
+            kw_face, kw_edge = rc._get_background_props(native=False, **kwargs)
             kw = {**kw_face, **kw_edge, 'rasterized': False, 'clip_on': False}
             self._map_boundary.update(kw)
         # Rectangular projections
         else:
-            kw_face, kw_edge = self._get_background_props(context=ctx, **kwargs)
+            kw_face, kw_edge = rc._get_background_props(native=False, **kwargs)
             self.patch.update({**kw_face, 'edgecolor': 'none'})
             for spine in self.spines.values():
                 spine.update(kw_edge)
@@ -1314,8 +1311,7 @@ class _BasemapAxes(GeoAxes):
             # Correct lonarray and latarray label toggles by changing from lrbt to lrtb.
             # Then update the cahced toggle array. This lets us change gridline locs
             # while preserving the label toggle setting from a previous format() call.
-            ctx = rc._context_mode == 2
-            grid = self._get_gridline_toggle(grid, axis=axis, which=which, context=ctx)
+            grid = rc._get_gridline_bool(grid, axis=axis, which=which, native=False)
             axis = getattr(self, f'_{name}axis')
             if which == 'major':
                 bools = getattr(self, f'_{name}array')
@@ -1363,9 +1359,8 @@ class _BasemapAxes(GeoAxes):
             # Update gridline settings
             # WARNING: Here we use native matplotlib 'grid' rc param for geographic
             # gridlines. If rc mode is 1 (first format call) use context=False
-            ctx = not rebuild and rc._context_mode == 2
-            kwlines = self._get_gridline_props(which=which, context=ctx)
-            kwtext = self._get_ticklabel_props(context=ctx)
+            kwlines = rc._get_gridline_props(which=which, native=False)
+            kwtext = rc._get_ticklabel_props(native=False)
             for obj in self._iter_gridlines(objs):
                 if isinstance(obj, mtext.Text):
                     obj.update(kwtext)

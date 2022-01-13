@@ -1191,25 +1191,6 @@ docstring._snippet_manager['plot.stream'] = _flow_docstring.format(
 )
 
 
-def _default_absolute():
-    """
-    Try to detect `seaborn` calls to `scatter` and `bar` and then automatically
-    apply `absolute_size` and `absolute_width`.
-    """
-    frame = sys._getframe()
-    absolute_names = (
-        'seaborn.distributions',
-        'seaborn.categorical',
-        'seaborn.relational',
-        'seaborn.regression',
-    )
-    while frame is not None:
-        if frame.f_globals.get('__name__', '') in absolute_names:
-            return True
-        frame = frame.f_back
-    return False
-
-
 def _get_vert(vert=None, orientation=None, **kwargs):
     """
     Get the orientation specified as either `vert` or `orientation`. This is
@@ -1248,6 +1229,25 @@ def _parse_vert(
     if kwargs.get('orientation', None) not in (None, 'horizontal', 'vertical'):
         raise ValueError("Orientation must be either 'horizontal' or 'vertical'.")
     return kwargs
+
+
+def _seaborn_call():
+    """
+    Try to detect `seaborn` calls to `scatter` and `bar` and then automatically
+    apply `absolute_size` and `absolute_width`.
+    """
+    frame = sys._getframe()
+    absolute_names = (
+        'seaborn.distributions',
+        'seaborn.categorical',
+        'seaborn.relational',
+        'seaborn.regression',
+    )
+    while frame is not None:
+        if frame.f_globals.get('__name__', '') in absolute_names:
+            return True
+        frame = frame.f_back
+    return False
 
 
 class PlotAxes(base.Axes):
@@ -3031,7 +3031,7 @@ class PlotAxes(base.Axes):
                 s.flat[:] = utils.units(s.flat, 'pt')
                 s = s.astype(np.float) ** 2
         if absolute_size is None:
-            if _default_absolute():
+            if _seaborn_call():
                 absolute_size = True
             else:
                 absolute_size = default_size
@@ -3252,7 +3252,7 @@ class PlotAxes(base.Axes):
         xs, hs, kw = self._parse_1d_plot(xs, hs, orientation=orientation, **kw)
         edgefix_kw = _pop_params(kw, self._add_edge_fix)
         if absolute_width is None:
-            absolute_width = _default_absolute()
+            absolute_width = _seaborn_call()
 
         # Call func after converting bar width
         b0 = 0

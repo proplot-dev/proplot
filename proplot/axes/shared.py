@@ -22,7 +22,7 @@ class _SharedAxes(object):
         Update the background patch and spines.
         """
         # Update the background patch
-        kw_face, kw_edge = self._get_background_props(**kwargs)
+        kw_face, kw_edge = rc._get_background_props(**kwargs)
         self.patch.update(kw_face)
         if x is None:
             opts = self.spines
@@ -77,7 +77,7 @@ class _SharedAxes(object):
         """
         # Filter out text properties
         axis = 'both' if x is None else x
-        kwtext = self._get_ticklabel_props(axis)
+        kwtext = rc._get_ticklabel_props(axis)
         kwtext_extra = _pop_kwargs(kwtext, 'weight', 'family')
         kwtext = {'label' + key: value for key, value in kwtext.items()}
         if labelcolor is not None:
@@ -101,7 +101,7 @@ class _SharedAxes(object):
             # Tick properties
             # NOTE: Must make 'tickcolor' overwrite 'labelcolor' or else 'color'
             # passed to __init__ will not apply correctly. Annoying but unavoidable
-            kwticks = self._get_tick_props(axis, which=which)
+            kwticks = rc._get_tickline_props(axis, which=which)
             if labelpad is not None:
                 kwticks['pad'] = labelpad
             if tickcolor is not None:
@@ -134,10 +134,12 @@ class _SharedAxes(object):
             # Gridline properties
             # NOTE: Internally ax.grid() passes gridOn to ax.tick_params() but this
             # is undocumented and might have weird side effects. Just use ax.grid()
-            b = self._get_gridline_toggle(b, axis=axis, which=which)
+            b = rc._get_gridline_bool(b, axis=axis, which=which)
             if b is not None:
                 self.grid(b, axis=axis, which=which)
-            kwlines = self._get_gridline_props(native=True, which=which)
+            kwlines = rc._get_gridline_props(which=which)
+            if 'axisbelow' in kwlines:
+                self.set_axisbelow(kwlines.pop('axisbelow'))
             if gridcolor is not None:
                 kwlines['grid_color'] = gridcolor
 

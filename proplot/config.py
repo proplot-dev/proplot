@@ -28,7 +28,16 @@ import numpy as np
 from matplotlib import RcParams
 
 from .internals import ic  # noqa: F401
-from .internals import _not_none, _translate_grid, docstring, rcsetup, warnings
+from .internals import (
+    _not_none,
+    _pop_kwargs,
+    _pop_props,
+    _translate_grid,
+    dependencies,
+    docstring,
+    rcsetup,
+    warnings,
+)
 
 try:
     from IPython import get_ipython
@@ -183,28 +192,29 @@ def _get_data_folders(folder, user=True, local=True, default=True, reverse=False
     return paths
 
 
-def _get_matplotlib_defaults():
+def _iter_data_objects(folder, *args, **kwargs):
     """
-    Get the default rc parameters dictionary with deprecated parameters filtered.
+    Iterate over input objects and files in the data folders that should be
+    registered. Also yield an index indicating whether these are user files.
     """
-    # NOTE: Use RcParams update to filter and translate deprecated settings
-    # before actually applying them to rcParams down pipeline. This way we can
-    # suppress warnings for deprecated default params but still issue warnings
-    # when user-supplied stylesheets have deprecated params.
-    # WARNING: Some deprecated rc params remain in dictionary as None so we
-    # filter them out. Beware if hidden attribute changes.
-    rcdict = _get_filtered_dict(mpl.rcParamsDefault, warn=False)
-    with warnings.catch_warnings():
-        warnings.simplefilter('ignore', mpl.MatplotlibDeprecationWarning)
-        rcdict = dict(RcParams(rcdict))
-    for attr in ('_deprecated_set', '_deprecated_remain_as_none'):
-        if hasattr(mpl, attr):  # _deprecated_set is in matplotlib before v3
-            for deprecated in getattr(mpl, attr):
-                rcdict.pop(deprecated, None)
-    return rcdict
+    i = 0  # default files
+    for i, path in enumerate(_get_data_folders(folder, **kwargs)):
+        for dirname, dirnames, filenames in os.walk(path):
+            for filename in filenames:
+                if filename[0] == '.':  # UNIX-style hidden files
+                    continue
+                path = os.path.join(dirname, filename)
+                yield i, path
+    i += 1  # user files
+    for path in args:
+        path = os.path.expanduser(path)
+        if os.path.isfile(path):
+            yield i, path
+        else:
+            raise FileNotFoundError(f'Invalid file path {path!r}.')
 
 
-def _get_filtered_dict(rcdict, warn=True):
+def _filter_style_dict(rcdict, warn=True):
     """
     Filter out blacklisted style parameters.
     """
@@ -225,12 +235,31 @@ def _get_filtered_dict(rcdict, warn=True):
     return rcdict_filtered
 
 
-def _get_style_dicts(style, infer=False, filter=True):
+def _get_default_style_dict():
     """
-    Return a dictionary of settings belonging to the requested style(s). If `infer`
-    is ``True``, two dictionaries are returned, where the second contains custom
-    proplot settings "inferred" from the matplotlib settings. If `filter` is ``True``,
-    invalid style parameters like `backend` are filtered out.
+    Get the default rc parameters dictionary with deprecated parameters filtered.
+    """
+    # NOTE: Use RcParams update to filter and translate deprecated settings
+    # before actually applying them to rcParams down pipeline. This way we can
+    # suppress warnings for deprecated default params but still issue warnings
+    # when user-supplied stylesheets have deprecated params.
+    # WARNING: Some deprecated rc params remain in dictionary as None so we
+    # filter them out. Beware if hidden attribute changes.
+    rcdict = _filter_style_dict(mpl.rcParamsDefault, warn=False)
+    with warnings.catch_warnings():
+        warnings.simplefilter('ignore', mpl.MatplotlibDeprecationWarning)
+        rcdict = dict(RcParams(rcdict))
+    for attr in ('_deprecated_set', '_deprecated_remain_as_none'):
+        if hasattr(mpl, attr):  # _deprecated_set is in matplotlib before v3
+            for deprecated in getattr(mpl, attr):
+                rcdict.pop(deprecated, None)
+    return rcdict
+
+
+def _get_style_dict(style, filter=True):
+    """
+    Return a dictionary of settings belonging to the requested style(s). If `filter`
+    is ``True``, invalid style parameters like `backend` are filtered out.
     """
     # NOTE: This is adapted from matplotlib source for the following changes:
     # 1. Add an 'original' pseudo style. Like rcParamsOrig except we also reload
@@ -252,13 +281,9 @@ def _get_style_dicts(style, infer=False, filter=True):
     }
 
     # Always apply the default style *first* so styles are rigid
-    kw_matplotlib = _get_matplotlib_defaults()
+    kw_matplotlib = _get_default_style_dict()
     if style == 'default' or style is mpl.rcParamsDefault:
-        if infer:
-            kw_proplot = _infer_added_params(kw_matplotlib)
-            return kw_matplotlib, kw_proplot
-        else:
-            return kw_matplotlib
+        return kw_matplotlib
 
     # Apply limited deviations from the matplotlib style that we want to propagate to
     # other styles. Want users selecting stylesheets to have few surprises, so
@@ -292,18 +317,13 @@ def _get_style_dicts(style, infer=False, filter=True):
         else:
             raise ValueError(f'Invalid style {style!r}. Must be string or dictionary.')
         if filter:
-            kw = _get_filtered_dict(kw, warn=True)
+            kw = _filter_style_dict(kw, warn=True)
         kw_matplotlib.update(kw)
 
-    # Infer proplot params from stylesheet params
-    if infer:
-        kw_proplot = _infer_added_params(kw_matplotlib)
-        return kw_matplotlib, kw_proplot
-    else:
-        return kw_matplotlib
+    return kw_matplotlib
 
 
-def _infer_added_params(kw_params):
+def _infer_proplot_dict(kw_params):
     """
     Infer values for proplot's "added" parameters from stylesheet parameters.
     """
@@ -333,28 +353,6 @@ def _infer_added_params(kw_params):
             for param in params:
                 kw_proplot[param] = value
     return kw_proplot
-
-
-def _iter_data_objects(folder, *args, **kwargs):
-    """
-    Iterate over input objects and files in the data folders that should be
-    registered. Also yield an index indicating whether these are user files.
-    """
-    i = 0  # default files
-    for i, path in enumerate(_get_data_folders(folder, **kwargs)):
-        for dirname, dirnames, filenames in os.walk(path):
-            for filename in filenames:
-                if filename[0] == '.':  # UNIX-style hidden files
-                    continue
-                path = os.path.join(dirname, filename)
-                yield i, path
-    i += 1  # user files
-    for path in args:
-        path = os.path.expanduser(path)
-        if os.path.isfile(path):
-            yield i, path
-        else:
-            raise FileNotFoundError(f'Invalid file path {path!r}.')
 
 
 def config_inline_backend(fmt=None):
@@ -424,9 +422,9 @@ def use_style(style):
     # stylesheet-supporting features obvious. Plus changing the style does
     # so much *more* than changing rc params or quick settings, so it is
     # nice to have dedicated function instead of just another rc_param name.
-    kw_matplotlib, kw_proplot = _get_style_dicts(style, infer=True)
+    kw_matplotlib = _get_style_dict(style)
     rc_matplotlib.update(kw_matplotlib)
-    rc_proplot.update(kw_proplot)
+    rc_proplot.update(_infer_proplot_dict(kw_matplotlib))
 
 
 @docstring._snippet_manager
@@ -750,7 +748,7 @@ class Configurator(MutableMapping, dict):
         Modify an `rc_matplotlib` or `rc_proplot` setting using dictionary notation
         (e.g., ``pplt.rc[name] = value``).
         """
-        kw_proplot, kw_matplotlib = self._get_params(key, value)
+        kw_proplot, kw_matplotlib = self._item_dicts(key, value)
         rc_proplot.update(kw_proplot)
         rc_matplotlib.update(kw_matplotlib)
 
@@ -784,10 +782,10 @@ class Configurator(MutableMapping, dict):
             )
         context = self._context[-1]
         kwargs = context.kwargs
-        rc_new = context.rc_new  # used for context-based _get_with_context
+        rc_new = context.rc_new  # used for context-based _item_context
         rc_old = context.rc_old  # used to re-apply settings without copying whole dict
         for key, value in kwargs.items():
-            kw_proplot, kw_matplotlib = self._get_params(key, value)
+            kw_proplot, kw_matplotlib = self._item_dicts(key, value)
             for rc_dict, kw_new in zip(
                 (rc_proplot, rc_matplotlib),
                 (kw_proplot, kw_matplotlib),
@@ -806,7 +804,7 @@ class Configurator(MutableMapping, dict):
             )
         context = self._context[-1]
         for key, value in context.rc_old.items():
-            kw_proplot, kw_matplotlib = self._get_params(key, value)
+            kw_proplot, kw_matplotlib = self._item_dicts(key, value)
             rc_proplot.update(kw_proplot)
             rc_matplotlib.update(kw_matplotlib)
         del self._context[-1]
@@ -829,7 +827,7 @@ class Configurator(MutableMapping, dict):
         Convert numpy ndarray to list and validate if possible.
         """
         # NOTE: Ideally would implicitly validate on subsequent assignment to rc
-        # dictionaries, but must explicitly do it here, so _get_params can 'sync'
+        # dictionaries, but must explicitly do it here, so _item_dicts can 'sync'
         # settings with children (e.g. multiplying tick widths by width ratios)
         # and so _load_file() can catch errors and emit warnings before assignment.
         if isinstance(value, np.ndarray):
@@ -852,11 +850,11 @@ class Configurator(MutableMapping, dict):
         # Update from default settings
         # NOTE: see _remove_blacklisted_style_params bugfix
         if default:
-            rc_matplotlib.update(_get_style_dicts('original', filter=False))
+            rc_matplotlib.update(_get_style_dict('original', filter=False))
             rc_matplotlib.update(rcsetup._rc_matplotlib_default)
             rc_proplot.update(rcsetup._rc_proplot_default)
             for key, value in rc_proplot.items():
-                kw_proplot, kw_matplotlib = self._get_params(
+                kw_proplot, kw_matplotlib = self._item_dicts(
                     key, value, skip_cycle=skip_cycle
                 )
                 rc_matplotlib.update(kw_matplotlib)
@@ -877,7 +875,34 @@ class Configurator(MutableMapping, dict):
                     continue
                 self.load(path)
 
-    def _get_params(self, key, value, skip_cycle=False):
+    def _item_context(self, key, mode=None):
+        """
+        As with `~Configurator.__getitem__` but the search is limited based
+        on the context mode and ``None`` is returned if the key is not found.
+        """
+        key = self._validate_key(key)
+        if mode is None:
+            mode = self._context_mode
+        cache = tuple(context.rc_new for context in self._context)
+        if mode == 0:
+            rcdicts = (*cache, rc_proplot, rc_matplotlib)
+        elif mode == 1:
+            rcdicts = (*cache, rc_proplot)  # added settings only!
+        elif mode == 2:
+            rcdicts = (*cache,)
+        else:
+            raise ValueError(f'Invalid caching mode {mode!r}.')
+        for rcdict in rcdicts:
+            if not rcdict:
+                continue
+            try:
+                return rcdict[key]
+            except KeyError:
+                continue
+        if mode == 0:  # otherwise return None
+            raise KeyError(f'Invalid rc setting {key!r}.')
+
+    def _item_dicts(self, key, value, skip_cycle=False):
         """
         Return dictionaries for updating the `rc_proplot` and `rc_matplotlib`
         properties associated with this key. Used when setting items, entering
@@ -912,9 +937,9 @@ class Configurator(MutableMapping, dict):
         # Special key: apply stylesheet
         elif contains('style'):
             if value is not None:
-                ikw_matplotlib, ikw_proplot = _get_style_dicts(value, infer=True)
+                ikw_matplotlib = _get_style_dict(value)
                 kw_matplotlib.update(ikw_matplotlib)
-                kw_proplot.update(ikw_proplot)
+                kw_proplot.update(_infer_proplot_dict(ikw_matplotlib))
 
         # Cycler
         # NOTE: Have to skip this step during initial proplot import
@@ -990,32 +1015,190 @@ class Configurator(MutableMapping, dict):
 
         return kw_proplot, kw_matplotlib
 
-    def _get_with_context(self, key, mode=None):
+    @staticmethod
+    def _axisbelow_to_zorder(axisbelow):
         """
-        As with `~Configurator.__getitem__` but the search is limited based
-        on the context mode and ``None`` is returned if the key is not found.
+        Convert the `axisbelow` string to its corresponding `zorder`.
         """
-        key = self._validate_key(key)
-        if mode is None:
-            mode = self._context_mode
-        cache = tuple(context.rc_new for context in self._context)
-        if mode == 0:
-            rcdicts = (*cache, rc_proplot, rc_matplotlib)
-        elif mode == 1:
-            rcdicts = (*cache, rc_proplot)  # added settings only!
-        elif mode == 2:
-            rcdicts = (*cache,)
+        if axisbelow is True:
+            zorder = 0.5
+        elif axisbelow is False:
+            zorder = 2.5
+        elif axisbelow in ('line', 'lines'):
+            zorder = 1.5
         else:
-            raise ValueError(f'Invalid caching mode {mode!r}.')
-        for rcdict in rcdicts:
-            if not rcdict:
-                continue
-            try:
-                return rcdict[key]
-            except KeyError:
-                continue
-        if mode == 0:  # otherwise return None
-            raise KeyError(f'Invalid rc setting {key!r}.')
+            raise ValueError(f'Unexpected axisbelow value {axisbelow!r}.')
+        return zorder
+
+    def _get_background_props(self, patch_kw=None, native=True, **kwargs):
+        """
+        Return background properties, optionally filtering the output dictionary
+        based on the context.
+        """
+        # Deprecated behavior
+        context = native or self._context_mode == 2
+        if patch_kw:
+            warnings._warn_proplot(
+                "'patch_kw' is not necessary as of proplot v0.8. Pass "
+                'the parameters as keyword arguments instead.'
+            )
+            kwargs.update(patch_kw)
+
+        # Get user-input properties and changed rc settings
+        # NOTE: Here we use 'color' as an alias for just 'edgecolor' rather than
+        # both 'edgecolor' and 'facecolor' to match 'xcolor' and 'ycolor' arguments.
+        props = _pop_props(kwargs, 'patch')
+        if 'color' in props:
+            props.setdefault('edgecolor', props.pop('color'))
+        for key in ('alpha', 'facecolor', 'linewidth', 'edgecolor'):
+            value = self.find('axes.' + key, context=context)
+            if value is not None:
+                props.setdefault(key, value)
+
+        # Partition properties into face and edge
+        kw_face = _pop_kwargs(props, 'alpha', 'facecolor')
+        kw_edge = _pop_kwargs(props, 'edgecolor', 'linewidth', 'linestyle')
+        kw_edge['capstyle'] = 'projecting'  # NOTE: needed to fix cartopy bounds
+        if 'color' in props:
+            kw_edge.setdefault('edgecolor', props.pop('color'))
+        if kwargs:
+            raise TypeError(f'Unexpected keyword argument(s): {kwargs!r}')
+
+        return kw_face, kw_edge
+
+    def _get_gridline_bool(self, grid=None, axis=None, which='major', native=True):
+        """
+        Return major and minor gridline toggles from ``axes.grid``, ``axes.grid.which``,
+        and ``axes.grid.axis``, optionally returning `None` based on the context.
+        """
+        # NOTE: If you pass 'grid' or 'gridminor' the native args are updated
+        # NOTE: Very careful to return not None only if setting was changed.
+        # Avoid unnecessarily triggering grid redraws (esp. bad for geo.py)
+        context = native or self._context_mode == 2
+        grid_on = self.find('axes.grid', context=context)
+        which_on = self.find('axes.grid.which', context=context)
+        if grid_on is not None or which_on is not None:  # if *one* was changed
+            axis_on = self['axes.grid.axis']  # always need this property
+            grid_on = _not_none(grid_on, self['axes.grid'])
+            which_on = _not_none(which_on, self['axes.grid.which'])
+            axis = _not_none(axis, 'x')
+            axis_on = axis is None or axis_on in (axis, 'both')
+            which_on = which_on in (which, 'both')
+            grid = _not_none(grid, grid_on and axis_on and which_on)
+        return grid
+
+    def _get_gridline_props(self, which='major', native=True):
+        """
+        Return gridline properties, optionally filtering the output dictionary
+        based on the context.
+        """
+        # Line properties
+        # NOTE: Gridline zorder is controlled automatically by matplotlib but
+        # must be controlled manually for geographic projections
+        key = 'grid' if which == 'major' else 'gridminor'
+        prefix = 'grid_' if native else ''  # for native gridlines use this prefix
+        context = native or self._context_mode == 2
+        kwlines = self.fill(
+            {
+                f'{prefix}alpha': f'{key}.alpha',
+                f'{prefix}color': f'{key}.color',
+                f'{prefix}linewidth': f'{key}.linewidth',
+                f'{prefix}linestyle': f'{key}.linestyle',
+            },
+            context=context,
+        )
+        axisbelow = self.find('axes.axisbelow', context=context)
+        if axisbelow is not None:
+            if native:  # this is a native plot so use set_axisbelow() down the line
+                kwlines['axisbelow'] = axisbelow
+            else:  # this is a geographic plot so apply with zorder
+                kwlines['zorder'] = self._axisbelow_to_zorder(axisbelow)
+        return kwlines
+
+    def _get_label_props(self, native=True, **kwargs):
+        """
+        Return the axis label properties, optionally filtering the output dictionary
+        based on the context.
+        """
+        # Get the label settings
+        # NOTE: This permits passing arbitrary additional args to set_[xy]label()
+        context = native or self._context_mode == 2
+        kw = self.fill(
+            {
+                'color': 'axes.labelcolor',
+                'weight': 'axes.labelweight',
+                'size': 'axes.labelsize',
+                'family': 'font.family',
+                'labelpad': 'axes.labelpad',  # read by set_xlabel/set_ylabel
+            },
+            context=context,
+        )
+        for key, value in kwargs.items():
+            if value is not None:  # allow e.g. color=None
+                kw[key] = value
+        return kw
+
+    def _get_loc_string(self, string, axis=None, native=True):
+        """
+        Return `tickloc` and `spineloc` location strings from the `rc` boolean toggles,
+        optionally returning `None` based on the context.
+        """
+        context = native or self._context_mode == 2
+        axis = _not_none(axis, 'x')
+        opt1, opt2 = ('top', 'bottom') if axis == 'x' else ('left', 'right')
+        b1 = self.find(f'{string}.{opt1}', context=context)
+        b2 = self.find(f'{string}.{opt2}', context=context)
+        if b1 is None and b2 is None:
+            return None
+        elif b1 and b2:
+            return 'both'
+        elif b1:
+            return opt1
+        elif b2:
+            return opt2
+        else:
+            return 'neither'
+
+    def _get_tickline_props(self, axis=None, which='major', native=True):
+        """
+        Return the tick line properties, optionally filtering the output dictionary
+        based on the context.
+        """
+        # Tick properties obtained with rc.category
+        # NOTE: This loads 'size', 'width', 'pad', 'bottom', and 'top'
+        axis = _not_none(axis, 'x')
+        context = native or self._context_mode == 2
+        kwticks = self.category(f'{axis}tick.{which}', context=context)
+        kwticks.pop('visible', None)
+        for key in ('color', 'direction'):
+            value = self.find(f'{axis}tick.{key}', context=context)
+            if value is not None:
+                kwticks[key] = value
+        return kwticks
+
+    def _get_ticklabel_props(self, axis=None, native=True):
+        """
+        Return the tick label properties, optionally filtering the output dictionary
+        based on the context.
+        """
+        # NOTE: 'tick.label' properties are now synonyms of 'grid.label' properties
+        sprefix = axis or ''
+        cprefix = sprefix if dependencies._version_mpl >= 3.4 else ''  # new settings
+        context = native or self._context_mode == 2
+        kwtext = self.fill(
+            {
+                'color': f'{cprefix}tick.labelcolor',  # native setting sometimes avail
+                'size': f'{sprefix}tick.labelsize',  # native setting always avail
+                'weight': 'tick.labelweight',  # native setting never avail
+                'family': 'font.family',  # apply manually
+            },
+            context=context,
+        )
+        if kwtext.get('color', None) == 'inherit':
+            # Inheritence is not automatic for geographic
+            # gridline labels so we apply inheritence here.
+            kwtext['color'] = self[f'{sprefix}tick.color']
+        return kwtext
 
     @staticmethod
     def local_files():
@@ -1268,7 +1451,7 @@ class Configurator(MutableMapping, dict):
         for key in self:
             if not re.match(fr'\A{cat}\.[^.]+\Z', key):
                 continue
-            value = self._get_with_context(key, None if context else 0)
+            value = self._item_context(key, None if context else 0)
             if value is None:
                 continue
             if trimcat:
@@ -1297,7 +1480,7 @@ class Configurator(MutableMapping, dict):
         """
         kw = {}
         for key, value in props.items():
-            item = self._get_with_context(value, None if context else 0)
+            item = self._item_context(value, None if context else 0)
             if item is not None:
                 kw[key] = item
         return kw
@@ -1319,7 +1502,7 @@ class Configurator(MutableMapping, dict):
         Configurator.category
         Configurator.fill
         """
-        return self._get_with_context(key, None if context else 0)
+        return self._item_context(key, None if context else 0)
 
     def update(self, *args, **kwargs):
         """
@@ -1403,7 +1586,7 @@ class Configurator(MutableMapping, dict):
                 with warnings.catch_warnings():
                     warnings.simplefilter('error', warnings.ProplotWarning)
                     try:
-                        ikw_proplot, ikw_matplotlib = self._get_params(key, val)
+                        ikw_proplot, ikw_matplotlib = self._item_dicts(key, val)
                     except KeyError:
                         warnings._warn_proplot(
                             f'Invalid rc key {key!r} on {message}.', 'default'
@@ -1419,7 +1602,7 @@ class Configurator(MutableMapping, dict):
                             f'Outdated rc key {key!r} on {message}: {err}', 'default'
                         )
                         warnings.simplefilter('ignore', warnings.ProplotWarning)
-                        ikw_proplot, ikw_matplotlib = self._get_params(key, val)
+                        ikw_proplot, ikw_matplotlib = self._item_dicts(key, val)
                 # Update the settings
                 kw_proplot.update(ikw_proplot)
                 kw_matplotlib.update(ikw_matplotlib)
@@ -1551,7 +1734,7 @@ class Configurator(MutableMapping, dict):
         # we cannot load it from _cmap_database in rcsetup.
         rcdict.pop('interactive', None)  # changed by backend
         rcdict.pop('axes.prop_cycle', None)
-        return _get_filtered_dict(rcdict, warn=False)
+        return _filter_style_dict(rcdict, warn=False)
 
     # Renamed methods
     load_file = warnings._rename_objs('0.8', load_file=load)
