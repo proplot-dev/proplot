@@ -92,15 +92,15 @@ def _is_descending(data):
     """
     Test whether the input data is descending. This is used for auto axis reversal.
     """
-    # NOTE: Want this to work with e.g. datetime axes but fail for strange
-    # mixed types so filter against object dtypes rather than using _is_numeric
+    # NOTE: Want this to work with e.g. datetime object arrays and numpy datetime
+    # arrays so use try except clause.
     data = _to_numpy_array(data)
-    return (
-        data.ndim == 1
-        and data.size > 1
-        and data.dtype != 'O'
-        and np.all(np.sign(np.diff(data)) == -1)
-    )
+    if data.ndim > 1 or data.size < 2:
+        return False
+    try:
+        return all(x != abs(x) for x in np.diff(data))
+    except TypeError:
+        return False
 
 
 def _to_duck_array(data, strip_units=False):
@@ -156,7 +156,10 @@ def _to_masked_array(data, *, copy=False):
     units = None
     if ndarray is not Quantity and isinstance(data, Quantity):
         data, units = data.magnitude, data.units
-    data = ma.masked_invalid(data, copy=copy)
+    if data.dtype == 'O':
+        data = ma.array(data, mask=False)
+    else:
+        data = ma.masked_invalid(data, copy=copy)
     if np.issubdtype(data.dtype, np.integer):
         data = data.astype(np.float)
     if np.issubdtype(data.dtype, np.number):
@@ -503,17 +506,25 @@ def _safe_range(data, lo=0, hi=100):
     min_ = max_ = None
     if data.size:
         min_ = np.min(data) if lo <= 0 else np.percentile(data, lo)
-        if np.issubdtype(min_.dtype, np.integer):
+        if hasattr(min_, 'dtype') and np.issubdtype(min_.dtype, np.integer):
             min_ = np.float(min_)
-        if not np.isfinite(min_):
+        try:
+            is_finite = np.isfinite(min_)
+        except TypeError:
+            is_finite = True
+        if not is_finite:
             min_ = None
         elif units is not None:
             min_ *= units
     if data.size:
         max_ = np.max(data) if hi >= 100 else np.percentile(data, hi)
-        if np.issubdtype(max_.dtype, np.integer):
+        if hasattr(max_, 'dtype') and np.issubdtype(max_.dtype, np.integer):
             max_ = np.float(max_)
-        if not np.isfinite(max_):
+        try:
+            is_finite = np.isfinite(min_)
+        except TypeError:
+            is_finite = True
+        if not is_finite:
             max_ = None
         elif units is not None:
             max_ *= units
