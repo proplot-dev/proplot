@@ -387,12 +387,6 @@ includepanels : bool, default: False
     Whether to include panels when aligning figure "super titles" along the top
     of the subplot grid and when aligning the `spanx` *x* axis labels and
     `spany` *y* axis labels along the sides of the subplot grid.
-mathtext_fallback : bool or str, default: :rc:`mathtext.fallback`
-    Apply this :rcraw:`mathtext.fallback` value when drawing the figure. If
-    ``True`` or string, unavailable glyphs are replaced with a glyph from a
-    fallback font (Computer Modern by default). Otherwise, they are replaced
-    with the "¤" dummy character. For details see this `mathtext tutorial \
-<https://matplotlib.org/stable/tutorials/text/mathtext.html#custom-fonts>`__.
 """
 _rc_init_docstring = """
 """

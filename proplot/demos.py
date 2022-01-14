@@ -14,7 +14,7 @@ from . import colors as pcolors
 from . import constructor, ui
 from .config import _get_data_folders, rc
 from .internals import ic  # noqa: F401
-from .internals import _not_none, docstring, warnings
+from .internals import _not_none, dependencies, docstring, warnings
 from .utils import to_rgb, to_xyz
 
 __all__ = [
@@ -841,9 +841,9 @@ def show_fonts(
     show_cycles
     show_colors
     """
+    # Select fonts for plotting. Default is to show sans-serif fonts. Otherwise
+    # fonts can be specified as input arguments or with the family keyword
     if not args and family is None:
-        # User fonts and sans-serif fonts. Note all proplot sans-serif
-        # fonts are added to 'font.sans-serif' by default
         args = sorted(
             {
                 font.name for font in mfonts.fontManager.ttflist
@@ -879,7 +879,7 @@ def show_fonts(
             }
         )
 
-    # Text
+    # The default sample text
     if text is None:
         text = (
             'the quick brown fox jumps over a lazy dog' '\n'
@@ -893,12 +893,22 @@ def show_fonts(
             r'$\Phi\phi$ $\Psi\psi$ $\Omega\omega$ !?&#%'
         )
 
+    # Settings for rendering math text
+    ctx = {
+        'mathtext.default': 'regular',
+        'mathtext.fontset': 'custom',
+    }
+    if dependencies._version_mpl < 3.4:
+        ctx['mathtext.fallback_to_cm'] = False
+    else:
+        ctx['mathtext.fallback'] = None
+
     # Create figure
     refheight = 1.2 * (text.count('\n') + 2.5) * size / 72
     fig, axs = ui.subplots(
         refwidth=4.5, refheight=refheight, nrows=len(args), ncols=1, space=0,
-        mathtext_fallback=False
     )
+    fig._render_context.update(ctx)
     axs.format(
         xloc='neither', yloc='neither',
         xlocator='null', ylocator='null', alpha=0

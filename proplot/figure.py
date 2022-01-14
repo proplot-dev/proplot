@@ -26,7 +26,6 @@ from .internals import (
     _pop_rc,
     _translate_loc,
     context,
-    dependencies,
     docstring,
     texts,
     warnings,
@@ -466,7 +465,7 @@ def _add_canvas_preprocessor(canvas, method):
         # call in this function before proceeding with print_figure).
         ctx1 = fig._context_adjusting(cache=(method != 'print_figure'))
         ctx2 = fig._context_authorized()  # backends might call set_constrained_layout()
-        ctx3 = rc.context(fig._mathtext_context)  # draw with figure-specific setting
+        ctx3 = rc.context(fig._render_context)  # draw with figure-specific setting
         with ctx1, ctx2, ctx3:
             fig.auto_layout()
             return func(self, *args, **kwargs)
@@ -715,7 +714,7 @@ class Figure(mfigure.Figure):
         self._is_adjusting = False
         self._is_authorized = False
         self._includepanels = None
-        self._mathtext_context = {}
+        self._render_context = {}
         rc_kw, rc_mode = _pop_rc(kwargs)
         kw_format = _pop_params(kwargs, self._format_signature)
         with self._context_authorized():
@@ -1468,6 +1467,7 @@ class Figure(mfigure.Figure):
             gs._auto_layout_tight(renderer)
         _align_content()
 
+    @warnings._rename_kwargs('0.10', mathtext_fallback='pplt.rc.mathtext_fallback = {}')
     @docstring._snippet_manager
     def format(
         self, axs=None, *,
@@ -1477,7 +1477,7 @@ class Figure(mfigure.Figure):
         blabels=None, bottomlabels=None, bottomlabels_kw=None,
         tlabels=None, toplabels=None, toplabels_kw=None,
         rowlabels=None, collabels=None,  # aliases
-        includepanels=None, mathtext_fallback=None, **kwargs,
+        includepanels=None, **kwargs,
     ):
         """
         Modify figure-wide labels and call ``format`` for the
@@ -1523,17 +1523,7 @@ class Figure(mfigure.Figure):
             kw = rc.fill({'facecolor': 'figure.facecolor'}, context=True)
             self.patch.update(kw)
 
-            # Update text drawing behavior
-            if includepanels is not None:
-                self._includepanels = includepanels
-            if mathtext_fallback is not None:
-                if dependencies._version_mpl >= 3.4:
-                    context = {'mathtext.fallback': mathtext_fallback if isinstance(mathtext_fallback, str) else 'cm' if mathtext_fallback else None}  # noqa: E501
-                else:
-                    context = {'mathtext.fallback_to_cm': bool(mathtext_fallback)}
-                self._mathtext_context = context
-
-            # Update super title and label padding
+            # Update super title and label spacing
             pad = rc.find('suptitle.pad', context=True)  # super title
             if pad is not None:
                 self._suptitle_pad = pad
@@ -1541,6 +1531,8 @@ class Figure(mfigure.Figure):
                 pad = rc.find(side + 'label.pad', context=True)
                 if pad is not None:
                     self._suplabel_pad[side] = pad
+            if includepanels is not None:
+                self._includepanels = includepanels
 
             # Update super title and labels text and settings
             suptitle_kw = suptitle_kw or {}

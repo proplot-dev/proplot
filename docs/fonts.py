@@ -67,19 +67,23 @@
 # :ref:`default proplotrc file <ug_proplotrc>`.
 #
 # To compare different fonts, use the `~proplot.demos.show_fonts` command with the
-# `family` keyword (default behavior is ``family='sans-serif'``). Tables of the
-# TeX Gyre and sans-serif fonts packaged with proplot are shown below. The "¤" symbol
-# appears where characters for a particular font are unavailable (when making plots,
-# "¤" is replaced with the character from a fallback font). Since most TeX Gyre fonts
-# have limited character sets, if your plots contain lots of mathematical symbols,
-# you may want to set :rcraw:`font.family` to the matplotlib-packaged
-# font ``'DejaVu Sans'`` or the proplot-packaged font ``'Fira Math'``
-# (see `this page <https://github.com/firamath/firamath>`__ for more on Fira Math).
+# `family` keyword (default behavior is ``family='sans-serif'``). Tables of the TeX
+# Gyre and sans-serif fonts packaged with proplot are shown below. In order to show how
+# the fonts perform as math text, the demo is rendered with :rcraw:`mathtext.default`
+# = ``'regular'``, :rcraw:`mathtext.fontset` = ``'custom'``, and
+# :rcraw:`mathtext.fallback` = ``None``. This uses the global :rcraw:`font.family`
+# for the math text and shows a dummy glyph "¤" is shown where math characters
+# are unavailable (see the matplotlib `math text guide
+# <https://matplotlib.org/stable/tutorials/text/mathtext.html#custom-fonts>`__
+# for details). In practice, proplot uses a standard non-italicized math
+# text everywhere by setting :rc:`mathtext.fontset` = ``'stixsans'`` and
+# :rcraw:`mathtext.default = 'rm'` (see the :ref:`proplotrc file <ug_proplotrc>`
+# for details).
 #
 # .. note::
 #
-#    Try to avoid ``.ttf`` files with ``Thin`` in the file name. Some versions of
-#    matplotlib interpret fonts with the "thin" style as having *normal* weight (see
+#    Try to avoid "thin" ``.ttf`` files. Some versions of matplotlib
+#    interpret fonts with the "thin" style as having *normal* weight (see
 #    `this issue page <https://github.com/matplotlib/matplotlib/issues/8788>`__),
 #    causing them to override the correct normal weight versions. While proplot
 #    tries to filter out these files, this cannot be done systematically. In the
