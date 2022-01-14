@@ -668,6 +668,8 @@ _rc_matplotlib_default = {
     'ytick.minor.width': LINEWIDTH * TICKWIDTHRATIO,
     'ytick.minor.visible': TICKMINOR,
 }
+if 'mathtext.fallback' in _rc_matplotlib_native:
+    _rc_matplotlib_default['mathtext.fallback'] = 'stixsans'
 
 # Proplot pseudo-setting defaults, validators, and descriptions
 # NOTE: Cannot have different a-b-c and title paddings because they are both controlled
