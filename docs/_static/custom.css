@@ -44,7 +44,7 @@
   --l5-bg-color: #b6b6b6;
   --l6-bg-color: #a9a9a9;
   --l7-bg-color: #9c9c9c;
-  --block-bg-color: #f0f0f0;
+  --block-bg-color: #f4f4f4;
   --accent-bg-color: #d0d0d0;
 }
 
@@ -131,8 +131,13 @@ h6{
 body.scroll-up,
 body.scroll-down,
 .wy-nav-content {
-  /* max-width: 50em !important; */
+  max-width: 60em;
   background: var(--main-bg-color);
+}
+
+/* List item separation. Compare to paragraph break margin of 24px */
+.rst-content li {
+  margin-bottom: 8px;
 }
 
 /* Sidebar text color, includes text-logo color for mobile */
@@ -247,12 +252,18 @@ body.scroll-down,
   /* box-shadow-color: var(--search-shadow-color); */
 }
 
-/* Code block color. dl:not(.docutils) needed to match specificity */
+/* Code block color. dl:not(.docutils) needed below to match specificity */
+/* Previously included border but have removed this to match pydata theme */
 code,
 .rst-content tt,
 .rst-content code {
-  border: solid 1px var(--code-border-color);
-  background: var(--code-bg-color);
+  border: 0;
+  padding: 0;
+  background: transparent;
+  font-size: 87.5%;  /* matches pydata theme */
+  /* border: solid 1px var(--code-border-color);  */
+  /* background: var(--code-bg-color);  */
+  /* font-size: 75%;  */
 }
 .rst-content tt.literal,
 .rst-content code.literal,
@@ -313,8 +324,8 @@ code,
   font-weight: bold;
   background: var(--block-bg-color);
   border-left-color: var(--accent-bg-color);
-  /* padding: 0; */ /* remove accents, decided against this */
-  /* border: 0; */ /* remove accents, decided against this */
+  /* padding: 0;  /* remove accents, decided against this */
+  /* border: 0;  /* remove accents, decided against this */
 }
 
 /* Parameter table colors */
