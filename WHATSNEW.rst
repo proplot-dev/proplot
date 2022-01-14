@@ -60,8 +60,10 @@ Style changes
   (:commit:`ba405ac0`). This also silences a matplotlib >= 3.5 deprecation warning.
 * Change the default fallback font from the serif font Computer Modern to the
   sans-serif font STIX Sans (:commit:`d619b5f2`).
-* Change the default font used in ``'$LaTeX equations$'`` from the value of
-  :rcraw:`font.sans` to STIX Sans (:commit:`5b9029d4`).
+* Change the default math text style :rcraw:`mathtext.default` from ``'regular'`` to
+  ``'rm'`` (i.e., upright version of the math fontset), and change the math text fontset
+  :rcraw:`mathtext.fontset` from ``'custom'`` to ``'stixsans'`` (i.e., use STIX sans
+  for math text instead of the default sans-serif font) (:commit:`5b9029d4`).
 * Use `~proplot.ticker.DiscreteLocator` for major/minor discrete colorbar ticks instead
   of `~matplotlib.ticker.FixedLocator` and auto-update the tick selection whenever
   the axes is drawn (:commit:`b94a9b1e`, :commit:`92bb937e`, :commit:`302c239e`).
@@ -71,11 +73,14 @@ Style changes
 
 Features
 --------
-* Adding custom abc and titles (:pr:`294`) by `Pratiman Patel`.
+
+* Support passing abc and title lists to `proplot.axes.Axes.format`, where
+  the label is picked by indexing the list with `~proplot.axes.Axes.number`
+  (:pr:`294`) by `Pratiman Patel`.
 * Significantly improve "tight layout" performance in geographic plots by skipping
-  artists with clipping paths/boxes set to the subplot bounds (:commit:`f891e4f0`).
-* Add modifiable `proplot.figure.Figure.tight` property to retrieve/change the
-  tight layout setting (:commit:`46f46c26`).
+  artists with clipping paths equivalent to the axes patch path (:commit:`f891e4f0`).
+* Add modifiable `proplot.figure.Figure.tight` property to retrieve and optionally
+  toggle the tight layout setting (:commit:`46f46c26`).
 * Add top-level `~proplot.ui.subplot` command that returns a figure and a single
   subplot, analogous to `~proplot.ui.subplots` (:commit:`8459c24c`).
 * Support specifying `transform` keyword arguments as registered cartopy
@@ -128,18 +133,18 @@ Bug fixes
   due to a new default date converter (:commit:`63deee21`).
 * Fix matplotlib >= 3.4 issue where position of child axes in presence of
   subfigures is incorrect (:commit:`9246835f`).
-* Fix matplotlib >= 3.4 issue where alternate axes are drawn twice
-  due to using `~matplotlib.figure.Figure.add_child_axes` and failing to
-  remove axes from the ``fig._localaxes`` stack (:issue:`303`).
-* Fix issue where outer colorbars are drawn twice
-  due to using both `~matplotlib.figure.Figure.add_subplot` and
-  `~matplotlib.axes.Axes.add_child_axes` (:issue:`304`).
+* Fix matplotlib >= 3.4 issue where alternate axes are drawn twice due to adding them
+  as child axes and failing to remove from the ``fig._localaxes`` stack (:issue:`303`).
+* Fix issue where outer colorbars are drawn twice due to adding them as both
+  figure-wide axes and child axes (:issue:`304`).
 * Fix issue where silently-deprecated `aspect` parameter passed to
   `proplot.ui.subplots` is not translated to `refaspect` (:commit:`2406a2ae`).
 * Fix issue where `proplot.gridspec.GridSpec.figure` is allowed to change -- instead
   raise error that recommends `~proplot.gridspec.GridSpec.copy` (:commit:`d8898f5f`).
 * Fix issue where `proplot.gridspec.GridSpec.update` cannot be called
   on gridspecs without companion `~proplot.figure.Figure`\ s (:commit:`e69fd041`).
+* Fix issues passing pandas datetime coordinates and object-type coordinate
+  arrays to plotting methods (:issue:`320`).
 * Fix issue where list-of-string colors passed to `~proplot.axes.Axes.scatter`
   are interpreted as data values (:issue:`316`).
 * Fix issue where background properties like `color` and `linewidth` cannot be
@@ -158,6 +163,8 @@ Documentation
 
 * Indicate default values in type-specification rather than
   parameter descriptions (:commit:`50546dee`).
+* Improve website style: lighter headers, wider text, and no more
+  clumsy boxes around code literals (:commit:`450ede53`).
 * Improve colorbar and legend documentation, expound
   added features more carefully (:commit:`43631840`).
 

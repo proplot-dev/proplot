@@ -22,6 +22,14 @@ from . import dependencies, warnings
 # colors that were most likely a failed literal string evaluation during startup.
 REGEX_NAMED_COLOR = re.compile(r'\A[a-zA-Z0-9:_ -]*\Z')
 
+# Configurable validation settings
+# NOTE: These are set to True inside __init__.py
+# NOTE: We really cannot delay creation of 'rc' until after registration because
+# colormap creation depends on rc['cmap.lut'] and rc['cmap.listedthresh'].
+# And anyway to revoke that dependence would require other uglier kludges.
+VALIDATE_REGISTERED_CMAPS = False
+VALIDATE_REGISTERED_COLORS = False
+
 # Initial synced properties
 # NOTE: Important that LINEWIDTH is less than matplotlib default of 0.8.
 # In general want axes lines to look about as thick as text.
@@ -149,14 +157,6 @@ PT_KEYS = (
     'contour.linewidth',
 )
 FONT_KEYS = set()  # dynamically add to this below
-
-# Configurable validation settings
-# NOTE: These are set to True inside __init__.py
-# NOTE: We really cannot delay creation of 'rc' until after registration because
-# colormap creation depends on rc['cmap.lut'] and rc['cmap.listedthresh'].
-# And anyway to revoke that dependence would require other uglier kludges.
-VALIDATE_REGISTERED_CMAPS = False
-VALIDATE_REGISTERED_COLORS = False
 
 
 def _get_default_param(key):
