@@ -35,7 +35,9 @@ Deprecated
 ----------
 
 * Rename `rasterize` and :rcraw:`colorbar.rasterize` to `rasterized`,
-  consistent with existing matplotlib ``rasterized`` property (:commit:`31efafea`).
+  consistent with the existing matplotlib ``rasterized`` property (:commit:`31efafea`).
+* Remove the obscure `proplot.figure.Figure.format` keyword `mathtext_fallback`
+  (:commit:`5ce23a59`). This can now only be modified with the `rc` dictionary.
 * Improve the `~proplot.gridspec.GridSpec` "panel" obfuscation by
   renaming `~proplot.gridspec.GridSpec.get_subplot_geometry` to
   `~proplot.gridspec.GridSpec.get_geometry`, `~proplot.gridspec.GridSpec.get_geometry`
@@ -54,6 +56,12 @@ Style changes
 
 * Disable automatic reversal of dependent variable coordinates when axis limits
   are fixed, and add documentation for this feature (:issue:`300`).
+* Prevent auto-disabling of gridlines in presence of `pcolor` plots in matplotlib < 3.5
+  (:commit:`ba405ac0`). This also silences a matplotlib >= 3.5 deprecation warning.
+* Change the default fallback font from the serif font Computer Modern to the
+  sans-serif font STIX Sans (:commit:`d619b5f2`).
+* Change the default font used in ``'$LaTeX equations$'`` from the value of
+  :rcraw:`font.sans` to STIX Sans (:commit:`5b9029d4`).
 * Use `~proplot.ticker.DiscreteLocator` for major/minor discrete colorbar ticks instead
   of `~matplotlib.ticker.FixedLocator` and auto-update the tick selection whenever
   the axes is drawn (:commit:`b94a9b1e`, :commit:`92bb937e`, :commit:`302c239e`).
@@ -132,6 +140,8 @@ Bug fixes
   raise error that recommends `~proplot.gridspec.GridSpec.copy` (:commit:`d8898f5f`).
 * Fix issue where `proplot.gridspec.GridSpec.update` cannot be called
   on gridspecs without companion `~proplot.figure.Figure`\ s (:commit:`e69fd041`).
+* Fix issue where list-of-string colors passed to `~proplot.axes.Axes.scatter`
+  are interpreted as data values (:issue:`316`).
 * Fix issue where background properties like `color` and `linewidth` cannot be
   passed to `~proplot.axes.Axes` instantiation commands (:commit:`b67b046c`).
 * Fix issue where manual data aspect ratio passed with `~proplot.axes.Axes.format`
