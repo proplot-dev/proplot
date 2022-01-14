@@ -296,14 +296,17 @@ docstring._snippet_manager['axes.panel'] = _panel_docstring
 
 # Format docstrings
 _axes_format_docstring = """
-title : str, optional
-    The axes title.
-abc : bool or str or tuple, default: :rc:`abc`
+title : str or sequence, optional
+    The axes title. Can optionally be a sequence strings, in which case
+    the title will be selected from the sequence according to `~Axes.number`.
+abc : bool or str or sequence, default: :rc:`abc`
     The "a-b-c" subplot label style. Must contain the character ``a`` or ``A``,
     for example ``'a.'``, or ``'A'``. If ``True`` then the default style of
     ``'a'`` is used. The ``a`` or ``A`` is replaced with the alphabetic character
     matching the `~Axes.number`. If `~Axes.number` is greater than 26, the
     characters loop around to a, ..., z, aa, ..., zz, aaa, ..., zzz, etc.
+    Can also be a sequence of strings, in which case the "a-b-c" label
+    will simply be selected from the sequence according to `~Axes.number`.
 abcloc, titleloc : str, default: :rc:`abc.loc`, :rc:`title.loc`
     Strings indicating the location for the a-b-c label and main title.
     The following locations are valid:
@@ -345,17 +348,17 @@ abctitlepad : float, default: :rc:`abc.titlepad`
     The horizontal padding between a-b-c labels and titles in the same location.
     %(units.pt)s
 ltitle, ctitle, rtitle, ultitle, uctitle, urtitle, lltitle, lctitle, lrtitle \
-: str, tuple, optional
+: str or sequence, optional
     Shorthands for the below keywords.
 lefttitle, centertitle, righttitle, upperlefttitle, uppercentertitle, upperrighttitle, \
-lowerlefttitle, lowercentertitle, lowerrighttitle : str, tuple, optional
-    Additional titles in specific positions. This works as an alternative
-    to the ``ax.format(title='Title', titleloc=loc)`` workflow and permits
-    adding more than one title-like label for a single axes.
+lowerlefttitle, lowercentertitle, lowerrighttitle : str or sequence, optional
+    Additional titles in specific positions (see `title` for details). This works as
+    an alternative to the ``ax.format(title='Title', titleloc=loc)`` workflow and
+    permits adding more than one title-like label for a single axes.
 a, alpha, fc, facecolor, ec, edgecolor, lw, linewidth, ls, linestyle : default: \
 :rc:`axes.alpha`, :rc:`axes.facecolor`, :rc:`axes.edgecolor`, :rc:`axes.linewidth`, '-'
     Additional settings applied to the background patch, and their
-    shorthands. Defaults are the ``'axes'`` properties.
+    shorthands. Their defaults values are the ``'axes'`` properties.
 """
 _figure_format_docstring = """
 rowlabels, collabels, llabels, tlabels, rlabels, blabels
@@ -2285,20 +2288,30 @@ class Axes(maxes.Axes):
         self._abc_border_kwargs.update(kwb)
 
         # A-b-c labels. Build as a...z...aa...zz...aaa...zzz
+        # NOTE: The abc string should already be validated here
         abc = rc.find('abc', context=True)  # 1st run, or changed
         if abc is True:
             abc = 'a'
-        if isinstance(abc, tuple):
-            kw['text'] = abc[self.number - 1]
-        elif abc and (not isinstance(abc, str) or 'a' not in abc and 'A' not in abc):
-            raise ValueError(f'Invalid style {abc!r}. Must include letter "a" or "A"')
-        if isinstance(abc, str) and self.number is not None:
+        if abc is False:
+            abc = ''
+        if abc is None or self.number is None:
+            pass
+        elif isinstance(abc, str):
             nabc, iabc = divmod(self.number - 1, 26)
-            old = re.search('[aA]', abc).group()  # return the *first* 'a' or 'A'
-            new = (nabc + 1) * ABC_STRING[iabc]
-            new = new.upper() if old == 'A' else new
-            abc = abc.replace(old, new, 1)
-            kw['text'] = abc or ''
+            if abc:  # should have been validated to contain 'a' or 'A'
+                old = re.search('[aA]', abc).group()  # return first occurrence
+                new = (nabc + 1) * ABC_STRING[iabc]
+                new = new.upper() if old == 'A' else new
+                abc = abc.replace(old, new, 1)  # replace first occurrence
+            kw['text'] = abc
+        else:
+            if self.number > len(abc):
+                raise ValueError(
+                    f'Invalid abc list length {len(abc)} '
+                    f'for axes with number {self.number}.'
+                )
+            else:
+                kw['text'] = abc[self._number - 1]
 
         # Update a-b-c label
         loc = rc.find('abc.loc', context=True)
@@ -2371,10 +2384,22 @@ class Axes(maxes.Axes):
         # necesssary. For inner panels, use the border and bbox settings.
         if loc not in ('left', 'right', 'center'):
             kw.update(self._title_border_kwargs)
-        if isinstance(title, tuple):
-            kw['text'] = title[self.number - 1]
-        elif title is not None:
+        if title is None:
+            pass
+        elif isinstance(title, str):
             kw['text'] = title
+        elif np.iterable(title) and all(isinstance(_, str) for _ in title):
+            if self.number is None:
+                pass
+            elif self.number > len(title):
+                raise ValueError(
+                    f'Invalid title list length {len(title)} '
+                    f'for axes with number {self.number}.'
+                )
+            else:
+                kw['text'] = title[self.number - 1]
+        else:
+            raise ValueError(f'Invalid title {title!r}. Must be string(s).')
         kw.update(kwargs)
         self._title_dict[loc].update(kw)
 

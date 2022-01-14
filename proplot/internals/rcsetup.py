@@ -181,15 +181,21 @@ def _validate_abc(value):
     Validate a-b-c setting.
     """
     try:
-        if type(value) is not tuple:
+        if np.iterable(value):
+            return all(map(_validate_bool, value))
+        else:
             return _validate_bool(value)
     except ValueError:
         pass
-    if isinstance(value, str) and 'a' in value.lower():
-        return value
-    if isinstance(value, tuple):
-        return value
-    raise ValueError("A-b-c specification must be string containing 'a' or 'A'")
+    if isinstance(value, str):
+        if 'a' in value.lower():
+            return value
+    else:
+        if all(isinstance(_, str) for _ in value):
+            return tuple(value)
+    raise ValueError(
+        "A-b-c setting must be string containing 'a' or 'A' or sequence of strings."
+    )
 
 
 def _validate_belongs(*options):
