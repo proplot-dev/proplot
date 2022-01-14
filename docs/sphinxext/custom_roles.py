@@ -8,9 +8,9 @@ from proplot.internals import rcsetup
 from matplotlib import rcParams
 
 
-def _get_nodes(rawtext, text, inliner):
+def _node_list(rawtext, text, inliner):
     """
-    Return the literal node.
+    Return a singleton node list or an empty list if source is unknown.
     """
     source = inliner.document.attributes['source'].replace(sep, '/')
     relsource = source.split('/docs/', 1)
@@ -22,7 +22,7 @@ def _get_nodes(rawtext, text, inliner):
     else:
         path = '../' * relsource[1].count('/') + 'en/stable'
         refuri = f'{path}/configuration.html?highlight={text}#table-of-settings'
-    node = nodes.Text(f'rc[{text!r}]' if '.' in text else f'rc.{text}')
+    node = nodes.Text(f"rc[\\'{text}\\']" if '.' in text else f'rc.{text}')
     ref = nodes.reference(rawtext, node, refuri=refuri)
     return [nodes.literal('', '', ref)]
 
@@ -31,23 +31,23 @@ def rc_raw_role(name, rawtext, text, lineno, inliner, options={}, content=[]):  
     """
     The :rcraw: role. Includes a link to the setting.
     """
-    list_ = _get_nodes(rawtext, text, inliner)
-    return list_, []
+    node_list = _node_list(rawtext, text, inliner)
+    return node_list, []
 
 
 def rc_role(name, rawtext, text, lineno, inliner, options={}, content=[]):  # noqa: U100
     """
     The :rc: role. Includes a link to the setting and its default value.
     """
-    list_ = _get_nodes(rawtext, text, inliner)
+    node_list = _node_list(rawtext, text, inliner)
     try:
         default = rcsetup._get_default_param(text)
     except KeyError:
         pass
     else:
-        list_.append(nodes.Text(' = '))
-        list_.append(nodes.literal('', '', nodes.Text(repr(default))))
-    return list_, []
+        node_list.append(nodes.Text(' = '))
+        node_list.append(nodes.literal('', '', nodes.Text(repr(default))))
+    return node_list, []
 
 
 def setup(app):
