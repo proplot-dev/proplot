@@ -30,7 +30,14 @@ import numpy.ma as ma
 
 from .config import rc
 from .internals import ic  # noqa: F401
-from .internals import _kwargs_to_args, _not_none, _pop_props, docstring, warnings
+from .internals import (
+    _kwargs_to_args,
+    _not_none,
+    _pop_props,
+    docstring,
+    inputs,
+    warnings,
+)
 from .utils import set_alpha, to_hex, to_rgb, to_rgba, to_xyz, to_xyza
 
 __all__ = [
@@ -2305,12 +2312,12 @@ def _sanitize_levels(levels):
     """
     Ensure the levels are monotonic. If they are descending, reverse them.
     """
-    levels = np.atleast_1d(levels)
+    levels = inputs._to_numpy_array(levels)
     if levels.ndim != 1 or levels.size < 2:
         raise ValueError(f'Levels {levels} must be a 1D array with size >= 2.')
     if isinstance(levels, ma.core.MaskedArray):
         levels = levels.filled(np.nan)
-    if not np.all(np.isfinite(levels)):
+    if not np.all(np.isfinite(levels)) or not inputs._is_numeric(levels):
         raise ValueError(f'Levels {levels} contain invalid values.')
     diffs = np.sign(np.diff(levels))
     if np.all(diffs == 1):

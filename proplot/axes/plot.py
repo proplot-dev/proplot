@@ -1911,30 +1911,22 @@ class PlotAxes(base.Axes):
                 if axis.isDefault_label:
                     kw_format[sy + 'label'] = title
 
-        # Convert string-type coordinates
+        # Convert string-type coordinates to indices
         # NOTE: This should even allow qualitative string input to hist()
         if autox:
             x, kw_format = inputs._meta_coords(x, which=sx, **kw_format)
         if autoy:
             *ys, kw_format = inputs._meta_coords(*ys, which=sy, **kw_format)
-        descending = (
-            autox
-            and autoreverse
-            and x.ndim == 1
-            and x.size > 1
-            and np.all(np.sign(np.diff(inputs._to_numpy_array(x))) == -1)
-        )
-        if descending and getattr(self, f'get_autoscale{sx}_on')():
-            kw_format[sx + 'reverse'] = True
+        if autox and autoreverse and inputs._is_descending(x):
+            if getattr(self, f'get_autoscale{sx}_on')():
+                kw_format[sx + 'reverse'] = True
 
-        # Apply formatting
-        if kw_format:
-            self.format(**kw_format)
-
-        # Finally strip metadata
+        # Finally apply formatting and strip metadata
         # WARNING: Most methods that accept 2D arrays use columns of data, but when
         # pandas DataFrame specifically is passed to hist, boxplot, or violinplot, rows
         # of data assumed! Converting to ndarray necessary.
+        if kw_format:
+            self.format(**kw_format)
         ys = tuple(map(inputs._to_numpy_array, ys))
         if x is not None:  # pie() and hist()
             x = inputs._to_numpy_array(x)
@@ -2004,14 +1996,9 @@ class PlotAxes(base.Axes):
             x, kw_format = inputs._meta_coords(x, which='x', **kw_format)
             y, kw_format = inputs._meta_coords(y, which='y', **kw_format)
             for s, d in zip('xy', (x, y)):
-                descending = (
-                    autoreverse
-                    and d.ndim == 1
-                    and d.size > 1
-                    and np.all(np.sign(np.diff(inputs._to_numpy_array(d))) == -1)
-                )
-                if descending and getattr(self, f'get_autoscale{s}_on')():
-                    kw_format[s + 'reverse'] = True
+                if autoreverse and inputs._is_descending(d):
+                    if getattr(self, f'get_autoscale{s}_on')():
+                        kw_format[s + 'reverse'] = True
 
             # Apply formatting
             if kw_format:

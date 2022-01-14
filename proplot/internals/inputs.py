@@ -88,6 +88,21 @@ def _is_categorical(data):
     )
 
 
+def _is_descending(data):
+    """
+    Test whether the input data is descending. This is used for auto axis reversal.
+    """
+    # NOTE: Want this to work with e.g. datetime axes but fail for strange
+    # mixed types so filter against object dtypes rather than using _is_numeric
+    data = _to_numpy_array(data)
+    return (
+        data.ndim == 1
+        and data.size > 1
+        and data.dtype != 'O'
+        and np.all(np.sign(np.diff(data)) == -1)
+    )
+
+
 def _to_duck_array(data, strip_units=False):
     """
     Convert arbitrary input to duck array. Preserve array containers with metadata.
