@@ -638,8 +638,8 @@ _rc_matplotlib_default = {
     'legend.fontsize': SMALLSIZE,
     'legend.framealpha': FRAMEALPHA,
     'legend.handletextpad': 0.5,
-    'mathtext.fontset': 'custom',
-    'mathtext.default': 'regular',
+    'mathtext.default': 'rm',
+    'mathtext.fontset': 'stixsans',
     'patch.linewidth': LINEWIDTH,
     'savefig.bbox': None,  # use custom tight layout
     'savefig.directory': '',  # current directory
