@@ -2308,17 +2308,18 @@ def _interpolate_extrapolate_vector(xq, x, y):
     return yq
 
 
-def _sanitize_levels(levels):
+def _sanitize_levels(levels, minsize=2):
     """
     Ensure the levels are monotonic. If they are descending, reverse them.
     """
+    # NOTE: Matplotlib does not support datetime colormap levels as of 3.5
     levels = inputs._to_numpy_array(levels)
-    if levels.ndim != 1 or levels.size < 2:
-        raise ValueError(f'Levels {levels} must be a 1D array with size >= 2.')
+    if levels.ndim != 1 or levels.size < minsize:
+        raise ValueError(f'Levels {levels} must be a 1D array with size >= {minsize}.')
     if isinstance(levels, ma.core.MaskedArray):
         levels = levels.filled(np.nan)
-    if not np.all(np.isfinite(levels)) or not inputs._is_numeric(levels):
-        raise ValueError(f'Levels {levels} contain invalid values.')
+    if not inputs._is_numeric(levels) or not np.all(np.isfinite(levels)):
+        raise ValueError(f'Levels {levels} does not support non-numeric cmap levels.')
     diffs = np.sign(np.diff(levels))
     if np.all(diffs == 1):
         descending = False

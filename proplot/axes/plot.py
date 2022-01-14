@@ -2397,8 +2397,10 @@ class PlotAxes(base.Axes):
         )
         try:
             levels = locator.tick_values(vmin, vmax)
+        except TypeError:  # e.g. due to datetime arrays
+            return None, kwargs
         except RuntimeError:  # too-many-ticks error
-            levels = np.linspace(vmin, vmax, levels)  # TODO: _autolev used N+1
+            levels = np.linspace(vmin, vmax, levels)  # TODO: _autolev used N + 1
 
         # Possibly trim levels far outside of 'vmin' and 'vmax'
         # NOTE: This part is mostly copied from matplotlib _autolev
@@ -2468,48 +2470,58 @@ class PlotAxes(base.Axes):
         kwargs
             Unused arguments.
         """
-        # Rigorously check user input levels and values
+        # Helper function that restricts levels
+        # NOTE: This should have no effect if levels were generated automatically.
+        # However want to apply these to manual-input levels as well.
+        def _restrict_levels(levels):
+            if nozero:
+                levels = levels[levels != 0]
+            if positive:
+                levels = levels[levels >= 0]
+            if negative:
+                levels = levels[levels <= 0]
+            return levels
+
+        # Helper function to sanitize input levels
         # NOTE: Include special case where color levels are referenced by string labels
+        def _sanitize_levels(key, array, minsize):
+            if np.iterable(array):
+                array, _ = pcolors._sanitize_levels(array, minsize)
+            if isinstance(norm, (mcolors.BoundaryNorm, pcolors.SegmentedNorm)):
+                if array is not None:
+                    warnings._warn_proplot(
+                        f'Ignoring {key}={array}. Using norm={norm!r} {key} instead.'
+                    )
+                if key == 'levels':
+                    array = _not_none(levels=array, norm_boundaries=norm.boundaries)
+                else:
+                    array = None
+            return array
+
+        # Parse input arguments and resolve incompatibilities
+        vmin = vmax = None
         levels = _not_none(N=N, levels=levels, norm_kw_levs=norm_kw.pop('levels', None))
-        min_levels = _not_none(min_levels, 2)  # q for contour plots
         if positive and negative:
-            negative = False
             warnings._warn_proplot(
                 'Incompatible args positive=True and negative=True. Using former.'
             )
+            negative = False
         if levels is not None and values is not None:
             warnings._warn_proplot(
                 f'Incompatible args levels={levels!r} and values={values!r}. Using former.'  # noqa: E501
             )
-        for key, points in (('levels', levels), ('values', values)):
-            if points is None:
-                continue
-            if isinstance(norm, (mcolors.BoundaryNorm, pcolors.SegmentedNorm)):
-                warnings._warn_proplot(
-                    f'Ignoring {key}={points}. Instead using norm={norm!r} boundaries.'
-                )
-            if not np.iterable(points):
-                continue
-            if len(points) < min_levels:
-                raise ValueError(
-                    f'Invalid {key}={points}. Must be at least length {min_levels}.'
-                )
-        if isinstance(norm, (mcolors.BoundaryNorm, pcolors.SegmentedNorm)):
-            levels, values = norm.boundaries, None
-        else:
-            levels = _not_none(levels, rc['cmap.levels'])
+            values = None
+        levels = _sanitize_levels('levels', levels, _not_none(min_levels, 2))
+        levels = _not_none(levels, rc['cmap.levels'])
+        values = _sanitize_levels('values', values, 1)
 
         # Infer level edges from level centers if possible
         # NOTE: The only way for user to manually impose BoundaryNorm is by
         # passing one -- users cannot create one using Norm constructor key.
-        if isinstance(values, Integral):
-            levels = values + 1
-        elif values is None:
+        if values is None:
             pass
-        elif not np.iterable(values):
-            raise ValueError(f'Invalid values={values!r}.')
-        elif len(values) == 0:
-            levels = []  # weird but why not
+        elif isinstance(values, Integral):
+            levels = values + 1
         elif len(values) == 1:
             levels = [values[0] - 1, values[0] + 1]  # weird but why not
         elif norm is not None and norm not in ('segments', 'segmented'):
@@ -2519,16 +2531,16 @@ class PlotAxes(base.Axes):
             convert = constructor.Norm(norm, **norm_kw)
             levels = convert.inverse(utils.edges(convert(values)))
         else:
-            # Try to generate levels so SegmentedNorm will place 'values' ticks at the
-            # center of each segment. edges() gives wrong result unless spacing is even.
+            # Generate levels so that ticks will be centered between edges
             # Solve: (x1 + x2) / 2 = y --> x2 = 2 * y - x1 with arbitrary starting x1.
+            print('hi!!!', values)
             descending = values[1] < values[0]
             if descending:  # e.g. [100, 50, 20, 10, 5, 2, 1] successful if reversed
                 values = values[::-1]
             levels = [1.5 * values[0] - 0.5 * values[1]]  # arbitrary starting point
             for value in values:
                 levels.append(2 * value - levels[-1])
-            if np.any(np.diff(levels) < 0):
+            if np.any(np.diff(levels) < 0):  # never happens for evenly spaced levels
                 levels = utils.edges(values)
             if descending:  # then revert back below
                 levels = levels[::-1]
@@ -2541,39 +2553,40 @@ class PlotAxes(base.Axes):
             pop = _pop_params(kwargs, self._parse_level_count, ignore_internal=True)
             if pop:
                 warnings._warn_proplot(f'Ignoring unused keyword arg(s): {pop}')
-        elif not skip_autolev:
+        if not np.iterable(levels) and not skip_autolev:
             levels, kwargs = self._parse_level_count(
                 *args, levels=levels, norm=norm, norm_kw=norm_kw, extend=extend,
                 negative=negative, positive=positive, **kwargs
             )
 
-        # Determine default norm
-        # NOTE: DiscreteNorm does not currently support vmin and vmax different
-        # from level list minimum and maximum.
-        if levels is not None:
-            if len(levels) == 1:  # use central colormap color
-                vmin, vmax = levels[0] - 1, levels[0] + 1
-            elif len(levels) > 1:  # use minimum and maximum
-                vmin, vmax = np.min(levels), np.max(levels)
-                if not np.allclose(levels[1] - levels[0], np.diff(levels)):
-                    norm = _not_none(norm, 'segmented')
-        if np.iterable(levels) and norm in ('segments', 'segmented'):
-            norm_kw['levels'] = levels
-
-        # Determine default colorbar locator
-        # NOTE: Always show all segmented levels in case distribution is uneven
+        # Determine default colorbar locator and norm and apply filters
+        # NOTE: DiscreteNorm does not currently support vmin and
+        # vmax different from level list minimum and maximum.
+        # NOTE: The level restriction should have no effect if levels were generated
+        # automatically. However want to apply these to manual-input levels as well.
         locator = values if np.iterable(values) else levels
-        if locator is not None and np.iterable(locator):
+        if np.iterable(locator):
+            locator = _restrict_levels(locator)
             if norm in ('segments', 'segmented') or isinstance(norm, pcolors.SegmentedNorm):  # noqa: E501
                 locator = mticker.FixedLocator(locator)
             else:
                 locator = pticker.DiscreteLocator(locator)
             guides._guide_kw_to_arg('colorbar', kwargs, locator=locator)
+        if np.iterable(levels):
+            levels = _restrict_levels(levels)
+            if len(levels) == 0:  # skip
+                pass
+            elif len(levels) == 1:  # use central colormap color
+                vmin, vmax = levels[0] - 1, levels[0] + 1
+            else:  # use minimum and maximum
+                vmin, vmax = np.min(levels), np.max(levels)
+                if not np.allclose(levels[1] - levels[0], np.diff(levels)):
+                    norm = _not_none(norm, 'segmented')
+            if norm in ('segments', 'segmented'):
+                norm_kw['levels'] = levels
 
         # Filter the level boundaries
-        # NOTE: This should have no effect if levels were generated automatically.
-        # However want to apply these to manual-input levels as well.
-        if levels is not None and np.iterable(levels):
+        if np.iterable(levels):
             if nozero:
                 levels = levels[levels != 0]
             if positive:
