@@ -42,6 +42,8 @@ os.environ['PROJ_LIB'] = os.path.join(conda, 'share', 'proj')
 # with conda > 0.19 so cannot install with conda in environment.yml.
 try:
     if _version_mpl > '3.2':
+        pass
+    else:
         import mpl_toolkits.basemap  # noqa: F401
 except ImportError:
     subprocess.check_call(

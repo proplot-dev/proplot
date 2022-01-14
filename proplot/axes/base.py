@@ -1391,7 +1391,7 @@ class Axes(maxes.Axes):
         types_noclip = (
             maxes.Axes, maxis.Axis, moffsetbox.AnnotationBbox, moffsetbox.OffsetBox
         )
-        return isinstance(artist, types_noclip) or (
+        return not isinstance(artist, types_noclip) and (
             artist.get_clip_on()
             and (clip_box is not None or clip_path is not None)
             and (

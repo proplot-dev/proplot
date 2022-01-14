@@ -27,9 +27,9 @@ def _get_nodes(rawtext, text, inliner):
     return [nodes.literal('', '', ref)]
 
 
-def rc_name_role(name, rawtext, text, lineno, inliner, options={}, content=[]):  # noqa: U100, E501
+def rc_raw_role(name, rawtext, text, lineno, inliner, options={}, content=[]):  # noqa: U100, E501
     """
-    The :rcname: role. Includes a link to the setting.
+    The :rcraw: role. Includes a link to the setting.
     """
     list_ = _get_nodes(rawtext, text, inliner)
     return list_, []
@@ -47,7 +47,7 @@ def rc_role(name, rawtext, text, lineno, inliner, options={}, content=[]):  # no
     else:
         list_.append(nodes.Text(' = '))
         list_.append(nodes.literal('', '', nodes.Text(repr(default))))
-    return nodes, []
+    return list_, []
 
 
 def setup(app):
@@ -55,5 +55,5 @@ def setup(app):
     Set up the roles.
     """
     app.add_role('rc', rc_role)
-    app.add_role('rcname', rc_name_role)
+    app.add_role('rcraw', rc_raw_role)
     return {'parallel_read_safe': True, 'parallel_write_safe': True}
