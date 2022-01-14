@@ -3,7 +3,9 @@
 The second-level axes subclass used for all proplot figures.
 Implements plotting method overrides.
 """
+import contextlib
 import inspect
+import itertools
 import re
 import sys
 from numbers import Integral
@@ -1702,6 +1704,28 @@ class PlotAxes(base.Axes):
                 convert = getattr(self, 'convert_' + axis + 'units')
                 edges = getattr(obj.sticky_edges, axis)
                 edges.extend(convert((min_, max_)))
+
+    @contextlib.contextmanager
+    def _keep_grid_bools(self):
+        """
+        Preserve the gridline booleans during the operation. This prevents `pcolor`
+        methods from disabling grids (mpl < 3.5) and emitting warnings (mpl >= 3.5).
+        """
+        # NOTE: Modern matplotlib uses _get_axis_list() but this is only to support
+        # Axes3D which PlotAxes does not subclass. Safe to use xaxis and yaxis.
+        bools = []
+        for axis, which in itertools.product(
+            (self.xaxis, self.yaxis), ('major', 'minor')
+        ):
+            kw = getattr(axis, f'_{which}_tick_kw', {})
+            bools.append(kw.get('gridOn', None))
+            kw['gridOn'] = False  # prevent deprecation warning
+        yield
+        for b, (axis, which) in zip(
+            bools, itertools.product('xy', ('major', 'minor'))
+        ):
+            if b is not None:
+                self.grid(b, axis=axis, which=which)
 
     def _inbounds_extent(self, *, inbounds=None, **kwargs):
         """
@@ -3746,8 +3770,9 @@ class PlotAxes(base.Axes):
         edgefix_kw = _pop_params(kw, self._add_edge_fix)
         labels_kw = _pop_params(kw, self._add_auto_labels)
         guide_kw = _pop_params(kw, self._update_guide)
-        m = self._plot_native('pcolor', x, y, z, **kw)
-        self._add_edge_fix(m, **edgefix_kw, **kw)
+        with self._keep_grid_bools():
+            m = self._plot_native('pcolor', x, y, z, **kw)
+        self._fix_patch_edges(m, **edgefix_kw, **kw)
         self._add_auto_labels(m, **labels_kw)
         self._update_guide(m, queue_colorbar=False, **guide_kw)
         return m
@@ -3765,8 +3790,9 @@ class PlotAxes(base.Axes):
         edgefix_kw = _pop_params(kw, self._add_edge_fix)
         labels_kw = _pop_params(kw, self._add_auto_labels)
         guide_kw = _pop_params(kw, self._update_guide)
-        m = self._plot_native('pcolormesh', x, y, z, **kw)
-        self._add_edge_fix(m, **edgefix_kw, **kw)
+        with self._keep_grid_bools():
+            m = self._plot_native('pcolormesh', x, y, z, **kw)
+        self._fix_patch_edges(m, **edgefix_kw, **kw)
         self._add_auto_labels(m, **labels_kw)
         self._update_guide(m, queue_colorbar=False, **guide_kw)
         return m
@@ -3784,7 +3810,8 @@ class PlotAxes(base.Axes):
         edgefix_kw = _pop_params(kw, self._add_edge_fix)
         labels_kw = _pop_params(kw, self._add_auto_labels)
         guide_kw = _pop_params(kw, self._update_guide)
-        m = self._plot_native('pcolorfast', x, y, z, **kw)
+        with self._keep_grid_bools():
+            m = self._plot_native('pcolorfast', x, y, z, **kw)
         if not isinstance(m, mimage.AxesImage):  # NOTE: PcolorImage is derivative
             self._add_edge_fix(m, **edgefix_kw, **kw)
             self._add_auto_labels(m, **labels_kw)
@@ -3963,8 +3990,9 @@ class PlotAxes(base.Axes):
         edgefix_kw = _pop_params(kw, self._add_edge_fix)
         labels_kw = _pop_params(kw, self._add_auto_labels)
         guide_kw = _pop_params(kw, self._update_guide)
-        m = self._plot_native('tripcolor', x, y, z, **kw)
-        self._add_edge_fix(m, **edgefix_kw, **kw)
+        with self._keep_grid_bools():
+            m = self._plot_native('tripcolor', x, y, z, **kw)
+        self._fix_patch_edges(m, **edgefix_kw, **kw)
         self._add_auto_labels(m, **labels_kw)
         self._update_guide(m, queue_colorbar=False, **guide_kw)
         return m
