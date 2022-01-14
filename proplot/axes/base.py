@@ -298,7 +298,7 @@ docstring._snippet_manager['axes.panel'] = _panel_docstring
 _axes_format_docstring = """
 title : str, optional
     The axes title.
-abc : bool or str, default: :rc:`abc`
+abc : bool or str or tuple, default: :rc:`abc`
     The "a-b-c" subplot label style. Must contain the character ``a`` or ``A``,
     for example ``'a.'``, or ``'A'``. If ``True`` then the default style of
     ``'a'`` is used. The ``a`` or ``A`` is replaced with the alphabetic character
@@ -345,10 +345,10 @@ abctitlepad : float, default: :rc:`abc.titlepad`
     The horizontal padding between a-b-c labels and titles in the same location.
     %(units.pt)s
 ltitle, ctitle, rtitle, ultitle, uctitle, urtitle, lltitle, lctitle, lrtitle \
-: str, optional
+: str, tuple, optional
     Shorthands for the below keywords.
 lefttitle, centertitle, righttitle, upperlefttitle, uppercentertitle, upperrighttitle, \
-lowerlefttitle, lowercentertitle, lowerrighttitle : str, optional
+lowerlefttitle, lowercentertitle, lowerrighttitle : str, tuple, optional
     Additional titles in specific positions. This works as an alternative
     to the ``ax.format(title='Title', titleloc=loc)`` workflow and permits
     adding more than one title-like label for a single axes.
@@ -2288,9 +2288,11 @@ class Axes(maxes.Axes):
         abc = rc.find('abc', context=True)  # 1st run, or changed
         if abc is True:
             abc = 'a'
-        if abc and (not isinstance(abc, str) or 'a' not in abc and 'A' not in abc):
-            raise ValueError(f'Invalid style {abc!r}. Must include letter "a" or "A".')
-        if abc and self.number is not None:
+        if isinstance(abc, tuple):
+            kw['text'] = abc[self.number - 1]
+        elif abc and (not isinstance(abc, str) or 'a' not in abc and 'A' not in abc):
+            raise ValueError(f'Invalid style {abc!r}. Must include letter "a" or "A"')
+        if isinstance(abc, str) and self.number is not None:
             nabc, iabc = divmod(self.number - 1, 26)
             old = re.search('[aA]', abc).group()  # return the *first* 'a' or 'A'
             new = (nabc + 1) * ABC_STRING[iabc]
@@ -2369,7 +2371,9 @@ class Axes(maxes.Axes):
         # necesssary. For inner panels, use the border and bbox settings.
         if loc not in ('left', 'right', 'center'):
             kw.update(self._title_border_kwargs)
-        if title is not None:
+        if isinstance(title, tuple):
+            kw['text'] = title[self.number - 1]
+        elif title is not None:
             kw['text'] = title
         kw.update(kwargs)
         self._title_dict[loc].update(kw)

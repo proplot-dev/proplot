@@ -71,7 +71,7 @@ Style changes
 
 Features
 --------
-
+* Adding custom abc and titles (:pr:`294`) by `Pratiman Patel`.
 * Significantly improve "tight layout" performance in geographic plots by skipping
   artists with clipping paths/boxes set to the subplot bounds (:commit:`f891e4f0`).
 * Add modifiable `proplot.figure.Figure.tight` property to retrieve/change the
