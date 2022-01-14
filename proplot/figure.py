@@ -421,7 +421,7 @@ def _get_journal_size(preset):
     return figwidth, figheight
 
 
-def _add_canvas_preprocessor(canvas, method):
+def _add_canvas_preprocessor(canvas, method, cache=False):
     """
     Return a pre-processer that can be used to override instance-level
     canvas draw() and print_figure() methods. This applies tight layout
@@ -456,15 +456,8 @@ def _add_canvas_preprocessor(canvas, method):
         # Adjust layout
         # NOTE: The authorized_context is needed because some backends disable
         # constrained layout or tight layout before printing the figure.
-        # NOTE: *Critical* to not add print_figure renderer to the cache when the print
-        # method (print_pdf, print_png, etc.) calls Figure.draw(). Otherwise have issues
-        # where (1) figure size and/or figure bounds are incorrect after saving figure
-        # *then* displaying it in qt or inline notebook backends, and (2) figure fails
-        # to update correctly after successively modifying and displaying within inline
-        # notebook backend (previously worked around this by forcing additional draw()
-        # call in this function before proceeding with print_figure).
-        ctx1 = fig._context_adjusting(cache=(method != 'print_figure'))
-        ctx2 = fig._context_authorized()  # backends might call set_constrained_layout()
+        ctx1 = fig._context_adjusting(cache=cache)
+        ctx2 = fig._context_authorized()  # skip backend set_constrained_layout()
         ctx3 = rc.context(fig._render_context)  # draw with figure-specific setting
         with ctx1, ctx2, ctx3:
             fig.auto_layout()
@@ -1737,14 +1730,20 @@ class Figure(mfigure.Figure):
         --------
         matplotlib.figure.Figure.set_canvas
         """
-        # Set the canvas and add monkey patches to the instance-level draw and
-        # print_figure methods. The latter is called by save() and by the inline
-        # backend. See `_add_canvas_preprocessor` for details.
-        _add_canvas_preprocessor(canvas, 'print_figure')
-        if callable(getattr(canvas, '_draw', None)):  # for macosx backend
-            _add_canvas_preprocessor(canvas, '_draw')
-        else:
-            _add_canvas_preprocessor(canvas, 'draw')
+        # NOTE: Use the _draw method if it exists, e.g. for osx backends. Critical
+        # or else wrong renderer size is used.
+        # NOTE: See _add_canvas_preprocessor for details. Critical to not add cache
+        # print_figure renderer when the print method (print_pdf, print_png, etc.)
+        # calls Figure.draw(). Otherwise have issues where (1) figure size and/or
+        # bounds are incorrect after saving figure *then* displaying it in qt or inline
+        # notebook backends, and (2) figure fails to update correctly after successively
+        # modifying and displaying within inline notebook backend (previously worked
+        # around this by forcing additional draw() call in this function before
+        # proceeding with print_figure). Set the canvas and add monkey patches
+        # to the instance-level draw and print_figure methods.
+        method = '_draw' if callable(getattr(canvas, '_draw', None)) else 'draw'
+        _add_canvas_preprocessor(canvas, 'print_figure', cache=False)  # saves, inlines
+        _add_canvas_preprocessor(canvas, method, cache=True)  # renderer displays
         super().set_canvas(canvas)
 
     def _is_same_size(self, figsize, eps=None):
