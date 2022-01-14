@@ -1233,7 +1233,7 @@ def _parse_vert(
     return kwargs
 
 
-def _seaborn_call():
+def _inside_seaborn_call():
     """
     Try to detect `seaborn` calls to `scatter` and `bar` and then automatically
     apply `absolute_size` and `absolute_width`.
@@ -1403,21 +1403,6 @@ class PlotAxes(base.Axes):
 
         obj.set_edgecolors(edgecolors)
         return labs
-
-    def _add_contour_edge(self, method, *args, **kwargs):
-        """
-        Call the contour method to add "edges" to filled contours.
-        """
-        # NOTE: This is used to provide an object that can be used by 'clabel' for
-        # auto-labels. Filled contours create strange artifacts.
-        # NOTE: Make the default 'line width' identical to one used for pcolor plots
-        # rather than rc['contour.linewidth']. See mpl pcolor() source code
-        if not any(key in kwargs for key in ('linewidths', 'linestyles', 'edgecolors')):
-            kwargs['linewidths'] = 0  # for clabel
-        kwargs.setdefault('linewidths', EDGEWIDTH)
-        kwargs.pop('cmap', None)
-        kwargs['colors'] = kwargs.pop('edgecolors', 'k')
-        return self._plot_native(method, *args, **kwargs)
 
     def _add_contour_labels(
         self, obj, cobj, fmt, *, c=None, color=None, colors=None,
@@ -1636,9 +1621,25 @@ class PlotAxes(base.Axes):
         kwargs['distribution'] = distribution
         return (*eobjs, kwargs)
 
-    def _add_edge_fix(self, obj, edgefix=None, **kwargs):
+    def _fix_contour_edges(self, method, *args, **kwargs):
         """
-        Fix white lines between between filled contours and mesh and fix issues
+        Fix the filled contour edges by secretly adding solid contours with
+        the same input data.
+        """
+        # NOTE: This is used to provide an object that can be used by 'clabel' for
+        # auto-labels. Filled contours create strange artifacts.
+        # NOTE: Make the default 'line width' identical to one used for pcolor plots
+        # rather than rc['contour.linewidth']. See mpl pcolor() source code
+        if not any(key in kwargs for key in ('linewidths', 'linestyles', 'edgecolors')):
+            kwargs['linewidths'] = 0  # for clabel
+        kwargs.setdefault('linewidths', EDGEWIDTH)
+        kwargs.pop('cmap', None)
+        kwargs['colors'] = kwargs.pop('edgecolors', 'k')
+        return self._plot_native(method, *args, **kwargs)
+
+    def _fix_patch_edges(self, obj, edgefix=None, **kwargs):
+        """
+        Fix white lines between between filled patches and fix issues
         with colormaps that are transparent. If keyword args passed by user
         include explicit edge properties then we skip this step.
         """
@@ -1685,17 +1686,17 @@ class PlotAxes(base.Axes):
             obj.set_edgecolor(obj.get_facecolor())
         elif np.iterable(obj):  # e.g. silent_list of BarContainer
             for element in obj:
-                self._add_edge_fix(element, edgefix=edgefix)
+                self._fix_patch_edges(element, edgefix=edgefix)
         else:
-            warnings._warn_proplot(f'Unexpected object {obj} passed to _add_edge_fix.')
+            warnings._warn_proplot(f'Unexpected obj {obj} passed to _fix_patch_edges.')
 
-    def _add_sticky_edges(self, objs, axis, *args, only=None):
+    def _fix_sticky_edges(self, objs, axis, *args, only=None):
         """
-        Add sticky edges to the input artists using the minimum and maximum of the
+        Fix sticky edges for the input artists using the minimum and maximum of the
         input coordinates. This is used to copy `bar` behavior to `area` and `lines`.
         """
-        for sides in args:
-            min_, max_ = inputs._safe_range(sides)
+        for array in args:
+            min_, max_ = inputs._safe_range(array)
             if min_ is None or max_ is None:
                 continue
             for obj in guides._iter_iterables(objs):
@@ -2734,7 +2735,7 @@ class PlotAxes(base.Axes):
                 objs.append((*eb, *es, obj) if eb or es else obj)
 
         # Add sticky edges
-        self._add_sticky_edges(objs, 'x' if vert else 'y', *xsides, only=mlines.Line2D)
+        self._fix_sticky_edges(objs, 'x' if vert else 'y', *xsides, only=mlines.Line2D)
         self._update_guide(objs, **guide_kw)
         return cbook.silent_list('Line2D', objs)  # always return list
 
@@ -3012,7 +3013,7 @@ class PlotAxes(base.Axes):
             objs.append(obj)
 
         # Draw guide and add sticky edges
-        self._add_sticky_edges(objs, 'y' if vert else 'x', *sides)
+        self._fix_sticky_edges(objs, 'y' if vert else 'x', *sides)
         self._update_guide(objs, **guide_kw)
         return (
             objs[0] if len(objs) == 1
@@ -3055,7 +3056,7 @@ class PlotAxes(base.Axes):
                 s.flat[:] = utils.units(s.flat, 'pt')
                 s = s.astype(np.float) ** 2
         if absolute_size is None:
-            if _seaborn_call():
+            if _inside_seaborn_call():
                 absolute_size = True
             else:
                 absolute_size = default_size
@@ -3171,7 +3172,7 @@ class PlotAxes(base.Axes):
         name = 'fill_between' if vert else 'fill_betweenx'
         stack = _not_none(stack=stack, stacked=stacked)
         xs, ys1, ys2, kw = self._parse_1d_plot(xs, ys1, ys2, vert=vert, **kw)
-        edgefix_kw = _pop_params(kw, self._add_edge_fix)
+        edgefix_kw = _pop_params(kw, self._fix_patch_edges)
 
         # Draw patches with default edge width zero
         y0 = 0
@@ -3187,7 +3188,7 @@ class PlotAxes(base.Axes):
                 obj = self._plot_negpos(name, x, y1, y2, where=w, use_where=True, **kw)  # noqa: E501
             else:
                 obj = self._plot_native(name, x, y1, y2, where=w, **kw)
-            self._add_edge_fix(obj, **edgefix_kw, **kw)
+            self._fix_patch_edges(obj, **edgefix_kw, **kw)
             xsides.append(x)
             for y in (y1, y2):
                 self._inbounds_xylim(extents, x, y, vert=vert)
@@ -3198,7 +3199,7 @@ class PlotAxes(base.Axes):
         # Draw guide and add sticky edges
         self._update_guide(objs, **guide_kw)
         for axis, sides in zip('xy' if vert else 'yx', (xsides, ysides)):
-            self._add_sticky_edges(objs, axis, *sides)
+            self._fix_sticky_edges(objs, axis, *sides)
         return (
             objs[0] if len(objs) == 1
             else cbook.silent_list('PolyCollection', objs)
@@ -3274,9 +3275,9 @@ class PlotAxes(base.Axes):
         name = 'barh' if orientation == 'horizontal' else 'bar'
         stack = _not_none(stack=stack, stacked=stacked)
         xs, hs, kw = self._parse_1d_plot(xs, hs, orientation=orientation, **kw)
-        edgefix_kw = _pop_params(kw, self._add_edge_fix)
+        edgefix_kw = _pop_params(kw, self._fix_patch_edges)
         if absolute_width is None:
-            absolute_width = _seaborn_call()
+            absolute_width = _inside_seaborn_call()
 
         # Call func after converting bar width
         b0 = 0
@@ -3304,7 +3305,7 @@ class PlotAxes(base.Axes):
                 obj = self._plot_negpos(name, x, h, w, b, use_zero=True, **kw)
             else:
                 obj = self._plot_native(name, x, h, w, b, **kw)
-            self._add_edge_fix(obj, **edgefix_kw, **kw)
+            self._fix_patch_edges(obj, **edgefix_kw, **kw)
             for y in (b, b + h):
                 self._inbounds_xylim(extents, x, y, orientation=orientation)
             objs.append((*eb, obj) if eb else obj)
@@ -3349,13 +3350,13 @@ class PlotAxes(base.Axes):
         kw = kwargs.copy()
         pad = _not_none(labeldistance=labeldistance, labelpad=labelpad, default=1.15)
         props = _pop_props(kw, 'patch')
-        edgefix_kw = _pop_params(kw, self._add_edge_fix)
+        edgefix_kw = _pop_params(kw, self._fix_patch_edges)
         _, x, kw = self._parse_1d_plot(x, autox=False, autoy=False, **kw)
         kw = self._parse_cycle(x.size, **kw)
         kw['labeldistance'] = pad
         objs = self._plot_native('pie', x, explode, wedgeprops=props, **kw)
         objs = tuple(cbook.silent_list(type(seq[0]).__name__, seq) for seq in objs)
-        self._add_edge_fix(objs[0], **edgefix_kw, **props)
+        self._fix_patch_edges(objs[0], **edgefix_kw, **props)
         return objs
 
     @staticmethod
@@ -3637,13 +3638,13 @@ class PlotAxes(base.Axes):
         kw['rwidth'] = _not_none(width=width, rwidth=rwidth)  # latter is native
         kw['histtype'] = histtype = _not_none(histtype, 'bar')
         kw.update(_pop_props(kw, 'patch'))
-        edgefix_kw = _pop_params(kw, self._add_edge_fix)
+        edgefix_kw = _pop_params(kw, self._fix_patch_edges)
         guide_kw = _pop_params(kw, self._update_guide)
         n = xs.shape[1] if xs.ndim > 1 else 1
         kw = self._parse_cycle(n, **kw)
         obj = self._plot_native('hist', xs, orientation=orientation, **kw)
         if histtype.startswith('bar'):
-            self._add_edge_fix(obj[2], **edgefix_kw, **kw)
+            self._fix_patch_edges(obj[2], **edgefix_kw, **kw)
         # Revert to mpl < 3.3 behavior where silent_list was always returned for
         # non-bar-type histograms. Because consistency.
         res = obj[2]
@@ -3744,15 +3745,15 @@ class PlotAxes(base.Axes):
         kw.update(_pop_props(kw, 'collection'))
         kw = self._parse_cmap(x, y, z, plot_contours=True, **kw)
         contour_kw = _pop_kwargs(kw, 'edgecolors', 'linewidths', 'linestyles')
-        edgefix_kw = _pop_params(kw, self._add_edge_fix)
+        edgefix_kw = _pop_params(kw, self._fix_patch_edges)
         labels_kw = _pop_params(kw, self._add_auto_labels)
         guide_kw = _pop_params(kw, self._update_guide)
         label = kw.pop('label', None)
         m = cm = self._plot_native('contourf', x, y, z, **kw)
         m._legend_label = label
-        self._add_edge_fix(m, **edgefix_kw, **contour_kw)  # skipped if not contour_kw
+        self._fix_patch_edges(m, **edgefix_kw, **contour_kw)  # no-op if not contour_kw
         if contour_kw or labels_kw:
-            cm = self._add_contour_edge('contour', x, y, z, **kw, **contour_kw)
+            cm = self._fix_contour_edges('contour', x, y, z, **kw, **contour_kw)
         self._add_auto_labels(m, cm, **labels_kw)
         self._update_guide(m, queue_colorbar=False, **guide_kw)
         return m
@@ -3767,7 +3768,7 @@ class PlotAxes(base.Axes):
         x, y, z, kw = self._parse_2d_plot(x, y, z, edges=True, **kwargs)
         kw.update(_pop_props(kw, 'collection'))
         kw = self._parse_cmap(x, y, z, to_centers=True, **kw)
-        edgefix_kw = _pop_params(kw, self._add_edge_fix)
+        edgefix_kw = _pop_params(kw, self._fix_patch_edges)
         labels_kw = _pop_params(kw, self._add_auto_labels)
         guide_kw = _pop_params(kw, self._update_guide)
         with self._keep_grid_bools():
@@ -3787,7 +3788,7 @@ class PlotAxes(base.Axes):
         x, y, z, kw = self._parse_2d_plot(x, y, z, edges=True, **kwargs)
         kw.update(_pop_props(kw, 'collection'))
         kw = self._parse_cmap(x, y, z, to_centers=True, **kw)
-        edgefix_kw = _pop_params(kw, self._add_edge_fix)
+        edgefix_kw = _pop_params(kw, self._fix_patch_edges)
         labels_kw = _pop_params(kw, self._add_auto_labels)
         guide_kw = _pop_params(kw, self._update_guide)
         with self._keep_grid_bools():
@@ -3807,13 +3808,13 @@ class PlotAxes(base.Axes):
         x, y, z, kw = self._parse_2d_plot(x, y, z, edges=True, **kwargs)
         kw.update(_pop_props(kw, 'collection'))
         kw = self._parse_cmap(x, y, z, to_centers=True, **kw)
-        edgefix_kw = _pop_params(kw, self._add_edge_fix)
+        edgefix_kw = _pop_params(kw, self._fix_patch_edges)
         labels_kw = _pop_params(kw, self._add_auto_labels)
         guide_kw = _pop_params(kw, self._update_guide)
         with self._keep_grid_bools():
             m = self._plot_native('pcolorfast', x, y, z, **kw)
         if not isinstance(m, mimage.AxesImage):  # NOTE: PcolorImage is derivative
-            self._add_edge_fix(m, **edgefix_kw, **kw)
+            self._fix_patch_edges(m, **edgefix_kw, **kw)
             self._add_auto_labels(m, **labels_kw)
         elif edgefix_kw or labels_kw:
             kw = {**edgefix_kw, **labels_kw}
@@ -3831,28 +3832,28 @@ class PlotAxes(base.Axes):
         """
         obj = self.pcolormesh(*args, default_discrete=False, **kwargs)
         aspect = _not_none(aspect, rc['image.aspect'])
-        if self._name == 'cartesian':
-            coords = getattr(obj, '_coordinates', None)
-            xlocator = ylocator = None
-            if coords is not None:
-                coords = 0.5 * (coords[1:, ...] + coords[:-1, ...])
-                coords = 0.5 * (coords[:, 1:, :] + coords[:, :-1, :])
-                xlocator, ylocator = coords[0, :, 0], coords[:, 0, 1]
-            kw = {'aspect': aspect, 'xgrid': False, 'ygrid': False}
-            if xlocator is not None and self.xaxis.isDefault_majloc:
-                kw['xlocator'] = xlocator
-            if ylocator is not None and self.yaxis.isDefault_majloc:
-                kw['ylocator'] = ylocator
-            if self.xaxis.isDefault_minloc:
-                kw['xtickminor'] = False
-            if self.yaxis.isDefault_minloc:
-                kw['ytickminor'] = False
-            self.format(**kw)
-        else:
+        if self._name != 'cartesian':
             warnings._warn_proplot(
-                'The heatmap() command is meant for CartesianAxes. '
-                'Please use pcolor() or pcolormesh() instead.'
+                'The heatmap() command is meant for CartesianAxes '
+                'only. Please use pcolor() or pcolormesh() instead.'
             )
+            return obj
+        coords = getattr(obj, '_coordinates', None)
+        xlocator = ylocator = None
+        if coords is not None:
+            coords = 0.5 * (coords[1:, ...] + coords[:-1, ...])
+            coords = 0.5 * (coords[:, 1:, :] + coords[:, :-1, :])
+            xlocator, ylocator = coords[0, :, 0], coords[:, 0, 1]
+        kw = {'aspect': aspect, 'xgrid': False, 'ygrid': False}
+        if xlocator is not None and self.xaxis.isDefault_majloc:
+            kw['xlocator'] = xlocator
+        if ylocator is not None and self.yaxis.isDefault_majloc:
+            kw['ylocator'] = ylocator
+        if self.xaxis.isDefault_minloc:
+            kw['xtickminor'] = False
+        if self.yaxis.isDefault_minloc:
+            kw['ytickminor'] = False
+        self.format(**kw)
         return obj
 
     @inputs._preprocess_args('x', 'y', 'u', 'v', ('c', 'color', 'colors'))
@@ -3962,15 +3963,15 @@ class PlotAxes(base.Axes):
         kw.update(_pop_props(kw, 'collection'))
         contour_kw = _pop_kwargs(kw, 'edgecolors', 'linewidths', 'linestyles')
         kw = self._parse_cmap(x, y, z, plot_contours=True, **kw)
-        edgefix_kw = _pop_params(kw, self._add_edge_fix)
+        edgefix_kw = _pop_params(kw, self._fix_patch_edges)
         labels_kw = _pop_params(kw, self._add_auto_labels)
         guide_kw = _pop_params(kw, self._update_guide)
         label = kw.pop('label', None)
         m = cm = self._plot_native('tricontourf', x, y, z, **kw)
         m._legend_label = label
-        self._add_edge_fix(m, **edgefix_kw, **contour_kw)  # skipped if not contour_kw
+        self._fix_patch_edges(m, **edgefix_kw, **contour_kw)  # no-op if not contour_kw
         if contour_kw or labels_kw:
-            cm = self._add_contour_edge('tricontour', x, y, z, **kw, **contour_kw)
+            cm = self._fix_contour_edges('tricontour', x, y, z, **kw, **contour_kw)
         self._add_auto_labels(m, cm, **labels_kw)
         self._update_guide(m, queue_colorbar=False, **guide_kw)
         return m
@@ -3987,7 +3988,7 @@ class PlotAxes(base.Axes):
             raise ValueError('Three input arguments are required.')
         kw.update(_pop_props(kw, 'collection'))
         kw = self._parse_cmap(x, y, z, **kw)
-        edgefix_kw = _pop_params(kw, self._add_edge_fix)
+        edgefix_kw = _pop_params(kw, self._fix_patch_edges)
         labels_kw = _pop_params(kw, self._add_auto_labels)
         guide_kw = _pop_params(kw, self._update_guide)
         with self._keep_grid_bools():

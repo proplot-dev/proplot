@@ -1159,7 +1159,7 @@ class Axes(maxes.Axes):
             obj.dividers.update(kw_outline)
         if obj.solids:
             obj.solids.set_rasterized(rasterized)
-            cax._add_edge_fix(obj.solids, edgefix=edgefix)
+            cax._fix_patch_edges(obj.solids, edgefix=edgefix)
 
         # Return after registering location
         self._register_guide('colorbar', obj, (loc, align))  # possibly replace another
