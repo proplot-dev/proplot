@@ -77,11 +77,16 @@
   --accent-bg-color: #505050;
 }
 
-/* Pydata theme font families */
-/* Github: font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol"; */
-/* Pandas: -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol"; */
-body, h1, h2, h3, h4, h5, h6, .rst-content .toctree-wrapper p.caption{
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+/* Pydata theme font families, sizes, and weights */
+/* Github text: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol"; */
+/* Pydata text: -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol"; */
+/* Pydata code: "fontSFMono-Regular", Menlo, Consolas, Monaco, "Liberation Mono", "Lucida Console", monospace; */
+/* Note that pydata code settings seem to be unchaged compared to readthedocs */
+body, legend, h1, h2, h3, h4, h5, h6, .rst-content .toctree-wrapper p.caption{
+  font-family: "-apple-system", BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+}
+legend, h1, h2, h3, h4, h5, h6, .rst-content .toctree-wrapper p.caption{
+  font-weight: 500;
 }
 
 /* Readjust font sizes */
@@ -253,14 +258,14 @@ body.scroll-down,
 }
 
 /* Code block color. dl:not(.docutils) needed below to match specificity */
-/* Previously included border but have removed this to match pydata theme */
+/* Previously included border but have removed this to match Pydata theme */
 code,
 .rst-content tt,
 .rst-content code {
   border: 0;
   padding: 0;
   background: transparent;
-  font-size: 87.5%;  /* matches pydata theme */
+  font-size: 87.5%;
   /* border: solid 1px var(--code-border-color);  */
   /* background: var(--code-bg-color);  */
   /* font-size: 75%;  */
