@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Utilities related to matplotlib text objects.
+Utilities related to matplotlib text labels.
 """
 import matplotlib.patheffects as mpatheffects
 import matplotlib.text as mtext
@@ -8,7 +8,7 @@ import matplotlib.text as mtext
 from . import ic  # noqa: F401
 
 
-def _transfer_text(src, dest):
+def _transfer_label(src, dest):
     """
     Transfer the input text object properties and content to the destination
     text object. Then clear the input object text.
@@ -22,7 +22,7 @@ def _transfer_text(src, dest):
     src.set_text('')
 
 
-def _update_text(text, props=None, **kwargs):
+def _update_label(text, props=None, **kwargs):
     """
     Add a monkey patch for ``Text.update`` with pseudo "border" and "bbox"
     properties without wrapping the entire class. This facillitates inset titles.

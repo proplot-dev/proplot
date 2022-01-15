@@ -27,7 +27,7 @@ from .internals import (
     _translate_loc,
     context,
     docstring,
-    texts,
+    labels,
     warnings,
 )
 from .utils import units
@@ -1199,14 +1199,14 @@ class Figure(mfigure.Figure):
             ax._apply_title_above()
         if side not in ('left', 'right', 'bottom', 'top'):
             raise ValueError(f'Invalid side {side!r}.')
-        labels = self._suplabel_dict[side]
-        axs = tuple(ax for ax, label in labels.items() if label.get_text())
+        labs = self._suplabel_dict[side]
+        axs = tuple(ax for ax, lab in labs.items() if lab.get_text())
         if not axs:
             return
         c = self._get_offset_coord(side, axs, renderer)
-        for label in labels.values():
+        for lab in labs.values():
             s = 'x' if side in ('left', 'right') else 'y'
-            label.update({s: c})
+            lab.update({s: c})
 
     def _align_super_title(self, renderer):
         """
@@ -1229,56 +1229,53 @@ class Figure(mfigure.Figure):
         """
         Update the aligned axis label for the input axes.
         """
+        # Get the central axis and the spanning label (initialize if it does not exist)
         # NOTE: Previously we secretly used matplotlib axis labels for spanning labels,
         # offsetting them between two subplots if necessary. Now we track designated
         # 'super' labels and replace the actual labels with spaces so they still impact
         # the tight bounding box and thus allocate space for the spanning label.
         x, y = 'xy' if side in ('bottom', 'top') else 'yx'
-        labs = getattr(self, f'_sup{x}label_dict')  # dict of spanning labels
-        setpos = getattr(mtext.Text, 'set_' + y)
-        axislist = [getattr(ax, x + 'axis') for ax in axs]
-
-        # Get the central label and "super" label for parallel alignment.
-        # Initialize the super label if one does not already exist.
         c, ax = self._get_align_coord(side, axs, includepanels=self._includepanels)
-        axis = getattr(ax, x + 'axis')  # use the central axis
-        label = labs.get(ax, None)
-        if label is None and not axis.label.get_text().strip():
+        axlab = getattr(ax, x + 'axis').label  # the central label
+        suplabs = getattr(self, '_sup' + x + 'label_dict')  # dict of spanning labels
+        suplab = suplabs.get(ax, None)
+        if suplab is None and not axlab.get_text().strip():
             return  # nothing to transfer from the normal label
-        if label is not None and not label.get_text().strip():
+        if suplab is not None and not suplab.get_text().strip():
             return  # nothing to update on the super label
-        if label is None:
+        if suplab is None:
             props = ('ha', 'va', 'rotation', 'rotation_mode')
-            label = labs[ax] = self.text(0, 0, '')
-            label.update({p: getattr(axis.label, 'get_' + p)() for p in props})
+            suplab = suplabs[ax] = self.text(0, 0, '')
+            suplab.update({prop: getattr(axlab, 'get_' + prop)() for prop in props})
 
-        # Copy text from central label to spanning label
+        # Copy text from the central label to the spanning label
         # NOTE: Must use spaces rather than newlines, otherwise tight layout
         # won't make room. Reason is Text implementation (see Text._get_layout())
-        texts._transfer_text(axis.label, label)  # text, color, and font properties
-        space = '\n'.join(' ' * (1 + label.get_text().count('\n')))
-        for axis in axislist:  # should include original 'axis'
+        labels._transfer_label(axlab, suplab)  # text, color, and font properties
+        count = 1 + suplab.get_text().count('\n')
+        space = '\n'.join(' ' * count)
+        for ax in axs:  # includes original 'axis'
+            axis = getattr(ax, x + 'axis')
             axis.label.set_text(space)
 
-        # Update spanning label position
+        # Update spanning label position then add simple monkey patch
+        # NOTE: Simply using axis._update_label_position() when this is
+        # called is not sufficient. Fails with e.g. inline backend.
         t = mtransforms.IdentityTransform()  # set in pixels
-        cx, cy = axis.label.get_position()
+        cx, cy = axlab.get_position()
         if x == 'x':
             trans = mtransforms.blended_transform_factory(self.transFigure, t)
             coord = (c, cy)
         else:
             trans = mtransforms.blended_transform_factory(t, self.transFigure)
             coord = (cx, c)
-        label.set_transform(trans)
-        label.set_position(coord)
-
-        # Add simple monkey patch to ensure positions stay in sync
-        # NOTE: Simply using axis._update_label_position() when this is called
-        # is not sufficient. Fails with e.g. inline backend.
-        def _set_coord(self, *args, **kwargs):
+        suplab.set_transform(trans)
+        suplab.set_position(coord)
+        setpos = getattr(mtext.Text, 'set_' + y)
+        def _set_coord(self, *args, **kwargs):  # noqa: E306
             setpos(self, *args, **kwargs)
-            setpos(label, *args, **kwargs)
-        setattr(axis.label, 'set_' + y, _set_coord.__get__(axis.label))
+            setpos(suplab, *args, **kwargs)
+        setattr(axlab, 'set_' + y, _set_coord.__get__(axlab))
 
     def _update_super_labels(self, side, labels, **kwargs):
         """

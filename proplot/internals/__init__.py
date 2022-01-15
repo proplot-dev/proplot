@@ -51,8 +51,8 @@ from . import (  # noqa: F401
     docstring,
     guides,
     inputs,
+    labels,
     rcsetup,
-    texts,
     warnings
 )
 

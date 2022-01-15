@@ -41,8 +41,8 @@ from ..internals import (
     dependencies,
     docstring,
     guides,
+    labels,
     rcsetup,
-    texts,
     warnings,
 )
 from ..utils import _fontsize_to_pt, edges, units
@@ -792,7 +792,7 @@ class Axes(maxes.Axes):
         self.yaxis.isDefault_minloc = True
 
         # Various dictionary properties
-        # NOTE: Critical to use self.text() so they are patched with _update_text
+        # NOTE: Critical to use self.text() so they are patched with _update_label
         self._legend_dict = {}
         self._colorbar_dict = {}
         d = self._panel_dict = {}
@@ -1315,7 +1315,7 @@ class Axes(maxes.Axes):
         pax._title_pad = self._title_pad
         pax._abc_title_pad = self._abc_title_pad
         for name in names:
-            texts._transfer_text(self._title_dict[name], pax._title_dict[name])
+            labels._transfer_label(self._title_dict[name], pax._title_dict[name])
 
     def _apply_auto_share(self):
         """
@@ -2378,7 +2378,7 @@ class Axes(maxes.Axes):
             loc = rc.find('title.loc', context=True)
             loc = self._title_loc = _translate_loc(loc or self._title_loc, 'text')
             if loc != old and old is not None:
-                texts._transfer_text(self._title_dict[old], self._title_dict[loc])
+                labels._transfer_label(self._title_dict[old], self._title_dict[loc])
 
         # Update the title text. For outer panels, add text to the panel if
         # necesssary. For inner panels, use the border and bbox settings.
@@ -2986,7 +2986,7 @@ class Axes(maxes.Axes):
 
         # Update the text object using a monkey patch
         obj = func(*args, transform=transform, **kwargs)
-        obj.update = texts._update_text.__get__(obj)
+        obj.update = labels._update_label.__get__(obj)
         obj.update(
             {
                 'border': border,
