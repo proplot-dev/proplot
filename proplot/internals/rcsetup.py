@@ -412,6 +412,12 @@ class _RcParams(MutableMapping, dict):
         for key, value in source.items():
             self.__setitem__(key, value)  # trigger validation
 
+    def __repr__(self):
+        return RcParams.__repr__(self)
+
+    def __str__(self):
+        return RcParams.__repr__(self)
+
     def __len__(self):
         return dict.__len__(self)
 
@@ -539,7 +545,7 @@ _rc_matplotlib_default = {
     'axes.ymargin': MARGIN,
     'errorbar.capsize': 3.0,
     'figure.autolayout': False,
-    'figure.figsize': (4, 4),  # for interactife backends
+    'figure.figsize': (4.0, 4.0),  # for interactife backends
     'figure.dpi': 100,
     'figure.facecolor': '#f4f4f4',  # similar to MATLAB interface
     'figure.titlesize': LARGESIZE,
@@ -1823,10 +1829,10 @@ _rc_children = {
     'tick.labelsize': ('xtick.labelsize', 'ytick.labelsize'),
 }
 
-# Symmetric aliases. Changing one setting changes the other. Also account for
-# existing children. Most of these are aliased due to proplot settings overlapping
-# with existing matplotlib settings.
-_rc_aliases = (
+# Setting synonyms. Changing one setting changes the other. Also account for existing
+# children. Most of these are aliased due to proplot settings overlapping with
+# existing matplotlib settings.
+_rc_synonyms = (
     ('cmap', 'image.cmap', 'cmap.sequential'),
     ('cmap.lut', 'image.lut'),
     ('font.name', 'font.family'),
@@ -1858,25 +1864,12 @@ _rc_aliases = (
     ('title.size', 'axes.titlesize'),
     ('title.weight', 'axes.titleweight'),
 )
-for _keys in _rc_aliases:
+for _keys in _rc_synonyms:
     for _key in _keys:
         _set = {_ for k in _keys for _ in {k, *_rc_children.get(k, ())}} - {_key}
         _rc_children[_key] = tuple(sorted(_set))
 
-# Recently added settings. Update these only if the version is recent enough
-# NOTE: We don't make 'title.color' a child of 'axes.titlecolor' because
-# the latter can take on the value 'auto' and can't handle that right now.
-if dependencies._version_mpl >= 3.2:
-    _rc_matplotlib_default['axes.titlecolor'] = BLACK
-    _rc_children['title.color'] = ('axes.titlecolor',)
-if dependencies._version_mpl >= 3.4:
-    _rc_matplotlib_default['xtick.labelcolor'] = BLACK
-    _rc_matplotlib_default['ytick.labelcolor'] = BLACK
-    _rc_children['meta.color'] += ('xtick.labelcolor', 'ytick.labelcolor')
-    _rc_children['tick.labelcolor'] += ('xtick.labelcolor', 'ytick.labelcolor')
-    _rc_children['grid.labelcolor'] += ('xtick.labelcolor', 'ytick.labelcolor')
-
-# Deprecated settings. Add renamed settings to children dictionary so that
+# Previously removed settings. Add renamed settings to children dictionary so that
 # pplt.rc[deprecated] = value updates the correct children. We don't natively
 # translate deprecated keys in Configurator -- leave that to the RcParams dicts.
 _rc_removed = {  # {key: (alternative, version)} dictionary
@@ -1937,8 +1930,23 @@ for _key_old, (_key_new, _) in _rc_renamed.items():
     if _key_new in _rc_children:
         _rc_children[_key_old] = _rc_children[_key_new]
 
-# The default settings dictionary. Analogous to matplotlib's rcParamsDefault
-# Also surreptitiously add font keys (boolean always evaluates to True)
+# Recently added settings. Update these only if the version is recent enough
+# NOTE: We don't make 'title.color' a child of 'axes.titlecolor' because
+# the latter can take on the value 'auto' and can't handle that right now.
+if dependencies._version_mpl >= 3.2:
+    _rc_matplotlib_default['axes.titlecolor'] = BLACK
+    _rc_children['title.color'] = ('axes.titlecolor',)
+if dependencies._version_mpl >= 3.4:
+    _rc_matplotlib_default['xtick.labelcolor'] = BLACK
+    _rc_matplotlib_default['ytick.labelcolor'] = BLACK
+    _rc_children['meta.color'] += ('xtick.labelcolor', 'ytick.labelcolor')
+    _rc_children['tick.labelcolor'] += ('xtick.labelcolor', 'ytick.labelcolor')
+    _rc_children['grid.labelcolor'] += ('xtick.labelcolor', 'ytick.labelcolor')
+
+# Validate the default settings dictionaries using a custom proplot _RcParams
+# and the original matplotlib RcParams. Also surreptitiously add proplot
+# font settings to the font keys list (beoolean below always evalutes to True)
+# font keys list whlie initializing.
 _rc_proplot_default = {
     key: value for key, (value, _, _) in _rc_proplot_table.items()
 }
@@ -1947,6 +1955,7 @@ _rc_proplot_validate = {
     if not (validator is _validate_fontsize and FONT_KEYS.add(key))
 }
 _rc_proplot_default = _RcParams(_rc_proplot_default, _rc_proplot_validate)
+_rc_matplotlib_default = RcParams(_rc_matplotlib_default)
 
 # Important joint matplotlib proplot constants
 # NOTE: The 'nodots' dictionary should include removed and renamed settings
