@@ -143,15 +143,15 @@ axs.format(
 #    * For simple subplot grids (e.g., grids created by passing integers to
 #      `~proplot.figure.Figure.add_subplot` or by passing `ncols` or `nrows`
 #      to `~proplot.figure.Figure.add_subplots`) the keyword arguments `refaspect`,
-#      `refwidth`, and `refheight` effectively apply to every subplot in the figure
-#      -- not just the reference subplot.
-#    * The keyword argument `refaspect` is ignored when the `data aspect ratio
+#      `refwidth`, and `refheight` effectively apply to every subplot in the
+#      figure -- not just the reference subplot.
+#    * The `refaspect` argument is ignored when the `data aspect ratio
 #      <https://matplotlib.org/stable/examples/pylab_examples/equal_aspect_ratio.html>`__
-#      of the reference subplot is fixed (either by manually calling
-#      `~matplotlib.axes.Axes.set_aspect` or by filling the subplot with a
+#      of the reference subplot is fixed (either due to calling
+#      `~matplotlib.axes.Axes.set_aspect` or filling the subplot with a
 #      :ref:`geographic projection <ug_geo>`, `~proplot.axes.PlotAxes.imshow`
-#      plot, or `~proplot.axes.PlotAxes.heatmap` plot). This is critical for
-#      minimizing excess space between grids of subplots with fixed aspect ratios.
+#      plot, or `~proplot.axes.PlotAxes.heatmap` plot). This helps minimize
+#      excess space between grids of subplots with fixed aspect ratios.
 #    * The physical widths of proplot `~proplot.axes.Axes.colorbar`\ s and
 #      `~proplot.axes.Axes.panel`\ s are always independent of the figure size.
 #      `~proplot.gridspec.GridSpec` specifies their widths in physical units to help

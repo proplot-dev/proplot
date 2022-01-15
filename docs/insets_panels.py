@@ -146,8 +146,8 @@ for cbarloc, ploc in ('rb', 'br'):
 # `~proplot.gridspec.SubplotGrid.inset_axes` on the `~proplot.gridspec.SubplotGrid`
 # returned by `~proplot.figure.Figure.subplots`. By default, inset axes have the
 # same projection as the parent axes, but you can also request a :ref:`different
-# projection <ug_proj>` (e.g., ``ax.inset_axes(bounds, proj='polar')``). When the
-# axes are both `~proplot.axes.Axes.CartesianAxes`, you can pass ``zoom=True``
+# projection <ug_proj>` (e.g., ``ax.inset_axes(bounds, proj='polar')``). When
+# the axes are both `~proplot.axes.CartesianAxes`, you can pass ``zoom=True``
 # to `~proplot.axes.Axes.inset_axes` to quickly add a "zoom indication" box and
 # lines (this uses `~matplotlib.axes.Axes.indicate_inset_zoom` internally). The box
 # and line positions automatically follow the axis limits of the inset axes and parent
