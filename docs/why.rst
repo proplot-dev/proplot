@@ -222,7 +222,7 @@ subplot in the figure. This is partly because you must specify the physical
 dimensions of the figure, despite the fact that...
 
 #. The subplot aspect ratio is generally more relevant than the figure
-   aspect ratio. An aspect ratio of ``1`` is desirable for most plots, and
+   aspect ratio. A default aspect ratio of ``1`` is desirable for most plots, and
    the aspect ratio must be held fixed for :ref:`geographic and polar <ug_proj>`
    projections and most `~matplotlib.axes.Axes.imshow` plots.
 #. The subplot width and height control the "apparent" size of lines, markers,

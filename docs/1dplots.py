@@ -473,7 +473,7 @@ ax.colorbar(m, loc='b', locator=2, label='parametric coordinate')
 # positions are adjusted according to the number of bars in the group.
 #
 # The `~proplot.axes.PlotAxes.fill_between` and `~proplot.axes.PlotAxes.fill_betweenx`
-# have the new shorthands `~proplot.axes.PlotAxes.area`
+# commands have the new shorthands `~proplot.axes.PlotAxes.area`
 # and `~proplot.axes.PlotAxes.areax`. Similar to `~proplot.axes.PlotAxes.bar` and
 # `~proplot.axes.PlotAxes.barh`, they apply default *x* coordinates if you failed
 # to provide them explicitly, and can *overlay* or *stack* successive columns of

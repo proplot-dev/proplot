@@ -226,18 +226,16 @@ fig.save('~/example4.png')
 # a "python-style" object-oriented interface with axes-level commands
 # like `matplotlib.axes.Axes.plot`, and a "MATLAB-style" interface
 # with global commands like `matplotlib.pyplot.plot` that tracks "current" axes.
-# Rather than adding to the `~matplotlib.pyplot` namespace,
-# proplot uses the intermediate subclass `proplot.axes.PlotAxes`
-# to modify existing axes-level commands and add a few new ones.
-# While certain `~proplot.axes.PlotAxes` features may be accessible via
-# the relevant `~matplotlib.pyplot` commands, proplot only officially supports
-# the "python-style" axes-level commands.
+# Proplot takes advantage of the "python-style" interface by adding and modifying
+# axes-level commands using the intermediate class `proplot.axes.PlotAxes`. While
+# certain `~proplot.axes.PlotAxes` features may be accessible via `~matplotlib.pylot`
+# commands, proplot only officially supports the "python-style" interface.
 
-# `~proplot.axes.PlotAxes` does not change the usage or syntax of existing commands,
-# which means a shallow learning curve for the average matplotlib user. It also tries
-# to :ref:`standardize the positional arguments <ug_1dstd>` and optional keyword
-# arguments accepted by similar or analogous commands, providing an arguably more
-# intuitive interface. In the below example, we create a 4-panel figure with the
+# `~proplot.axes.PlotAxes` does not change the usage of existing commands,
+# which means a shallow learning curve for the average matplotlib user. It also
+# :ref:`expands the positional arguments <ug_1dstd>` and optional keyword
+# arguments accepted by commands to provide an arguably more intuitive
+# interface. In the below example, we create a 4-panel figure with the
 # familiar "1D" plotting commands `~proplot.axes.PlotAxes.plot` and
 # `~proplot.axes.PlotAxes.scatter`, along with the "2D" plotting commands
 # `~proplot.axes.PlotAxes.pcolormesh` and `~proplot.axes.PlotAxes.contourf`.
@@ -279,9 +277,9 @@ fig.colorbar(m, loc='b', label='label')
 # a "python-style" object-oriented interface with instance-level commands
 # like `matplotlib.axes.Axes.set_title`, and a "MATLAB-style" interface
 # that tracks current axes and provides global commands like
-# `matplotlib.pyplot.title`. Proplot provides the ``format`` command as a
-# succinct and powerful alternative for formatting a variety of plot elements. While
-# matplotlib's one-liner commands still work, ``format`` only needs to be
+# `matplotlib.pyplot.title`. Proplot provides the ``format`` command as an
+# alternative "python-style" command for formatting a variety of plot elements.
+# While matplotlib's one-liner commands still work, ``format`` only needs to be
 # called once and tends to cut down on boilerplate code. You can call
 # ``format`` manually or pass ``format`` parameters to axes-creation commands
 # like `~proplot.figure.Figure.subplots`, `~proplot.figure.Figure.add_subplot`,
@@ -318,7 +316,7 @@ fig.colorbar(m, loc='b', label='label')
 # * `~proplot.config.rc` settings. Any keyword matching the name
 #   of an rc setting is locally applied to the figure and axes.
 #   If the name has "dots", you can pass it as a keyword argument with
-#   the "dots" omitted or pass it to `rc_kw` in a dictionary. For example, the
+#   the "dots" omitted, or pass it to `rc_kw` in a dictionary. For example, the
 #   default a-b-c label location is controlled by :rcraw:`abc.loc`. To change
 #   this for an entire figure, you can use ``fig.format(abcloc='right')``
 #   or ``fig.format(rc_kw={'abc.loc': 'right'})``.

@@ -136,7 +136,7 @@ h6{
 body.scroll-up,
 body.scroll-down,
 .wy-nav-content {
-  max-width: 60em;
+  max-width: 58em;
   background: var(--main-bg-color);
 }
 

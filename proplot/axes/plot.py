@@ -2533,7 +2533,6 @@ class PlotAxes(base.Axes):
         else:
             # Generate levels so that ticks will be centered between edges
             # Solve: (x1 + x2) / 2 = y --> x2 = 2 * y - x1 with arbitrary starting x1.
-            print('hi!!!', values)
             descending = values[1] < values[0]
             if descending:  # e.g. [100, 50, 20, 10, 5, 2, 1] successful if reversed
                 values = values[::-1]

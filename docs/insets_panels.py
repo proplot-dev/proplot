@@ -162,6 +162,7 @@ N = 20
 state = np.random.RandomState(51423)
 x, y = np.arange(10), np.arange(10)
 data = state.rand(10, 10).cumsum(axis=0)
+data = np.flip(data, (0, 1))
 
 # Plot data in the main axes
 fig, ax = pplt.subplots(refwidth=3)

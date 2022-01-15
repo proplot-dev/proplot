@@ -507,9 +507,9 @@ ax.format(ymin=0.05, yscale=('power', 0.5), title=title)
 #
 # .. note::
 #
-#    Unlike matplotlib, proplot adds alternate axes as :ref:`children
+#    Unlike matplotlib, proplot adds alternate axes as `children
 #    <https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.add_child_axes.html>`__
-#    of the original axes. This considerably simplifies the :ref:`tight layout algorithm
+#    of the original axes. This helps simplify the :ref:`tight layout algorithm
 #    <ug_tight>` but means that the drawing order is controlled by the difference
 #    between the zorders of the alternate axes and the content *inside* the original
 #    axes rather than the zorder of the original axes itself (see `this issue page

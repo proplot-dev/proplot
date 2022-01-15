@@ -22,7 +22,7 @@ def _node_list(rawtext, text, inliner):
     else:
         path = '../' * relsource[1].count('/') + 'en/stable'
         refuri = f'{path}/configuration.html?highlight={text}#table-of-settings'
-    node = nodes.Text(f"rc[\\'{text}\\']" if '.' in text else f'rc.{text}')
+    node = nodes.Text(f'rc[{text!r}]' if '.' in text else f'rc.{text}')
     ref = nodes.reference(rawtext, node, refuri=refuri)
     return [nodes.literal('', '', ref)]
 
