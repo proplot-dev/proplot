@@ -1130,7 +1130,7 @@ class Axes(maxes.Axes):
         obj.minorlocator = minorlocator  # backwards compatibility
         obj.update_ticks = guides._update_ticks.__get__(obj)  # backwards compatibility
         if minorlocator is not None:
-            pass
+            obj.update_ticks()
         elif tickminor:
             obj.minorticks_on()
         else:
