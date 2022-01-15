@@ -1297,8 +1297,7 @@ class _BasemapAxes(GeoAxes):
         self, which='major', longrid=None, latgrid=None, lonarray=None, latarray=None,
     ):
         """
-        Apply changes to the basemap axes. Extra kwargs are used
-        to update the proj4 params.
+        Apply changes to the basemap axes.
         """
         latmax = self._lataxis.get_latmax()
         for axis, name, grid, array, method in zip(
@@ -1357,10 +1356,9 @@ class _BasemapAxes(GeoAxes):
                 setattr(self, attr, objs)
 
             # Update gridline settings
-            # WARNING: Here we use native matplotlib 'grid' rc param for geographic
-            # gridlines. If rc mode is 1 (first format call) use context=False
-            kwlines = rc._get_gridline_props(which=which, native=False)
-            kwtext = rc._get_ticklabel_props(native=False)
+            # We use native matplotlib 'grid' rc param for geographic gridlines
+            kwlines = rc._get_gridline_props(which=which, native=False, rebuild=rebuild)
+            kwtext = rc._get_ticklabel_props(native=False, rebuild=rebuild)
             for obj in self._iter_gridlines(objs):
                 if isinstance(obj, mtext.Text):
                     obj.update(kwtext)

@@ -1039,8 +1039,8 @@ class Configurator(MutableMapping, dict):
         context = native or self._context_mode == 2
         if patch_kw:
             warnings._warn_proplot(
-                "'patch_kw' is not necessary as of proplot v0.8. Pass "
-                'the parameters as keyword arguments instead.'
+                "'patch_kw' is no longer necessary as of proplot v0.8. "
+                'Pass the parameters as keyword arguments instead.'
             )
             kwargs.update(patch_kw)
 
@@ -1087,7 +1087,7 @@ class Configurator(MutableMapping, dict):
             grid = _not_none(grid, grid_on and axis_on and which_on)
         return grid
 
-    def _get_gridline_props(self, which='major', native=True):
+    def _get_gridline_props(self, which='major', native=True, rebuild=False):
         """
         Return gridline properties, optionally filtering the output dictionary
         based on the context.
@@ -1097,7 +1097,7 @@ class Configurator(MutableMapping, dict):
         # must be controlled manually for geographic projections
         key = 'grid' if which == 'major' else 'gridminor'
         prefix = 'grid_' if native else ''  # for native gridlines use this prefix
-        context = native or self._context_mode == 2
+        context = not rebuild and (native or self._context_mode == 2)
         kwlines = self.fill(
             {
                 f'{prefix}alpha': f'{key}.alpha',
@@ -1159,7 +1159,7 @@ class Configurator(MutableMapping, dict):
         else:
             return 'neither'
 
-    def _get_tickline_props(self, axis=None, which='major', native=True):
+    def _get_tickline_props(self, axis=None, which='major', native=True, rebuild=False):
         """
         Return the tick line properties, optionally filtering the output dictionary
         based on the context.
@@ -1167,7 +1167,7 @@ class Configurator(MutableMapping, dict):
         # Tick properties obtained with rc.category
         # NOTE: This loads 'size', 'width', 'pad', 'bottom', and 'top'
         axis = _not_none(axis, 'x')
-        context = native or self._context_mode == 2
+        context = not rebuild and (native or self._context_mode == 2)
         kwticks = self.category(f'{axis}tick.{which}', context=context)
         kwticks.pop('visible', None)
         for key in ('color', 'direction'):
@@ -1176,7 +1176,7 @@ class Configurator(MutableMapping, dict):
                 kwticks[key] = value
         return kwticks
 
-    def _get_ticklabel_props(self, axis=None, native=True):
+    def _get_ticklabel_props(self, axis=None, native=True, rebuild=False):
         """
         Return the tick label properties, optionally filtering the output dictionary
         based on the context.
@@ -1184,7 +1184,7 @@ class Configurator(MutableMapping, dict):
         # NOTE: 'tick.label' properties are now synonyms of 'grid.label' properties
         sprefix = axis or ''
         cprefix = sprefix if dependencies._version_mpl >= 3.4 else ''  # new settings
-        context = native or self._context_mode == 2
+        context = not rebuild and (native or self._context_mode == 2)
         kwtext = self.fill(
             {
                 'color': f'{cprefix}tick.labelcolor',  # native setting sometimes avail
