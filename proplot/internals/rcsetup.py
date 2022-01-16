@@ -198,11 +198,11 @@ def _validate_abc(value):
     )
 
 
-def _validate_belongs(*options):
+def _validate_options(*options):
     """
     Return a validator ensuring the item belongs in the list.
     """
-    def _validate_belongs(value):  # noqa: E306
+    def _validate_options(value):  # noqa: E306
         for opt in options:
             if isinstance(value, str) and isinstance(opt, str):
                 if value.lower() == opt.lower():  # noqa: E501
@@ -217,7 +217,7 @@ def _validate_belongs(*options):
             + ', '.join(map(repr, options))
             + '.'
         )
-    return _validate_belongs
+    return _validate_options
 
 
 def _validate_cmap(subtype):
@@ -427,11 +427,11 @@ class _RcParams(MutableMapping, dict):
         yield from sorted(dict.__iter__(self))
 
     def __getitem__(self, key):
-        key = self._check_key(key)
+        key, _ = self._check_key(key)
         return dict.__getitem__(self, key)
 
     def __setitem__(self, key, value):
-        key = self._check_key(key)
+        key, value = self._check_key(key, value)
         if key not in self._validate:
             raise KeyError(f'Invalid rc key {key!r}.')
         try:
@@ -442,20 +442,24 @@ class _RcParams(MutableMapping, dict):
             dict.__setitem__(self, key, value)
 
     @staticmethod
-    def _check_key(key):
-        # NOTE: If we assigned from Configurator the deprecated key will still
-        # propagate to same 'children' as the new key.
+    def _check_key(key, value=None):
+        # NOTE: If we assigned from the Configurator then the deprecated key will
+        # still propagate to the same 'children' as the new key.
+        # NOTE: This also translates values for special cases of renamed keys.
+        # Currently the only special case is the rc.basemap setting.
         if key in _rc_renamed:
             key_new, version = _rc_renamed[key]
             message = f'rc setting {key!r} was renamed to {key_new!r} in version {version}.'  # noqa: E501
             warnings._warn_proplot(message)
+            if key == 'basemap':  # special case
+                value = ('cartopy', 'basemap')[int(bool(value))]
             key = key_new
         if key in _rc_removed:
             info, version = _rc_removed[key]
             info = info and ' ' + info
             message = f'rc setting {key!r} was removed in version {version}.{info}'
             raise KeyError(message)
-        return key
+        return key, value
 
     def copy(self):
         source = {key: dict.__getitem__(self, key) for key in self}
@@ -477,13 +481,13 @@ _validate_fontweight = msetup.validate_fontweight
 
 # Special style validators
 # See: https://matplotlib.org/stable/api/_as_gen/matplotlib.patches.FancyBboxPatch.html
-_validate_boxstyle = _validate_belongs(
+_validate_boxstyle = _validate_options(
     'square', 'circle', 'round', 'round4', 'sawtooth', 'roundtooth',
 )
 if hasattr(msetup, '_validate_linestyle'):  # fancy validation including dashes
     _validate_linestyle = msetup._validate_linestyle
 else:  # no dashes allowed then but no big deal
-    _validate_linestyle = _validate_belongs(
+    _validate_linestyle = _validate_options(
         '-', ':', '--', '-.', 'solid', 'dashed', 'dashdot', 'dotted', 'none', ' ', '',
     )
 
@@ -498,7 +502,7 @@ if not hasattr(RcParams, 'validate'):  # not mission critical so skip
 else:
     _validate = RcParams.validate
     _validate['image.cmap'] = _validate_cmap('continuous')
-    _validate['legend.loc'] = _validate_belongs(*LEGEND_LOCS)
+    _validate['legend.loc'] = _validate_options(*LEGEND_LOCS)
     for _key, _validator in _validate.items():
         if _validator is msetup.validate_fontsize:
             FONT_KEYS.add(_key)
@@ -550,7 +554,7 @@ _rc_matplotlib_default = {
     'figure.facecolor': '#f4f4f4',  # similar to MATLAB interface
     'figure.titlesize': LARGESIZE,
     'figure.titleweight': 'bold',  # differentiate from axes titles
-    'font.serif': [  # NOTE: font lists passed to rcParams are lists, not tuples
+    'font.serif': [
         'TeX Gyre Schola',  # Century lookalike
         'TeX Gyre Bonum',  # Bookman lookalike
         'TeX Gyre Termes',  # Times New Roman lookalike
@@ -761,7 +765,7 @@ _rc_proplot_table = {
     ),
     'abc.loc': (
         'left',  # left side above the axes
-        _validate_belongs(*TEXT_LOCS),
+        _validate_options(*TEXT_LOCS),
         'a-b-c label position. '
         'For options see the :ref:`location table <title_table>`.'
     ),
@@ -807,13 +811,6 @@ _rc_proplot_table = {
         MARGIN,
         _validate_float,
         'The fractional *x* and *y* axis margins when limits are unset.'
-    ),
-
-    # Special basemap settings
-    'basemap': (
-        False,
-        _validate_bool,
-        'Toggles whether basemap is the default backend.'
     ),
 
     # Country borders
@@ -977,7 +974,7 @@ _rc_proplot_table = {
     ),
     'colorbar.loc': (
         'right',
-        _validate_belongs(*COLORBAR_LOCS),
+        _validate_options(*COLORBAR_LOCS),
         'Inset colorbar location. '
         'For options see the :ref:`location table <colorbar_table>`.'
     ),
@@ -1158,6 +1155,14 @@ _rc_proplot_table = {
         'Alias for :rcraw:`axes.formatter.useOffset`.'
     ),
 
+    # Geographic axes settings
+    'geo.backend': (
+        'cartopy',
+        _validate_options('cartopy', 'basemap'),
+        'The backend used for `~proplot.axes.GeoAxes`. Must be '
+        "either 'cartopy' or 'basemap'."
+    ),
+
     # Gridlines
     # NOTE: Here 'grid' and 'gridminor' or *not* aliases for native 'axes.grid' and
     # invented 'axes.gridminor' because native 'axes.grid' controls both major *and*
@@ -1169,7 +1174,7 @@ _rc_proplot_table = {
     ),
     'grid.below': (
         GRIDBELOW,  # like axes.axisbelow
-        _validate_belongs(False, 'line', True),
+        _validate_options(False, 'line', True),
         'Alias for :rcraw:`axes.axisbelow`. If ``True``, draw gridlines below '
         "everything. If ``True``, draw them above everything. If ``'line'``, "
         'draw them above patches but below lines and markers.'
@@ -1288,7 +1293,7 @@ _rc_proplot_table = {
     # Backend stuff
     'inlinefmt': (
         'retina',
-        _validate_belongs('svg', 'pdf', 'retina', 'png', 'jpeg'),
+        _validate_options('svg', 'pdf', 'retina', 'png', 'jpeg'),
         'The inline backend figure format. Valid formats include '
         "``'svg'``, ``'pdf'``, ``'retina'``, ``'png'``, and ``jpeg``."
     ),
@@ -1485,7 +1490,7 @@ _rc_proplot_table = {
     # Geographic resolution
     'reso': (
         'lo',
-        _validate_belongs('lo', 'med', 'hi', 'x-hi', 'xx-hi'),
+        _validate_options('lo', 'med', 'hi', 'x-hi', 'xx-hi'),
         'Resolution for `~proplot.axes.GeoAxes` geographic features. '
         "Must be one of ``'lo'``, ``'med'``, ``'hi'``, ``'x-hi'``, or ``'xx-hi'``."
     ),
@@ -1580,7 +1585,7 @@ _rc_proplot_table = {
     ),
     'subplots.share': (
         True,
-        _validate_belongs(0, 1, 2, 3, 4, False, 'labels', 'limits', True, 'all'),
+        _validate_options(0, 1, 2, 3, 4, False, 'labels', 'limits', True, 'all'),
         'The axis sharing level, one of ``0``, ``1``, ``2``, or ``3``, or the '
         "more intuitive aliases ``False``, ``'labels'``, ``'limits'``, or ``True``. "
         'See `~proplot.figure.Figure` for details.'
@@ -1626,7 +1631,7 @@ _rc_proplot_table = {
     ),
     'tick.dir': (
         TICKDIR,
-        _validate_belongs('in', 'out', 'inout'),
+        _validate_options('in', 'out', 'inout'),
         'Major and minor tick direction. Must be one of '
         "``'out'``, ``'in'``, or ``'inout'``."
     ),
@@ -1689,7 +1694,7 @@ _rc_proplot_table = {
     # Title settings
     'title.above': (
         True,
-        _validate_belongs(False, True, 'panels'),
+        _validate_options(False, True, 'panels'),
         'Whether to move outer titles and a-b-c labels above panels, colorbars, or '
         "legends that are above the axes. If the string 'panels' then text is only "
         'redirected above axes panels. Otherwise should be boolean.'
@@ -1739,7 +1744,7 @@ _rc_proplot_table = {
     ),
     'title.loc': (
         'center',
-        _validate_belongs(*TEXT_LOCS),
+        _validate_options(*TEXT_LOCS),
         'Title position. For options see the :ref:`location table <title_table>`.'
     ),
     'title.pad': (
@@ -1829,6 +1834,19 @@ _rc_children = {
     'tick.labelsize': ('xtick.labelsize', 'ytick.labelsize'),
 }
 
+# Recently added settings. Update these only if the version is recent enough
+# NOTE: We don't make 'title.color' a child of 'axes.titlecolor' because
+# the latter can take on the value 'auto' and can't handle that right now.
+if dependencies._version_mpl >= 3.2:
+    _rc_matplotlib_default['axes.titlecolor'] = BLACK
+    _rc_children['title.color'] = ('axes.titlecolor',)
+if dependencies._version_mpl >= 3.4:
+    _rc_matplotlib_default['xtick.labelcolor'] = BLACK
+    _rc_matplotlib_default['ytick.labelcolor'] = BLACK
+    _rc_children['meta.color'] += ('xtick.labelcolor', 'ytick.labelcolor')
+    _rc_children['tick.labelcolor'] += ('xtick.labelcolor', 'ytick.labelcolor')
+    _rc_children['grid.labelcolor'] += ('xtick.labelcolor', 'ytick.labelcolor')
+
 # Setting synonyms. Changing one setting changes the other. Also account for existing
 # children. Most of these are aliased due to proplot settings overlapping with
 # existing matplotlib settings.
@@ -1871,9 +1889,13 @@ for _keys in _rc_synonyms:
         _set = {_ for k in _keys for _ in {k, *_rc_children.get(k, ())}} - {_key}
         _rc_children[_key] = tuple(sorted(_set))
 
-# Previously removed settings. Add renamed settings to children dictionary so that
-# pplt.rc[deprecated] = value updates the correct children. We don't natively
-# translate deprecated keys in Configurator -- leave that to the RcParams dicts.
+# Previously removed settings.
+# NOTE: Initial idea was to defer deprecation warnings in Configurator to the
+# subsequent RcParams indexing. However this turned out be complicated, because
+# would have to detect deprecated keys in _get_item_dicts blocks, and need to
+# validate values before e.g. applying 'tick.lenratio'. So the renamed parameters
+# do not have to be added as _rc_children, since Configurator translates before
+# retrieving the list of children in _get_item_dicts.
 _rc_removed = {  # {key: (alternative, version)} dictionary
     'rgbcycle': ('', '0.6'),  # no alternative, we no longer offer this feature
     'geogrid.latmax': ('Please use e.g. ax.format(latmax=N) instead.', '0.6'),
@@ -1926,24 +1948,9 @@ _rc_renamed = {  # {old_key: (new_key, version)} dictionary
     'grid.loninline': ('grid.inlinelabels', '0.8'),
     'grid.latinline': ('grid.inlinelabels', '0.8'),
     'cmap.edgefix': ('edgefix', '0.9'),
+    'basemap': ('geo.backend', '0.10'),
     'colorbar.rasterize': ('colorbar.rasterized', '0.10'),
 }
-for _key_old, (_key_new, _) in _rc_renamed.items():
-    if _key_new in _rc_children:
-        _rc_children[_key_old] = _rc_children[_key_new]
-
-# Recently added settings. Update these only if the version is recent enough
-# NOTE: We don't make 'title.color' a child of 'axes.titlecolor' because
-# the latter can take on the value 'auto' and can't handle that right now.
-if dependencies._version_mpl >= 3.2:
-    _rc_matplotlib_default['axes.titlecolor'] = BLACK
-    _rc_children['title.color'] = ('axes.titlecolor',)
-if dependencies._version_mpl >= 3.4:
-    _rc_matplotlib_default['xtick.labelcolor'] = BLACK
-    _rc_matplotlib_default['ytick.labelcolor'] = BLACK
-    _rc_children['meta.color'] += ('xtick.labelcolor', 'ytick.labelcolor')
-    _rc_children['tick.labelcolor'] += ('xtick.labelcolor', 'ytick.labelcolor')
-    _rc_children['grid.labelcolor'] += ('xtick.labelcolor', 'ytick.labelcolor')
 
 # Validate the default settings dictionaries using a custom proplot _RcParams
 # and the original matplotlib RcParams. Also surreptitiously add proplot

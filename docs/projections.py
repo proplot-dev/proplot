@@ -89,9 +89,9 @@ axs.format(
 #   to work with the projection classes directly, they are available in the
 #   top-level namespace (e.g., ``proj=pplt.PlateCarre()`` is allowed).
 #
-# * Basemap is an alternative backend. To use basemap, set :rcraw:`basemap` to
-#   ``True`` or pass ``basemap=True`` to the axes-creation command. When you
-#   request a projection name with basemap as the backend (or pass a
+# * Basemap is an alternative backend. To use basemap, set :rcraw:`geo.backend` to
+#   ``'basemap'`` or pass ``backend='basemap'`` to the axes-creation command. When
+#   you request a projection name with basemap as the backend (or pass a
 #   `~mpl_toolkits.basemap.Basemap` to the `proj` keyword), the returned axes
 #   redirects the plotting methods plot, scatter, contour, contourf, pcolor,
 #   pcolormesh, quiver, streamplot, and barb to the identically named methods on
@@ -148,14 +148,14 @@ fig = pplt.figure()
 # Add projections
 gs = pplt.GridSpec(ncols=2, nrows=3, hratios=(1, 1, 1.4))
 for i, proj in enumerate(('cyl', 'hammer', 'npstere')):
-    ax1 = fig.subplot(gs[i, 0], proj=proj, basemap=True)  # basemap
-    ax2 = fig.subplot(gs[i, 1], proj=proj)  # cartopy
+    ax1 = fig.subplot(gs[i, 0], proj=proj)  # default cartopy backend
+    ax2 = fig.subplot(gs[i, 1], proj=proj, backend='basemap')  # basemap backend
 
 # Format projections
 fig.format(
     land=True,
     suptitle='Figure with several projections',
-    toplabels=('Basemap projections', 'Cartopy projections'),
+    toplabels=('Cartopy examples', 'Basemap examples'),
     toplabelweight='normal',
     latlines=30, lonlines=60,
     lonlabels='b', latlabels='r',  # or lonlabels=True, labels=True, etc.
@@ -206,8 +206,9 @@ for globe in (False, True):
     gs = pplt.GridSpec(nrows=2, ncols=2)
     fig = pplt.figure(refwidth=2.5)
     for i, ss in enumerate(gs):
-        ax = fig.subplot(ss, proj='kav7', basemap=(i % 2))
         cmap = ('sunset', 'sunrise')[i % 2]
+        backend = ('cartopy', 'basemap')[i % 2]
+        ax = fig.subplot(ss, proj='kav7', backend=backend)
         if i > 1:
             ax.pcolor(lon, lat, data, cmap=cmap, globe=globe, extend='both')
         else:
@@ -319,7 +320,7 @@ import proplot as pplt
 
 # Plate Carrée map projection
 pplt.rc.reso = 'med'  # use higher res for zoomed in geographic features
-basemap = pplt.Proj('cyl', lonlim=(-20, 180), latlim=(-10, 50), basemap=True)
+basemap = pplt.Proj('cyl', lonlim=(-20, 180), latlim=(-10, 50), backend='basemap')
 fig, axs = pplt.subplots(nrows=2, refwidth=5, proj=('cyl', basemap))
 axs.format(
     land=True, labels=True, lonlines=20, latlines=20,
@@ -333,7 +334,7 @@ axs[1].format(title='Basemap example')
 import proplot as pplt
 
 # Pole-centered map projections
-basemap = pplt.Proj('npaeqd', boundinglat=60, basemap=True)
+basemap = pplt.Proj('npaeqd', boundinglat=60, backend='basemap')
 fig, axs = pplt.subplots(ncols=2, refwidth=2.7, proj=('splaea', basemap))
 fig.format(suptitle='Zooming into polar projections')
 axs.format(land=True, latmax=80)  # no gridlines poleward of 80 degrees
@@ -347,7 +348,7 @@ import proplot as pplt
 fig = pplt.figure(refwidth=3)
 ax = fig.subplot(121, proj='lcc', proj_kw={'lon_0': 0})
 ax.format(lonlim=(-20, 50), latlim=(30, 70), title='Cartopy example')
-proj = pplt.Proj('lcc', lon_0=-100, lat_0=45, width=8e6, height=8e6, basemap=True)
+proj = pplt.Proj('lcc', lon_0=-100, lat_0=45, width=8e6, height=8e6, backend='basemap')
 ax = fig.subplot(122, proj=proj)
 ax.format(lonlines=20, title='Basemap example')
 fig.format(suptitle='Zooming into specific regions', land=True)
@@ -419,7 +420,7 @@ projs = [
     'vandg', 'aea', 'eqdc', 'gnom', 'cass', 'lcc',
     'npstere', 'npaeqd', 'nplaea'
 ]
-fig, axs = pplt.subplots(ncols=3, nrows=8, basemap=True, figwidth=7, proj=projs)
+fig, axs = pplt.subplots(ncols=3, nrows=8, figwidth=7, proj=projs, backend='basemap')
 axs.format(
     land=True, labels=False,
     suptitle='Table of basemap projections'

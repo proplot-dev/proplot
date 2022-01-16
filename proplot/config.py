@@ -736,7 +736,7 @@ class Configurator(MutableMapping, dict):
         Return an `rc_matplotlib` or `rc_proplot` setting using dictionary notation
         (e.g., ``value = pplt.rc[name]``).
         """
-        key = self._validate_key(key)  # might issue proplot removed/renamed error
+        key, _ = self._validate_key(key)  # might issue proplot removed/renamed error
         try:
             return rc_proplot[key]
         except KeyError:
@@ -748,7 +748,7 @@ class Configurator(MutableMapping, dict):
         Modify an `rc_matplotlib` or `rc_proplot` setting using dictionary notation
         (e.g., ``pplt.rc[name] = value``).
         """
-        kw_proplot, kw_matplotlib = self._item_dicts(key, value)
+        kw_proplot, kw_matplotlib = self._get_item_dicts(key, value)
         rc_proplot.update(kw_proplot)
         rc_matplotlib.update(kw_matplotlib)
 
@@ -782,10 +782,10 @@ class Configurator(MutableMapping, dict):
             )
         context = self._context[-1]
         kwargs = context.kwargs
-        rc_new = context.rc_new  # used for context-based _item_context
+        rc_new = context.rc_new  # used for context-based _get_item_context
         rc_old = context.rc_old  # used to re-apply settings without copying whole dict
         for key, value in kwargs.items():
-            kw_proplot, kw_matplotlib = self._item_dicts(key, value)
+            kw_proplot, kw_matplotlib = self._get_item_dicts(key, value)
             for rc_dict, kw_new in zip(
                 (rc_proplot, rc_matplotlib),
                 (kw_proplot, kw_matplotlib),
@@ -804,41 +804,10 @@ class Configurator(MutableMapping, dict):
             )
         context = self._context[-1]
         for key, value in context.rc_old.items():
-            kw_proplot, kw_matplotlib = self._item_dicts(key, value)
+            kw_proplot, kw_matplotlib = self._get_item_dicts(key, value)
             rc_proplot.update(kw_proplot)
             rc_matplotlib.update(kw_matplotlib)
         del self._context[-1]
-
-    @staticmethod
-    def _validate_key(key):
-        """
-        Ensure string and convert keys with omitted dots.
-        """
-        if not isinstance(key, str):
-            raise KeyError(f'Invalid key {key!r}. Must be string.')
-        if '.' not in key:
-            key = rcsetup._rc_nodots.get(key, key)
-        key = rc_proplot._check_key(key)  # may issue deprecation warning
-        return key.lower()
-
-    @staticmethod
-    def _validate_value(key, value):
-        """
-        Convert numpy ndarray to list and validate if possible.
-        """
-        # NOTE: Ideally would implicitly validate on subsequent assignment to rc
-        # dictionaries, but must explicitly do it here, so _item_dicts can 'sync'
-        # settings with children (e.g. multiplying tick widths by width ratios)
-        # and so _load_file() can catch errors and emit warnings before assignment.
-        if isinstance(value, np.ndarray):
-            value = value.item() if value.size == 1 else value.tolist()
-        validate = getattr(rc_matplotlib, 'validate', None)
-        validate_proplot = rc_proplot._validate
-        if validate is not None and key in validate:  # guard against API change
-            value = validate[key](value)
-        elif key in validate_proplot:
-            value = validate_proplot[key](value)
-        return value
 
     def _init(self, *, local, user, default, skip_cycle=False):
         """
@@ -854,7 +823,7 @@ class Configurator(MutableMapping, dict):
             rc_matplotlib.update(rcsetup._rc_matplotlib_default)
             rc_proplot.update(rcsetup._rc_proplot_default)
             for key, value in rc_proplot.items():
-                kw_proplot, kw_matplotlib = self._item_dicts(
+                kw_proplot, kw_matplotlib = self._get_item_dicts(
                     key, value, skip_cycle=skip_cycle
                 )
                 rc_matplotlib.update(kw_matplotlib)
@@ -875,12 +844,49 @@ class Configurator(MutableMapping, dict):
                     continue
                 self.load(path)
 
-    def _item_context(self, key, mode=None):
+    @staticmethod
+    def _validate_key(key, value=None):
+        """
+        Validate setting names and handle `rc_proplot` deprecations.
+        """
+        # NOTE: Not necessary to check matplotlib key here because... not sure why.
+        # Think deprecated matplotlib keys are not involved in any synced settings.
+        # Also note _check_key includes special handling for some renamed keys.
+        if not isinstance(key, str):
+            raise KeyError(f'Invalid key {key!r}. Must be string.')
+        key = key.lower()
+        if '.' not in key:
+            key = rcsetup._rc_nodots.get(key, key)
+        key, value = rc_proplot._check_key(key, value)  # may issue deprecation warning
+        return key, value
+
+    @staticmethod
+    def _validate_value(key, value):
+        """
+        Validate setting values and convert numpy ndarray to list if possible.
+        """
+        # NOTE: Ideally would implicitly validate on subsequent assignment to rc
+        # dictionaries, but must explicitly do it here, so _get_item_dicts can
+        # work with e.g. 'tick.lenratio', so _get_item_dicts does not have to include
+        # deprecated name handling in its if statements, and so _load_file can
+        # catch errors and emit warnings with line number indications as files
+        # are being read rather than after the end of the file reading.
+        if isinstance(value, np.ndarray):
+            value = value.item() if value.size == 1 else value.tolist()
+        validate_matplotlib = getattr(rc_matplotlib, 'validate', None)
+        validate_proplot = rc_proplot._validate
+        if validate_matplotlib is not None and key in validate_matplotlib:
+            value = validate_matplotlib[key](value)
+        elif key in validate_proplot:
+            value = validate_proplot[key](value)
+        return value
+
+    def _get_item_context(self, key, mode=None):
         """
         As with `~Configurator.__getitem__` but the search is limited based
         on the context mode and ``None`` is returned if the key is not found.
         """
-        key = self._validate_key(key)
+        key, _ = self._validate_key(key)
         if mode is None:
             mode = self._context_mode
         cache = tuple(context.rc_new for context in self._context)
@@ -902,14 +908,14 @@ class Configurator(MutableMapping, dict):
         if mode == 0:  # otherwise return None
             raise KeyError(f'Invalid rc setting {key!r}.')
 
-    def _item_dicts(self, key, value, skip_cycle=False):
+    def _get_item_dicts(self, key, value, skip_cycle=False):
         """
         Return dictionaries for updating the `rc_proplot` and `rc_matplotlib`
         properties associated with this key. Used when setting items, entering
         context blocks, or loading files.
         """
         # Get validated key, value, and child keys
-        key = self._validate_key(key)
+        key, value = self._validate_key(key, value)
         value = self._validate_value(key, value)
         keys = (key,) + rcsetup._rc_children.get(key, ())  # settings to change
         contains = lambda *args: any(arg in keys for arg in args)  # noqa: E731
@@ -1016,7 +1022,7 @@ class Configurator(MutableMapping, dict):
         return kw_proplot, kw_matplotlib
 
     @staticmethod
-    def _axisbelow_to_zorder(axisbelow):
+    def _get_axisbelow_zorder(axisbelow):
         """
         Convert the `axisbelow` string to its corresponding `zorder`.
         """
@@ -1112,7 +1118,7 @@ class Configurator(MutableMapping, dict):
             if native:  # this is a native plot so use set_axisbelow() down the line
                 kwlines['axisbelow'] = axisbelow
             else:  # this is a geographic plot so apply with zorder
-                kwlines['zorder'] = self._axisbelow_to_zorder(axisbelow)
+                kwlines['zorder'] = self._get_axisbelow_zorder(axisbelow)
         return kwlines
 
     def _get_label_props(self, native=True, **kwargs):
@@ -1349,8 +1355,8 @@ class Configurator(MutableMapping, dict):
         file : path-like, optional
             Filename from which settings should be loaded.
         **kwargs
-            `rc` names and values passed as keyword arguments. If the
-            name has dots, simply omit them.
+            `rc` names and values passed as keyword arguments.
+            If the name has dots, simply omit them.
 
         Other parameters
         ----------------
@@ -1363,16 +1369,16 @@ class Configurator(MutableMapping, dict):
 
             * ``mode=0``: Matplotlib's `rc_matplotlib` settings
               and proplot's `rc_proplot` settings are all returned,
-              whether they are local to the "with as" block.
+              whether or not they are local to the "with as" block.
             * ``mode=1``: Matplotlib's `rc_matplotlib` settings are only
               returned if they are local to the "with as" block. For example,
               if :rcraw:`axes.titlesize` was passed to `~Configurator.context`,
               then ``pplt.rc.find('axes.titlesize', context=True)`` will return
-              this value, but ``pplt.rc.find('axes.titleweight', context=True)``
-              will return ``None``.
+              this value, but ``pplt.rc.find('axes.titleweight', context=True)`` will
+              return ``None``. This is used internally when instantiating axes.
             * ``mode=2``: Matplotlib's `rc_matplotlib` settings and proplot's
               `rc_proplot` settings are only returned if they are local to the
-              "with as" block.
+              "with as" block. This is used internally when formatting axes.
 
         Note
         ----
@@ -1451,7 +1457,7 @@ class Configurator(MutableMapping, dict):
         for key in self:
             if not re.match(fr'\A{cat}\.[^.]+\Z', key):
                 continue
-            value = self._item_context(key, None if context else 0)
+            value = self._get_item_context(key, None if context else 0)
             if value is None:
                 continue
             if trimcat:
@@ -1480,7 +1486,7 @@ class Configurator(MutableMapping, dict):
         """
         kw = {}
         for key, value in props.items():
-            item = self._item_context(value, None if context else 0)
+            item = self._get_item_context(value, None if context else 0)
             if item is not None:
                 kw[key] = item
         return kw
@@ -1502,7 +1508,7 @@ class Configurator(MutableMapping, dict):
         Configurator.category
         Configurator.fill
         """
-        return self._item_context(key, None if context else 0)
+        return self._get_item_context(key, None if context else 0)
 
     def update(self, *args, **kwargs):
         """
@@ -1586,7 +1592,7 @@ class Configurator(MutableMapping, dict):
                 with warnings.catch_warnings():
                     warnings.simplefilter('error', warnings.ProplotWarning)
                     try:
-                        ikw_proplot, ikw_matplotlib = self._item_dicts(key, val)
+                        ikw_proplot, ikw_matplotlib = self._get_item_dicts(key, val)
                     except KeyError:
                         warnings._warn_proplot(
                             f'Invalid rc key {key!r} on {message}.', 'default'
@@ -1602,7 +1608,7 @@ class Configurator(MutableMapping, dict):
                             f'Outdated rc key {key!r} on {message}: {err}', 'default'
                         )
                         warnings.simplefilter('ignore', warnings.ProplotWarning)
-                        ikw_proplot, ikw_matplotlib = self._item_dicts(key, val)
+                        ikw_proplot, ikw_matplotlib = self._get_item_dicts(key, val)
                 # Update the settings
                 kw_proplot.update(ikw_proplot)
                 kw_matplotlib.update(ikw_matplotlib)

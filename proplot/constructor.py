@@ -1262,7 +1262,7 @@ def Scale(scale, *args, **kwargs):
     return scale(*args, **kwargs)
 
 
-def Proj(name, basemap=None, **kwargs):
+def Proj(name, backend=None, **kwargs):
     """
     Return a `cartopy.crs.Projection` or `~mpl_toolkits.basemap.Basemap` instance.
 
@@ -1339,19 +1339,21 @@ def Proj(name, basemap=None, **kwargs):
         ``'wintri'``   `Winkel tripel <wintri_>`_                       ✓ (added)  ✗
         =============  ===============================================  =========  =======
 
-    basemap : bool, default: :rc:`basemap`
-        Whether to use the basemap package as opposed to the cartopy package.
+    backend : {'cartopy', 'basemap'}, default: :rc:`geo.backend`
+        Whether to return a cartopy `~cartopy.crs.Projection` instance
+        or a basemap `~mpl_toolkits.basemap.Basemap` instance.
     lonlim : 2-tuple of float, optional
-        Alternative way to specify `llcrnrlon` and `urcrnrlon` for basemap projections.
+        *For basemap projections only*. Alternative way to specify the
+        longitude corner bounds `llcrnrlon` and `urcrnrlon`.
     latlim : 2-tuple of float, optional
-        Alternative way to specify `llcrnrlat` and `urcrnrlat` for basemap projections.
+        *For basemap projections only*. Alternative way to specify the
+        latitude corner bounds `llcrnrlat` and `urcrnrlat`.
 
     Other parameters
     ----------------
     **kwargs
-        Passed to the `mpl_toolkits.basemap.Basemap` or `cartopy.crs.Projection`
-        class. For cartopy axes, proplot translates `lon_0` and `lat_0` to
-        `central_longitude` and `central_latitude`.
+        Passed to the basemap `~mpl_toolkits.basemap.Basemap`
+        or cartopy `~cartopy.crs.Projection` class.
 
     Returns
     -------
@@ -1410,25 +1412,57 @@ def Proj(name, basemap=None, **kwargs):
     .. _vandg: https://proj4.org/operations/projections/vandg.html
     .. _wintri: https://proj4.org/operations/projections/wintri.html
     """  # noqa: E501
-    # Class instances
-    basemap = _not_none(basemap, rc['basemap'])
+    # Parse input arguments
     is_crs = Projection is not object and isinstance(name, Projection)
     is_basemap = Basemap is not object and isinstance(name, Basemap)
     include_axes = kwargs.pop('include_axes', False)  # for error message
+    if backend is not None and backend not in ('cartopy', 'basemap'):
+        raise ValueError(
+            f"Invalid backend={backend!r}. Options are 'cartopy' or 'basemap'."
+        )
+    if not is_crs and not is_basemap:
+        backend = _not_none(backend, rc['geo.backend'])
+        if not isinstance(name, str):
+            raise ValueError(
+                f'Unexpected projection {name!r}. Must be PROJ string name, '
+                'cartopy.crs.Projection, or mpl_toolkits.basemap.Basemap.'
+            )
+
+    # Projection instances
     if is_crs or is_basemap:
-        proj = name
-        package = 'cartopy' if is_crs else 'basemap'
+        if backend is not None:
+            kwargs['backend'] = backend
         if kwargs:
             warnings._warn_proplot(f'Ignoring Proj() keyword arg(s): {kwargs!r}.')
+        proj = name
+        backend = 'cartopy' if is_crs else 'basemap'
 
-    # Unknown
-    elif not isinstance(name, str):
-        raise ValueError(
-            f'Unexpected projection {name!r}. Must be PROJ string name, '
-            'cartopy.crs.Projection, or mpl_toolkits.basemap.Basemap.'
-        )
+    # Cartopy name
+    # NOTE: Error message matches basemap invalid projection message
+    elif backend == 'cartopy':
+        import cartopy.crs as ccrs  # noqa: F401
+        proj_kw = {PROJ_ALIASES_KW.get(key, key): value for key, value in kwargs.items()}  # noqa: E501
+        if 'boundinglat' in proj_kw:
+            raise ValueError('"boundinglat" must be passed to the ax.format() command for cartopy axes.')  # noqa: E501
+        try:
+            crs = PROJS[name]
+        except KeyError:
+            message = f'{name!r} is an unknown cartopy projection class.\n'
+            message += 'The known cartopy projection classes are:\n'
+            message += '\n'.join(
+                ' ' + key + ' ' * (max(map(len, PROJS)) - len(key) + 10) + cls.__name__
+                for key, cls in PROJS.items()
+            )
+            if include_axes:
+                from . import axes as paxes  # avoid circular imports
+                message = message.replace('class.', 'class or axes subclass.')
+                message += '\nThe known axes subclasses are:\n' + paxes._cls_table
+            raise ValueError(message) from None
+        if name == 'geos':  # fix common mistake
+            proj_kw.pop('central_latitude', None)
+        proj = crs(**proj_kw)
 
-    # Basemap
+    # Basemap name
     # NOTE: Known issue that basemap sometimes produces backwards maps:
     # https://stackoverflow.com/q/56299971/4970632
     # NOTE: We set rsphere to fix non-conda installed basemap issue:
@@ -1437,9 +1471,8 @@ def Proj(name, basemap=None, **kwargs):
     # https://stackoverflow.com/questions/56299971/ (also triggers 'no room for axes')
     # NOTE: Unlike cartopy, basemap resolution is configured
     # on initialization and controls *all* features.
-    elif basemap:
+    else:
         import mpl_toolkits.basemap as mbasemap
-        package = 'basemap'
         if dependencies._version_mpl >= 3.3:
             raise RuntimeError(
                 'Basemap is no longer maintained and is incompatible with '
@@ -1487,33 +1520,7 @@ def Proj(name, basemap=None, **kwargs):
                 message += '\nThe known axes subclasses are:\n' + paxes._cls_table
             raise ValueError(message) from None
 
-    # Cartopy
-    # NOTE: Error message matches basemap invalid projection message
-    else:
-        import cartopy.crs as ccrs  # noqa: F401
-        package = 'cartopy'
-        proj_kw = {PROJ_ALIASES_KW.get(key, key): value for key, value in kwargs.items()}  # noqa: E501
-        if 'boundinglat' in proj_kw:
-            raise ValueError('"boundinglat" must be passed to the ax.format() command for cartopy axes.')  # noqa: E501
-        try:
-            crs = PROJS[name]
-        except KeyError:
-            message = f'{name!r} is an unknown cartopy projection class.\n'
-            message += 'The known cartopy projection classes are:\n'
-            message += '\n'.join(
-                ' ' + key + ' ' * (max(map(len, PROJS)) - len(key) + 10) + cls.__name__
-                for key, cls in PROJS.items()
-            )
-            if include_axes:
-                from . import axes as paxes  # avoid circular imports
-                message = message.replace('class.', 'class or axes subclass.')
-                message += '\nThe known axes subclasses are:\n' + paxes._cls_table
-            raise ValueError(message) from None
-        if name == 'geos':  # fix common mistake
-            proj_kw.pop('central_latitude', None)
-        proj = crs(**proj_kw)
-
-    proj._proj_package = package
+    proj._proj_backend = backend
     return proj
 
 

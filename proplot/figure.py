@@ -214,8 +214,8 @@ order : {'C', 'F'}, default: 'C'
     ``pplt.subplots(ncols=2, proj='cyl', proj_kw=({'lon_0': 0}, {'lon_0': 180})``
     centers the projection in the left subplot on the prime meridian and in the
     right subplot on the international dateline.
-%(axes.basemap)s
-    If boolean, applies to all subplots. If list or dict, applies to specific
+%(axes.backend)s
+    If string, applies to all subplots. If list or dict, applies to specific
     subplots, as with `proj`.
 %(gridspec.shared)s
 %(gridspec.vector)s
@@ -302,7 +302,7 @@ autoshare : bool, default: True
     or ``sharey=False`` were passed to the figure.
 %(axes.proj)s
 %(axes.proj_kw)s
-%(axes.basemap)s
+%(axes.backend)s
 
 Other parameters
 ----------------
@@ -328,7 +328,7 @@ rect : 4-tuple of float
     figure-relative coordinates.
 %(axes.proj)s
 %(axes.proj_kw)s
-%(axes.basemap)s
+%(axes.backend)s
 
 Other parameters
 ----------------
@@ -756,7 +756,7 @@ class Figure(mfigure.Figure):
 
     def _parse_proj(
         self, proj=None, projection=None,
-        proj_kw=None, projection_kw=None, basemap=None,
+        proj_kw=None, projection_kw=None, backend=None,
         **kwargs
     ):
         """
@@ -786,7 +786,7 @@ class Figure(mfigure.Figure):
         # Helpful error message
         if (
             name is None
-            and basemap is None
+            and backend is None
             and isinstance(proj, str)
             and constructor.Projection is object
             and constructor.Basemap is object
@@ -800,8 +800,8 @@ class Figure(mfigure.Figure):
         # Search geographic projections
         # NOTE: Also raises errors due to unexpected projection type
         if name is None:
-            proj = constructor.Proj(proj, basemap=basemap, include_axes=True, **proj_kw)
-            name = proj._proj_package
+            proj = constructor.Proj(proj, backend=backend, include_axes=True, **proj_kw)
+            name = proj._proj_backend
             kwargs['map_projection'] = proj
 
         kwargs['projection'] = 'proplot_' + name
@@ -1050,7 +1050,7 @@ class Figure(mfigure.Figure):
 
     def _add_subplots(
         self, array=None, nrows=1, ncols=1, order='C',
-        proj=None, projection=None, proj_kw=None, projection_kw=None, basemap=None,
+        proj=None, projection=None, proj_kw=None, projection_kw=None, backend=None,
         **kwargs
     ):
         """
@@ -1119,9 +1119,9 @@ class Figure(mfigure.Figure):
         proj = _axes_dict(naxs, proj, kw=False, default='cartesian')
         proj_kw = _not_none(projection_kw=projection_kw, proj_kw=proj_kw) or {}
         proj_kw = _axes_dict(naxs, proj_kw, kw=True)
-        basemap = _axes_dict(naxs, basemap, kw=False)
+        backend = _axes_dict(naxs, backend, kw=False)
         axes_kw = {
-            num: {'proj': proj[num], 'proj_kw': proj_kw[num], 'basemap': basemap[num]}
+            num: {'proj': proj[num], 'proj_kw': proj_kw[num], 'backend': backend[num]}
             for num in proj
         }
         for key in ('gridspec_kw', 'subplot_kw'):

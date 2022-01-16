@@ -107,14 +107,14 @@ proj_kw, projection_kw : dict-like, optional
     Keyword arguments passed to `~mpl_toolkits.basemap.Basemap` or
     cartopy `~cartopy.crs.Projection` classes on instantiation.
 """
-_basemap_docstring = """
-basemap : bool or dict-like, default: :rc:`basemap`
+_backend_docstring = """
+backend : {'cartopy', 'basemap'}, default: :rc:`geo.backend`
     Whether to use `~mpl_toolkits.basemap.Basemap` or
     `~cartopy.crs.Projection` for map projections.
 """
 docstring._snippet_manager['axes.proj'] = _proj_docstring
 docstring._snippet_manager['axes.proj_kw'] = _proj_kw_docstring
-docstring._snippet_manager['axes.basemap'] = _basemap_docstring
+docstring._snippet_manager['axes.backend'] = _backend_docstring
 
 
 # Colorbar and legend space
@@ -180,7 +180,7 @@ bounds : 4-tuple of float
     Default is to use the same projection as the current axes.
 %(axes.proj)s
 %(axes.proj_kw)s
-%(axes.basemap)s
+%(axes.backend)s
 zorder : float, default: 4
     The `zorder <https://matplotlib.org/stable/gallery/misc/zorder_demo.html>`__
     of the axes. Should be greater than the zorder of elements in the parent axes.
