@@ -14,7 +14,7 @@ from .. import scale as pscale
 from .. import ticker as pticker
 from ..config import rc
 from ..internals import ic  # noqa: F401
-from ..internals import _not_none, _pop_rc, dependencies, docstring, labels, warnings
+from ..internals import _not_none, _pop_rc, _version_mpl, docstring, labels, warnings
 from . import plot, shared
 
 __all__ = ['CartesianAxes']
@@ -748,8 +748,7 @@ class CartesianAxes(shared._SharedAxes, plot.PlotAxes):
         if min_ is not None or max_ is not None:
             if lim is not None:
                 warnings._warn_proplot(
-                    f'Overriding {s}lim={lim!r} '
-                    f'with {s}min={min_!r} and {s}max={max_!r}.'
+                    f'Overriding {s}lim={lim!r} with {s}min={min_!r}, {s}max={max_!r}.'
                 )
             lim = (min_, max_)
         if lim is not None:
@@ -904,7 +903,7 @@ class CartesianAxes(shared._SharedAxes, plot.PlotAxes):
         if offsetloc is not None:
             if hasattr(axis, 'set_offset_position'):  # y axis (and future x axis?)
                 axis.set_offset_position(offsetloc)
-            elif s == 'x' and dependencies._version_mpl >= 3.3:  # ugly mpl kludge
+            elif s == 'x' and _version_mpl >= 3.3:  # ugly x axis kludge
                 axis._tick_position = offsetloc
                 axis.offsetText.set_verticalalignment(REVERSE_SIDE[offsetloc])
 

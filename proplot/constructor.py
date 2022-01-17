@@ -29,7 +29,7 @@ from . import scale as pscale
 from . import ticker as pticker
 from .config import rc
 from .internals import ic  # noqa: F401
-from .internals import _not_none, _pop_props, dependencies, warnings
+from .internals import _not_none, _pop_props, _version_cartopy, _version_mpl, warnings
 from .utils import get_colors, to_hex, to_rgba
 
 try:
@@ -110,7 +110,7 @@ LOCATORS = {
 }
 if hasattr(mproj.polar, 'ThetaLocator'):
     LOCATORS['theta'] = mproj.polar.ThetaLocator
-if dependencies._version_cartopy >= 0.18:
+if _version_cartopy >= 0.18:
     LOCATORS['dms'] = partial(pticker.DegreeLocator, dms=True)
     LOCATORS['dmslon'] = partial(pticker.LongitudeLocator, dms=True)
     LOCATORS['dmslat'] = partial(pticker.LatitudeLocator, dms=True)
@@ -156,7 +156,7 @@ if hasattr(mproj.polar, 'ThetaFormatter'):
     FORMATTERS['theta'] = mproj.polar.ThetaFormatter
 if hasattr(mdates, 'ConciseDateFormatter'):
     FORMATTERS['concise'] = mdates.ConciseDateFormatter
-if dependencies._version_cartopy >= 0.18:
+if _version_cartopy >= 0.18:
     FORMATTERS['dms'] = partial(pticker.DegreeFormatter, dms=True)
     FORMATTERS['dmslon'] = partial(pticker.LongitudeFormatter, dms=True)
     FORMATTERS['dmslat'] = partial(pticker.LatitudeFormatter, dms=True)
@@ -1473,7 +1473,7 @@ def Proj(name, backend=None, **kwargs):
     # on initialization and controls *all* features.
     else:
         import mpl_toolkits.basemap as mbasemap
-        if dependencies._version_mpl >= 3.3:
+        if _version_mpl >= 3.3:
             raise RuntimeError(
                 'Basemap is no longer maintained and is incompatible with '
                 'matplotlib >= 3.3. Please use cartopy as your geographic '

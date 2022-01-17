@@ -33,7 +33,7 @@ from .internals import (
     _pop_kwargs,
     _pop_props,
     _translate_grid,
-    dependencies,
+    _version_mpl,
     docstring,
     rcsetup,
     warnings,
@@ -685,8 +685,10 @@ def register_fonts(*args, user=True, local=True, default=False):
     mfonts.fontManager.ttflist = [
         font
         for font in mfonts.fontManager.ttflist
-        if os.path.splitext(font.fname)[1] != '.ttc'
-        or 'Thin' in os.path.basename(font.fname)
+        if os.path.splitext(font.fname)[1] != '.ttc' and (
+            _version_mpl >= '3.3.0'
+            or 'Thin' not in os.path.basename(font.fname)
+        )
     ]
 
 
@@ -1189,7 +1191,7 @@ class Configurator(MutableMapping, dict):
         """
         # NOTE: 'tick.label' properties are now synonyms of 'grid.label' properties
         sprefix = axis or ''
-        cprefix = sprefix if dependencies._version_mpl >= 3.4 else ''  # new settings
+        cprefix = sprefix if _version_mpl >= 3.4 else ''  # new settings
         context = not rebuild and (native or self._context_mode == 2)
         kwtext = self.fill(
             {

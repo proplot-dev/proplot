@@ -9,46 +9,22 @@
 # full list see the documentation:
 # http://www.sphinx-doc.org/en/master/config
 
+# -- Imports and paths --------------------------------------------------------------
 
-# -- Path setup --------------------------------------------------------------
-
-# Add proplot to path for sphinx-automodapi
-# Add docs folder to PATH for local 'sphinxext' extensions
+# Import statements
 import os
 import sys
+import datetime
+import subprocess
+
+# Update path for sphinx-automodapi and sphinxext extension
 sys.path.append(os.path.abspath('.'))
 sys.path.insert(0, os.path.abspath('..'))
 
-# Other imports
-import datetime
-import subprocess
-from proplot.config import rc
-from proplot.internals.dependencies import _version_mpl
-from pygments.formatters import HtmlFormatter
-from pygments.styles import get_all_styles  # noqa: F401
-
-# Hack to get basemap to work
-# See: https://github.com/readthedocs/readthedocs.org/issues/5339
-if os.environ.get('READTHEDOCS', None) == 'True':
-    conda = os.path.join(os.environ['CONDA_ENVS_PATH'], os.environ['CONDA_DEFAULT_ENV'])
-else:
-    conda = os.environ['CONDA_PREFIX']
-os.environ['GEOS_DIR'] = conda
-os.environ['PROJ_LIB'] = os.path.join(conda, 'share', 'proj')
-
-# Install basemap if does not exist
-# Extremely ugly but impossible to install in environment.yml. Must set
-# GEOS_DIR before installing so cannot install with pip and basemap conflicts
-# with conda > 0.19 so cannot install with conda in environment.yml.
-try:
-    if _version_mpl > '3.2':
-        pass
-    else:
-        import mpl_toolkits.basemap  # noqa: F401
-except ImportError:
-    subprocess.check_call(
-        ['pip', 'install', 'git+https://github.com/matplotlib/basemap@v1.2.2rel']
-    )
+# Print available system fonts
+from matplotlib.font_manager import fontManager
+print('Font files:')
+print(', '.join(os.path.basename(font.fname) for font in fontManager.ttflist))
 
 
 # -- Project information -----------------------------------------------------
@@ -63,6 +39,54 @@ version = ''
 
 # The full version, including alpha/beta/rc tags
 release = ''
+
+
+# -- Create files --------------------------------------------------------------
+
+# Create RST table and sample proplotrc file
+from proplot.config import rc
+rc._save_rst(os.path.join('_static', 'rctable.rst'))
+rc._save_yaml(os.path.join('_static', 'proplotrc'))
+
+# Create local pygments copies
+# WARNING: Must update these files whenever _static/custom.js changes
+# from pygments.styles import get_all_styles
+from pygments.formatters import HtmlFormatter
+path = os.path.join('_static', 'pygments')
+if not os.path.isdir(path):
+    os.mkdir(path)
+for style in ('pastie', 'monokai'):  # or get_all_styles()
+    path = os.path.join('_static', 'pygments', style + '.css')
+    if os.path.isfile(path):
+        continue
+    with open(path, 'w') as f:
+        f.write(HtmlFormatter(style=style).get_style_defs('.highlight'))
+
+# -- Setup basemap --------------------------------------------------------------
+
+# Hack to get basemap to work
+# See: https://github.com/readthedocs/readthedocs.org/issues/5339
+if os.environ.get('READTHEDOCS', None) == 'True':
+    conda = os.path.join(os.environ['CONDA_ENVS_PATH'], os.environ['CONDA_DEFAULT_ENV'])
+else:
+    conda = os.environ['CONDA_PREFIX']
+os.environ['GEOS_DIR'] = conda
+os.environ['PROJ_LIB'] = os.path.join(conda, 'share', 'proj')
+
+# Install basemap if does not exist
+# Extremely ugly but impossible to install in environment.yml. Must set
+# GEOS_DIR before installing so cannot install with pip and basemap conflicts
+# with conda > 0.19 so cannot install with conda in environment.yml.
+from proplot.internals import _version_mpl
+try:
+    if _version_mpl > '3.2':
+        pass
+    else:
+        import mpl_toolkits.basemap  # noqa: F401
+except ImportError:
+    subprocess.check_call(
+        ['pip', 'install', 'git+https://github.com/matplotlib/basemap@v1.2.2rel']
+    )
 
 
 # -- General configuration ---------------------------------------------------
@@ -217,25 +241,9 @@ nbsphinx_timeout = 300
 # Add jupytext support to nbsphinx
 nbsphinx_custom_formats = {'.py': ['jupytext.reads', {'fmt': 'py:percent'}]}
 
-# Create RST table and sample proplotrc file
-rc._save_rst(os.path.join('_static', 'rctable.rst'))
-rc._save_yaml(os.path.join('_static', 'proplotrc'))
-
 # The name of the Pygments (syntax highlighting) style to use.
 # The light-dark theme toggler overloads this, but set default anyway
 pygments_style = 'none'
-
-# Create local pygments copies
-# WARNING: Must update these files whenever _static/custom.js changes
-path = os.path.join('_static', 'pygments')
-if not os.path.isdir(path):
-    os.mkdir(path)
-for style in ('pastie', 'monokai'):  # or get_all_styles()
-    path = os.path.join('_static', 'pygments', style + '.css')
-    if os.path.isfile(path):
-        continue
-    with open(path, 'w') as f:
-        f.write(HtmlFormatter(style=style).get_style_defs('.highlight'))
 
 
 # -- Options for HTML output -------------------------------------------------

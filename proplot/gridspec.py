@@ -751,14 +751,10 @@ class GridSpec(mgridspec.GridSpec):
         else:
             ratio = 1 / ratio
 
-        # Compare to current aspect
-        xscale, yscale = ax.get_xscale(), ax.get_yscale()
-        if xscale == 'linear' and yscale == 'linear':
-            aspect = ratio / ax.get_data_ratio()
-        elif xscale == 'log' and yscale == 'log':
-            aspect = ratio / ax.get_data_ratio_log()
-        else:
-            return  # matplotlib should have issued warning
+        # Compare to current aspect after scaling by data ratio
+        # Noat matplotlib 3.2.0 expanded get_data_ratio to work for all axis scales:
+        # https://github.com/matplotlib/matplotlib/commit/87c742b99dc6b9a190f8c89bc6256ced72f5ab80  # noqa: E501
+        aspect = ratio / ax.get_data_ratio()
         if fig._refaspect is not None:
             return  # fixed by user
         if np.isclose(aspect, fig._refaspect_default):

@@ -14,7 +14,7 @@ from . import colors as pcolors
 from . import constructor, ui
 from .config import _get_data_folders, rc
 from .internals import ic  # noqa: F401
-from .internals import _not_none, dependencies, docstring, warnings
+from .internals import _not_none, _version_mpl, docstring, warnings
 from .utils import to_rgb, to_xyz
 
 __all__ = [
@@ -898,7 +898,7 @@ def show_fonts(
         'mathtext.default': 'regular',
         'mathtext.fontset': 'custom',
     }
-    if dependencies._version_mpl < 3.4:
+    if _version_mpl < 3.4:
         ctx['mathtext.fallback_to_cm'] = False
     else:
         ctx['mathtext.fallback'] = None

@@ -47,14 +47,15 @@ def _not_none(*args, default=None, **kwargs):
 from . import (  # noqa: F401
     benchmarks,
     context,
-    dependencies,
     docstring,
     guides,
     inputs,
     labels,
     rcsetup,
+    versions,
     warnings
 )
+from .versions import _version_mpl, _version_cartopy  # noqa: F401
 
 
 # Style aliases. We use this rather than matplotlib's normalize_kwargs and _alias_maps.

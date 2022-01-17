@@ -16,7 +16,8 @@ from matplotlib.colors import Colormap
 from matplotlib.font_manager import font_scalings
 
 from . import ic  # noqa: F401
-from . import dependencies, warnings
+from . import warnings
+from .versions import _version_mpl
 
 # Regex for "probable" unregistered named colors. Try to retain warning message for
 # colors that were most likely a failed literal string evaluation during startup.
@@ -1837,15 +1838,15 @@ _rc_children = {
 # Recently added settings. Update these only if the version is recent enough
 # NOTE: We don't make 'title.color' a child of 'axes.titlecolor' because
 # the latter can take on the value 'auto' and can't handle that right now.
-if dependencies._version_mpl >= 3.2:
+if _version_mpl >= 3.2:
     _rc_matplotlib_default['axes.titlecolor'] = BLACK
     _rc_children['title.color'] = ('axes.titlecolor',)
-if dependencies._version_mpl >= 3.4:
+if _version_mpl >= 3.4:
     _rc_matplotlib_default['xtick.labelcolor'] = BLACK
     _rc_matplotlib_default['ytick.labelcolor'] = BLACK
+    _rc_children['tick.labelcolor'] = ('xtick.labelcolor', 'ytick.labelcolor')
+    _rc_children['grid.labelcolor'] = ('xtick.labelcolor', 'ytick.labelcolor')
     _rc_children['meta.color'] += ('xtick.labelcolor', 'ytick.labelcolor')
-    _rc_children['tick.labelcolor'] += ('xtick.labelcolor', 'ytick.labelcolor')
-    _rc_children['grid.labelcolor'] += ('xtick.labelcolor', 'ytick.labelcolor')
 
 # Setting synonyms. Changing one setting changes the other. Also account for existing
 # children. Most of these are aliased due to proplot settings overlapping with
