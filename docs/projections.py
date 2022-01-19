@@ -178,13 +178,14 @@ axs.format(
 #      non-polar cartopy projections global extent and bounds polar cartopy projections
 #      at the equator. This is a deviation from cartopy, which determines map boundaries
 #      automatically based on the coordinates of the plotted content. To revert to
-#      cartopy's default behavior, set :rcraw:`geo.autoextent` to ``True``.
-#    * By default, proplot gives circular boundaries to polar cartopy
-#      projections like `~cartopy.crs.NorthPolarStereo` (see `this example
-#      <https://scitools.org.uk/cartopy/docs/latest/gallery/lines_and_polygons/always_circular_stereo.html>`__
-#      from the cartopy website). This is consistent with basemap's behavior. To
-#      disable this feature, set :rcraw:`geo.circlebounds` to ``False``. Please note
-#      that cartopy cannot add gridline labels to polar plots with circular boundaries.
+#      cartopy's default behavior, set :rcraw:`geo.extent` to ``'auto`` or pass
+#      ``extent='auto'`` to `~proplot.axes.GeoAxes.format`.
+#    * By default, proplot gives circular boundaries to polar cartopy and basemap
+#      projections like `~cartopy.crs.NorthPolarStereo` (see `this cartopy example
+#      <https://scitools.org.uk/cartopy/docs/latest/gallery/lines_and_polygons/always_circular_stereo.html>`__).
+#      To disable this feature, set :rcraw:`geo.round` to ``False`` or pass
+#      ``round=False` to `~proplot.axes.GeoAxes.format`. Please note that cartopy
+#      cannot add gridline labels to polar plots with circular boundaries.
 #    * To make things more consistent, the `~proplot.constructor.Proj` constructor
 #      function lets you supply native `PROJ <https://proj.org>`__ keyword names
 #      for the cartopy `~cartopy.crs.Projection` classes (e.g., `lon_0` instead

@@ -45,7 +45,7 @@ round : bool, default: :rc:`geo.round`
     Whether to bound polar projections with circles rather than squares. Note that outer
     gridline labels cannot be added to circle-bounded polar projections. When basemap
     is the backend this argument must be passed to `~proplot.constructor.Proj` instead.
-extent : {'globe', 'auto'}, default: :rc:`geo.autoextent`
+extent : {'globe', 'auto'}, default: :rc:`geo.extent`
     *For cartopy axes only*.
     Whether to auto adjust the map bounds based on plotted content. If ``'globe'`` then
     non-polar projections are fixed with `~cartopy.mpl.geoaxes.GeoAxes.set_global`,
@@ -312,8 +312,8 @@ class _LonAxis(_GeoAxis):
 
     def get_view_interval(self):
         # NOTE: Proplot tries to set its *own* view intervals to avoid dateline
-        # weirdness, but if geo.autoextent is False the interval will be
-        # unset, so we are forced to use get_extent().
+        # weirdness, but if geo.extent is 'auto' the interval will be unset, so
+        # we are forced to use _get_extent().
         interval = self._interval
         if interval is None:
             extent = self._get_extent()
