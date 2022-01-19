@@ -4,6 +4,8 @@ An axes used to jointly format Cartesian and polar axes.
 """
 # NOTE: We could define these in base.py but idea is projection-specific formatters
 # should never be defined on the base class. Might add to this class later anyway.
+import numpy as np
+
 from ..config import rc
 from ..internals import ic  # noqa: F401
 from ..internals import _pop_kwargs
@@ -15,6 +17,19 @@ class _SharedAxes(object):
     Mix-in class with methods shared between `~proplot.axes.CartesianAxes`
     and `~proplot.axes.PolarAxes`.
     """
+    @staticmethod
+    def _min_max_lim(key, min_=None, max_=None, lim=None):
+        """
+        Translate and standardize minimum, maximum, and limit keyword arguments.
+        """
+        if lim is None:
+            lim = (None, None)
+        if not np.iterable(lim) or not len(lim) == 2:
+            raise ValueError(f'Invalid {key}{lim!r}. Must be 2-tuple of values.')
+        min_ = _not_none(**{f'{key}min': min_, f'{key}lim_0': lim[0]})
+        max_ = _not_none(**{f'{key}max': max_, f'{key}lim_1': lim[1]})
+        return min_, max_
+
     def _update_background(
         self, x=None, tickwidth=None, tickwidthratio=None, **kwargs
     ):

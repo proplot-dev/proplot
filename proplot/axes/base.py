@@ -1402,6 +1402,29 @@ class Axes(maxes.Axes):
             )
         )
 
+    def _get_legend_handles(self, handler_map=None):
+        """
+        Internal implementation of matplotlib's ``get_legend_handles_labels``.
+        """
+        if not self._panel_hidden:  # this is a normal axes
+            axs = [self]
+        elif self._panel_parent:  # this is an axes-wide legend
+            axs = list(self._panel_parent._iter_axes(hidden=False, children=True))
+        else:  # this is a figure-wide legend
+            axs = list(self.figure._iter_axes(hidden=False, children=True))
+        handles = []
+        handler_map_full = mlegend.Legend.get_default_handler_map()
+        handler_map_full = handler_map_full.copy()
+        handler_map_full.update(handler_map or {})
+        for ax in axs:
+            for attr in ('lines', 'patches', 'collections', 'containers'):
+                for handle in getattr(ax, attr, []):  # guard against API changes
+                    label = handle.get_label()
+                    handler = mlegend.Legend.get_legend_handler(handler_map_full, handle)  # noqa: E501
+                    if handler and label and label[0] != '_':
+                        handles.append(handle)
+        return handles
+
     def _get_share_axes(self, sx, panels=False):
         """
         Return the axes whose horizontal or vertical extent in the main gridspec
@@ -1442,38 +1465,6 @@ class Axes(maxes.Axes):
             out.append(ax)
         return out
 
-    def _get_topmost_axes(self):
-        """
-        Return the topmost axes including panels and parents.
-        """
-        for _ in range(5):
-            self = self._axes or self
-            self = self._panel_parent or self
-        return self
-
-    def _get_legend_handles(self, handler_map=None):
-        """
-        Internal implementation of matplotlib's ``get_legend_handles_labels``.
-        """
-        if not self._panel_hidden:  # this is a normal axes
-            axs = [self]
-        elif self._panel_parent:  # this is an axes-wide legend
-            axs = list(self._panel_parent._iter_axes(hidden=False, children=True))
-        else:  # this is a figure-wide legend
-            axs = list(self.figure._iter_axes(hidden=False, children=True))
-        handles = []
-        handler_map_full = mlegend.Legend.get_default_handler_map()
-        handler_map_full = handler_map_full.copy()
-        handler_map_full.update(handler_map or {})
-        for ax in axs:
-            for attr in ('lines', 'patches', 'collections', 'containers'):
-                for handle in getattr(ax, attr, []):  # guard against API changes
-                    label = handle.get_label()
-                    handler = mlegend.Legend.get_legend_handler(handler_map_full, handle)  # noqa: E501
-                    if handler and label and label[0] != '_':
-                        handles.append(handle)
-        return handles
-
     def _get_size_inches(self):
         """
         Return the width and height of the axes in inches.
@@ -1483,6 +1474,15 @@ class Axes(maxes.Axes):
         width = width * abs(bbox.width)
         height = height * abs(bbox.height)
         return np.array([width, height])
+
+    def _get_topmost_axes(self):
+        """
+        Return the topmost axes including panels and parents.
+        """
+        for _ in range(5):
+            self = self._axes or self
+            self = self._panel_parent or self
+        return self
 
     def _get_transform(self, transform, default='data'):
         """

@@ -25,8 +25,8 @@ DATE_CONVERTERS = (mdates.DateConverter,)
 if hasattr(mdates, '_SwitchableDateConverter'):
     DATE_CONVERTERS += (mdates._SwitchableDateConverter,)
 
-# Dictionary to reverse side keywords
-REVERSE_SIDE = {
+# Opposite side keywords
+OPPOSITE_SIDE = {
     'left': 'right',
     'right': 'left',
     'bottom': 'top',
@@ -427,7 +427,7 @@ class CartesianAxes(shared._SharedAxes, plot.PlotAxes):
         self._twinned_axes.join(self, ax)
 
         # Format parent and child axes
-        self.format(**{f'{sx}loc': REVERSE_SIDE.get(kwargs[f'{sx}loc'], None)})
+        self.format(**{f'{sx}loc': OPPOSITE_SIDE.get(kwargs[f'{sx}loc'], None)})
         setattr(ax, f'_alt{sx}_parent', self)
         getattr(ax, f'{sy}axis').set_visible(False)
         getattr(ax, 'patch').set_visible(False)
@@ -744,19 +744,14 @@ class CartesianAxes(shared._SharedAxes, plot.PlotAxes):
         Update the axis limits.
         """
         # Set limits for just one side or both at once
-        axis = getattr(self, f'{s}axis')
-        if min_ is not None or max_ is not None:
-            if lim is not None:
-                warnings._warn_proplot(
-                    f'Overriding {s}lim={lim!r} with {s}min={min_!r}, {s}max={max_!r}.'
-                )
-            lim = (min_, max_)
-        if lim is not None:
+        lim = self._min_max_lim(s, min_, max_, lim)
+        if any(_ is not None for _ in lim):
             getattr(self, f'set_{s}lim')(lim)
 
         # Reverse direction
         # NOTE: 3.1+ has axis.set_inverted(), below is from source code
         if reverse is not None:
+            axis = getattr(self, f'{s}axis')
             lo, hi = axis.get_view_interval()
             if reverse:
                 lim = (max(lo, hi), min(lo, hi))
@@ -905,7 +900,7 @@ class CartesianAxes(shared._SharedAxes, plot.PlotAxes):
                 axis.set_offset_position(offsetloc)
             elif s == 'x' and _version_mpl >= 3.3:  # ugly x axis kludge
                 axis._tick_position = offsetloc
-                axis.offsetText.set_verticalalignment(REVERSE_SIDE[offsetloc])
+                axis.offsetText.set_verticalalignment(OPPOSITE_SIDE[offsetloc])
 
     @docstring._snippet_manager
     def format(

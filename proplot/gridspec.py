@@ -1239,7 +1239,7 @@ class GridSpec(mgridspec.GridSpec):
 
 class SubplotGrid(MutableSequence, list):
     """
-    List-like object used to store subplots returned by
+    List-like, array-like object used to store subplots returned by
     `~proplot.figure.Figure.subplots`. 1D indexing uses the underlying list of
     `~proplot.axes.Axes` while 2D indexing uses the `~SubplotGrid.gridspec`.
     See `~SubplotGrid.__getitem__` for details.
@@ -1353,9 +1353,9 @@ class SubplotGrid(MutableSequence, list):
         -------
         >>> import proplot as pplt
         >>> fig, axs = pplt.subplots(nrows=3, ncols=3)
-        >>> axs[5]  # the Axes in the second row, third column
-        >>> axs[1, 2]  # the Axes in the second row, third column
-        >>> axs[:, 0]  # a SubplotGrid containing the Axes in the first column
+        >>> axs[5]  # the subplot in the second row, third column
+        >>> axs[1, 2]  # the subplot in the second row, third column
+        >>> axs[:, 0]  # a SubplotGrid containing the subplots in the first column
         """
         if isinstance(key, tuple) and len(key) == 1:
             key = key[0]
@@ -1385,7 +1385,7 @@ class SubplotGrid(MutableSequence, list):
                 incol = col1_key <= col1 <= col2_key or col1_key <= col2 <= col2_key
                 if inrow and incol:
                     objs.append(ax)
-            if not slices and len(objs) == 1:
+            if not slices and len(objs) == 1:  # accounts for overlapping subplots
                 objs = objs[0]
         else:
             raise IndexError(f'Invalid index {key!r}.')

@@ -11,7 +11,7 @@ from .. import constructor
 from .. import ticker as pticker
 from ..config import rc
 from ..internals import ic  # noqa: F401
-from ..internals import _not_none, _pop_rc, docstring, warnings
+from ..internals import _not_none, _pop_rc, docstring
 from . import plot, shared
 
 __all__ = ['PolarAxes']
@@ -154,13 +154,7 @@ class PolarAxes(shared._SharedAxes, plot.PlotAxes, mproj.PolarAxes):
         """
         # Try to use public API where possible
         r = 'theta' if x == 'x' else 'r'
-        if lim is not None:
-            if min_ is not None or max_ is not None:
-                warnings._warn_proplot(
-                    f'Overriding {r}min={min_} and '
-                    f'{r}max={max_} with {r}lim={lim}.'
-                )
-            min_, max_ = lim
+        min_, max_ = self._min_max_lim(r, min_, max_, lim)
         if min_ is not None:
             getattr(self, f'set_{r}min')(min_)
         if max_ is not None:
