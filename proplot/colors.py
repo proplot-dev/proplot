@@ -406,10 +406,10 @@ def _get_channel(color, channel, space='hcl'):
     # Interpret string or RGB tuple
     offset = 0
     if isinstance(color, str):
-        match = re.search('([-+][0-9.]+)$', color)
-        if match:
-            offset = float(match.group(0))
-            color = color[:match.start()]
+        m = re.search('([-+][0-9.]+)$', color)
+        if m:
+            offset = float(m.group(0))
+            color = color[:m.start()]
     return offset + to_xyz(color, space)[channel]
 
 

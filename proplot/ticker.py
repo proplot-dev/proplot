@@ -443,12 +443,12 @@ class AutoFormatter(mticker.ScalarFormatter):
         # truncate if value is within `offset` order of magnitude of the float
         # precision. Common issue is e.g. levels=pplt.arange(-1, 1, 0.1).
         # This choice satisfies even 1000 additions of 0.1 to -100.
-        match = REGEX_ZERO.match(string)
+        m = REGEX_ZERO.match(string)
         decimal_point = self._get_decimal_point()
 
-        if match and x != 0:
+        if m and x != 0:
             # Get initial precision spit out by algorithm
-            decimals, = match.groups()
+            decimals, = m.groups()
             if decimals:
                 precision_init = len(decimals.lstrip(decimal_point))
             else:
