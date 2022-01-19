@@ -23,7 +23,7 @@ sys.path.insert(0, os.path.abspath('..'))
 
 # Print available system fonts
 from matplotlib.font_manager import fontManager
-print('Font files:')
+print('Font files:', end=' ')
 print(', '.join(os.path.basename(font.fname) for font in fontManager.ttflist))
 
 

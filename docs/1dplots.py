@@ -21,14 +21,14 @@
 #
 # .. _ug_1dplots:
 #
-# 1D plotting
-# ===========
+# 1D plotting commands
+# ====================
 #
 # Proplot adds :ref:`several new features <why_plotting>` to matplotlib's
-# plotting commands using the intermediate `~proplot.axes.PlotAxes` subclass.
+# plotting commands using the intermediate `~proplot.axes.PlotAxes` class.
 # For the most part, these additions represent a *superset* of matplotlib -- if
-# you are not interested, you can use the plotting commands just like you always
-# have. This section documents the features added for 1D plotting commands
+# you are not interested, you can use the plotting commands just like you would
+# in matplotlib. This section documents the features added for 1D plotting commands
 # like `~proplot.axes.PlotAxes.plot`, `~proplot.axes.PlotAxes.scatter`,
 # and `~proplot.axes.PlotAxes.bar`.
 
@@ -36,12 +36,12 @@
 # %% [raw] raw_mimetype="text/restructuredtext"
 # .. _ug_1dstd:
 #
-# Standardized arguments
-# ----------------------
+# Data arguments
+# --------------
 #
-# Data arguments passed to 1D `~proplot.axes.PlotAxes` commands are uniformly
-# standardized. For each command, you can optionally omit the dependent
-# variable coordinates, in which case they are inferred from the data
+# The treatment of data arguments passed to the 1D `~proplot.axes.PlotAxes`
+# commands is standardized. For each command, you can optionally omit
+# the dependent variable coordinates, in which case they are inferred from the data
 # (see :ref:`xarray and pandas integration <ug_1dintegration>`), or pass
 # 2D dependent or independent variable coordinates, in which case the
 # plotting command is called for each column of the 2D array(s). If coordinates
@@ -53,7 +53,7 @@
 #
 # .. note::
 #
-#    By default, when choosing default values for the *x* or *y* axis limits,
+#    By default, when choosing the *x* or *y* axis limits,
 #    proplot ignores out-of-bounds data along the other axis if it was explicitly
 #    fixed by `~matplotlib.axes.Axes.set_xlim` or `~matplotlib.axes.Axes.set_ylim` (or,
 #    equivalently, by passing `xlim` or `ylim` to `proplot.axes.CartesianAxes.format`).

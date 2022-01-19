@@ -1,7 +1,9 @@
 # Hard requirements for notebook examples and documentation build
 # WARNING: Keep this up-to-date with ci/environment.yml
-# * basemap is broken as of matplotlib >=3.3 so for documentation
+# * basemap is broken as of matplotlib >= 3.3 so for documentation
 #   use 3.2.1. Probably lots of basemap holdouts for next ~5 years.
+# * basemap geography is weird with the geos >= 3.9.0 required by cartopy >=
+#   0.19, but important to use 0.19 becuase it fixes padding, so live with it.
 # * pyqt5 is needed by pyplot, RTD server *happens* to already have it
 #   but creating local environment will fail.
 # * jinja >= 3.0 and nbsphinx >= 0.8.2 seem to break default ReST roles when

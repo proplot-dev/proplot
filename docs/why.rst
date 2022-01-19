@@ -141,9 +141,9 @@ Matplotlib and `cartopy`_ define several classes with verbose names like
 `~matplotlib.ticker.MultipleLocator`, `~matplotlib.ticker.FormatStrFormatter`,
 and `~cartopy.crs.LambertAzimuthalEqualArea`. They also keep them out of the
 top-level package namespace. Since plotting code has a half life of about 30 seconds,
-typing out these extra class names and import statements can be kind of a drag.
+typing out these extra class names and import statements can be frustrating.
 
-Parts of matplotlib's interface were actually designed with this in mind.
+Parts of matplotlib's interface were designed with this in mind.
 `Backend classes <https://matplotlib.org/faq/usage_faq.html#what-is-a-backend>`__,
 `native axes projections <https://matplotlib.org/stable/api/projections_api.html>`__,
 `axis scales <https://matplotlib.org/stable/gallery/scales/scales.html>`__,
@@ -217,7 +217,7 @@ Automatic dimensions and spacing
 Limitation
 ----------
 
-Matplotlib plots tend to require lots of "tweaking" when you have more than one
+Matplotlib plots tend to require "tweaking" when you have more than one
 subplot in the figure. This is partly because you must specify the physical
 dimensions of the figure, despite the fact that...
 
@@ -427,6 +427,9 @@ The following features are relevant for "1D" `~proplot.axes.PlotAxes` commands
 like `~proplot.axes.PlotAxes.line` (equivalent to `~proplot.axes.PlotAxes.plot`)
 and `~proplot.axes.PlotAxes.scatter`:
 
+* The treatment of data arguments passed to the 1D `~proplot.axes.PlotAxes`
+  commands is :ref:`standardized <ug_1dstd>`. This makes them more flexible
+  and arguably more intuitive to use than their matplotlib counterparts.
 * The `cycle` keyword is interpreted by the `~proplot.constructor.Cycle`
   :ref:`constructor function <why_constructor>` and applies
   :ref:`property cyclers <ug_apply_cycle>` on-the-fly. This permits succinct
@@ -468,6 +471,9 @@ and `~proplot.axes.PlotAxes.scatter`:
 The following features are relevant for "2D" `~proplot.axes.PlotAxes` commands
 like `~proplot.axes.PlotAxes.pcolor` and `~proplot.axes.PlotAxes.contour`:
 
+* The treatment of data arguments passed to the 2D `~proplot.axes.PlotAxes`
+  commands is :ref:`standardized <ug_2dstd>`. This makes them more flexible
+  and arguably more intuitive to use than their matplotlib counterparts.
 * The `cmap` and `norm` :ref:`keyword arguments <ug_apply_cmap>` are interpreted
   by the `~proplot.constructor.Colormap` and `~proplot.constructor.Norm`
   :ref:`constructor functions <why_constructor>`. This permits succinct
@@ -516,9 +522,9 @@ Links
   see :ref:`this page <ug_1dplots>`.
 * For the 2D plotting features,
   see :ref:`this page <ug_2dplots>`.
-* For standardization of 1D positional arguments,
+* For treatment of 1D data arguments,
   see :ref:`this page <ug_1dstd>`.
-* For standardization of 2D positional arguments,
+* For treatment of 2D data arguments,
   see :ref:`this page <ug_2dstd>`.
 
 .. _why_cartopy_basemap:
@@ -545,10 +551,10 @@ longitude-latitude (i.e., "Plate Carrée") coordinates.
 Solution
 --------
 
-Proplot can succinctly create detailed geographic plots using either cartopy
-or basemap as "backends". By default, cartopy is used, but basemap can be used
-by passing ``basemap=True`` to axes-creation commands or by setting :rcraw:`basemap`
-to ``True``. To create a geographic plot, simply pass the `PROJ <https://proj.org>`__
+Proplot can succinctly create detailed geographic plots using either cartopy or
+basemap as "backends". By default, cartopy is used, but basemap can be used by passing
+``backend='basemap'`` to axes-creation commands or by setting :rcraw:`geo.backend` to
+``'basemap'``. To create a geographic plot, simply pass the `PROJ <https://proj.org>`__
 name to an axes-creation command, e.g. ``fig, ax = pplt.subplots(proj='pcarree')``
 or ``fig.add_subplot(proj='pcarree')``. Alternatively, use the
 `~proplot.constructor.Proj` constructor function to quickly generate

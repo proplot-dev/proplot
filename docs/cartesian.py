@@ -16,8 +16,8 @@
 # %% [raw] raw_mimetype="text/restructuredtext"
 # .. _ug_cartesian:
 #
-# Cartesian plots
-# ===============
+# Cartesian axes
+# ==============
 #
 # This section documents features used for modifying Cartesian *x* and *y*
 # axes, including axis scales, tick locations, tick label formatting, and

@@ -21,14 +21,14 @@
 #
 # .. _ug_2dplots:
 #
-# 2D plotting
-# ===========
+# 2D plotting commands
+# ====================
 #
 # Proplot adds :ref:`several new features <why_plotting>` to matplotlib's
-# plotting commands using the intermediate `~proplot.axes.PlotAxes` subclass.
+# plotting commands using the intermediate `~proplot.axes.PlotAxes` class.
 # For the most part, these additions represent a *superset* of matplotlib -- if
-# you are not interested, you can use the plotting commands just like you always
-# have. This section documents the features added for 2D plotting commands
+# you are not interested, you can use the plotting commands just like you would
+# in matplotlib. This section documents the features added for 2D plotting commands
 # like `~proplot.axes.PlotAxes.contour`, `~proplot.axes.PlotAxes.pcolor`,
 # and `~proplot.axes.PlotAxes.imshow`.
 #
@@ -45,15 +45,15 @@
 # %% [raw] raw_mimetype="text/restructuredtext"
 # .. _ug_2dstd:
 #
-# Standardized arguments
-# ----------------------
+# Data arguments
+# --------------
 #
-# Data arguments passed to 2D `~proplot.axes.PlotAxes` commands are uniformly
-# standardized. For each command, you can optionally omit the *x* and
-# *y* coordinates, in which case they are inferred from the data
+# The treatment of data arguments passed to the 2D `~proplot.axes.PlotAxes`
+# commands is standardized. For each command, you can optionally omit the *x*
+# and *y* coordinates, in which case they are inferred from the data
 # (see :ref:`xarray and pandas integration <ug_2dintegration>`). If coordinates
 # are string labels, they are converted to indices and tick labels using
-# `~proplot.ticker.IndexLocator` and `~matplotlib.ticker.IndexFormatter`.
+# `~proplot.ticker.IndexLocator` and `~proplot.ticker.IndexFormatter`.
 # If coordinates are descending and the axis limits are unset, the axis
 # direction is automatically reversed. If coordinate *centers* are passed to commands
 # like `~proplot.axes.PlotAxes.pcolor` and `~proplot.axes.PlotAxes.pcolormesh`, they
@@ -66,7 +66,7 @@
 #
 # .. note::
 #
-#    By default, when choosing a default colormap :ref:`normalization
+#    By default, when choosing the colormap :ref:`normalization
 #    range <ug_apply_cmap>`, proplot ignores data outside the *x* or *y* axis
 #    limits if they were previously fixed by `~matplotlib.axes.Axes.set_xlim` or
 #    `~matplotlib.axes.Axes.set_ylim` (or, equivalently, by passing `xlim` or

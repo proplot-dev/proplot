@@ -44,9 +44,10 @@
 # range of symbols, especially mathematical symbols. However in our opinion,
 # DejaVu Sans is not very aesthetically pleasing. To improve the font selection while
 # keeping things consistent across different workstations, proplot is packaged
-# the open source `TeX Gyre fonts <https://ctan.org/pkg/tex-gyre?lang=en>`__
-# and a few additional open source sans-serif fonts. Proplot also uses the TeX
-# Gyre fonts as default entries for each of matplotlib's font families:
+# the open source `TeX Gyre fonts <https://ctan.org/pkg/tex-gyre?lang=en>`__ and a few
+# additional open source sans-serif fonts. Proplot also uses the TeX Gyre fonts as the
+# first (i.e., default) entries for each of matplotlib's `font family lists
+# <https://matplotlib.org/stable/tutorials/text/text_props.html#default-font>`__`:
 #
 # * The `Century <https://en.wikipedia.org/wiki/Century_type_family>`__ lookalike
 #   :rcraw:`font.serif` = ``'TeX Gyre Schola'``.
@@ -61,10 +62,9 @@
 #
 # After importing proplot, the default matplotlib font will be
 # `TeX Gyre Heros <https://ctan.org/pkg/tex-gyre-heros>`__,
-# which emulates the more conventional and aesthetically pleasing font
-# `Helvetica <https://en.wikipedia.org/wiki/Helvetica>`__. The
-# full font priority lists for each family are displayed in the
-# :ref:`default proplotrc file <ug_proplotrc>`.
+# which emulates the more conventional and (in our opinion) aesthetically pleasing
+# font `Helvetica <https://en.wikipedia.org/wiki/Helvetica>`__. The new default font
+# family lists are shown in the :ref:`default proplotrc file <ug_proplotrc>`.
 #
 # To compare different fonts, use the `~proplot.demos.show_fonts` command with the
 # `family` keyword (default behavior is ``family='sans-serif'``). Tables of the TeX
@@ -79,25 +79,14 @@
 # text everywhere by setting :rc:`mathtext.fontset` = ``'stixsans'`` and
 # :rcraw:`mathtext.default = 'rm'` (see the :ref:`proplotrc file <ug_proplotrc>`
 # for details).
-#
-# .. note::
-#
-#    Try to avoid "thin" ``.ttf`` files. Some versions of matplotlib
-#    interpret fonts with the "thin" style as having *normal* weight (see
-#    `this issue page <https://github.com/matplotlib/matplotlib/issues/8788>`__),
-#    causing them to override the correct normal weight versions. While proplot
-#    tries to filter out these files, this cannot be done systematically. In the
-#    below example, the "Roboto" font may be overridden by its "thin" version
-#    because the RTD server includes this style.
-
-# %%
-import proplot as pplt
-fig, axs = pplt.show_fonts(family='sans-serif')
 
 # %%
 import proplot as pplt
 fig, axs = pplt.show_fonts(family='tex-gyre')
 
+# %%
+import proplot as pplt
+fig, axs = pplt.show_fonts(family='sans-serif')
 
 # %% [raw] raw_mimetype="text/restructuredtext"
 # .. _ug_fonts_user:

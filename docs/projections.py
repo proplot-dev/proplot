@@ -23,14 +23,72 @@
 #
 # .. _ug_proj:
 #
-# Geographic and polar plots
-# ==========================
+# Geographic and polar axes
+# =========================
 #
 # This section documents several useful features for working with `polar`_ plots
-# and :ref:`geographic projections <ug_geo>`. The geographic features are powered
-# by `cartopy`_ (or, optionally, `basemap`_). Note that these features are
-# *optional* -- installation of cartopy or basemap are not required to use proplot.
+# and :ref:`geographic projections <ug_geo>`. The geographic features are powered by
+# `cartopy`_ (or, optionally, `basemap`_).
+# Note that these features are *optional* --
+# installation of cartopy or basemap are not required to use proplot.
 #
+# %% [raw] raw_mimetype="text/restructuredtext"
+# .. _ug_polar:
+#
+# Polar axes
+# ----------
+#
+# To create `polar axes <polar_>`_, pass ``proj='polar'`` to an axes-creation
+# command like `proplot.figure.Figure.add_subplot`. Polar axes are represented with the
+# `~proplot.axes.PolarAxes` subclass, which has its own `~proplot.axes.PolarAxes.format`
+# command. `proplot.axes.PolarAxes.format` facilitates polar-specific modifications
+# like changing the central radius `r0`, the zero azimuth location `theta0`,
+# and the positive azimuthal direction `thetadir`. It also supports toggling and
+# configuring the "major" and "minor" gridline locations with `grid`, `rlocator`,
+# `thetalocator`, `gridminor`, `rminorlocator`, and `thetaminorlocator` and formatting
+# the gridline labels with `rformatter` and `thetaformatter` (analogous to `xlocator`,
+# `xformatter`, and `xminorlocator` used by `proplot.axes.CartesianAxes.format`),
+# and creating "annular" or "sector" plots by changing the radial or azimuthal
+# bounds `rlim` and `thetalim`. Finally, since `proplot.axes.PolarAxes.format`
+# calls `proplot.axes.Axes.format`, it can be used to add axes titles, a-b-c
+# labels, and figure titles.
+#
+# For details, see `proplot.axes.PolarAxes.format`.
+
+# %%
+import proplot as pplt
+import numpy as np
+N = 200
+state = np.random.RandomState(51423)
+x = np.linspace(0, 2 * np.pi, N)[:, None] + np.arange(5) * 2 * np.pi / 5
+y = 100 * (state.rand(N, 5) - 0.3).cumsum(axis=0) / N
+fig, axs = pplt.subplots([[1, 1, 2, 2], [0, 3, 3, 0]], proj='polar')
+axs.format(
+    suptitle='Polar axes demo', linewidth=1, titlepad='1em',
+    ticklabelsize=9, rlines=0.5, rlim=(0, 19),
+)
+for ax in axs:
+    ax.plot(x, y, cycle='default', zorder=0, lw=3)
+
+# Standard polar plot
+axs[0].format(
+    title='Normal plot', thetaformatter='tau',
+    rlabelpos=225, rlines=pplt.arange(5, 30, 5),
+    edgecolor='red8', tickpad='1em',
+)
+
+# Sector plot
+axs[1].format(
+    title='Sector plot', thetadir=-1, thetalines=90, thetalim=(0, 270), theta0='N',
+    rlim=(0, 22), rlines=pplt.arange(5, 30, 5),
+)
+
+# Annular plot
+axs[2].format(
+    title='Annular plot', thetadir=-1, thetalines=20, gridcolor='red',
+    r0=-20, rlim=(0, 22), rformatter='null', rlocator=2
+)
+
 # %% [raw] raw_mimetype="text/restructuredtext"
 # .. _ug_geo:
 #
@@ -51,14 +109,15 @@
 # has its own `~proplot.axes.GeoAxes.format` command. `proplot.axes.GeoAxes.format`
 # facilitates :ref:`geographic-specific modifications <ug_geoformat>` like meridional
 # and parallel gridlines and land mass outlines. The syntax is very similar to
-# `proplot.axes.CartesianAxes.format`. In the below example, we create
-# and format a very simple geographic plot.
+# `proplot.axes.CartesianAxes.format`. Note that the `proj` keyword and several of
+# the `~proplot.axes.GeoAxes.format` keywords are inspired by the basemap API.
+# In the below example, we create and format a very simple geographic plot.
 
 # %%
 # Use an on-the-fly projection
 import proplot as pplt
 fig = pplt.figure(refwidth=3)
-axs = fig.subplots(nrows=2, proj='robin', proj_kw={'lon_0': 180})
+axs = fig.subplots(nrows=2, proj='robin', proj_kw={'lon_0': 150})
 # proj = pplt.Proj('robin', lon_0=180)
 # axs = pplt.subplots(nrows=2, proj=proj)  # equivalent to above
 axs.format(
@@ -104,7 +163,7 @@ axs.format(
 #   using methods like `~mpl_toolkits.basemap.Basemap.fillcontinents`
 #   and `~mpl_toolkits.basemap.Basemap.drawcoastlines`. If you need to
 #   use the underlying `~mpl_toolkits.basemap.Basemap` instance, it is
-#   available via the `~proplot.axes.GeoAxes.projection` attribute.
+#   available as the `~proplot.axes.GeoAxes.projection` attribute.
 #
 # Together, these features let you work with geophysical data without invoking
 # verbose cartopy classes like `~cartopy.crs.LambertAzimuthalEqualArea` or
@@ -113,20 +172,19 @@ axs.format(
 # plots. In the below examples, we create a variety of plots using both
 # cartopy and basemap as backends.
 #
-# .. note::
+# .. important::
 #
-#    * By default, proplot gives circular boundaries to polar cartopy projections
-#      like `~cartopy.crs.NorthPolarStereo` (see `this example
-#      <https://scitools.org.uk/cartopy/docs/latest/gallery/lines_and_polygons/always_circular_stereo.html>`__
-#      from the cartopy website). This is consistent with basemap's default behavior.
-#      To disable this feature, set :rcraw:`cartopy.circular` to ``False``.
-#      Please note that cartopy cannot add gridline labels to polar plots
-#      with circular boundaries.
 #    * By default, proplot uses `~cartopy.mpl.geoaxes.GeoAxes.set_global` to give
 #      non-polar cartopy projections global extent and bounds polar cartopy projections
 #      at the equator. This is a deviation from cartopy, which determines map boundaries
 #      automatically based on the coordinates of the plotted content. To revert to
-#      cartopy's default behavior, set :rcraw:`cartopy.autoextent` to ``True``.
+#      cartopy's default behavior, set :rcraw:`geo.autoextent` to ``True``.
+#    * By default, proplot gives circular boundaries to polar cartopy
+#      projections like `~cartopy.crs.NorthPolarStereo` (see `this example
+#      <https://scitools.org.uk/cartopy/docs/latest/gallery/lines_and_polygons/always_circular_stereo.html>`__
+#      from the cartopy website). This is consistent with basemap's behavior. To
+#      disable this feature, set :rcraw:`geo.circlebounds` to ``False``. Please note
+#      that cartopy cannot add gridline labels to polar plots with circular boundaries.
 #    * To make things more consistent, the `~proplot.constructor.Proj` constructor
 #      function lets you supply native `PROJ <https://proj.org>`__ keyword names
 #      for the cartopy `~cartopy.crs.Projection` classes (e.g., `lon_0` instead
@@ -170,24 +228,27 @@ pplt.rc.reset()
 # Plotting in projections
 # -----------------------
 #
-# In proplot, plotting with `~proplot.axes.GeoAxes` is very similar to plotting
+# In proplot, plotting with `~proplot.axes.GeoAxes` is just like plotting
 # with `~proplot.axes.CartesianAxes`. Proplot makes longitude-latitude
 # (i.e., Plate Carrée) coordinates the *default* coordinate system for all plotting
 # commands by internally passing ``transform=ccrs.PlateCarree()`` to cartopy commands
-# and ``latlon=True`` to basemap commands. And again, when basemap is the backend,
+# and ``latlon=True`` to basemap commands. And again, when `basemap`_ is the backend,
 # plotting is done "cartopy-style" by calling methods from the `proplot.axes.GeoAxes`
 # instance rather than the `~mpl_toolkits.basemap.Basemap` instance.
 #
-# To ensure that graphics generated by 2D `~proplot.axes.PlotAxes` commands like
-# `~matplotlib.axes.Axes.contour` fill the entire globe, simply pass ``globe=True``
-# to the command. This interpolates the data to the poles and across the longitude
+# To ensure that a 2D `~proplot.axes.PlotAxes` command like
+# `~proplot.axes.PlotAxes.contour` or `~proplot.axes.PlotAxes.pcolor`
+# fills the entire globe, simply pass ``globe=True`` to the command.
+# This interpolates the data to the North and South poles and across the longitude
 # seam before plotting. This is a convenient and succinct alternative to cartopy's
 # `~cartopy.util.add_cyclic_point` and basemap's `~mpl_toolkits.basemap.addcyclic`.
-# Geographic features can be drawn underneath or on top of content by changing the
-# corresponding `zorder <https://matplotlib.org/3.1.1/gallery/misc/zorder_demo.html>`__
-# setting. For example, to draw land patches on top of all plotted content as
-# a "land mask," you can use ``ax.format(land=True, landzorder=4)``
-# (see the :ref:`next section <ug_geoformat>` for details).
+#
+# To draw content above or underneath a given geographic feature, simply change
+# the `zorder <https://matplotlib.org/3.1.1/gallery/misc/zorder_demo.html>`__
+# property for that feature. For example, to draw land patches on top of all plotted
+# content as a "land mask" you can use ``ax.format(land=True, landzorder=4)`` or set
+# ``pplt.rc['land.zorder'] = 4`` (see the :ref:`next section <ug_geoformat>`
+# for details).
 
 # %%
 import proplot as pplt
@@ -427,61 +488,3 @@ axs.format(
 )
 for proj, ax in zip(projs, axs):
     ax.format(title=proj, titleweight='bold', labels=False)
-
-
-# %% [raw] raw_mimetype="text/restructuredtext"
-# .. _ug_polar:
-#
-# Polar axes
-# ----------
-#
-# To create `polar axes <polar_>`_, pass ``proj='polar'`` to an axes-creation
-# command like `proplot.figure.Figure.add_subplot`. Polar axes are represented with the
-# `~proplot.axes.PolarAxes` subclass, which has its own `~proplot.axes.PolarAxes.format`
-# command. `proplot.axes.PolarAxes.format` facilitates polar-specific modifications
-# like changing the central radius `r0`, the zero azimuth location `theta0`,
-# and the positive azimuthal direction `thetadir`. It also supports toggling and
-# configuring the "major" and "minor" gridline locations with `grid`, `rlocator`,
-# `thetalocator`, `gridminor`, `rminorlocator`, and `thetaminorlocator` and formatting
-# the gridline labels with `rformatter` and `thetaformatter` (analogous to `xlocator`,
-# `xformatter`, and `xminorlocator` used by `proplot.axes.CartesianAxes.format`),
-# and creating "annular" or "sector" plots by changing the radial or azimuthal
-# bounds `rlim` and `thetalim`. Finally, since `proplot.axes.PolarAxes.format`
-# calls `proplot.axes.Axes.format`, it can be used to add axes titles, a-b-c
-# labels, and figure titles.
-#
-# For details, see `proplot.axes.PolarAxes.format`.
-
-# %%
-import proplot as pplt
-import numpy as np
-N = 200
-state = np.random.RandomState(51423)
-x = np.linspace(0, 2 * np.pi, N)[:, None] + np.arange(5) * 2 * np.pi / 5
-y = 100 * (state.rand(N, 5) - 0.3).cumsum(axis=0) / N
-fig, axs = pplt.subplots([[1, 1, 2, 2], [0, 3, 3, 0]], proj='polar')
-axs.format(
-    suptitle='Polar axes demo', linewidth=1, titlepad='1em',
-    ticklabelsize=9, rlines=0.5, rlim=(0, 19),
-)
-for ax in axs:
-    ax.plot(x, y, cycle='FlatUI', zorder=0, lw=3)
-
-# Standard polar plot
-axs[0].format(
-    title='Normal plot', thetaformatter='tau',
-    rlabelpos=225, rlines=pplt.arange(5, 30, 5),
-    edgecolor='red8', tickpad='1em',
-)
-
-# Sector plot
-axs[1].format(
-    title='Sector plot', thetadir=-1, thetalines=90, thetalim=(0, 270), theta0='N',
-    rlim=(0, 22), rlines=pplt.arange(5, 30, 5),
-)
-
-# Annular plot
-axs[2].format(
-    title='Annular plot', thetadir=-1, thetalines=20, gridcolor='red',
-    r0=-20, rlim=(0, 22), rformatter='null', rlocator=2
-)
