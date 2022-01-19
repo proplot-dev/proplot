@@ -186,18 +186,8 @@ mscale.register_scale(pscale.PowerScale)
 mscale.register_scale(pscale.SineLatitudeScale)
 mscale.register_scale(pscale.SymmetricalLogScale)
 
-# Cartopy projection registry and default basemap keyword args
+# Cartopy projection registry and basemap default keyword args
 # NOTE: Normally basemap raises error if you omit keyword args
-PROJ_ALIASES = {  # aliases to basemap naming conventions
-    'eqc': 'cyl',
-    'pcarree': 'cyl',
-}
-PROJ_ALIASES_KW = {  # use PROJ shorthands instead of verbose cartopy names
-    'lat_0': 'central_latitude',
-    'lon_0': 'central_longitude',
-    'lat_min': 'min_latitude',
-    'lat_max': 'max_latitude',
-}
 PROJ_DEFAULTS = {
     'geos': {'lon_0': 0},
     'eck4': {'lon_0': 0},
@@ -1262,7 +1252,7 @@ def Scale(scale, *args, **kwargs):
     return scale(*args, **kwargs)
 
 
-def Proj(name, backend=None, **kwargs):
+def Proj(name, backend=None, lon0=None, lat0=None, lonlim=None, latlim=None, **kwargs):
     """
     Return a `cartopy.crs.Projection` or `~mpl_toolkits.basemap.Basemap` instance.
 
@@ -1274,12 +1264,12 @@ def Proj(name, backend=None, **kwargs):
         `PROJ <https://proj.org>`__ projection name shorthands, like in
         basemap.
 
-        The following table lists the valid projection name shorthands, their
-        full names (with links to the relevant
-        `PROJ documentation <https://proj4.org/operations/projections>`__),
+        The following table lists the valid projection name shorthands,
+        their full names (with links to the relevant `PROJ documentation
+        <https://proj.org/operations/projections>`__),
         and whether they are available in the cartopy and basemap packages.
-        (added) indicates a projection class that proplot has "added"
-        to cartopy using the cartopy API.
+        (added) indicates a projection class that proplot has "added" to
+        cartopy using the cartopy API.
 
         .. _proj_table:
 
@@ -1342,23 +1332,26 @@ def Proj(name, backend=None, **kwargs):
     backend : {'cartopy', 'basemap'}, default: :rc:`geo.backend`
         Whether to return a cartopy `~cartopy.crs.Projection` instance
         or a basemap `~mpl_toolkits.basemap.Basemap` instance.
+    lon0, lat0 : float, optional
+        The central projection longitude and latitude. These are translated to
+        `central_longitude`, `central_latitude` for cartopy projections.
     lonlim : 2-tuple of float, optional
-        *For basemap projections only*. Alternative way to specify the
-        longitude corner bounds `llcrnrlon` and `urcrnrlon`.
+        The longitude limits. Translated to `min_longitude` and `max_longitude` for
+        cartopy projections and `llcrnrlon` and `urcrnrlon` for basemap projections.
     latlim : 2-tuple of float, optional
-        *For basemap projections only*. Alternative way to specify the
-        latitude corner bounds `llcrnrlat` and `urcrnrlat`.
+        The latitude limits. Translated to `min_latitude` and `max_latitude` for
+        cartopy projections and `llcrnrlon` and `urcrnrlon` for basemap projections.
 
     Other parameters
     ----------------
     **kwargs
-        Passed to the basemap `~mpl_toolkits.basemap.Basemap`
-        or cartopy `~cartopy.crs.Projection` class.
+        Passed to the cartopy `~cartopy.crs.Projection` or
+        basemap `~mpl_toolkits.basemap.Basemap` class.
 
     Returns
     -------
     proj : mpl_toolkits.basemap.Basemap or cartopy.crs.Projection
-        A `~mpl_toolkits.basemap.Basemap` or `~cartopy.crs.Projection` instance.
+        A cartopy or basemap projection instance.
 
     See also
     --------
@@ -1373,46 +1366,52 @@ def Proj(name, backend=None, **kwargs):
     `wikipedia page <https://en.wikipedia.org/wiki/Map_projection>`__ and the
     `PROJ <https://proj.org>`__ documentation.
 
-    .. _aea: https://proj4.org/operations/projections/aea.html
-    .. _aeqd: https://proj4.org/operations/projections/aeqd.html
-    .. _aitoff: https://proj4.org/operations/projections/aitoff.html
-    .. _cass: https://proj4.org/operations/projections/cass.html
-    .. _cea: https://proj4.org/operations/projections/cea.html
-    .. _eqc: https://proj4.org/operations/projections/eqc.html
-    .. _eck1: https://proj4.org/operations/projections/eck1.html
-    .. _eck2: https://proj4.org/operations/projections/eck2.html
-    .. _eck3: https://proj4.org/operations/projections/eck3.html
-    .. _eck4: https://proj4.org/operations/projections/eck4.html
-    .. _eck5: https://proj4.org/operations/projections/eck5.html
-    .. _eck6: https://proj4.org/operations/projections/eck6.html
-    .. _eqdc: https://proj4.org/operations/projections/eqdc.html
-    .. _eqc: https://proj4.org/operations/projections/eqc.html
-    .. _eqearth: https://proj4.org/operations/projections/eqearth.html
-    .. _gall: https://proj4.org/operations/projections/gall.html
-    .. _geos: https://proj4.org/operations/projections/geos.html
-    .. _gnom: https://proj4.org/operations/projections/gnom.html
-    .. _hammer: https://proj4.org/operations/projections/hammer.html
-    .. _igh: https://proj4.org/operations/projections/igh.html
-    .. _kav7: https://proj4.org/operations/projections/kav7.html
-    .. _laea: https://proj4.org/operations/projections/laea.html
-    .. _lcc: https://proj4.org/operations/projections/lcc.html
-    .. _mbtfpq: https://proj4.org/operations/projections/mbtfpq.html
-    .. _merc: https://proj4.org/operations/projections/merc.html
-    .. _mill: https://proj4.org/operations/projections/mill.html
-    .. _moll: https://proj4.org/operations/projections/moll.html
-    .. _nsper: https://proj4.org/operations/projections/nsper.html
-    .. _omerc: https://proj4.org/operations/projections/omerc.html
-    .. _ortho: https://proj4.org/operations/projections/ortho.html
-    .. _eqc: https://proj4.org/operations/projections/eqc.html
-    .. _poly: https://proj4.org/operations/projections/poly.html
-    .. _sinu: https://proj4.org/operations/projections/sinu.html
-    .. _stere: https://proj4.org/operations/projections/stere.html
-    .. _tmerc: https://proj4.org/operations/projections/tmerc.html
-    .. _utm: https://proj4.org/operations/projections/utm.html
-    .. _vandg: https://proj4.org/operations/projections/vandg.html
-    .. _wintri: https://proj4.org/operations/projections/wintri.html
+    .. _aea: https://proj.org/operations/projections/aea.html
+    .. _aeqd: https://proj.org/operations/projections/aeqd.html
+    .. _aitoff: https://proj.org/operations/projections/aitoff.html
+    .. _cass: https://proj.org/operations/projections/cass.html
+    .. _cea: https://proj.org/operations/projections/cea.html
+    .. _eqc: https://proj.org/operations/projections/eqc.html
+    .. _eck1: https://proj.org/operations/projections/eck1.html
+    .. _eck2: https://proj.org/operations/projections/eck2.html
+    .. _eck3: https://proj.org/operations/projections/eck3.html
+    .. _eck4: https://proj.org/operations/projections/eck4.html
+    .. _eck5: https://proj.org/operations/projections/eck5.html
+    .. _eck6: https://proj.org/operations/projections/eck6.html
+    .. _eqdc: https://proj.org/operations/projections/eqdc.html
+    .. _eqc: https://proj.org/operations/projections/eqc.html
+    .. _eqearth: https://proj.org/operations/projections/eqearth.html
+    .. _gall: https://proj.org/operations/projections/gall.html
+    .. _geos: https://proj.org/operations/projections/geos.html
+    .. _gnom: https://proj.org/operations/projections/gnom.html
+    .. _hammer: https://proj.org/operations/projections/hammer.html
+    .. _igh: https://proj.org/operations/projections/igh.html
+    .. _kav7: https://proj.org/operations/projections/kav7.html
+    .. _laea: https://proj.org/operations/projections/laea.html
+    .. _lcc: https://proj.org/operations/projections/lcc.html
+    .. _mbtfpq: https://proj.org/operations/projections/mbtfpq.html
+    .. _merc: https://proj.org/operations/projections/merc.html
+    .. _mill: https://proj.org/operations/projections/mill.html
+    .. _moll: https://proj.org/operations/projections/moll.html
+    .. _nsper: https://proj.org/operations/projections/nsper.html
+    .. _omerc: https://proj.org/operations/projections/omerc.html
+    .. _ortho: https://proj.org/operations/projections/ortho.html
+    .. _eqc: https://proj.org/operations/projections/eqc.html
+    .. _poly: https://proj.org/operations/projections/poly.html
+    .. _sinu: https://proj.org/operations/projections/sinu.html
+    .. _stere: https://proj.org/operations/projections/stere.html
+    .. _tmerc: https://proj.org/operations/projections/tmerc.html
+    .. _utm: https://proj.org/operations/projections/utm.html
+    .. _vandg: https://proj.org/operations/projections/vandg.html
+    .. _wintri: https://proj.org/operations/projections/wintri.html
     """  # noqa: E501
     # Parse input arguments
+    # NOTE: Underscores are permitted for consistency with cartopy only here.
+    # In format() underscores are not allowed for constistency with reset of API.
+    lon0 = _not_none(lon_0=kwargs.pop('lon_0', None), lon0=lon0)  # silent deprecation
+    lat0 = _not_none(lat_0=kwargs.pop('lon_0', None), lat0=lat0)
+    lonlim = _not_none(lonlim, default=(None, None))
+    latlim = _not_none(latlim, default=(None, None))
     is_crs = Projection is not object and isinstance(name, Projection)
     is_basemap = Basemap is not object and isinstance(name, Basemap)
     include_axes = kwargs.pop('include_axes', False)  # for error message
@@ -1427,6 +1426,19 @@ def Proj(name, backend=None, **kwargs):
                 f'Unexpected projection {name!r}. Must be PROJ string name, '
                 'cartopy.crs.Projection, or mpl_toolkits.basemap.Basemap.'
             )
+    for key_proj, key_cartopy, value in (
+        ('lon_0', 'central_longitude', lon0),
+        ('lat_0', 'central_latitude', lat0),
+        ('llcrnrlon', 'min_longitude', lonlim[0]),
+        ('urcrnrlon', 'max_longitude', lonlim[1]),
+        ('llcrnrlat', 'min_latitude', latlim[0]),
+        ('urcrnrlat', 'max_latitude', latlim[1]),
+    ):
+        if value is None:
+            continue
+        if backend == 'basemap' and key_proj == 'lon_0' and value > 0:
+            value -= 360  # see above comment
+        kwargs[key_proj if backend == 'basemap' else key_cartopy] = value
 
     # Projection instances
     if is_crs or is_basemap:
@@ -1440,10 +1452,17 @@ def Proj(name, backend=None, **kwargs):
     # Cartopy name
     # NOTE: Error message matches basemap invalid projection message
     elif backend == 'cartopy':
+        # Parse keywoard arguments
         import cartopy.crs as ccrs  # noqa: F401
-        proj_kw = {PROJ_ALIASES_KW.get(key, key): value for key, value in kwargs.items()}  # noqa: E501
-        if 'boundinglat' in proj_kw:
-            raise ValueError('"boundinglat" must be passed to the ax.format() command for cartopy axes.')  # noqa: E501
+        for key in ('round', 'boundinglat'):
+            value = kwargs.pop(key, None)
+            if value is not None:
+                raise ValueError(
+                    'Ignoring Proj() keyword {key}={value!r}. Must be passed '
+                    'to GeoAxes.format() when cartopy is the backend.'
+                )
+
+        # Retrieve projection and initialize with nice error message
         try:
             crs = PROJS[name]
         except KeyError:
@@ -1459,43 +1478,42 @@ def Proj(name, backend=None, **kwargs):
                 message += '\nThe known axes subclasses are:\n' + paxes._cls_table
             raise ValueError(message) from None
         if name == 'geos':  # fix common mistake
-            proj_kw.pop('central_latitude', None)
-        proj = crs(**proj_kw)
+            kwargs.pop('central_latitude', None)
+        proj = crs(**kwargs)
 
     # Basemap name
     # NOTE: Known issue that basemap sometimes produces backwards maps:
     # https://stackoverflow.com/q/56299971/4970632
     # NOTE: We set rsphere to fix non-conda installed basemap issue:
     # https://github.com/matplotlib/basemap/issues/361
-    # NOTE: Adjust lon_0 tof fix issues with Robinson (and related?) projections
+    # NOTE: Adjust lon_0 to fix issues with Robinson (and related?) projections
     # https://stackoverflow.com/questions/56299971/ (also triggers 'no room for axes')
     # NOTE: Unlike cartopy, basemap resolution is configured
     # on initialization and controls *all* features.
     else:
+        # Parse input arguments
         import mpl_toolkits.basemap as mbasemap
+        if name in ('eqc', 'pcarree'):
+            name = 'cyl'  # PROJ package aliases
+        defaults = {'fix_aspect': True, **PROJ_DEFAULTS.get(name, {})}
+        if name[:2] in ('np', 'sp'):
+            defaults['round'] = rc['geo.round']
+        if name == 'geos':
+            defaults['rsphere'] = (6378137.00, 6356752.3142)
+        for key, value in defaults.items():
+            if kwargs.get(key, None) is None:  # allow e.g. boundinglat=None
+                kwargs[key] = value
+
+        # Initialize
         if _version_mpl >= 3.3:
             raise RuntimeError(
                 'Basemap is no longer maintained and is incompatible with '
                 'matplotlib >= 3.3. Please use cartopy as your geographic '
                 'plotting backend or downgrade to matplotlib <= 3.2.'
             )
-        if 'lonlim' in kwargs:
-            kwargs['llcrnrlon'], kwargs['urcrnrlon'] = kwargs.pop('lonlim')
-        if 'latlim' in kwargs:
-            kwargs['llcrnrlat'], kwargs['urcrnrlat'] = kwargs.pop('latlim')
-        name = PROJ_ALIASES.get(name, name)
-        proj_kw = PROJ_DEFAULTS.get(name, {}).copy()
-        proj_kw.update(kwargs)
-        proj_kw.setdefault('fix_aspect', True)
-        if proj_kw.get('lon_0', 0) > 0:
-            proj_kw['lon_0'] -= 360
-        if name[:2] in ('np', 'sp'):
-            proj_kw.setdefault('round', True)
-        if name == 'geos':
-            proj_kw.setdefault('rsphere', (6378137.00, 6356752.3142))
         reso = _not_none(
-            reso=proj_kw.pop('reso', None),
-            resolution=proj_kw.pop('resolution', None),
+            reso=kwargs.pop('reso', None),
+            resolution=kwargs.pop('resolution', None),
             default=rc['reso']
         )
         if reso in RESOS_BASEMAP:
@@ -1506,9 +1524,9 @@ def Proj(name, backend=None, **kwargs):
                 + ', '.join(map(repr, RESOS_BASEMAP))
                 + '.'
             )
-        proj_kw.update({'resolution': reso, 'projection': name})
+        kwargs.update({'resolution': reso, 'projection': name})
         try:
-            proj = mbasemap.Basemap(**proj_kw)  # will raise helpful warning
+            proj = mbasemap.Basemap(**kwargs)  # will raise helpful warning
         except ValueError as err:
             message = str(err)
             message = message.strip()

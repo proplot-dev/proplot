@@ -40,17 +40,31 @@ __all__ = ['GeoAxes']
 
 # Format docstring
 _format_docstring = """
+round : bool, default: :rc:`geo.round`
+    *For polar cartopy axes only*.
+    Whether to bound polar projections with circles rather than squares. Note that outer
+    gridline labels cannot be added to circle-bounded polar projections. When basemap
+    is the backend this argument must be passed to `~proplot.constructor.Proj` instead.
+extent : {'globe', 'auto'}, default: :rc:`geo.autoextent`
+    *For cartopy axes only*.
+    Whether to auto adjust the map bounds based on plotted content. If ``'globe'`` then
+    non-polar projections are fixed with `~cartopy.mpl.geoaxes.GeoAxes.set_global`,
+    non-Gnomonic polar projections are bounded at the equator, and Gnomonic polar
+    projections are bounded at 30 degrees latitude. If ``'auto'`` nothing is done.
 lonlim, latlim : 2-tuple of float, optional
     *For cartopy axes only.*
     The approximate longitude and latitude boundaries of the map, applied
-    with `~cartopy.mpl.geoaxes.GeoAxes.set_extent`. Basemap axes extents must
-    be declared by passing keyword arguments to `~proplot.constructor.Proj`.
+    with `~cartopy.mpl.geoaxes.GeoAxes.set_extent`. When basemap is the backend
+    this argument must be passed to `~proplot.constructor.Proj` instead.
 boundinglat : float, optional
     *For cartopy axes only.*
-    The edge latitude for the circle bounding North Pole and
-    South Pole-centered projections.
-    Basemap bounding latitudes must be declared by passing keyword arguments
-    to `~proplot.constructor.Proj`.
+    The edge latitude for the circle bounding North Pole and South Pole-centered
+    projections. When basemap is the backend this argument must be passed to
+    `~proplot.constructor.Proj` instead.
+latmax : float, default: 80
+    The maximum absolute latitude for longitude and latitude gridlines.
+    Longitude gridlines are cut off poleward of this latitude for all basemap
+    and cartopy projections (note this feature does not work in cartopy 0.18).
 longrid, latgrid, grid : bool, default: :rc:`grid`
     Whether to draw longitude and latitude gridlines.
     Use the keyword `grid` to toggle both.
@@ -80,10 +94,6 @@ lonminorlines_kw, latminorlines_kw : optional
     Aliases for `lonminorlocator_kw`, `latminorlocator_kw`.
 lonminorlocator_kw, latminorlocator_kw : optional
     As with `lonlocator_kw` and `latlocator_kw` but for the "minor" gridlines.
-latmax : float, default: 80
-    The maximum absolute latitude for longitude and latitude gridlines.
-    Longitude gridlines are cut off poleward of this latitude for *all*
-    basemap projections and cartopy projections predating cartopy 0.18.
 labels : bool, default: :rc:`grid.labels`
     Sets `lonlabels` and `latlabels` to ``True``. To draw labels
     by default use e.g. ``pplt.rc['grid.labels'] = True``.
@@ -170,19 +180,6 @@ labelweight, gridlabelweight : str, default: :rc:`grid.labelweight`
     Font weight for the gridline labels.
 """
 docstring._snippet_manager['geo.format'] = _format_docstring
-
-
-def _circular_boundary(N=100):
-    """
-    Return a circle `~matplotlib.path.Path` used as the outline for polar
-    stereographic, azimuthal equidistant, Lambert conformal, and gnomonic
-    projections. This was developed from `this cartopy example \
-<https://scitools.org.uk/cartopy/docs/v0.15/examples/always_circular_stereo.html>`__.
-    """
-    theta = np.linspace(0, 2 * np.pi, N)
-    center, radius = [0.5, 0.5], 0.5
-    verts = np.vstack([np.sin(theta), np.cos(theta)]).T
-    return mpath.Path(verts * radius + center)
 
 
 class _GeoAxis(object):
@@ -315,7 +312,7 @@ class _LonAxis(_GeoAxis):
 
     def get_view_interval(self):
         # NOTE: Proplot tries to set its *own* view intervals to avoid dateline
-        # weirdness, but if cartopy.autoextent is False the interval will be
+        # weirdness, but if geo.autoextent is False the interval will be
         # unset, so we are forced to use get_extent().
         interval = self._interval
         if interval is None:
@@ -411,16 +408,6 @@ class GeoAxes(plot.PlotAxes):
         ----------
         *args
             Passed to `matplotlib.axes.Axes`.
-        autoextent : bool, default: :rc:`cartopy.autoextent`
-            *For cartopy axes only*. Whether to automatically adjust map bounds
-            based on plotted content or enforce a global map extent (or a map bounded
-            at the equator for polar projections). The extent can subsequently by
-            adjusted with the `~GeoAxes.format` keywords `lonlim`, `latlim`, and
-            `boundinglat`, or with `~cartopy.mpl.geoaxes.GeoAxes.set_extent`.
-        circular : bool, default: :rc:`cartopy.circular`
-            *For cartopy axes only*. Whether to bound polar projections with
-            circles rather than squares. Note that outer gridline labels cannot
-            be added to circularly bounded polar projections.
         map_projection : `~cartopy.crs.Projection` or `~mpl_toolkits.basemap.Basemap`
             The cartopy or basemap projection instance. This is
             passed automatically when calling axes-creation
@@ -521,10 +508,11 @@ class GeoAxes(plot.PlotAxes):
     @docstring._snippet_manager
     def format(
         self, *,
-        lonlim=None, latlim=None, boundinglat=None,
+        extent=None, round=None,
+        lonlim=None, latlim=None, boundinglat=None, latmax=None,
         longrid=None, latgrid=None, longridminor=None, latgridminor=None,
         lonlocator=None, lonlines=None,
-        latlocator=None, latlines=None, latmax=None,
+        latlocator=None, latlines=None,
         lonminorlocator=None, lonminorlines=None,
         latminorlocator=None, latminorlines=None,
         lonlocator_kw=None, lonlines_kw=None,
@@ -563,7 +551,7 @@ class GeoAxes(plot.PlotAxes):
         # updating the map boundary (in the future may also handle gridlines). However
         # drawing gridlines before basemap map boundary will call set_axes_limits()
         # which initializes a boundary hidden from external access. So we must call
-        # it here. Must do this between matplotlib.Axes.__init__() and Axes.format().
+        # it here. Must do this between mpl.Axes.__init__() and base.Axes.format().
         if self._name == 'basemap' and self._map_boundary is None:
             if self.projection.projection in self._proj_non_rectangular:
                 patch = self.projection.drawmapboundary(ax=self)
@@ -582,7 +570,11 @@ class GeoAxes(plot.PlotAxes):
         if labelweight is not None:
             rc_kw['grid.labelweight'] = labelweight
         with rc.context(rc_kw, mode=rc_mode):
-            # Label toggles
+            # Apply extent mode first
+            self._update_boundary(round)
+            self._update_extent_mode(extent, boundinglat)
+
+            # Retrieve label toggles
             labels = _not_none(labels, rc.find('grid.labels', context=True))
             lonlabels = _not_none(lonlabels, labels, loninline, inlinelabels)
             latlabels = _not_none(latlabels, labels, latinline, inlinelabels)
@@ -655,7 +647,9 @@ class GeoAxes(plot.PlotAxes):
                 self._lonaxis.get_major_locator()._dms = dms
                 self._lataxis.get_major_locator()._dms = dms
 
-            # Apply worker functions
+            # Apply worker extent, feature, and gridline functions
+            lonlim = _not_none(lonlim, default=(None, None))
+            latlim = _not_none(latlim, default=(None, None))
             self._update_extent(lonlim=lonlim, latlim=latlim, boundinglat=boundinglat)
             self._update_features()
             self._update_major_gridlines(
@@ -708,13 +702,16 @@ class _CartopyAxes(GeoAxes, _GeoAxes):
     )
     _proj_polar = _proj_north + _proj_south
 
-    def __init__(
-        self, *args, autoextent=None, circular=None, map_projection=None, **kwargs
-    ):
+    # NOTE: The rename argument wrapper belongs here instead of format() because
+    # these arguments were previously only accepted during initialization.
+    @warnings._rename_kwargs('0.10', circular='round', autoextent='extent')
+    def __init__(self, *args, map_projection=None, **kwargs):
         """
-        Other parameters
-        ----------------
-        **kwargs
+        Parameters
+        ----------
+        map_projection : ~cartopy.crs.Projection
+            The map projection.
+        *args, **kwargs
             Passed to `GeoAxes`.
         """
         # Initialize axes. Note that critical attributes like outline_patch
@@ -722,17 +719,8 @@ class _CartopyAxes(GeoAxes, _GeoAxes):
         import cartopy  # noqa: F401 verify package is available
         self.projection = map_projection  # verify
         polar = isinstance(self.projection, self._proj_polar)
-        if not polar:
-            latmax = 90
-            boundinglat = None
-        else:
-            latmax = 80
-            if isinstance(self.projection, pcrs.NorthPolarGnomonic):
-                boundinglat = 30  # *default* bounding latitudes
-            elif isinstance(self.projection, pcrs.SouthPolarGnomonic):
-                boundinglat = -30
-            else:
-                boundinglat = 0
+        latmax = 80 if polar else 90  # default latmax
+        self._is_round = False
         self._boundinglat = None  # NOTE: must start at None so _update_extent acts
         self._gridlines_major = None
         self._gridlines_minor = None
@@ -742,31 +730,24 @@ class _CartopyAxes(GeoAxes, _GeoAxes):
         for axis in (self.xaxis, self.yaxis):
             axis.set_tick_params(which='both', size=0)  # prevent extra label offset
 
-        # Apply circular map boundary for polar projections. Apply default
-        # global extent for other projections.
-        # NOTE: This has to come after initialization so set_extent and set_global
-        # can do their things. This also updates _LatAxis and _LonAxis.
-        # NOTE: Use set_global rather than _update_extent() manually in case
-        # the projection extent cannot be global.
-        # NOTE: For some reason the initial call to _set_view_intervals may change
-        # the default boundary with autoextent=True. Try in a robinson projection:
-        # ax.contour(np.linspace(-90, 180, N), np.linspace(0, 90, N),  state.rand(N, N))
-        auto = _not_none(autoextent, rc['cartopy.autoextent'])
-        circular = _not_none(circular, rc['cartopy.circular'])
-        if polar and circular and hasattr(self, 'set_boundary'):
-            self.set_boundary(_circular_boundary(), transform=self.transAxes)
-        if auto:
-            self._set_view_intervals(self._get_global_extent())
-        elif polar:
-            self._update_extent(boundinglat=boundinglat)
-        else:
-            self.set_global()
-
     def _apply_axis_sharing(self):  # noqa: U100
         """
         No-op for now. In future will hide labels on certain subplots.
         """
         pass
+
+    @staticmethod
+    def _get_circle_path(N=100):
+        """
+        Return a circle `~matplotlib.path.Path` used as the outline for polar
+        stereographic, azimuthal equidistant, Lambert conformal, and gnomonic
+        projections. This was developed from `this cartopy example \
+    <https://scitools.org.uk/cartopy/docs/v0.15/examples/always_circular_stereo.html>`__.
+        """
+        theta = np.linspace(0, 2 * np.pi, N)
+        center, radius = [0.5, 0.5], 0.5
+        verts = np.vstack([np.sin(theta), np.cos(theta)]).T
+        return mpath.Path(verts * radius + center)
 
     def _get_global_extent(self):
         """
@@ -854,6 +835,75 @@ class _CartopyAxes(GeoAxes, _GeoAxes):
         if top is not None:
             setattr(gl, top_labels, top)
 
+    def _update_background(self, **kwargs):
+        """
+        Update the map background patches. This is called in `Axes.format`.
+        """
+        # TODO: Understand issue where setting global linewidth puts map boundary on
+        # top of land patches, but setting linewidth with format() (even with separate
+        # format() calls) puts map boundary underneath. Zorder seems to be totally
+        # ignored and using spines vs. patch makes no difference.
+        # NOTE: outline_patch is redundant, use background_patch instead
+        kw_face, kw_edge = rc._get_background_props(native=False, **kwargs)
+        kw_face['linewidth'] = 0
+        kw_edge['facecolor'] = 'none'
+        if _version_cartopy >= 0.18:
+            self.patch.update(kw_face)
+            self.spines['geo'].update(kw_edge)
+        else:
+            self.background_patch.update(kw_face)
+            self.outline_patch.update(kw_edge)
+
+    def _update_boundary(self, round=None):
+        """
+        Update the map boundary path.
+        """
+        round = _not_none(round, rc.find('geo.round', context=True))
+        if round is None:
+            pass
+        elif round:
+            self._is_round = True
+            self.set_boundary(self._get_circle_path(), transform=self.transAxes)
+        elif not round and self._is_round:
+            if hasattr(self, '_boundary'):
+                self._boundary()
+            else:
+                warnings._warn_proplot('Failed to reset round map boundary.')
+
+    def _update_extent_mode(self, extent=None, boundinglat=None):
+        """
+        Update the extent mode.
+        """
+        # NOTE: Use set_global rather than set_extent() or _update_extent() for
+        # simplicity. Uses projection.[xy]_limits which may not be strictly global.
+        # NOTE: For some reason initial call to _set_view_intervals may change the
+        # default boundary with extent='auto'. Try this in a robinson projection:
+        # ax.contour(np.linspace(-90, 180, N), np.linspace(0, 90, N), np.zeros(N, N))
+        extent = _not_none(extent, rc.find('geo.extent', context=True))
+        if extent is None:
+            return
+        if extent not in ('globe', 'auto'):
+            raise ValueError(
+                f"Invalid extent mode {extent!r}. Must be 'auto' or 'globe'."
+            )
+        polar = isinstance(self.projection, self._proj_polar)
+        if not polar:
+            self.set_global()
+        else:
+            if isinstance(self.projection, pcrs.NorthPolarGnomonic):
+                default_boundinglat = 30
+            elif isinstance(self.projection, pcrs.SouthPolarGnomonic):
+                default_boundinglat = -30
+            else:
+                default_boundinglat = 0
+            boundinglat = _not_none(boundinglat, default_boundinglat)
+            self._update_extent(boundinglat=boundinglat)
+        if extent == 'auto':
+            # NOTE: This will work even if applied after plotting stuff
+            # and fixing the limits. Very easy to toggle on and off.
+            self.set_autoscalex_on(True)
+            self.set_autoscaley_on(True)
+
     def _update_extent(self, lonlim=None, latlim=None, boundinglat=None):
         """
         Set the projection extent.
@@ -868,9 +918,10 @@ class _CartopyAxes(GeoAxes, _GeoAxes):
         proj = type(self.projection).__name__
         north = isinstance(self.projection, self._proj_north)
         south = isinstance(self.projection, self._proj_south)
-        extent = None
+        lonlim = _not_none(lonlim, (None, None))
+        latlim = _not_none(latlim, (None, None))
         if north or south:
-            if lonlim is not None or latlim is not None:
+            if any(_ is not None for _ in (*lonlim, *latlim)):
                 warnings._warn_proplot(
                     f'{proj!r} extent is controlled by "boundinglat", '
                     f'ignoring lonlim={lonlim!r} and latlim={latlim!r}.'
@@ -889,39 +940,20 @@ class _CartopyAxes(GeoAxes, _GeoAxes):
                     f'{proj!r} extent is controlled by "lonlim" and "latlim", '
                     f'ignoring boundinglat={boundinglat!r}.'
                 )
-            if lonlim is not None or latlim is not None:
-                lonlim = list(lonlim or [None, None])
-                latlim = list(latlim or [None, None])
+            if any(_ is not None for _ in (*lonlim, *latlim)):
+                lonlim = list(lonlim)
                 if lonlim[0] is None:
                     lonlim[0] = lon0 - 180
                 if lonlim[1] is None:
                     lonlim[1] = lon0 + 180
                 lonlim[0] += eps
+                latlim = list(latlim)
                 if latlim[0] is None:
                     latlim[0] = -90
                 if latlim[1] is None:
                     latlim[1] = 90
                 extent = lonlim + latlim
                 self.set_extent(extent, crs=ccrs.PlateCarree())
-
-    def _update_background(self, **kwargs):
-        """
-        Update the map boundary patches. This is called in `Axes.format`.
-        """
-        # TODO: Understand issue where setting global linewidth puts map boundary on
-        # top of land patches, but setting linewidth with format() (even with separate
-        # format() calls) puts map boundary underneath. Zorder seems to be totally
-        # ignored and using spines vs. patch makes no difference.
-        # NOTE: outline_patch is redundant, use background_patch instead
-        kw_face, kw_edge = rc._get_background_props(native=False, **kwargs)
-        kw_face['linewidth'] = 0
-        kw_edge['facecolor'] = 'none'
-        if _version_cartopy >= 0.18:
-            self.patch.update(kw_face)
-            self.spines['geo'].update(kw_edge)
-        else:
-            self.background_patch.update(kw_face)
-            self.outline_patch.update(kw_edge)
 
     def _update_features(self):
         """
@@ -991,7 +1023,7 @@ class _CartopyAxes(GeoAxes, _GeoAxes):
         if nsteps is not None:
             gl.n_steps = nsteps
         latmax = self._lataxis.get_latmax()
-        if hasattr(gl, 'ylim'):  # cartopy > 0.19
+        if hasattr(gl, 'ylim'):  # cartopy >= 0.19
             gl.ylim = (-latmax, latmax)
         longrid = rc._get_gridline_bool(longrid, axis='x', which=which, native=False)
         if longrid is not None:
@@ -1171,9 +1203,11 @@ class _BasemapAxes(GeoAxes):
 
     def __init__(self, *args, map_projection=None, **kwargs):
         """
-        Other parameters
-        ----------------
-        **kwargs
+        Parameters
+        ----------
+        map_projection : ~mpl_toolkits.basemap.Basemap
+            The map projection.
+        *args, **kwargs
             Passed to `GeoAxes`.
         """
         # First assign projection and set axis bounds for locators
@@ -1229,21 +1263,6 @@ class _BasemapAxes(GeoAxes):
                 for obj in pj:
                     yield obj
 
-    def _update_extent(self, lonlim=None, latlim=None, boundinglat=None):
-        """
-        No-op. Map bounds cannot be changed in basemap.
-        """
-        if lonlim is not None or latlim is not None or boundinglat is not None:
-            warnings._warn_proplot(
-                f'Got lonlim={lonlim!r}, latlim={latlim!r}, '
-                f'boundinglat={boundinglat!r}, but you cannot "zoom into" a '
-                'basemap projection after creating it. Add any of the following '
-                "keyword args in your call to pplt.Proj('name', basemap=True, ...): "
-                "'boundinglat', 'lonlim', 'latlim', 'llcrnrlon', 'llcrnrlat', "
-                "'urcrnrlon', 'urcrnrlat', 'llcrnrx', 'llcrnry', "
-                "'urcrnrx', 'urcrnry', 'width', or 'height'."
-            )
-
     def _update_background(self, **kwargs):
         """
         Update the map boundary patches. This is called in `Axes.format`.
@@ -1262,6 +1281,54 @@ class _BasemapAxes(GeoAxes):
             self.patch.update({**kw_face, 'edgecolor': 'none'})
             for spine in self.spines.values():
                 spine.update(kw_edge)
+
+    def _update_boundary(self, round=None):
+        """
+        No-op. Boundary mode cannot be changed in basemap.
+        """
+        # NOTE: Unlike the cartopy method we do not look up the rc setting here.
+        if round is None:
+            return
+        else:
+            warnings._warn_proplot(
+                f'Got round={round!r}, but you cannot change the bounds of a polar '
+                "basemap projection after creating it. Please pass 'round' to pplt.Proj "  # noqa: E501
+                "instead (e.g. using the pplt.subplots() dictionary keyword 'proj_kw')."
+            )
+
+    def _update_extent_mode(self, extent=None, boundinglat=None):  # noqa: U100
+        """
+        No-op. Extent mode cannot be changed in basemap.
+        """
+        # NOTE: Unlike the cartopy method we do not look up the rc setting here.
+        if extent is None:
+            return
+        if extent not in ('globe', 'auto'):
+            raise ValueError(
+                f"Invalid extent mode {extent!r}. Must be 'auto' or 'globe'."
+            )
+        if extent == 'auto':
+            warnings._warn_proplot(
+                f'Got extent={extent!r}, but you cannot use auto extent mode '
+                'in basemap projections. Please consider switching to cartopy.'
+            )
+
+    def _update_extent(self, lonlim=None, latlim=None, boundinglat=None):
+        """
+        No-op. Map bounds cannot be changed in basemap.
+        """
+        lonlim = _not_none(lonlim, (None, None))
+        latlim = _not_none(latlim, (None, None))
+        if boundinglat is not None or any(_ is not None for _ in (*lonlim, *latlim)):
+            warnings._warn_proplot(
+                f'Got lonlim={lonlim!r}, latlim={latlim!r}, boundinglat={boundinglat!r}'
+                ', but you cannot "zoom into" a basemap projection after creating it. '
+                'Please pass any of the following keyword arguments to pplt.Proj '
+                "instead (e.g. using the pplt.subplots() dictionary keyword 'proj_kw'):"
+                "'boundinglat', 'lonlim', 'latlim', 'llcrnrlon', 'llcrnrlat', "
+                "'urcrnrlon', 'urcrnrlat', 'llcrnrx', 'llcrnry', 'urcrnrx', 'urcrnry', "
+                "'width', or 'height'."
+            )
 
     def _update_features(self):
         """

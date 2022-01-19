@@ -447,13 +447,15 @@ class _RcParams(MutableMapping, dict):
         # NOTE: If we assigned from the Configurator then the deprecated key will
         # still propagate to the same 'children' as the new key.
         # NOTE: This also translates values for special cases of renamed keys.
-        # Currently the only special case is the rc.basemap setting.
+        # Currently the special cases are 'basemap' and 'cartopy.autoextent'.
         if key in _rc_renamed:
             key_new, version = _rc_renamed[key]
             message = f'rc setting {key!r} was renamed to {key_new!r} in version {version}.'  # noqa: E501
             warnings._warn_proplot(message)
             if key == 'basemap':  # special case
                 value = ('cartopy', 'basemap')[int(bool(value))]
+            if key == 'cartopy.autoextent':
+                value = ('globe', 'auto')[int(bool(value))]
             key = key_new
         if key in _rc_removed:
             info, version = _rc_removed[key]
@@ -869,20 +871,6 @@ _rc_proplot_table = {
         'Font weight for column labels on the bottom of the figure.'
     ),
 
-    # Special cartopy settings
-    'cartopy.autoextent': (
-        False,
-        _validate_bool,
-        'If ``False`` (the default), cartopy projection extents are global by '
-        'default and no longer automatically adjusted based on plotted content.'
-    ),
-    'cartopy.circular': (
-        True,
-        _validate_bool,
-        "If ``True`` (the default), polar cartopy projections like ``'npstere'`` and "
-        "``'spstere'`` are bounded with circles rather than squares."
-    ),
-
     # Coastlines
     'coast': (
         False,
@@ -1163,6 +1151,20 @@ _rc_proplot_table = {
         'The backend used for `~proplot.axes.GeoAxes`. Must be '
         "either 'cartopy' or 'basemap'."
     ),
+    'geo.extent': (
+        'globe',
+        _validate_options('globe', 'auto'),
+        "If ``'globe'``, the extent of cartopy `~proplot.axes.GeoAxes` is always "
+        "global. If ``'auto'``, the extent is automatically adjusted based on "
+        "plotted content. Default is ``'globe'``."
+    ),
+    'geo.round': (
+        True,
+        _validate_bool,
+        "If ``True`` (the default), polar `~proplot.axes.GeoAxes` like ``'npstere'`` "
+        "and ``'spstere'`` are bounded with circles rather than squares."
+    ),
+
 
     # Gridlines
     # NOTE: Here 'grid' and 'gridminor' or *not* aliases for native 'axes.grid' and
@@ -1950,6 +1952,8 @@ _rc_renamed = {  # {old_key: (new_key, version)} dictionary
     'grid.latinline': ('grid.inlinelabels', '0.8'),
     'cmap.edgefix': ('edgefix', '0.9'),
     'basemap': ('geo.backend', '0.10'),
+    'cartopy.circular': ('geo.round', '0.10'),
+    'cartopy.autoextent': ('geo.extent', '0.10'),
     'colorbar.rasterize': ('colorbar.rasterized', '0.10'),
 }
 
