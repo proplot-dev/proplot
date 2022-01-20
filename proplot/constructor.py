@@ -1252,7 +1252,10 @@ def Scale(scale, *args, **kwargs):
     return scale(*args, **kwargs)
 
 
-def Proj(name, backend=None, lon0=None, lat0=None, lonlim=None, latlim=None, **kwargs):
+def Proj(
+    name, backend=None,
+    lon0=None, lon_0=None, lat0=None, lat_0=None, lonlim=None, latlim=None, **kwargs
+):
     """
     Return a `cartopy.crs.Projection` or `~mpl_toolkits.basemap.Basemap` instance.
 
@@ -1335,6 +1338,8 @@ def Proj(name, backend=None, lon0=None, lat0=None, lonlim=None, latlim=None, **k
     lon0, lat0 : float, optional
         The central projection longitude and latitude. These are translated to
         `central_longitude`, `central_latitude` for cartopy projections.
+    lon_0, lat_0 : float, optional
+        Aliases for `lon0`, `lat0`.
     lonlim : 2-tuple of float, optional
         The longitude limits. Translated to `min_longitude` and `max_longitude` for
         cartopy projections and `llcrnrlon` and `urcrnrlon` for basemap projections.
@@ -1408,8 +1413,8 @@ def Proj(name, backend=None, lon0=None, lat0=None, lonlim=None, latlim=None, **k
     # Parse input arguments
     # NOTE: Underscores are permitted for consistency with cartopy only here.
     # In format() underscores are not allowed for constistency with reset of API.
-    lon0 = _not_none(lon_0=kwargs.pop('lon_0', None), lon0=lon0)  # silent deprecation
-    lat0 = _not_none(lat_0=kwargs.pop('lon_0', None), lat0=lat0)
+    lon0 = _not_none(lon0=lon0, lon_0=lon_0)
+    lat0 = _not_none(lat0=lat0, lat_0=lat_0)
     lonlim = _not_none(lonlim, default=(None, None))
     latlim = _not_none(latlim, default=(None, None))
     is_crs = Projection is not object and isinstance(name, Projection)

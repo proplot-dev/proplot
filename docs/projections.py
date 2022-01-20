@@ -117,8 +117,8 @@ axs[2].format(
 # Use an on-the-fly projection
 import proplot as pplt
 fig = pplt.figure(refwidth=3)
-axs = fig.subplots(nrows=2, proj='robin', proj_kw={'lon_0': 150})
-# proj = pplt.Proj('robin', lon_0=180)
+axs = fig.subplots(nrows=2, proj='robin', proj_kw={'lon0': 150})
+# proj = pplt.Proj('robin', lon0=180)
 # axs = pplt.subplots(nrows=2, proj=proj)  # equivalent to above
 axs.format(
     suptitle='Figure with single projection',
@@ -174,24 +174,25 @@ axs.format(
 #
 # .. important::
 #
-#    * By default, proplot uses `~cartopy.mpl.geoaxes.GeoAxes.set_global` to give
-#      non-polar cartopy projections global extent and bounds polar cartopy projections
-#      at the equator. This is a deviation from cartopy, which determines map boundaries
-#      automatically based on the coordinates of the plotted content. To revert to
-#      cartopy's default behavior, set :rcraw:`geo.extent` to ``'auto`` or pass
-#      ``extent='auto'`` to `~proplot.axes.GeoAxes.format`.
+#    * By default, proplot bounds polar cartopy projections like
+#      `~cartopy.crs.NorthPolarStereo` at the equator and gives non-polar cartopy
+#      projections global extent by calling `~cartopy.mpl.geoaxes.GeoAxes.set_global`.
+#      This is a deviation from cartopy, which determines map boundaries automatically
+#      based on the coordinates of the plotted content. To revert to cartopy's
+#      default behavior, set :rcraw:`geo.extent` to ``'auto`` or pass ``extent='auto'``
+#      to `~proplot.axes.GeoAxes.format`.
 #    * By default, proplot gives circular boundaries to polar cartopy and basemap
-#      projections like `~cartopy.crs.NorthPolarStereo` (see `this cartopy example
-#      <https://scitools.org.uk/cartopy/docs/latest/gallery/lines_and_polygons/always_circular_stereo.html>`__).
-#      To disable this feature, set :rcraw:`geo.round` to ``False`` or pass
-#      ``round=False` to `~proplot.axes.GeoAxes.format`. Please note that cartopy
-#      cannot add gridline labels to polar plots with circular boundaries.
+#      projections like `~cartopy.crs.NorthPolarStereo` (see `this example
+#      <https://scitools.org.uk/cartopy/docs/latest/gallery/lines_and_polygons/always_circular_stereo.html>`__
+#      from the carotpy website). To disable this feature, set :rcraw:`geo.round` to
+#      ``False`` or pass ``round=False` to `~proplot.axes.GeoAxes.format`. Please note
+#      that cartopy cannot add gridline labels to polar plots with circular boundaries.
 #    * To make things more consistent, the `~proplot.constructor.Proj` constructor
 #      function lets you supply native `PROJ <https://proj.org>`__ keyword names
-#      for the cartopy `~cartopy.crs.Projection` classes (e.g., `lon_0` instead
+#      for the cartopy `~cartopy.crs.Projection` classes (e.g., `lon0` instead
 #      of `central_longitude`) and instantiates `~mpl_toolkits.basemap.Basemap`
 #      projections with sensible default PROJ parameters rather than raising an error
-#      when they are omitted (e.g., ``lon_0=0`` as the default for most projections).
+#      when they are omitted (e.g., ``lon0=0`` as the default for most projections).
 #    * Basemap is `no longer maintained \
 #      <https://matplotlib.org/basemap/users/intro.html#cartopy-new-management-and-eol-announcement>`__
 #      and will not work with matplotlib versions more recent than 3.2.2. However,
@@ -408,9 +409,9 @@ import proplot as pplt
 
 # Zooming in on continents
 fig = pplt.figure(refwidth=3)
-ax = fig.subplot(121, proj='lcc', proj_kw={'lon_0': 0})
+ax = fig.subplot(121, proj='lcc', proj_kw={'lon0': 0})
 ax.format(lonlim=(-20, 50), latlim=(30, 70), title='Cartopy example')
-proj = pplt.Proj('lcc', lon_0=-100, lat_0=45, width=8e6, height=8e6, backend='basemap')
+proj = pplt.Proj('lcc', lon0=-100, lat0=45, width=8e6, height=8e6, backend='basemap')
 ax = fig.subplot(122, proj=proj)
 ax.format(lonlines=20, title='Basemap example')
 fig.format(suptitle='Zooming into specific regions', land=True)
