@@ -14,6 +14,7 @@ from matplotlib import RcParams
 from matplotlib import rcParamsDefault as _rc_matplotlib_native
 from matplotlib.colors import Colormap
 from matplotlib.font_manager import font_scalings
+from matplotlib.fontconfig_pattern import parse_fontconfig_pattern
 
 from . import ic  # noqa: F401
 from . import warnings
@@ -263,6 +264,19 @@ def _validate_color(value, alternative=None):
         raise error
 
 
+def _validate_fontprops(s):
+    """
+    Parse font property with support for ``'regular'`` placeholder.
+    """
+    b = s.startswith('regular')
+    if b:
+        s = s.replace('regular', 'sans', 1)
+    parse_fontconfig_pattern(s)
+    if b:
+        s = s.replace('sans', 'regular', 1)
+    return s
+
+
 def _validate_fontsize(value):
     """
     Validate font size with new scalings and permitting other units.
@@ -507,13 +521,15 @@ else:
     _validate['image.cmap'] = _validate_cmap('continuous')
     _validate['legend.loc'] = _validate_options(*LEGEND_LOCS)
     for _key, _validator in _validate.items():
-        if _validator is msetup.validate_fontsize:
+        if _validator is getattr(msetup, 'validate_fontsize', None):  # should exist
             FONT_KEYS.add(_key)
             _validate[_key] = _validate_fontsize
         if _validator is getattr(msetup, 'validate_fontsize_None', None):
             FONT_KEYS.add(_key)
             _validate[_key] = _validate_or_none(_validate_fontsize)
-        if _validator is msetup.validate_color:
+        if _validator is getattr(msetup, 'validate_font_properties', None):
+            _validate[_key] = _validate_fontprops
+        if _validator is getattr(msetup, 'validate_color', None):  # should exist
             _validate[_key] = _validate_color
         if _validator is getattr(msetup, 'validate_color_or_auto', None):
             _validate[_key] = functools.partial(_validate_color, alternative='auto')
@@ -571,7 +587,9 @@ _rc_matplotlib_default = {
         'ITC Bookman',
         'New Century Schoolbook',
         'Nimbus Roman No9 L',
+        'Noto Serif',
         'Palatino',
+        'Source Serif Pro',
         'Times New Roman',
         'Times',
         'Utopia',
@@ -585,6 +603,7 @@ _rc_matplotlib_default = {
         'Arial',
         'Avenir',
         'Fira Math',
+        'Fira Sans',
         'Frutiger',
         'Geneva',
         'Gill Sans',
@@ -660,8 +679,14 @@ _rc_matplotlib_default = {
     'legend.fontsize': SMALLSIZE,
     'legend.framealpha': FRAMEALPHA,
     'legend.handletextpad': 0.5,
-    'mathtext.default': 'rm',
-    'mathtext.fontset': 'stixsans',
+    'mathtext.default': 'it',
+    'mathtext.fontset': 'custom',
+    'mathtext.bf': 'regular:bold',  # custom settings implemented above
+    'mathtext.cal': 'cursive',
+    'mathtext.it': 'regular:italic',
+    'mathtext.rm': 'regular',
+    'mathtext.sf': 'regular',
+    'mathtext.tt': 'monospace',
     'patch.linewidth': LINEWIDTH,
     'savefig.bbox': None,  # use custom tight layout
     'savefig.directory': '',  # current directory

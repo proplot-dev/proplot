@@ -61,32 +61,60 @@
 #   :rcraw:`font.fantasy` = ``'TeX Gyre Adventor'``.
 #
 # After importing proplot, the default matplotlib font will be
-# `TeX Gyre Heros <https://ctan.org/pkg/tex-gyre-heros>`__,
-# which emulates the more conventional and (in our opinion) aesthetically pleasing
-# font `Helvetica <https://en.wikipedia.org/wiki/Helvetica>`__. The new default font
+# `TeX Gyre Heros <https://ctan.org/pkg/tex-gyre-heros>`__, which
+# emulates the more conventional and (in our opinion) aesthetically pleasing
+# font `Helvetica <https://en.wikipedia.org/wiki/Helvetica>`__. The default font
 # family lists are shown in the :ref:`default proplotrc file <ug_proplotrc>`.
-#
 # To compare different fonts, use the `~proplot.demos.show_fonts` command with the
 # `family` keyword (default behavior is ``family='sans-serif'``). Tables of the TeX
-# Gyre and sans-serif fonts packaged with proplot are shown below. In order to show how
-# the fonts perform as math text, the demo is rendered with :rcraw:`mathtext.default`
-# = ``'regular'``, :rcraw:`mathtext.fontset` = ``'custom'``, and
-# :rcraw:`mathtext.fallback` = ``None``. This uses the global :rcraw:`font.family`
-# for the math text and shows a dummy glyph "¤" is shown where math characters
-# are unavailable (see the matplotlib `math text guide
-# <https://matplotlib.org/stable/tutorials/text/mathtext.html#custom-fonts>`__
-# for details). In practice, proplot uses a standard non-italicized math
-# text everywhere by setting :rc:`mathtext.fontset` = ``'stixsans'`` and
-# :rcraw:`mathtext.default = 'rm'` (see the :ref:`proplotrc file <ug_proplotrc>`
-# for details).
+# Gyre and sans-serif fonts packaged with proplot are shown below.
 
 # %%
 import proplot as pplt
-fig, axs = pplt.show_fonts(family='tex-gyre')
+fig, axs = pplt.show_fonts(family='tex-gyre', show_math=False)
 
 # %%
 import proplot as pplt
-fig, axs = pplt.show_fonts(family='sans-serif')
+fig, axs = pplt.show_fonts(family='sans-serif', show_math=False)
+
+# %% [raw] raw_mimetype="text/restructuredtext"
+# .. _ug_fonts_math:
+#
+# Math fonts
+# ----------
+#
+# Proplot changes the default :rcraw:`mathtext.fontset` from ``'dejavusans'`` to
+# ``'custom'``. This means that LaTeX-generated math text in a given string (i.e.,
+# text surrounded by ``'$dollar signs$'``) uses the same font
+# family as non-math text (see the matplotlib `math text guide
+# <https://matplotlib.org/stable/tutorials/text/mathtext.html#custom-fonts>`__ for
+# details). This improves the consistency of figure text when switching between
+# different fonts. However if you are rendering very complex equations,
+# you may want to change the default font to the matplotlib-packaged
+# font ``'DejaVu Sans'`` or the proplot-packaged font ``'Fira Math'`` (see
+# `this page <https://github.com/firamath/firamath>`__ for more on Fira Math).
+# Tables of the TeX Gyre and sans-serif fonts packaged with proplot are
+# shown below. A dummy glyph "¤" is shown where math characters are unavailable
+# for a particular font (in practice, the fallback font :rc:`mathtext.fallback`
+# is used whenever a math character is unavailable, but the demo function
+# disables the fallback font to highlight which characters are unavailable).
+#
+# .. note::
+#
+#    Proplot modifies the matplotlib math text internals so that the ``'custom'``
+#    font set can be applied with modifications to the currently active non-math
+#    font rather than only a global font family. This works by changing the default
+#    values of :rcraw:`mathtext.bf`, :rcraw:`mathtext.it`, :rcraw:`mathtext.rm`,
+#    :rcraw:`mathtext.sf` from the global default font family ``'sans'`` to the local
+#    font family ``'regular'``, where ``'regular'`` is a dummy name permitted by
+#    proplot (see the :ref:`proplotrc file <ug_proplotrc>` for details). This means
+#    that if :rcraw:`mathtext.fontset` is ``'custom'`` and the font family is changed
+#    for an arbitrary `~matplotlib.text.Text` instance, then any LaTeX-generated math
+#    in the text string will also use this font family.
+
+# %%
+import proplot as pplt
+fig, axs = pplt.show_fonts(family='sans-serif', show_math=True)
 
 # %% [raw] raw_mimetype="text/restructuredtext"
 # .. _ug_fonts_user:
