@@ -48,6 +48,7 @@ from . import (  # noqa: F401
     benchmarks,
     context,
     docstring,
+    fonts,
     guides,
     inputs,
     labels,
