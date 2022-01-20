@@ -795,7 +795,7 @@ def show_colors(*, nhues=17, minsat=10, unknown='User', include=None, ignore=Non
 
 
 def show_fonts(
-    *args, family=None, text=None,
+    *args, family=None, text=None, show_math=True,
     size=12, weight='normal', style='normal', stretch='normal',
 ):
     """
@@ -841,8 +841,8 @@ def show_fonts(
     show_cycles
     show_colors
     """
-    # Select fonts for plotting. Default is to show sans-serif fonts. Otherwise
-    # fonts can be specified as input arguments or with the family keyword
+    # Select fonts for plotting. Default is to show sans-serif and user fonts.
+    # Otherwise fonts can be specified as input arguments or with the family keyword
     if not args and family is None:
         args = sorted(
             {
@@ -881,23 +881,28 @@ def show_fonts(
 
     # The default sample text
     if text is None:
-        text = (
-            'the quick brown fox jumps over a lazy dog' '\n'
-            'THE QUICK BROWN FOX JUMPS OVER A LAZY DOG' '\n'
-            '(0) + {1\N{DEGREE SIGN}} \N{MINUS SIGN} [2*] - <3> / 4,0 '
-            r'$\geq\gg$ 5.0 $\leq\ll$ ~6 $\times$ 7 '
-            r'$\equiv$ 8 $\approx$ 9 $\propto$' '\n'
-            r'$\alpha\beta$ $\Gamma\gamma$ $\Delta\delta$ '
-            r'$\epsilon\zeta\eta$ $\Theta\theta$ $\kappa\mu\nu$ '
-            r'$\Lambda\lambda$ $\Pi\pi$ $\xi\rho\tau\chi$ $\Sigma\sigma$ '
-            r'$\Phi\phi$ $\Psi\psi$ $\Omega\omega$ !?&#%'
-        )
+        if not show_math:
+            text = (
+                'the quick brown fox jumps over a lazy dog . , + -'
+                '\n'
+                'THE QUICK BROWN FOX JUMPS OVER A LAZY DOG ! ? & # %'
+            )
+        else:
+            text = (
+                r'$\alpha\beta$ $\Gamma\gamma$ $\Delta\delta$ '
+                r'$\epsilon\zeta\eta$ $\Theta\theta$ $\kappa\mu\nu$ '
+                r'$\Lambda\lambda$ $\Pi\pi$ $\xi\rho\tau\chi$ $\Sigma\sigma$ '
+                r'$\Phi\phi$ $\Psi\psi$ $\Omega\omega$ '
+                r'$\ll { }^k \gg [ ]_l \propto ( )^m \cdot \left<\right>_n$'
+                '\n'
+                r'$0^a + 1_b - 2^c \times 3_d = '
+                r'4.0^e \equiv 5.0_f \approx 6.0^g \sim 7_h \leq 8^i \geq 9_j'
+                r'\sum X \ll \int Y \gg \oint Z \propto \prod Q$'
+                '\n'
+            )
 
     # Settings for rendering math text
-    ctx = {
-        'mathtext.default': 'regular',
-        'mathtext.fontset': 'custom',
-    }
+    ctx = {'mathtext.fontset': 'custom'}
     if _version_mpl < 3.4:
         ctx['mathtext.fallback_to_cm'] = False
     else:
