@@ -859,7 +859,7 @@ class _CartopyAxes(GeoAxes, _GeoAxes):
         Update the map boundary path.
         """
         round = _not_none(round, rc.find('geo.round', context=True))
-        if round is None:
+        if round is None or not isinstance(self.projection, self._proj_polar):
             pass
         elif round:
             self._is_round = True
