@@ -200,11 +200,11 @@ def _validate_abc(value):
     )
 
 
-def _validate_options(*options):
+def _validate_belongs(*options):
     """
     Return a validator ensuring the item belongs in the list.
     """
-    def _validate_options(value):  # noqa: E306
+    def _validate_belongs(value):  # noqa: E306
         for opt in options:
             if isinstance(value, str) and isinstance(opt, str):
                 if value.lower() == opt.lower():  # noqa: E501
@@ -219,7 +219,7 @@ def _validate_options(*options):
             + ', '.join(map(repr, options))
             + '.'
         )
-    return _validate_options
+    return _validate_belongs
 
 
 def _validate_cmap(subtype):
@@ -295,6 +295,43 @@ def _validate_fontsize(value):
         f'Invalid font size {value!r}. Can be points or one of the '
         'preset scalings: ' + ', '.join(map(repr, font_scalings)) + '.'
     )
+
+
+def _validate_labels(labels, lon=True):
+    """
+    Convert labels argument to length-4 boolean array.
+    """
+    if labels is None:
+        return [None] * 4
+    which = 'lon' if lon else 'lat'
+    if isinstance(labels, str):
+        labels = (labels,)
+    array = np.atleast_1d(labels).tolist()
+    if all(isinstance(_, str) for _ in array):
+        bool_ = [False] * 4
+        opts = ('left', 'right', 'bottom', 'top')
+        for string in array:
+            if string in opts:
+                string = string[0]
+            elif set(string) - set('lrbt'):
+                raise ValueError(
+                    f'Invalid {which}label string {string!r}. Must be one of '
+                    + ', '.join(map(repr, opts))
+                    + " or a string of single-letter characters like 'lr'."
+                )
+            for char in string:
+                bool_['lrbt'.index(char)] = True
+        array = bool_
+    if len(array) == 1:
+        array.append(False)  # default is to label bottom or left
+    if len(array) == 2:
+        if lon:
+            array = [False, False, *array]
+        else:
+            array = [*array, False, False]
+    if len(array) != 4 or any(isinstance(_, str) for _ in array):
+        raise ValueError(f'Invalid {which}label spec: {labels}.')
+    return array
 
 
 def _validate_or_none(validator):
@@ -498,13 +535,13 @@ _validate_fontweight = msetup.validate_fontweight
 
 # Special style validators
 # See: https://matplotlib.org/stable/api/_as_gen/matplotlib.patches.FancyBboxPatch.html
-_validate_boxstyle = _validate_options(
+_validate_boxstyle = _validate_belongs(
     'square', 'circle', 'round', 'round4', 'sawtooth', 'roundtooth',
 )
 if hasattr(msetup, '_validate_linestyle'):  # fancy validation including dashes
     _validate_linestyle = msetup._validate_linestyle
 else:  # no dashes allowed then but no big deal
-    _validate_linestyle = _validate_options(
+    _validate_linestyle = _validate_belongs(
         '-', ':', '--', '-.', 'solid', 'dashed', 'dashdot', 'dotted', 'none', ' ', '',
     )
 
@@ -519,7 +556,7 @@ if not hasattr(RcParams, 'validate'):  # not mission critical so skip
 else:
     _validate = RcParams.validate
     _validate['image.cmap'] = _validate_cmap('continuous')
-    _validate['legend.loc'] = _validate_options(*LEGEND_LOCS)
+    _validate['legend.loc'] = _validate_belongs(*LEGEND_LOCS)
     for _key, _validator in _validate.items():
         if _validator is getattr(msetup, 'validate_fontsize', None):  # should exist
             FONT_KEYS.add(_key)
@@ -793,7 +830,7 @@ _rc_proplot_table = {
     ),
     'abc.loc': (
         'left',  # left side above the axes
-        _validate_options(*TEXT_LOCS),
+        _validate_belongs(*TEXT_LOCS),
         'a-b-c label position. '
         'For options see the :ref:`location table <title_table>`.'
     ),
@@ -988,7 +1025,7 @@ _rc_proplot_table = {
     ),
     'colorbar.loc': (
         'right',
-        _validate_options(*COLORBAR_LOCS),
+        _validate_belongs(*COLORBAR_LOCS),
         'Inset colorbar location. '
         'For options see the :ref:`location table <colorbar_table>`.'
     ),
@@ -1172,13 +1209,13 @@ _rc_proplot_table = {
     # Geographic axes settings
     'geo.backend': (
         'cartopy',
-        _validate_options('cartopy', 'basemap'),
+        _validate_belongs('cartopy', 'basemap'),
         'The backend used for `~proplot.axes.GeoAxes`. Must be '
         "either 'cartopy' or 'basemap'."
     ),
     'geo.extent': (
         'globe',
-        _validate_options('globe', 'auto'),
+        _validate_belongs('globe', 'auto'),
         "If ``'globe'``, the extent of cartopy `~proplot.axes.GeoAxes` is always "
         "global. If ``'auto'``, the extent is automatically adjusted based on "
         "plotted content. Default is ``'globe'``."
@@ -1202,7 +1239,7 @@ _rc_proplot_table = {
     ),
     'grid.below': (
         GRIDBELOW,  # like axes.axisbelow
-        _validate_options(False, 'line', True),
+        _validate_belongs(False, 'line', True),
         'Alias for :rcraw:`axes.axisbelow`. If ``True``, draw gridlines below '
         "everything. If ``True``, draw them above everything. If ``'line'``, "
         'draw them above patches but below lines and markers.'
@@ -1213,6 +1250,12 @@ _rc_proplot_table = {
         'Whether to use degrees-minutes-seconds rather than decimals for gridline '
         'labels on cartopy `~proplot.axes.GeoAxes`.'
     ),
+    'grid.geolabels': (
+        True,
+        _validate_bool,
+        "Whether to include the ``'geo'`` spine in cartopy >= 0.20 when otherwise "
+        'toggling left, right, bottom, or top outer labels.'
+    ),
     'grid.inlinelabels': (
         False,
         _validate_bool,
@@ -1222,8 +1265,8 @@ _rc_proplot_table = {
     'grid.labels': (
         False,
         _validate_bool,
-        'Whether to label the longitude and latitude gridlines in '
-        '`~proplot.axes.GeoAxes`.'
+        'Whether to use outer labels for cartopy and basemap `~proplot.axes.GeoAxes` '
+        'longitude and latitude gridlines.'
     ),
     'grid.labelcolor': (
         BLACK,
@@ -1321,7 +1364,7 @@ _rc_proplot_table = {
     # Backend stuff
     'inlinefmt': (
         'retina',
-        _validate_options('svg', 'pdf', 'retina', 'png', 'jpeg'),
+        _validate_belongs('svg', 'pdf', 'retina', 'png', 'jpeg'),
         'The inline backend figure format. Valid formats include '
         "``'svg'``, ``'pdf'``, ``'retina'``, ``'png'``, and ``jpeg``."
     ),
@@ -1518,7 +1561,7 @@ _rc_proplot_table = {
     # Geographic resolution
     'reso': (
         'lo',
-        _validate_options('lo', 'med', 'hi', 'x-hi', 'xx-hi'),
+        _validate_belongs('lo', 'med', 'hi', 'x-hi', 'xx-hi'),
         'Resolution for `~proplot.axes.GeoAxes` geographic features. '
         "Must be one of ``'lo'``, ``'med'``, ``'hi'``, ``'x-hi'``, or ``'xx-hi'``."
     ),
@@ -1613,7 +1656,7 @@ _rc_proplot_table = {
     ),
     'subplots.share': (
         True,
-        _validate_options(0, 1, 2, 3, 4, False, 'labels', 'limits', True, 'all'),
+        _validate_belongs(0, 1, 2, 3, 4, False, 'labels', 'limits', True, 'all'),
         'The axis sharing level, one of ``0``, ``1``, ``2``, or ``3``, or the '
         "more intuitive aliases ``False``, ``'labels'``, ``'limits'``, or ``True``. "
         'See `~proplot.figure.Figure` for details.'
@@ -1659,7 +1702,7 @@ _rc_proplot_table = {
     ),
     'tick.dir': (
         TICKDIR,
-        _validate_options('in', 'out', 'inout'),
+        _validate_belongs('in', 'out', 'inout'),
         'Major and minor tick direction. Must be one of '
         "``'out'``, ``'in'``, or ``'inout'``."
     ),
@@ -1722,7 +1765,7 @@ _rc_proplot_table = {
     # Title settings
     'title.above': (
         True,
-        _validate_options(False, True, 'panels'),
+        _validate_belongs(False, True, 'panels'),
         'Whether to move outer titles and a-b-c labels above panels, colorbars, or '
         "legends that are above the axes. If the string 'panels' then text is only "
         'redirected above axes panels. Otherwise should be boolean.'
@@ -1772,7 +1815,7 @@ _rc_proplot_table = {
     ),
     'title.loc': (
         'center',
-        _validate_options(*TEXT_LOCS),
+        _validate_belongs(*TEXT_LOCS),
         'Title position. For options see the :ref:`location table <title_table>`.'
     ),
     'title.pad': (

@@ -464,45 +464,45 @@ class GeoAxes(plot.PlotAxes):
         self._lataxis.set_view_interval(*extent[2:])
 
     @staticmethod
-    def _to_label_array(labels, lon=True):
+    def _to_label_array(arg, lon=True):
         """
-        Convert labels argument to length-4 boolean array.
+        Convert labels argument to length-5 boolean array.
         """
-        if labels is None:
-            return [None] * 4
+        array = arg
         which = 'lon' if lon else 'lat'
-
-        # Parse string label indicators
-        if isinstance(labels, str):
-            labels = (labels,)
-        array = np.atleast_1d(labels).tolist()
-        if all(isinstance(_, str) for _ in array):
-            bool_ = [False] * 4
-            opts = ('left', 'right', 'bottom', 'top')
-            for string in array:
+        array = np.atleast_1d(array).tolist()
+        if len(array) == 1 and array[0] is None:
+            array = [None] * 5
+        elif all(isinstance(_, str) for _ in array):
+            strings = array  # iterate over list of strings
+            array = [False] * 5
+            opts = ('left', 'right', 'bottom', 'top', 'geo')
+            for string in strings:
                 if string in opts:
                     string = string[0]
-                elif set(string) - set('lrbt'):
+                elif set(string) - set('lrbtg'):
                     raise ValueError(
                         f'Invalid {which}label string {string!r}. Must be one of '
                         + ', '.join(map(repr, opts))
                         + " or a string of single-letter characters like 'lr'."
                     )
                 for char in string:
-                    bool_['lrbt'.index(char)] = True
-            array = bool_
-
-        # Parse boolean label indicators
-        if len(array) == 1:
-            array.append(False)  # default is to label bottom or left
-        if len(array) == 2:
-            if lon:
-                array = [False, False, *array]
-            else:
-                array = [*array, False, False]
-        if len(array) != 4 or any(isinstance(_, str) for _ in array):
-            raise ValueError(f'Invalid {which}label spec: {labels}.')
-
+                    array['lrbtg'.index(char)] = True
+                if rc['grid.geolabels'] and any(array):
+                    array[4] = True  # possibly toggle geo spine labels
+        elif not any(isinstance(_, str) for _ in array):
+            if len(array) == 1:
+                array.append(False)  # default is to label bottom or left
+            if len(array) == 2:
+                array = [False, False, *array] if lon else [*array, False, False]
+            if len(array) == 4:
+                b = any(array) if rc['grid.geolabels'] else False
+                array.append(b)  # possibly toggle geo spine labels
+            if len(array) != 5:
+                raise ValueError(f'Invald boolean label array length {len(array)}.')
+            array = list(map(bool, array))
+        else:
+            raise ValueError(f'Invalid {which}label spec: {arg}.')
         return array
 
     @docstring._snippet_manager
@@ -575,9 +575,15 @@ class GeoAxes(plot.PlotAxes):
             self._update_extent_mode(extent, boundinglat)
 
             # Retrieve label toggles
+            # NOTE: Cartopy 0.18 and 0.19 inline labels require any of
+            # top, bottom, left, or right to be toggled then ignores them.
+            # Later versions of cartopy permit both or neither labels.
             labels = _not_none(labels, rc.find('grid.labels', context=True))
-            lonlabels = _not_none(lonlabels, labels, loninline, inlinelabels)
-            latlabels = _not_none(latlabels, labels, latinline, inlinelabels)
+            lonlabels = _not_none(lonlabels, labels)
+            latlabels = _not_none(latlabels, labels)
+            if '0.18' <= _version_cartopy < '0.20':
+                lonlabels = _not_none(lonlabels, loninline, inlinelabels)
+                latlabels = _not_none(latlabels, latinline, inlinelabels)
             lonarray = self._to_label_array(lonlabels, lon=True)
             latarray = self._to_label_array(latlabels, lon=False)
 
@@ -808,11 +814,13 @@ class _CartopyAxes(GeoAxes, _GeoAxes):
         gl._axes_domain = _axes_domain.__get__(gl)
         gl._add_gridline_label = _add_gridline_label.__get__(gl)
         gl.xlines = gl.ylines = False
-        self._toggle_gridliner_labels(gl, False, False, False, False)
+        self._toggle_gridliner_labels(gl, False, False, False, False, False)
         return gl
 
     @staticmethod
-    def _toggle_gridliner_labels(gl, left, right, bottom, top):
+    def _toggle_gridliner_labels(
+        gl, left=None, right=None, bottom=None, top=None, geo=None
+    ):
         """
         Toggle gridliner labels across different cartopy versions.
         """
@@ -834,6 +842,8 @@ class _CartopyAxes(GeoAxes, _GeoAxes):
             setattr(gl, bottom_labels, bottom)
         if top is not None:
             setattr(gl, top_labels, top)
+        if geo is not None:  # only cartopy 0.20 supported but harmless
+            setattr(gl, 'geo_labels', geo)
 
     def _update_background(self, **kwargs):
         """
@@ -1054,12 +1064,18 @@ class _CartopyAxes(GeoAxes, _GeoAxes):
         self._update_gridlines(
             gl, which='major', longrid=longrid, latgrid=latgrid, nsteps=nsteps,
         )
+        gl.xformatter = self._lonaxis.get_major_formatter()
+        gl.yformatter = self._lataxis.get_major_formatter()
 
         # Update gridline label parameters
+        # NOTE: Cartopy 0.18 and 0.19 can not draw both edge and inline labels. Instead
+        # requires both a set 'side' and 'x_inline' is True (applied in GeoAxes.format).
+        # NOTE: Cartopy 0.20 uses 'x' or 'y' as value for 'inline_labels' sometimes but
+        # only ever checks their boolean values. Simply use boolean toggles for now.
         # NOTE: The 'xpadding' and 'ypadding' props were introduced in v0.16
         # with default 5 points, then set to default None in v0.18.
-        # TODO: Cartopy has had two formatters for a while but we use newer one
-        # https://github.com/SciTools/cartopy/pull/1066
+        # TODO: Cartopy has had two formatters for a while but we use the newer one.
+        # See https://github.com/SciTools/cartopy/pull/1066
         if labelpad is not None:
             gl.xpadding = gl.ypadding = labelpad
         if loninline is not None:
@@ -1067,13 +1083,9 @@ class _CartopyAxes(GeoAxes, _GeoAxes):
         if latinline is not None:
             gl.y_inline = bool(latinline)
         if rotatelabels is not None:
-            gl.rotate_labels = bool(rotatelabels)  # ignored in cartopy <0.18
-
-        # Gridline label formatters
-        lonaxis = self._lonaxis
-        lataxis = self._lataxis
-        gl.xformatter = lonaxis.get_major_formatter()
-        gl.yformatter = lataxis.get_major_formatter()
+            gl.rotate_labels = bool(rotatelabels)  # ignored in cartopy < 0.18
+        if latinline is not None or loninline is not None:
+            gl.inline_labels = loninline or latinline  # ignored in cartopy < 0.20
 
         # Gridline label toggling
         # Issue warning instead of error!
@@ -1086,14 +1098,17 @@ class _CartopyAxes(GeoAxes, _GeoAxes):
                     'Cannot add gridline labels to cartopy '
                     f'{type(self.projection).__name__} projection.'
                 )
-                latarray = [0] * 4
+                latarray = [False] * 5
             if any(lonarray):
                 warnings._warn_proplot(
                     'Cannot add gridline labels to cartopy '
                     f'{type(self.projection).__name__} projection.'
                 )
-                lonarray = [0] * 4
-        self._toggle_gridliner_labels(gl, *latarray[:2], *lonarray[2:])
+                lonarray = [False] * 5
+        print(latarray, lonarray)
+        self._toggle_gridliner_labels(
+            gl, *latarray[:2], *lonarray[2:4], latarray[4] or lonarray[4]
+        )
 
     def _update_minor_gridlines(self, longrid=None, latgrid=None, nsteps=None):
         """
@@ -1379,11 +1394,10 @@ class _BasemapAxes(GeoAxes):
             # while preserving the label toggle setting from a previous format() call.
             grid = rc._get_gridline_bool(grid, axis=axis, which=which, native=False)
             axis = getattr(self, f'_{name}axis')
-            if which == 'major':
-                bools = getattr(self, f'_{name}array')
-            else:
-                bools = 4 * [False]
-            array = [*array[:2], *array[2:][::-1]]  # flip to lrtb
+            if len(array) == 5:  # should be always
+                array = array[:4]
+            bools = 4 * [False] if which == 'major' else getattr(self, f'_{name}array')
+            array = [*array[:2], *array[2:4][::-1]]  # flip lrbt to lrtb and skip geo
             for i, b in enumerate(array):
                 if b is not None:
                     bools[i] = b  # update toggles
