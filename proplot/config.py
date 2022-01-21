@@ -1218,7 +1218,6 @@ class Configurator(MutableMapping, dict):
         See also
         --------
         Configurator.user_file
-        Configurator.user_folder
         Configurator.local_folders
         """
         cdir = os.getcwd()
@@ -1244,7 +1243,6 @@ class Configurator(MutableMapping, dict):
 
         See also
         --------
-        Configurator.user_file
         Configurator.user_folder
         Configurator.local_files
         """

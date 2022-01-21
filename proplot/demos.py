@@ -26,7 +26,19 @@ __all__ = [
     'show_fonts',
 ]
 
-COLORS_TABLE = {
+
+# Tables and constants
+FAMILY_TEXGYRE = (
+    'TeX Gyre Heros',  # sans-serif
+    'TeX Gyre Schola',  # serif
+    'TeX Gyre Bonum',
+    'TeX Gyre Termes',
+    'TeX Gyre Pagella',
+    'TeX Gyre Cursor',  # monospace
+    'TeX Gyre Chorus',  # cursive
+    'TeX Gyre Adventor',  # fantasy
+)
+COLOR_TABLE = {
     # NOTE: Just want the names but point to the dictionaries because
     # they don't get filled until after __init__ imports this module.
     'base': mcolors.BASE_COLORS,
@@ -34,8 +46,26 @@ COLORS_TABLE = {
     'opencolor': pcolors.COLORS_OPEN,
     'xkcd': pcolors.COLORS_XKCD,
 }
-
-CMAPS_TABLE = {
+CYCLE_TABLE = {
+    'Matplotlib defaults': (
+        'default', 'classic',
+    ),
+    'Matplotlib stylesheets': (
+        # NOTE: Do not include 'solarized' because colors are terrible for
+        # colorblind folks.
+        'colorblind', 'colorblind10', 'tableau', 'ggplot', '538', 'seaborn', 'bmh',
+    ),
+    'ColorBrewer2.0 qualitative': (
+        'Accent', 'Dark2',
+        'Paired', 'Pastel1', 'Pastel2',
+        'Set1', 'Set2', 'Set3',
+        'tab10', 'tab20', 'tab20b', 'tab20c',
+    ),
+    'Other qualitative': (
+        'FlatUI', 'Qual1', 'Qual2',
+    ),
+}
+CMAP_TABLE = {
     # NOTE: No longer rename colorbrewer greys map, just redirect 'grays'
     # to 'greys' in colormap database.
     'Grayscale': (  # assorted origin, but they belong together
@@ -150,27 +180,6 @@ CMAPS_TABLE = {
     )
 }
 
-CYCLES_TABLE = {
-    'Matplotlib defaults': (
-        'default', 'classic',
-    ),
-    'Matplotlib stylesheets': (
-        # NOTE: Do not include 'solarized' because colors are terrible for
-        # colorblind folks.
-        'colorblind', 'colorblind10', 'tableau', 'ggplot', '538', 'seaborn', 'bmh',
-    ),
-    'ColorBrewer2.0 qualitative': (
-        'Accent', 'Dark2',
-        'Paired', 'Pastel1', 'Pastel2',
-        'Set1', 'Set2', 'Set3',
-        'tab10', 'tab20', 'tab20b', 'tab20c',
-    ),
-    'Other qualitative': (
-        'FlatUI', 'Qual1', 'Qual2',
-    ),
-}
-
-
 # Docstring snippets
 _colorbar_docstring = """
 length : unit-spec, optional
@@ -183,9 +192,9 @@ rasterized : bool, default: :rc:`colorbar.rasterized`
     Whether to rasterize the colorbar solids. This increases rendering
     time and decreases file sizes for vector graphics.
 """
-docstring._snippet_manager['demos.cmaps'] = ', '.join(f'``{s!r}``' for s in CMAPS_TABLE)
-docstring._snippet_manager['demos.cycles'] = ', '.join(f'``{s!r}``' for s in CYCLES_TABLE)  # noqa: E501
-docstring._snippet_manager['demos.colors'] = ', '.join(f'``{s!r}``' for s in COLORS_TABLE)  # noqa: E501
+docstring._snippet_manager['demos.cmaps'] = ', '.join(f'``{s!r}``' for s in CMAP_TABLE)
+docstring._snippet_manager['demos.cycles'] = ', '.join(f'``{s!r}``' for s in CYCLE_TABLE)  # noqa: E501
+docstring._snippet_manager['demos.colors'] = ', '.join(f'``{s!r}``' for s in COLOR_TABLE)  # noqa: E501
 docstring._snippet_manager['demos.colorbar'] = _colorbar_docstring
 
 
@@ -554,7 +563,7 @@ def show_cmaps(*args, **kwargs):
         ignore = None
 
     # Return figure of colorbars
-    kwargs.setdefault('source', CMAPS_TABLE)
+    kwargs.setdefault('source', CMAP_TABLE)
     kwargs.setdefault('ignore', ignore)
     return _draw_bars(cmaps, **kwargs)
 
@@ -615,7 +624,7 @@ def show_cycles(*args, **kwargs):
         ignore = None
 
     # Return figure of colorbars
-    kwargs.setdefault('source', CYCLES_TABLE)
+    kwargs.setdefault('source', CYCLE_TABLE)
     kwargs.setdefault('ignore', ignore)
     return _draw_bars(cycles, **kwargs)
 
@@ -686,22 +695,22 @@ def show_colors(*, nhues=17, minsat=10, unknown='User', include=None, ignore=Non
     if isinstance(ignore, str):
         ignore = (ignore.lower(),)
     if include is None:
-        include = COLORS_TABLE.keys()
+        include = COLOR_TABLE.keys()
         include -= set(map(str.lower, ignore))
     for cat in sorted(include):
-        if cat not in COLORS_TABLE:
+        if cat not in COLOR_TABLE:
             raise ValueError(
                 f'Invalid categories {include!r}. Options are: '
-                + ', '.join(map(repr, COLORS_TABLE)) + '.'
+                + ', '.join(map(repr, COLOR_TABLE)) + '.'
             )
-        colordict[cat] = list(COLORS_TABLE[cat])  # copy the names
+        colordict[cat] = list(COLOR_TABLE[cat])  # copy the names
 
     # Add "unknown" colors
     if unknown:
         unknown_colors = [
             color for color in map(repr, pcolors._color_database)
             if 'xkcd:' not in color and 'tableau:' not in color
-            and not any(color in list_ for list_ in COLORS_TABLE)
+            and not any(color in list_ for list_ in COLOR_TABLE)
         ]
         if unknown_colors:
             colordict[unknown] = unknown_colors
@@ -794,38 +803,45 @@ def show_colors(*, nhues=17, minsat=10, unknown='User', include=None, ignore=Non
     return fig, axs
 
 
-def show_fonts(
-    *args, family=None, text=None, show_math=True,
-    size=12, weight='normal', style='normal', stretch='normal',
-):
+def show_fonts(*args, family=None, text=None, math=False, **kwargs):
     """
     Generate a table of fonts. If a glyph for a particular font is unavailable,
     it is replaced with the "¤" dummy character.
 
     Parameters
     ----------
-    *args
-        The font name(s). If none are provided and the `family` keyword argument
-        was not provided, the *available* :rcraw:`font.sans-serif` fonts and the
-        user fonts added to `~proplot.config.Configurator.user_folder` are shown.
+    *args : str or `~matplotlib.font_manager.FontProperties`
+        The font specs, font names, or `~matplotlib.font_manager.FontProperties`\\ s
+        to show. If no positional arguments are passed and the `family` argument is
+        not passed, then the fonts found in `~proplot.config.Configurator.user_folder`
+        and `~proplot.config.Configurator.local_folders` and the *available*
+        :rcraw:`font.sans-serif` fonts are shown.
     family \
-: {'serif', 'sans-serif', 'monospace', 'cursive', 'fantasy', 'tex-gyre'}, optional
-        If provided, the *available* fonts in the corresponding families
-        are shown. The fonts belonging to these families are listed under the
-        :rcraw:`font.serif`, :rcraw:`font.sans-serif`, :rcraw:`font.monospace`,
-        :rcraw:`font.cursive`, and :rcraw:`font.fantasy` settings. The
-        family ``'tex-gyre'`` draws the
-        `TeX Gyre <http://www.gust.org.pl/projects/e-foundry/tex-gyre>`__ fonts.
+: {'tex-gyre', 'sans-serif', 'serif', 'monospace', 'cursive', 'fantasy'}, optional
+        If provided, the *available* fonts in the corresponding families are shown.
+        The fonts belonging to these families are listed under the :rcraw:`font.serif`,
+        :rcraw:`font.sans-serif`, :rcraw:`font.monospace`, :rcraw:`font.cursive`, and
+        :rcraw:`font.fantasy` settings. The special family ``'tex-gyre'`` includes
+        the `TeX Gyre <http://www.gust.org.pl/projects/e-foundry/tex-gyre>`__ fonts.
     text : str, optional
-        The sample text. The default sample text includes the Latin letters,
-        Greek letters, Arabic numerals, and some simple mathematical symbols.
-    size : float, optional
-        The font size in points.
-    weight : str, optional
+        The sample text shown for each font. If not passed then default math or
+        non-math sample text is used.
+    math : bool, default: False
+        Whether the default sample text should show non-math Latin characters or
+        or math equations and Greek letters.
+    **kwargs
+        Additional font properties passed to `~matplotlib.font_manager.FontProperties`.
+        Default size is ``12`` and default weight, style, and strength are ``'normal'``.
+
+    Other parameters
+    ----------------
+    size : float, default: 12
+        The font size.
+    weight : str, default: 'normal'
         The font weight.
-    style : str, optional
+    style : str, default: 'normal'
         The font style.
-    stretch : str, optional
+    stretch : str, default: 'normal'
         The font stretch.
 
     Returns
@@ -841,47 +857,45 @@ def show_fonts(
     show_cycles
     show_colors
     """
-    # Select fonts for plotting. Default is to show sans-serif and user fonts.
-    # Otherwise fonts can be specified as input arguments or with the family keyword
+    # Parse user input fonts and translate into FontProperties.
+    s = set()
+    props = []  # should be string names
+    all_fonts = sorted(mfonts.fontManager.ttflist, key=lambda font: font.name)
+    all_fonts = [font for font in all_fonts if font.name not in s and not s.add(font.name)]  # noqa: E501
+    all_names = [font.name for font in all_fonts]
+    for arg in args:
+        if isinstance(arg, str):
+            arg = mfonts.FontProperties(arg, **kwargs)  # possibly a fontspec
+        elif not isinstance(arg, mfonts.FontProperties):
+            raise TypeError(f'Expected string or FontProperties but got {type(arg)}.')
+        opts = arg.get_family()  # usually a singleton list
+        if opts and opts[0] in all_names:
+            props.append(arg)
+        else:
+            warnings._warn_proplot(f'Input font name {opts[:1]!r} not found. Skipping.')
+
+    # Add user and family FontProperties.
     if not args and family is None:
-        args = sorted(
-            {
-                font.name for font in mfonts.fontManager.ttflist
-                if font.name in rc['font.sans-serif']
-                or _get_data_folders('fonts')[1] == os.path.dirname(font.fname)
-            }
-        )
-    elif family is not None:
+        family = 'sans-serif'
+        paths = _get_data_folders('fonts', default=False)
+        for font in all_fonts:  # fonts sorted by unique name
+            if os.path.dirname(font.fname) in paths:
+                props.append(mfonts.FontProperties(font.name, **kwargs))
+    if family is not None:
         options = ('serif', 'sans-serif', 'monospace', 'cursive', 'fantasy', 'tex-gyre')
         if family not in options:
             raise ValueError(
                 f'Invalid font family {family!r}. Options are: '
                 + ', '.join(map(repr, options)) + '.'
             )
-        if family == 'tex-gyre':
-            family_fonts = (
-                'TeX Gyre Adventor',
-                'TeX Gyre Bonum',
-                'TeX Gyre Cursor',
-                'TeX Gyre Chorus',
-                'TeX Gyre Heros',
-                'TeX Gyre Pagella',
-                'TeX Gyre Schola',
-                'TeX Gyre Termes',
-            )
-        else:
-            family_fonts = rc['font.' + family]
-        args = list(args)
-        args += sorted(
-            {
-                font.name for font in mfonts.fontManager.ttflist
-                if font.name in family_fonts
-            }
-        )
+        family_fonts = FAMILY_TEXGYRE if family == 'tex-gyre' else rc['font.' + family]
+        for font in family_fonts:
+            if font in all_names:  # valid font name
+                props.append(mfonts.FontProperties(font.name, **kwargs))
 
     # The default sample text
     if text is None:
-        if not show_math:
+        if not math:
             text = (
                 'the quick brown fox jumps over a lazy dog . , + -'
                 '\n'
@@ -907,23 +921,24 @@ def show_fonts(
         ctx['mathtext.fallback_to_cm'] = False
     else:
         ctx['mathtext.fallback'] = None
+    if 'size' not in kwargs:
+        for prop in props:
+            if prop.get_size() == rc['font.size']:
+                prop.set_size(12)  # only if fontspec did not change the size
 
     # Create figure
-    refheight = 1.2 * (text.count('\n') + 2.5) * size / 72
+    refsize = props[0].get_size_in_points() if props else rc['font.size']
+    refheight = 1.2 * (text.count('\n') + 2.5) * refsize / 72
     fig, axs = ui.subplots(
         refwidth=4.5, refheight=refheight, nrows=len(args), ncols=1, space=0,
     )
     fig._render_context.update(ctx)
     axs.format(
-        xloc='neither', yloc='neither',
-        xlocator='null', ylocator='null', alpha=0
+        xloc='neither', yloc='neither', xlocator='null', ylocator='null', alpha=0
     )
-    for i, ax in enumerate(axs):
-        font = args[i]
+    for ax, prop in zip(axs, props):
+        name = prop.get_family()[0]
         ax.text(
-            0, 0.5, f'{font}:\n{text}',
-            fontfamily=font, fontsize=size,
-            stretch=stretch, style=style, weight=weight,
-            ha='left', va='center'
+            0, 0.5, f'{name}:\n{text}', ha='left', va='center', fontproperties=prop
         )
     return fig, axs
