@@ -184,7 +184,7 @@ axs.format(
 #    * By default, proplot gives circular boundaries to polar cartopy and basemap
 #      projections like `~cartopy.crs.NorthPolarStereo` (see `this example
 #      <https://scitools.org.uk/cartopy/docs/latest/gallery/lines_and_polygons/always_circular_stereo.html>`__
-#      from the carotpy website). To disable this feature, set :rcraw:`geo.round` to
+#      from the cartopy website). To disable this feature, set :rcraw:`geo.round` to
 #      ``False`` or pass ``round=False` to `~proplot.axes.GeoAxes.format`. Please note
 #      that cartopy cannot add gridline labels to polar plots with circular boundaries.
 #    * To make things more consistent, the `~proplot.constructor.Proj` constructor

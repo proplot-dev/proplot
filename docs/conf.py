@@ -27,11 +27,10 @@ print('Font files:', end=' ')
 print(', '.join(os.path.basename(font.fname) for font in fontManager.ttflist))
 
 
-# -- Project information -----------------------------------------------------
-
-_today = datetime.datetime.today()
+# -- Project information -------------------------------------------------------
+# The basic info
 project = 'ProPlot'
-copyright = f'{_today.year}, Luke L. B. Davis'
+copyright = f'{datetime.datetime.today().year}, Luke L. B. Davis'
 author = 'Luke L. B. Davis'
 
 # The short X.Y version

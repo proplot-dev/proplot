@@ -28,16 +28,21 @@ Version 1.0.0 (2022-XX-XX)
 This will be published when more comprehensive testing is completed
 and stability is improved.
 
-Version 0.10.0 (2021-XX-XX)
+Version 0.10.0 (2022-##-##)
 ===========================
 
 Deprecated
 ----------
 
-* Rename `rasterize` and :rcraw:`colorbar.rasterize` to `rasterized`,
-  consistent with the existing matplotlib ``rasterized`` property (:commit:`31efafea`).
-* Remove the obscure `proplot.figure.Figure.format` keyword `mathtext_fallback`
-  (:commit:`5ce23a59`). This can now only be modified with the `rc` dictionary.
+* Remove the obscure `proplot.figure.Figure.format` keyword `mathtext_fallback`,
+  so that :rcraw:`mathtext.fallback` can only be changed globally (:commit:`5ce23a59`).
+* Rename `rasterize` and :rcraw:`colorbar.rasterize` to `rasterized`, consistent
+  with the existing matplotlib ``rasterized`` property (:commit:`31efafea`).
+* Rename `basemap` and :rcraw:`basemap` to `backend` and :rcraw:`geo.backend`, which
+  can take either of the values ``'cartopy'`` or ``'basemap'`` (:commit:`613ab0ea`).
+* Rename :rcraw:`cartopy.autoextent`, :rcraw:`cartopy.circular` to :rcraw:`geo.extent`,
+  :rcraw:`geo.round`, with :rcraw:`geo.extent` taking either of the values ``'globe'``
+  or ``'auto'`` (``cartopy.autoextent`` is translated when used) (:commit:`c4b93c9d`).
 * Improve the `~proplot.gridspec.GridSpec` "panel" obfuscation by
   renaming `~proplot.gridspec.GridSpec.get_subplot_geometry` to
   `~proplot.gridspec.GridSpec.get_geometry`, `~proplot.gridspec.GridSpec.get_geometry`
@@ -47,23 +52,27 @@ Deprecated
   ``gs.hratios``, ``gs.wspace``, ``gs.hspace``, ``gs.wpad``, and ``gs.hpad`` refer to
   the reduced non-panel geometry (:commit:`52f57094`).
 * Deprecate `maxn` and `maxn_minor` passed to `~proplot.axes.Axes.colorbar` and
-  recommend alternative ``locator_kw={'nbins': n}`` (:commit:`b94a9b1e`).
-  The new default locator `~proplot.ticker.DiscreteLocator` means these
+  recommend  the alternative ``locator_kw={'nbins': n}`` (:commit:`b94a9b1e`).
+  The new default locator `~proplot.ticker.DiscreteLocator` means that these
   settings should not need to be used as much (see below).
 
 Style changes
 -------------
 
-* Disable automatic reversal of dependent variable coordinates when axis limits
-  are fixed, and add documentation for this feature (:issue:`300`).
-* Prevent auto-disabling of gridlines in presence of `pcolor` plots in matplotlib < 3.5
-  (:commit:`ba405ac0`). This also silences a matplotlib >= 3.5 deprecation warning.
-* Change the default fallback font from the serif font Computer Modern to the
-  sans-serif font STIX Sans (:commit:`d619b5f2`).
-* Change the default math text style :rcraw:`mathtext.default` from ``'regular'`` to
-  ``'rm'`` (i.e., upright version of the math fontset), and change the math text fontset
-  :rcraw:`mathtext.fontset` from ``'custom'`` to ``'stixsans'`` (i.e., use STIX sans
-  for math text instead of the default sans-serif font) (:commit:`5b9029d4`).
+* Disable auto-reversal of dependent variable coordinates when the axis limits
+  were previously fixed, and add documentation for this feature (:issue:`300`).
+* Disable auto-removal of gridlines in presence of `pcolor` plots in all matplotlib
+  versions and silence the matplotlib 3.5 deprecation warning (:commit:`ba405ac0`).
+* Apply the :rcraw:`geo.round` setting when instantiating basemap projections
+  (previously this was only used for cartopy projections) (:commit:`5f1c67cc`).
+* Change :rcraw:`grid.labelpad` from ``4.0`` to ``3.0`` (:commit:`f95b828a`). This
+  makes cartopy grid labels and polar axes labels a bit more compact.
+* Change :rcraw:`mathtext.default` from ``'regular'`` to ``'it'`` and change ``'sans'``
+  to ``'regular'`` in :rcraw:`mathtext.rm`, :rcraw:`mathtext.sf`, :rcraw:`mathtext.bf`,
+  and :rcraw:`mathtext.it` (:commit:`323`). See below for details.
+* Change the sample `~proplot.demos.show_fonts` text with `math` keyword to show math
+  or non-math, sort fonts by input order or by their appearance in the `rc` list, and
+  permit `FontProperties` or fontspec input and property keywords (:commit:`34d6ec14`).
 * Use `~proplot.ticker.DiscreteLocator` for major/minor discrete colorbar ticks instead
   of `~matplotlib.ticker.FixedLocator` and auto-update the tick selection whenever
   the axes is drawn (:commit:`b94a9b1e`, :commit:`92bb937e`, :commit:`302c239e`).
@@ -74,17 +83,23 @@ Style changes
 Features
 --------
 
-* Support passing abc and title lists to `proplot.axes.Axes.format`, where
-  the label is picked by indexing the list with `~proplot.axes.Axes.number`
-  (:pr:`294`) by `Pratiman Patel`.
-* Significantly improve "tight layout" performance in geographic plots by skipping
-  artists with clipping paths equivalent to the axes patch path (:commit:`f891e4f0`).
+* Support passing lists for the `proplot.axes.Axes.format` keywords `abc` and `title`,
+  in which case the label is picked by selecting the `~proplot.axes.Axes.number`
+  (minus 1) entry from the list (:pr:`294`) by `Pratiman Patel`.
+* Move the `extent` and `round` keywords (formerly `autoextent` and `circular` --
+  see above) from `~proplot.axes.GeoAxes.__init__` to `proplot.axes.GeoAxes.format`,
+  supporting toggling and passage to e.g. `~proplot.ui.subplots` (:commit:`5f1c67cc`).
+* Add :rcraw:`grid.geolabels` setting that auto-includes cartopy >= 0.20 ``'geo'``
+  location when toggling labels with e.g. ``lonlabels='left'`` or ``labels=True``, and
+  support passing passing it explicitly with e.g. ``labels='geo'`` (:commit:`9040cde0`).
+* Allow using the `~proplot.constructor.Proj` keyword `latlim` as Mercator projection
+  limits and `lon0`, `lat0` aliases for `lon_0`, `lat_0` (:commit:`5f1c67cc`).
 * Add modifiable `proplot.figure.Figure.tight` property to retrieve and optionally
   toggle the tight layout setting (:commit:`46f46c26`).
-* Add top-level `~proplot.ui.subplot` command that returns a figure and a single
+* Add a top-level `~proplot.ui.subplot` command that returns a figure and a single
   subplot, analogous to `~proplot.ui.subplots` (:commit:`8459c24c`).
-* Support specifying `transform` keyword arguments as registered cartopy
-  projections rather than `~cartopy.crs.CRS` instances (:commit:`c7a9fc95`).
+* Improve performance of the "tight layout" algorithm in geographic plots by skipping
+  artists clipped by the axes background patch boundary (:commit:`f891e4f0`).
 * Permit passing `~proplot.gridspec.GridSpec` instances to
   `~proplot.figure.Figure.add_subplots` to quickly draw a subplot
   inside each gridspec slot in row or column-major order (:commit:`a9ad7429`).
@@ -107,6 +122,8 @@ Features
   as ``'discrete'`` in `proplot.constructor.Locator` (:commit:`b94a9b1e`).
 * Auto disable minor colorbar and axis ticks when major ticks have non-numeric
   labels set by `~matplotlib.ticker.FixedFormatter` (:commit:`c747ae44`).
+* Support specifying `transform` plotting command arguments as registered cartopy
+  projections rather than `~cartopy.crs.CRS` instances (:commit:`c7a9fc95`).
 * Permit passing `vmin` and `vmax` to `proplot.axes.Axes.colorbar`, as quick
   alternative to using `norm_kw` (:commit:`eb9565bd`).
 * Permit discretizing continuous colormaps passed to `~proplot.axes.Axes.colorbar` using
@@ -115,6 +132,9 @@ Features
   instances to `~proplot.axes.Axes.colorbar` (:commit:`503af4be`).
 * Emit warning when both a scalar mappable and `vmin`, `vmax`, `norm`, or `values`
   are passed to `~proplot.axes.Axes.colorbar` (:commit:`503af4be`).
+* Support TeX modifiers :rcraw:`mathtext.it`, :rcraw:`mathtext.bf`, etc. that act on
+  the "regular" font ``'regular'`` rather than a global font family like ``'sans'``
+  when :rcraw:`mathtext.fontset` is ``'custom'`` (:pr:`323`).
 * Automatically load from "local" folders named ``proplot_cmaps``, ``proplot_cycles``,
   ``proplot_colors``, and ``proplot_fonts`` in current or parent directories,
   consistent with "local" ``proplotrc`` files (:commit:`a3a7bb33`).
@@ -131,10 +151,16 @@ Bug fixes
   and colorbars scaled by `proplot.colors.DiscreteNorm` (:issue:`302`).
 * Fix matplotlib >= 3.5 issue where date axes are not correctly detected
   due to a new default date converter (:commit:`63deee21`).
+* Fix matplotlib >= 3.4 issue with fixed-aspect log-log axes due to deprecation
+  of `~matplotlib.axes.Axes.get_data_ratio_log` (:commit:`29ed6cce`).
 * Fix matplotlib >= 3.4 issue where position of child axes in presence of
   subfigures is incorrect (:commit:`9246835f`).
 * Fix matplotlib >= 3.4 issue where alternate axes are drawn twice due to adding them
   as child axes and failing to remove from the ``fig._localaxes`` stack (:issue:`303`).
+* Fix cartopy >= 0.20 issue where added projections like ``'wintri'`` fail
+  due to an ImportError (:issue:`324`).
+* Fix cartopy >= 0.20 issue where inline longitude and latitude gridline labels
+  can no longer be turned on (:issue:`307`).
 * Fix issue where outer colorbars are drawn twice due to adding them as both
   figure-wide axes and child axes (:issue:`304`).
 * Fix issue where silently-deprecated `aspect` parameter passed to
@@ -157,6 +183,10 @@ Bug fixes
   `~proplot.colors.DiscreteColormap` incorrectly samples the color list (:issue:`299`).
 * Fix issue where setting :rcraw:`legend.facecolor` or :rcraw:`legend.edgecolor` to
   ``'inherit'`` (or passing as keyword argument) raises error (:issue:`298`).
+* Fix issue where settings :rcraw:`grid.pad` and :rcraw:`grid.labelpad` and settings
+  :rcraw:`tick.pad` and :rcraw:`tick.labelpad` are not synced (:commit:`2b96eb0d`).
+* Fix issue where the unchanged :rcraw:`figure.figsize` setting is incorrectly included
+  in the `~proplot.rconfig.Configurator.changed` dictionary (:commit:`d862395b`).
 
 Documentation
 -------------
@@ -722,8 +752,8 @@ Deprecated
 * Rename confusing :rcraw:`text.labelsize` and :rcraw:`text.titlesize` settings
   to clearer :rcraw:`font.smallsize` and :rcraw:`font.largesize` with shorthands
   :rcraw:`font.small` and :rcraw:`font.large` (analogous to :rcraw:`font.size`)
-  (:pr:`a50d5264`). Previous names were bad because "label size" applies to more than
-  just axis or tick labels and "title size" applies to more than just axes titles.
+  (:commit:`a50d5264`). Previous names were bad because "label size" applies to more
+  than just axis or tick labels and "title size" applies to more than just axes titles.
 * Rename :rcraw:`tick.ratio` to :rcraw:`tick.widthratio` and add missing
   :rcraw:`tick.width` setting (:commit:`a50d5264`).
 * Rename vague shorthands :rcraw:`alpha` and :rcraw:`facecolor` back to native
@@ -793,8 +823,8 @@ Style changes
 * Set default linewidth to 0.3 when adding "edges" to filled contours
   (:commit:`6382cf91`). This matches matplotlib behavior when passing
   edgecolor to a ``pcolor`` command.
-* Only modify `heatmap` major and minor tick locations if the
-  default tickers are active (:pr:`6382cf91`). Do not override user tickers.
+* Only modify `heatmap` major and minor tick locations if the default
+  tickers are active (:commit:`6382cf91`). Do not override user tickers.
 * Use default luminance of ``90`` rather than ``100`` for auto-colormaps generated
   for barb, scatter, and streamline plots (:commit:`6382cf91`).
 * Sync 3D axes figure background color with axes background to avoid weird
@@ -976,10 +1006,10 @@ Features
   ticks with those string labels (:commit:`02fbda45`). This may be a common
   use case for parametric plots.
 * Add `ignore` keyword to omit specific ``show_cmaps``, ``show_cycles``, and
-  ``show_colors`` categories from the tables (:issue:`c45d5fa1`).
+  ``show_colors`` categories from the tables (:commit:`c45d5fa1`).
 * Allow case-insensitive specification of ``show_cmaps``, ``show_cycles``, and
   ``show_colors`` categories and never ignore input colormaps even if they
-  match an ignored name like ``'jet'`` (:issue:`c45d5fa1`).
+  match an ignored name like ``'jet'`` (:commit:`c45d5fa1`).
 * Support restricting cartopy bounds in cartopy 0.19 by leveraging the
   `ylim` `~cartopy.mpl.gridliner.Gridliner` property (:commit:`e190b66c`).
 * Add `xlabelpad`, `ylabelpad`, `xticklabelpad`, `yticklabelpad` keywords
@@ -1491,10 +1521,11 @@ Bug fixes
 Documentation
 -------------
 
-* Various improvements to website and API docstrings.
-* Document `proplot.figure.Figure.save` method (:commit:`da25266a`).
-* Darker "dark mode" (:commit:`979c8188`).
+* Various improvements the API docstrings.
+* Improve overall website style (:commit:`89d6f5bd`).
+* Make website "dark mode" darker (:commit:`979c8188`).
 * Prevent website from flashing light mode when changing pages (:commit:`75e4d6a1`).
+* Add documentation for `proplot.figure.Figure.save` method (:commit:`da25266a`).
 * Remove `~proplot.figure.Figure` setters like `set_sharex`, replace with
   read-only properties (:commit:`7b455008`). The getters were only for object
   introspection. The setters never worked properly/were unused in examples.
@@ -1525,6 +1556,8 @@ Deprecated
 * Remove the ``lonstep`` and ``latstep`` settings -- we now use
   `~proplot.ticker.LongitudeLocator` and `~proplot.ticker.LatitudeLocator`
   to select "nice" gridline locations even when zoomed in (:pr:`168`)
+* Rename the ``cartopy.global`` rc setting to ``cartopy.autoextent``
+  (:commit:`7c0f118a`) and add an `autoextent` keyword (:commit:`23db0498`).
 * Rename several "error indication" keyword arguments and rename `add_errorbars`
   wrapper to `~proplot.axes.indicate_error` (:pr:`166`, :commit:`d8c50a8d`).
 * Remove ``'rgbcycle'`` setting (:pr:`166`, :commit:`6653b7f0`).

@@ -33,8 +33,8 @@
 #
 # Proplot defines **continuous colormaps** as color palettes that sample some
 # *continuous function* between two end colors. They are generally used
-# to encode data values on a pseudo-third dimension. They are are implemented
-# with the `~proplot.colors.ContinuousColormap` and
+# to encode data values on a pseudo-third dimension. They are implemented
+# in proplot with the `~proplot.colors.ContinuousColormap` and
 # `~proplot.colors.PerceptualColormap` classes, which are
 # :ref:`subclassed from <ug_cmaps_new>`
 # `matplotlib.colors.LinearSegmentedColormap`.
