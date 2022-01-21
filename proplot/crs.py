@@ -66,8 +66,7 @@ class Aitoff(_WarpedRectangularProjection):
         """
         %(proj.init)s
         """
-        from cartopy._crs import Globe
-        from cartopy.crs import WGS84_SEMIMAJOR_AXIS
+        from cartopy.crs import Globe, WGS84_SEMIMAJOR_AXIS
         if globe is None:
             globe = Globe(semimajor_axis=WGS84_SEMIMAJOR_AXIS, ellipse=None)
 
@@ -110,8 +109,7 @@ class Hammer(_WarpedRectangularProjection):
         """
         %(proj.init)s
         """
-        from cartopy._crs import Globe
-        from cartopy.crs import WGS84_SEMIMAJOR_AXIS
+        from cartopy.crs import Globe, WGS84_SEMIMAJOR_AXIS
         if globe is None:
             globe = Globe(semimajor_axis=WGS84_SEMIMAJOR_AXIS, ellipse=None)
 
@@ -155,8 +153,7 @@ class KavrayskiyVII(_WarpedRectangularProjection):
         """
         %(proj.init)s
         """
-        from cartopy._crs import Globe
-        from cartopy.crs import WGS84_SEMIMAJOR_AXIS
+        from cartopy.crs import Globe, WGS84_SEMIMAJOR_AXIS
         if globe is None:
             globe = Globe(semimajor_axis=WGS84_SEMIMAJOR_AXIS, ellipse=None)
 
@@ -200,8 +197,7 @@ class WinkelTripel(_WarpedRectangularProjection):
         """
         %(proj.init)s
         """
-        from cartopy._crs import Globe
-        from cartopy.crs import WGS84_SEMIMAJOR_AXIS
+        from cartopy.crs import Globe, WGS84_SEMIMAJOR_AXIS
         if globe is None:
             globe = Globe(semimajor_axis=WGS84_SEMIMAJOR_AXIS, ellipse=None)
 
