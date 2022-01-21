@@ -50,6 +50,7 @@ with _benchmark('ui'):
     from .ui import *  # noqa: F401 F403
 with _benchmark('demos'):
     from .demos import *  # noqa: F401 F403
+    from .artist import *  # noqa: F401 F403
 
 # Dynamically add registered classes to top-level namespace
 from .constructor import NORMS, LOCATORS, FORMATTERS, SCALES, PROJS
