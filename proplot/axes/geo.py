@@ -562,6 +562,11 @@ class GeoAxes(plot.PlotAxes):
 
         # Initiate context block
         rc_kw, rc_mode = _pop_rc(kwargs)
+        lonlabels = _not_none(lonlabels, labels)
+        latlabels = _not_none(latlabels, labels)
+        if '0.18' <= _version_cartopy < '0.20':
+            lonlabels = _not_none(lonlabels, loninline, inlinelabels)
+            latlabels = _not_none(latlabels, latinline, inlinelabels)
         labelcolor = _not_none(labelcolor, kwargs.get('color', None))
         if labelcolor is not None:
             rc_kw['grid.labelcolor'] = labelcolor
@@ -581,9 +586,6 @@ class GeoAxes(plot.PlotAxes):
             labels = _not_none(labels, rc.find('grid.labels', context=True))
             lonlabels = _not_none(lonlabels, labels)
             latlabels = _not_none(latlabels, labels)
-            if '0.18' <= _version_cartopy < '0.20':
-                lonlabels = _not_none(lonlabels, loninline, inlinelabels)
-                latlabels = _not_none(latlabels, latinline, inlinelabels)
             lonarray = self._to_label_array(lonlabels, lon=True)
             latarray = self._to_label_array(latlabels, lon=False)
 
@@ -1070,8 +1072,6 @@ class _CartopyAxes(GeoAxes, _GeoAxes):
         # Update gridline label parameters
         # NOTE: Cartopy 0.18 and 0.19 can not draw both edge and inline labels. Instead
         # requires both a set 'side' and 'x_inline' is True (applied in GeoAxes.format).
-        # NOTE: Cartopy 0.20 uses 'x' or 'y' as value for 'inline_labels' sometimes but
-        # only ever checks their boolean values. Simply use boolean toggles for now.
         # NOTE: The 'xpadding' and 'ypadding' props were introduced in v0.16
         # with default 5 points, then set to default None in v0.18.
         # TODO: Cartopy has had two formatters for a while but we use the newer one.
@@ -1085,7 +1085,9 @@ class _CartopyAxes(GeoAxes, _GeoAxes):
         if rotatelabels is not None:
             gl.rotate_labels = bool(rotatelabels)  # ignored in cartopy < 0.18
         if latinline is not None or loninline is not None:
-            gl.inline_labels = loninline or latinline  # ignored in cartopy < 0.20
+            lon, lat = loninline, latinline
+            b = True if lon and lat else 'x' if lon else 'y' if lat else None
+            gl.inline_labels = b  # ignored in cartopy < 0.20
 
         # Gridline label toggling
         # Issue warning instead of error!
@@ -1105,10 +1107,11 @@ class _CartopyAxes(GeoAxes, _GeoAxes):
                     f'{type(self.projection).__name__} projection.'
                 )
                 lonarray = [False] * 5
-        print(latarray, lonarray)
-        self._toggle_gridliner_labels(
-            gl, *latarray[:2], *lonarray[2:4], latarray[4] or lonarray[4]
-        )
+        array = [
+            True if lon and lat else 'x' if lon else 'y' if lat else False
+            for lon, lat in zip(lonarray, latarray)
+        ]
+        self._toggle_gridliner_labels(gl, *array[:2], *array[2:4], array[4])
 
     def _update_minor_gridlines(self, longrid=None, latgrid=None, nsteps=None):
         """
