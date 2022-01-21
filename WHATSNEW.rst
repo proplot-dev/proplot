@@ -89,9 +89,9 @@ Features
 * Move the `extent` and `round` keywords (formerly `autoextent` and `circular` --
   see above) from `~proplot.axes.GeoAxes.__init__` to `proplot.axes.GeoAxes.format`,
   supporting toggling and passage to e.g. `~proplot.ui.subplots` (:commit:`5f1c67cc`).
-* Add :rcraw:`grid.geolabels` setting that auto-includes cartopy >= 0.20 ``'geo'``
-  location when toggling labels with e.g. ``lonlabels='left'`` or ``labels=True``, and
-  support passing passing it explicitly with e.g. ``labels='geo'`` (:commit:`9040cde0`).
+* Add :rcraw:`grid.geolabels` setting that auto-includes cartopy ``'geo'`` location
+  when toggling labels with e.g. ``lonlabels='left'`` or ``labels=True``, and support
+  passing passing it explicitly with e.g. ``labels='geo'`` (:commit:`9040cde0`).
 * Allow using the `~proplot.constructor.Proj` keyword `latlim` as Mercator projection
   limits and `lon0`, `lat0` aliases for `lon_0`, `lat_0` (:commit:`5f1c67cc`).
 * Add modifiable `proplot.figure.Figure.tight` property to retrieve and optionally
@@ -161,6 +161,8 @@ Bug fixes
   due to an ImportError (:issue:`324`).
 * Fix cartopy >= 0.20 issue where inline longitude and latitude gridline labels
   can no longer be turned on (:issue:`307`).
+* Fix cartopy >= 0.20 issue where user-specified longitude/latitude gridline label
+  sides ignored due to using booleans instead of ``'x'``, ``'y'`` (:commit:`2ac40715`).
 * Fix issue where outer colorbars are drawn twice due to adding them as both
   figure-wide axes and child axes (:issue:`304`).
 * Fix issue where silently-deprecated `aspect` parameter passed to
