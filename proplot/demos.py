@@ -34,9 +34,9 @@ FAMILY_TEXGYRE = (
     'TeX Gyre Bonum',
     'TeX Gyre Termes',
     'TeX Gyre Pagella',
-    'TeX Gyre Cursor',  # monospace
     'TeX Gyre Chorus',  # cursive
     'TeX Gyre Adventor',  # fantasy
+    'TeX Gyre Cursor',  # monospace
 )
 COLOR_TABLE = {
     # NOTE: Just want the names but point to the dictionaries because

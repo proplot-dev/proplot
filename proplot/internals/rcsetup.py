@@ -658,19 +658,6 @@ _rc_matplotlib_default = {
         'Verdana',
         'sans-serif',
     ],
-    'font.monospace': [
-        'TeX Gyre Cursor',  # Courier lookalike
-        'DejaVu Sans Mono',
-        'Bitstream Vera Sans Mono',
-        'Computer Modern Typewriter',
-        'Andale Mono',
-        'Courier New',
-        'Courier',
-        'Fixed',
-        'Nimbus Mono L',
-        'Terminal',
-        'monospace',
-    ],
     'font.cursive': [
         'TeX Gyre Chorus',  # Chancery lookalike
         'Apple Chancery',
@@ -694,6 +681,19 @@ _rc_matplotlib_default = {
         'Western',
         'xkcd',
         'fantasy',
+    ],
+    'font.monospace': [
+        'TeX Gyre Cursor',  # Courier lookalike
+        'DejaVu Sans Mono',
+        'Bitstream Vera Sans Mono',
+        'Computer Modern Typewriter',
+        'Andale Mono',
+        'Courier New',
+        'Courier',
+        'Fixed',
+        'Nimbus Mono L',
+        'Terminal',
+        'monospace',
     ],
     'font.family': FONTNAME,
     'font.size': FONTSIZE,
