@@ -686,7 +686,7 @@ def register_fonts(*args, user=True, local=True, default=False):
         font
         for font in mfonts.fontManager.ttflist
         if os.path.splitext(font.fname)[1] != '.ttc' and (
-            _version_mpl >= '3.3.0'
+            _version_mpl >= '3.3'
             or 'Thin' not in os.path.basename(font.fname)
         )
     ]
@@ -1191,7 +1191,7 @@ class Configurator(MutableMapping, dict):
         """
         # NOTE: 'tick.label' properties are now synonyms of 'grid.label' properties
         sprefix = axis or ''
-        cprefix = sprefix if _version_mpl >= 3.4 else ''  # new settings
+        cprefix = sprefix if _version_mpl >= '3.4' else ''  # new settings
         context = not rebuild and (native or self._context_mode == 2)
         kwtext = self.fill(
             {

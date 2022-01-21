@@ -898,7 +898,7 @@ class CartesianAxes(shared._SharedAxes, plot.PlotAxes):
         if offsetloc is not None:
             if hasattr(axis, 'set_offset_position'):  # y axis (and future x axis?)
                 axis.set_offset_position(offsetloc)
-            elif s == 'x' and _version_mpl >= 3.3:  # ugly x axis kludge
+            elif s == 'x' and _version_mpl >= '3.3':  # ugly x axis kludge
                 axis._tick_position = offsetloc
                 axis.offsetText.set_verticalalignment(OPPOSITE_SIDE[offsetloc])
 

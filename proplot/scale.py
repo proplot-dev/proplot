@@ -40,7 +40,7 @@ def _parse_logscale_args(*keys, **kwargs):
     # NOTE: Scale classes ignore unused arguments with warnings, but matplotlib 3.3
     # version changes the keyword args. Since we can't do a try except clause, only
     # way to avoid warnings with 3.3 upgrade is to test version string.
-    kwsuffix = '' if _version_mpl >= 3.3 else 'x'
+    kwsuffix = '' if _version_mpl >= '3.3' else 'x'
     for key in keys:
         # Remove duplicates
         opts = {

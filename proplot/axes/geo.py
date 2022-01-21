@@ -202,7 +202,7 @@ class _GeoAxis(object):
         self._use_dms = (
             ccrs is not None
             and isinstance(axes.projection, (ccrs._RectangularProjection, ccrs.Mercator))  # noqa: E501
-            and _version_cartopy >= 0.18
+            and _version_cartopy >= '0.18'
         )
 
     def _get_extent(self):
@@ -341,7 +341,7 @@ class _LatAxis(_GeoAxis):
 
     def _get_sanitized_ticks(self, locator):
         # Adjust latitude ticks to fix bug in some projections. Harmless for basemap.
-        # NOTE: Maybe fixed by cartopy v0.18?
+        # NOTE: Maybe this is fixed by cartopy 0.18?
         eps = 5e-10
         ticks = sorted(locator())
         if ticks:
@@ -772,7 +772,7 @@ class _CartopyAxes(GeoAxes, _GeoAxes):
         # the time between v0.17 and v0.18 is any indication.
         def _draw_gridliner(self, *args, **kwargs):
             result = type(self)._draw_gridliner(self, *args, **kwargs)
-            if _version_cartopy >= 0.18:
+            if _version_cartopy >= '0.18':
                 lon_lim, _ = self._axes_domain()
                 if abs(np.diff(lon_lim)) == abs(np.diff(self.crs.x_limits)):
                     for collection in self.xline_artists:
@@ -785,7 +785,7 @@ class _CartopyAxes(GeoAxes, _GeoAxes):
         # to values between lon_0 - 180 and lon_0 + 180.
         def _axes_domain(self, *args, **kwargs):
             x_range, y_range = type(self)._axes_domain(self, *args, **kwargs)
-            if _version_cartopy < 0.18:
+            if _version_cartopy < '0.18':
                 lon_0 = self.axes.projection.proj4_params.get('lon_0', 0)
                 x_range = np.asarray(x_range) + lon_0
             return x_range, y_range
@@ -799,7 +799,7 @@ class _CartopyAxes(GeoAxes, _GeoAxes):
         # 4. lonlines go from lon_0 - 180 to lon_0 + 180 monotonic, but prevents
         #    labels from being drawn outside of range (-180, 180)
         def _add_gridline_label(self, value, axis, upper_end):
-            if _version_cartopy < 0.18:
+            if _version_cartopy < '0.18':
                 if axis == 'x':
                     value = (value + 180) % 360 - 180
             return type(self)._add_gridline_label(self, value, axis, upper_end)
@@ -816,7 +816,7 @@ class _CartopyAxes(GeoAxes, _GeoAxes):
         """
         Toggle gridliner labels across different cartopy versions.
         """
-        if _version_cartopy >= 0.18:  # cartopy >= 0.18
+        if _version_cartopy >= '0.18':
             left_labels = 'left_labels'
             right_labels = 'right_labels'
             bottom_labels = 'bottom_labels'
@@ -847,7 +847,7 @@ class _CartopyAxes(GeoAxes, _GeoAxes):
         kw_face, kw_edge = rc._get_background_props(native=False, **kwargs)
         kw_face['linewidth'] = 0
         kw_edge['facecolor'] = 'none'
-        if _version_cartopy >= 0.18:
+        if _version_cartopy >= '0.18':
             self.patch.update(kw_face)
             self.spines['geo'].update(kw_edge)
         else:
@@ -1023,7 +1023,7 @@ class _CartopyAxes(GeoAxes, _GeoAxes):
         if nsteps is not None:
             gl.n_steps = nsteps
         latmax = self._lataxis.get_latmax()
-        if hasattr(gl, 'ylim'):  # cartopy >= 0.19
+        if _version_cartopy >= '0.19':
             gl.ylim = (-latmax, latmax)
         longrid = rc._get_gridline_bool(longrid, axis='x', which=which, native=False)
         if longrid is not None:
@@ -1078,7 +1078,7 @@ class _CartopyAxes(GeoAxes, _GeoAxes):
         # Gridline label toggling
         # Issue warning instead of error!
         if (
-            _version_cartopy < 0.18
+            _version_cartopy < '0.18'
             and not isinstance(self.projection, (ccrs.Mercator, ccrs.PlateCarree))
         ):
             if any(latarray):
@@ -1128,7 +1128,7 @@ class _CartopyAxes(GeoAxes, _GeoAxes):
             self.autoscale_view()
 
         # Adjust location
-        if _version_cartopy >= 0.18:
+        if _version_cartopy >= '0.18':
             self.patch._adjust_location()  # this does the below steps
         elif (
             getattr(self.background_patch, 'reclip', None)
@@ -1141,13 +1141,13 @@ class _CartopyAxes(GeoAxes, _GeoAxes):
         # Apply aspect
         self.apply_aspect()
         for gl in self._gridliners:
-            if _version_cartopy >= 0.18:
+            if _version_cartopy >= '0.18':
                 gl._draw_gridliner(renderer=renderer)
             else:
                 gl._draw_gridliner(background_patch=self.background_patch)
 
         # Remove gridliners
-        if _version_cartopy < 0.18:
+        if _version_cartopy < '0.18':
             self._gridliners = []
 
         return super().get_tightbbox(renderer, *args, **kwargs)
@@ -1172,7 +1172,7 @@ class _CartopyAxes(GeoAxes, _GeoAxes):
                     self._update_gridlines(self._gridlines_major, which='major')
                 if self._gridlines_minor is not None:
                     self._update_gridlines(self._gridlines_minor, which='minor')
-            if _version_cartopy < 0.18:
+            if _version_cartopy < '0.18':
                 clipped_path = self.outline_patch.orig_path.clip_to_bbox(self.viewLim)
                 self.outline_patch._path = clipped_path
                 self.background_patch._path = clipped_path

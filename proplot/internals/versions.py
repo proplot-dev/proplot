@@ -2,8 +2,6 @@
 """
 Utilities for handling dependencies and version changes.
 """
-from numbers import Real
-
 from . import ic  # noqa: F401
 from . import warnings
 
@@ -21,18 +19,12 @@ class _version(list):
 
     def __init__(self, version):
         try:
-            if isinstance(version, Real):
-                version = str(version)
-            if not isinstance(version, str):
-                version = '.'.join(map(str, version))
             major, minor, *_ = version.split('.')
             major, minor = int(major or 0), int(minor or 0)
         except Exception:
-            warnings._warn_proplot(
-                f'Unexpected version {version!r}. Interpreting as v0.0.'
-            )
+            warnings._warn_proplot(f'Unexpected version {version!r}. Using 0.0.')
             major = minor = 0
-        self._version = version
+        self._version = f'{major}.{minor}'
         super().__init__((major, minor))  # then use builtin python list sorting
 
     def __eq__(self, other):
@@ -62,6 +54,6 @@ _version_mpl = _version(matplotlib.__version__)
 try:
     import cartopy
 except ImportError:
-    _version_cartopy = _version((0, 0))
+    _version_cartopy = _version('0.0')
 else:
     _version_cartopy = _version(cartopy.__version__)

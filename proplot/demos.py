@@ -917,7 +917,7 @@ def show_fonts(*args, family=None, text=None, math=False, **kwargs):
 
     # Settings for rendering math text
     ctx = {'mathtext.fontset': 'custom'}
-    if _version_mpl < 3.4:
+    if _version_mpl < '3.4':
         ctx['mathtext.fallback_to_cm'] = False
     else:
         ctx['mathtext.fallback'] = None

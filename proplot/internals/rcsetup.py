@@ -1865,10 +1865,10 @@ _rc_children = {
 # Recently added settings. Update these only if the version is recent enough
 # NOTE: We don't make 'title.color' a child of 'axes.titlecolor' because
 # the latter can take on the value 'auto' and can't handle that right now.
-if _version_mpl >= 3.2:
+if _version_mpl >= '3.2':
     _rc_matplotlib_default['axes.titlecolor'] = BLACK
     _rc_children['title.color'] = ('axes.titlecolor',)
-if _version_mpl >= 3.4:
+if _version_mpl >= '3.4':
     _rc_matplotlib_default['xtick.labelcolor'] = BLACK
     _rc_matplotlib_default['ytick.labelcolor'] = BLACK
     _rc_children['tick.labelcolor'] = ('xtick.labelcolor', 'ytick.labelcolor')

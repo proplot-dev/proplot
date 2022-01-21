@@ -2250,7 +2250,7 @@ class Axes(maxes.Axes):
         if not isinstance(self, maxes.SubplotBase):
             raise RuntimeError('Axes must be a subplot.')
         setter = getattr(self, '_set_position', self.set_position)
-        if _version_mpl >= 3.4:
+        if _version_mpl >= '3.4':
             setter(self.get_subplotspec().get_position(self.figure))
         else:
             self.update_params()

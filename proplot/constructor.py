@@ -110,7 +110,7 @@ LOCATORS = {
 }
 if hasattr(mproj.polar, 'ThetaLocator'):
     LOCATORS['theta'] = mproj.polar.ThetaLocator
-if _version_cartopy >= 0.18:
+if _version_cartopy >= '0.18':
     LOCATORS['dms'] = partial(pticker.DegreeLocator, dms=True)
     LOCATORS['dmslon'] = partial(pticker.LongitudeLocator, dms=True)
     LOCATORS['dmslat'] = partial(pticker.LatitudeLocator, dms=True)
@@ -156,7 +156,7 @@ if hasattr(mproj.polar, 'ThetaFormatter'):
     FORMATTERS['theta'] = mproj.polar.ThetaFormatter
 if hasattr(mdates, 'ConciseDateFormatter'):
     FORMATTERS['concise'] = mdates.ConciseDateFormatter
-if _version_cartopy >= 0.18:
+if _version_cartopy >= '0.18':
     FORMATTERS['dms'] = partial(pticker.DegreeFormatter, dms=True)
     FORMATTERS['dmslon'] = partial(pticker.LongitudeFormatter, dms=True)
     FORMATTERS['dmslat'] = partial(pticker.LatitudeFormatter, dms=True)
@@ -1510,7 +1510,7 @@ def Proj(
                 kwargs[key] = value
 
         # Initialize
-        if _version_mpl >= 3.3:
+        if _version_mpl >= '3.3':
             raise RuntimeError(
                 'Basemap is no longer maintained and is incompatible with '
                 'matplotlib >= 3.3. Please use cartopy as your geographic '
