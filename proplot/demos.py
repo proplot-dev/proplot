@@ -888,10 +888,10 @@ def show_fonts(*args, family=None, text=None, math=False, **kwargs):
                 f'Invalid font family {family!r}. Options are: '
                 + ', '.join(map(repr, options)) + '.'
             )
-        family_fonts = FAMILY_TEXGYRE if family == 'tex-gyre' else rc['font.' + family]
-        for font in family_fonts:
-            if font in all_names:  # valid font name
-                props.append(mfonts.FontProperties(font.name, **kwargs))
+        names = FAMILY_TEXGYRE if family == 'tex-gyre' else rc['font.' + family]
+        for name in names:
+            if name in all_names:  # valid font name
+                props.append(mfonts.FontProperties(name, **kwargs))
 
     # The default sample text
     if text is None:
@@ -930,10 +930,10 @@ def show_fonts(*args, family=None, text=None, math=False, **kwargs):
     refsize = props[0].get_size_in_points() if props else rc['font.size']
     refheight = 1.2 * (text.count('\n') + 2.5) * refsize / 72
     fig, axs = ui.subplots(
-        refwidth=4.5, refheight=refheight, nrows=len(args), ncols=1, space=0,
+        refwidth=4.5, refheight=refheight, nrows=len(props), ncols=1, space=0,
     )
     fig._render_context.update(ctx)
-    axs.format(
+    fig.format(
         xloc='neither', yloc='neither', xlocator='null', ylocator='null', alpha=0
     )
     for ax, prop in zip(axs, props):
