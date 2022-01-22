@@ -1508,7 +1508,7 @@ def Proj(
     # on initialization and controls *all* features.
     else:
         # Parse input arguments
-        import mpl_toolkits.basemap as mbasemap
+        from mpl_toolkits.basemap import Basemap
         if name in ('eqc', 'pcarree'):
             name = 'cyl'  # PROJ package aliases
         defaults = {'fix_aspect': True, **PROJ_DEFAULTS.get(name, {})}
@@ -1542,7 +1542,7 @@ def Proj(
             )
         kwargs.update({'resolution': reso, 'projection': name})
         try:
-            proj = mbasemap.Basemap(**kwargs)  # will raise helpful warning
+            proj = Basemap(**kwargs)  # will raise helpful warning
         except ValueError as err:
             message = str(err)
             message = message.strip()

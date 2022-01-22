@@ -29,10 +29,8 @@ except ModuleNotFoundError:
     _GeoAxes = Projection = object
 
 try:
-    import mpl_toolkits.basemap as mbasemap
     from mpl_toolkits.basemap import Basemap
 except ModuleNotFoundError:
-    mbasemap = None
     Basemap = object
 
 __all__ = ['GeoAxes']
@@ -95,10 +93,7 @@ lonminorlocator, latminorlocator, lonminorlines, latminorlines : optional
 lonminorlines_kw, latminorlines_kw : optional
     Aliases for `lonminorlocator_kw`, `latminorlocator_kw`.
 lonminorlocator_kw, latminorlocator_kw : optional
-    As with `lonlocator_kw` and `latlocator_kw` but for the "minor" gridlines.
-labels : bool, str, or sequence, default:
-    Sets `lonlabels` and `latlabels` to the same value. To draw
-    labels by default use e.g. ``pplt.rc['grid.labels'] = True``.
+    As with `lonlocator_kw`, and `latlocator_kw` but for the "minor" gridlines.
 lonlabels, latlabels, labels : str, bool, or sequence, :rc:`grid.labels`
     Whether to add non-inline longitude and latitude gridline labels, and on
     which sides of the map. Use the keyword `labels` to set both at once. The
@@ -132,14 +127,14 @@ labelpad : unit-spec, default: :rc:`grid.labelpad`
     %(units.pt)s
 dms : bool, default: :rc:`grid.dmslabels`
     *For cartopy axes only.*
-    Whether the default locators and formatters should use "minutes" and "seconds" for
-    gridline labels on small scales rather than decimal degrees. Setting this to
-    ``False`` is equivalent to ``ax.format(lonlocator='deglon', latlocator='deglon')``
+    Whether the default locators and formatters should use "minutes" and "seconds"
+    for gridline labels on small scales rather than decimal degrees. Setting this to
+    ``False`` is equivalent to ``ax.format(lonlocator='deglon', latlocator='deglat')``
     and ``ax.format(lonformatter='deglon', latformatter='deglat')``.
 lonformatter, latformatter : formatter-spec, optional
     Formatter used to style longitude and latitude gridline labels.
-    Passed to the `~proplot.constructor.Formatter` constructor. Can
-    be string, list of string, or `matplotlib.ticker.Formatter` instance.
+    Passed to the `~proplot.constructor.Formatter` constructor. Can be
+    string, list of string, or `matplotlib.ticker.Formatter` instance.
 
     For basemap or cartopy < 0.18, the defaults are ``'deglon'`` and
     ``'deglat'``, which correspond to `~proplot.ticker.SimpleFormatter`

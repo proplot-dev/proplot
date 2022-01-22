@@ -85,13 +85,13 @@ They should almost always be changed with `~proplot.config.rc` rather than
 `~proplot.config.rc_proplot` to ensure that :ref:`meta-settings <ug_meta>` are
 synced. These settings are not found in `~matplotlib.rcParams` -- they either
 control proplot-managed features (e.g., a-b-c labels and geographic gridlines)
-or they represent existing matplotlib settings rearranged to be
-more clearly ordered. Here's a broad overview of the new settings:
+or they represent existing matplotlib settings with more clear or succinct names.
+Here's a broad overview of the new settings:
 
 * The ``subplots`` category includes settings that control the default
   subplot layout and padding.
-* The ``basemap`` setting controls whether basemap is the default geographic plotting
-  backend, and the ``cartopy`` category includes cartopy-specific settings.
+* The ``geo`` category contains settings related to geographic plotting, including the
+  geographic backend, gridline label settings, and map bound settings.
 * The ``abc``, ``title``, and ``label`` categories control a-b-c labels, axes
   titles, and axis labels. The latter two replace ``axes.title`` and ``axes.label``.
 * The ``suptitle``, ``leftlabel``, ``toplabel``, ``rightlabel``, and ``bottomlabel``

@@ -38,8 +38,8 @@ related to climate science, and has authored a number of
 as an avid vim user.
 
 `Riley Brady`_ is the next-biggest contributor. He helped Luke set up automatic
-testing, deploy this project to PyPi, and make proplot easier for new users. He is
-also proplot's earliest user and helped fix `a lot of the early bugs
+testing, deploy this project to PyPi, and improve new user experience. He is
+also proplot's earliest user and helped fix `lots of early bugs
 <https://github.com/lukelbd/proplot/issues?q=is%3Aissue+is%3Aclosed>`__.
 
 .. _Luke Davis: https://github.com/lukelbd

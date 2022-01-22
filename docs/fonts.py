@@ -47,18 +47,18 @@
 # the open source `TeX Gyre fonts <https://ctan.org/pkg/tex-gyre?lang=en>`__ and a few
 # additional open source sans-serif fonts. Proplot also uses the TeX Gyre fonts as the
 # first (i.e., default) entries for each of matplotlib's `font family lists
-# <https://matplotlib.org/stable/tutorials/text/text_props.html#default-font>`__`:
+# <https://matplotlib.org/stable/tutorials/text/text_props.html#default-font>`__:
 #
 # * The `Helvetica <https://en.wikipedia.org/wiki/Helvetica>`__ lookalike
 #   :rcraw:`font.sans-serif` = ``'TeX Gyre Heros'``.
 # * The `Century <https://en.wikipedia.org/wiki/Century_type_family>`__ lookalike
 #   :rcraw:`font.serif` = ``'TeX Gyre Schola'``.
-# * The `Courier <https://en.wikipedia.org/wiki/Courier_(typeface)>`__ lookalike
-#   :rcraw:`font.monospace` = ``'TeX Gyre Cursor'``.
 # * The `Chancery <https://en.wikipedia.org/wiki/ITC_Zapf_Chancery>`__ lookalike
 #   :rcraw:`font.cursive` = ``'TeX Gyre Chorus'``.
 # * The `Avant Garde <https://en.wikipedia.org/wiki/ITC_Avant_Garde>`__ lookalike
 #   :rcraw:`font.fantasy` = ``'TeX Gyre Adventor'``.
+# * The `Courier <https://en.wikipedia.org/wiki/Courier_(typeface)>`__ lookalike
+#   :rcraw:`font.monospace` = ``'TeX Gyre Cursor'``.
 #
 # After importing proplot, the default matplotlib font will be
 # `TeX Gyre Heros <https://ctan.org/pkg/tex-gyre-heros>`__, which
