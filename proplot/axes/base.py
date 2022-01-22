@@ -161,7 +161,7 @@ or `~matplotlib.transforms.Transform`, optional
     `~matplotlib.transforms.Transform` instance or a string representing
     the `~matplotlib.axes.Axes.transData`, `~matplotlib.axes.Axes.transAxes`,
     `~matplotlib.figure.Figure.transFigure`, or
-    `~matplotlib.figure.Figure.transSubfigure`, transforms.
+    `~matplotlib.figure.Figure.transSubfigure` transforms.
 """
 docstring._snippet_manager['axes.transform'] = _transform_docstring
 
@@ -319,10 +319,10 @@ abcloc, titleloc : str, default: :rc:`abc.loc`, :rc:`title.loc`
     center above axes         ``'center'``, ``'c'``
     left above axes           ``'left'``, ``'l'``
     right above axes          ``'right'``, ``'r'``
-    lower center inside axes  ``'lower center'``, ``'lc'``
     upper center inside axes  ``'upper center'``, ``'uc'``
-    upper right inside axes   ``'upper right'``, ``'ur'``
     upper left inside axes    ``'upper left'``, ``'ul'``
+    upper right inside axes   ``'upper right'``, ``'ur'``
+    lower center inside axes  ``'lower center'``, ``'lc'``
     lower left inside axes    ``'lower left'``, ``'ll'``
     lower right inside axes   ``'lower right'``, ``'lr'``
     ========================  ============================
@@ -331,7 +331,7 @@ abcborder, titleborder : bool, default: :rc:`abc.border` and :rc:`title.border`
     Whether to draw a white border around titles and a-b-c labels positioned
     inside the axes. This can help them stand out on top of artists
     plotted inside the axes.
-abcbbox, titlebbox : bool, default: :rc:`abc.bbox` and :rc:`title.bbox`
+abcbbox, titlebbox : bool, default: :rc:`abc.box` and :rc:`title.box`
     Whether to draw a white bbox around titles and a-b-c labels positioned
     inside the axes. This can help them stand out on top of artists plotted
     inside the axes.
@@ -641,6 +641,31 @@ docstring._snippet_manager['axes.legend_args'] = _legend_args_docstring
 docstring._snippet_manager['axes.legend_kwargs'] = _legend_kwargs_docstring
 
 
+# Location table docstring
+_loc_table_docstring = """
+    ==================  ============================================
+    Location            Valid keys
+    ==================  ============================================
+    outer left          ``'left'``, ``'l'``
+    outer right         ``'right'``, ``'r'``
+    outer bottom        ``'bottom'``, ``'b'``
+    outer top           ``'top'``, ``'t'``
+    "best" inset        ``'best'``, ``'inset'``, ``'i'``, ``0``
+    upper right inset   ``'upper right'``, ``'ur'``, ``'NE'``, ``1``
+    upper left inset    ``'upper left'``, ``'ul'``, ``'NW'``, ``2``
+    lower left inset    ``'lower left'``, ``'ll'``, ``'SW'``, ``3``
+    lower right inset   ``'lower right'``, ``'lr'``, ``'SE'``, ``4``
+    center left inset   ``'center left'``, ``'cl'``, ``'W'``, ``6``
+    center right inset  ``'center right'``, ``'cr'``, ``'E'``, ``7``
+    lower center inset  ``'lower center'``, ``'lc'``, ``'S'``, ``8``
+    upper center inset  ``'upper center'``, ``'uc'``, ``'N'``, ``9``
+    center inset        ``'center'``, ``'c'``, ``'C'``, ``10``
+    "filled"            ``'fill'``
+    ==================  ============================================
+"""
+docstring._snippet_manager['axes.legend_loc'] = _loc_table_docstring
+
+
 def _align_bbox(align, length):
     """
     Return a simple alignment bounding box for intersection calculations.
@@ -761,6 +786,8 @@ class Axes(maxes.Axes):
         super().__init__(*args, **kwargs)
 
         # Varous scalar properties
+        # NOTE: We use '_title_pad' and '_title_above' for both titles
+        # and a-b-c labels in order to keep them aligned.
         self._active_cycle = rc['axes.prop_cycle']
         self._auto_format = None  # manipulated by wrapper functions
         self._abc_border_kwargs = {}
@@ -790,7 +817,7 @@ class Axes(maxes.Axes):
         self.yaxis.isDefault_minloc = True
 
         # Various dictionary properties
-        # NOTE: Critical to use self.text() so they are patched with _update_label
+        # NOTE: Critical to use self.text() overrides rather than mtext.Text()
         self._legend_dict = {}
         self._colorbar_dict = {}
         d = self._panel_dict = {}
@@ -799,17 +826,13 @@ class Axes(maxes.Axes):
         d['bottom'] = []
         d['top'] = []
         d = self._title_dict = {}
-        kw = {'zorder': 3.5, 'transform': self.transAxes}
-        d['abc'] = self.text(0, 0, '', **kw)
-        d['left'] = self._left_title  # WARNING: track in case mpl changes this
+        d['abc'] = self.text('', loc='center', zorder=3.5)
+        d['left'] = self._left_title
         d['center'] = self.title
         d['right'] = self._right_title
-        d['upper left'] = self.text(0, 0, '', va='top', ha='left', **kw)
-        d['upper center'] = self.text(0, 0.5, '', va='top', ha='center', **kw)
-        d['upper right'] = self.text(0, 1, '', va='top', ha='right', **kw)
-        d['lower left'] = self.text(0, 0, '', va='bottom', ha='left', **kw)
-        d['lower center'] = self.text(0, 0.5, '', va='bottom', ha='center', **kw)
-        d['lower right'] = self.text(0, 1, '', va='bottom', ha='right', **kw)
+        for v, h in itertools.product(('upper', 'lower'), ('left', 'center', 'right')):
+            loc = ' '.join((v, h))
+            d[loc] = self.text('', loc=loc, zorder=3.5)
 
         # Subplot-specific settings
         # NOTE: Default number for any axes is None (i.e., no a-b-c labels allowed)
@@ -1069,8 +1092,8 @@ class Axes(maxes.Axes):
         # TODO: Make this auto-adjust to the subplot size
         if extendsize is not None and extendfrac is not None:
             warnings._warn_proplot(
-                f'You cannot specify both an absolute extendsize={extendsize!r} '
-                f"and a relative extendfrac={extendfrac!r}. Ignoring 'extendfrac'."
+                f'Got conflicting absolute extend length extendsize={extendsize!r} and '
+                f"relative length extendfrac={extendfrac!r}. Ignoring 'extendfrac'."
             )
             extendfrac = None
         if extendfrac is None:
@@ -1324,18 +1347,23 @@ class Axes(maxes.Axes):
         paxs = self._panel_dict['top']
         if not paxs:
             return
-        pax = paxs[-1]
-        names = ('left', 'center', 'right')
-        if self._abc_loc in names:
-            names += ('abc',)
         if not self._title_above:
             return
-        if pax._panel_hidden and self._title_above == 'panels':
-            return
-        pax._title_pad = self._title_pad
-        pax._abc_title_pad = self._abc_title_pad
-        for name in names:
-            labels._transfer_label(self._title_dict[name], pax._title_dict[name])
+        keys = ('left', 'center', 'right')
+        if self._abc_loc in keys:
+            keys += ('abc',)
+        for pax, key in itertools.product(paxs[::-1], keys):
+            if pax._panel_hidden and self._title_above == 'panels':
+                continue
+            loc = self._abc_loc if key == 'abc' else key
+            bbox = _align_bbox(loc, 0)
+            if not any(bbox.overlaps(b) for b in pax._panel_align.values()):
+                if pax._panel_align:
+                    self._title_dict[key].set_in_layout(False)
+                continue
+            pax._title_pad = self._title_pad
+            pax._abc_title_pad = self._abc_title_pad
+            labels._transfer_label(self._title_dict[key], pax._title_dict[key])
 
     def _apply_auto_share(self):
         """
@@ -2298,11 +2326,11 @@ class Axes(maxes.Axes):
             {
                 'border': 'abc.border',
                 'borderwidth': 'abc.borderwidth',
-                'bbox': 'abc.bbox',
-                'bboxpad': 'abc.bboxpad',
-                'bboxcolor': 'abc.bboxcolor',
-                'bboxstyle': 'abc.bboxstyle',
-                'bboxalpha': 'abc.bboxalpha',
+                'box': 'abc.box',
+                'boxpad': 'abc.boxpad',
+                'boxcolor': 'abc.boxcolor',
+                'boxstyle': 'abc.boxstyle',
+                'boxalpha': 'abc.boxalpha',
             },
             context=True,
         )
@@ -2340,7 +2368,7 @@ class Axes(maxes.Axes):
         if loc not in ('left', 'right', 'center'):
             kw.update(self._abc_border_kwargs)
         kw.update(kwargs)
-        self._title_dict['abc'].update(kw)
+        labels._update_label(self._title_dict['abc'], **kw)
 
     def _update_title(self, loc, title=None, **kwargs):
         """
@@ -2370,11 +2398,11 @@ class Axes(maxes.Axes):
             {
                 'border': 'title.border',
                 'borderwidth': 'title.borderwidth',
-                'bbox': 'title.bbox',
-                'bboxpad': 'title.bboxpad',
-                'bboxcolor': 'title.bboxcolor',
-                'bboxstyle': 'title.bboxstyle',
-                'bboxalpha': 'title.bboxalpha',
+                'box': 'title.box',
+                'boxpad': 'title.boxpad',
+                'boxcolor': 'title.boxcolor',
+                'boxstyle': 'title.boxstyle',
+                'boxalpha': 'title.boxalpha',
             },
             context=True,
         )
@@ -2422,40 +2450,26 @@ class Axes(maxes.Axes):
         else:
             raise ValueError(f'Invalid title {title!r}. Must be string(s).')
         kw.update(kwargs)
-        self._title_dict[loc].update(kw)
+        labels._update_label(self._title_dict[loc], **kw)
 
     def _update_title_position(self, renderer):
         """
         Update the position of inset titles and outer titles. This is called
         by matplotlib at drawtime.
         """
-        # Update title positions
+        # Update title box padding
         # NOTE: Critical to do this every time in case padding changes or
         # we added or removed an a-b-c label in the same position as a title
         width, height = self._get_size_inches()
-        x_pad = self._title_pad / (72 * width)
-        y_pad = self._title_pad / (72 * height)
         for loc, obj in self._title_dict.items():
-            x, y = (0, 1)
-            if loc == 'abc':  # redirect
+            if not isinstance(obj, moffsetbox.AnchoredText):
+                continue
+            if loc == 'abc':
                 loc = self._abc_loc
-            if loc == 'left':
-                x = 0
-            elif loc == 'center':
-                x = 0.5
-            elif loc == 'right':
-                x = 1
-            if loc in ('upper center', 'lower center'):
-                x = 0.5
-            elif loc in ('upper left', 'lower left'):
-                x = x_pad
-            elif loc in ('upper right', 'lower right'):
-                x = 1 - x_pad
-            if loc in ('upper left', 'upper right', 'upper center'):
-                y = 1 - y_pad
-            elif loc in ('lower left', 'lower right', 'lower center'):
-                y = y_pad
-            obj.set_position((x, y))
+            if loc in ('left', 'center', 'right'):  # invisible box
+                obj.borderpad = 0
+            else:
+                obj.borderpad = self._title_pad / _fontsize_to_pt(rc['legend.fontsize'])
 
         # Get title padding. Push title above tick marks since matplotlib ignores them.
         # This is known matplotlib problem but especially annoying with top panels.
@@ -2495,12 +2509,12 @@ class Axes(maxes.Axes):
             obj.get_window_extent(renderer).transformed(self.transAxes.inverted())
             .width for obj in (aobj, tobj)
         )
-        ha = aobj.get_ha()
         pad = (abcpad / 72) / self._get_size_inches()[0]
+        halign = aobj.get_ha()
         aoffset = toffset = 0
-        if ha == 'left':
+        if halign == 'left':
             toffset = awidth + pad
-        elif ha == 'right':
+        elif halign == 'right':
             aoffset = -(twidth + pad)
         else:  # guaranteed center, there are others
             toffset = 0.5 * (awidth + pad)
@@ -2693,7 +2707,7 @@ class Axes(maxes.Axes):
             self.indicate_inset_zoom()
         super().draw(renderer, *args, **kwargs)
 
-    def get_tightbbox(self, renderer, *args, **kwargs):
+    def get_tightbbox(self, renderer, *args, use_cache=False, **kwargs):
         # Perform extra post-processing steps
         # NOTE: This should be updated alongside draw(). We also cache the resulting
         # bounding box to speed up tight layout calculations (see _range_tightbbox).
@@ -2703,8 +2717,10 @@ class Axes(maxes.Axes):
             self._colorbar_fill.update_ticks(manual_only=True)  # only if needed
         if self._inset_parent is not None and self._inset_zoom:
             self.indicate_inset_zoom()
-        self._tight_bbox = super().get_tightbbox(renderer, *args, **kwargs)
-        return self._tight_bbox
+        bbox = self._tight_bbox
+        if not use_cache or bbox is None:
+            bbox = self._tight_bbox = super().get_tightbbox(renderer, *args, **kwargs)
+        return bbox
 
     def get_default_bbox_extra_artists(self):
         # Further restrict artists to those with disabled clipping
@@ -2801,25 +2817,14 @@ class Axes(maxes.Axes):
         Parameters
         ----------
         %(axes.colorbar_args)s
-        loc, location : int or str, default: :rc:`colorbar.loc`
-            The colorbar location. Valid location keys are shown in the below table.
+        loc, location : int, str, or 2-tuple of float, default: :rc:`colorbar.loc`
+            The colorbar location key or location coordinates, dependent on
+            `bbox_to_anchor` and `bbox_transform`. Valid location keys are
+            shown in the below table.
 
             .. _colorbar_table:
 
-            ==================  =======================================
-            Location            Valid keys
-            ==================  =======================================
-            outer left          ``'left'``, ``'l'``
-            outer right         ``'right'``, ``'r'``
-            outer bottom        ``'bottom'``, ``'b'``
-            outer top           ``'top'``, ``'t'``
-            default inset       ``'best'``, ``'inset'``, ``'i'``, ``0``
-            upper right inset   ``'upper right'``, ``'ur'``, ``1``
-            upper left inset    ``'upper left'``, ``'ul'``, ``2``
-            lower left inset    ``'lower left'``, ``'ll'``, ``3``
-            lower right inset   ``'lower right'``, ``'lr'``, ``4``
-            "filled"            ``'fill'``
-            ==================  =======================================
+        %(axes.legend_loc)s
 
         shrink
             Alias for `length`. This is included for consistency with
@@ -2878,30 +2883,14 @@ class Axes(maxes.Axes):
         Parameters
         ----------
         %(axes.legend_args)s
-        loc, location : int or str, default: :rc:`legend.loc`
-            The legend location. Valid location keys are shown in the below table.
+        loc, location : int, str, or 2-tuple of float, default: :rc:`legend.loc`
+            The legend location key or location coordinates, dependent on
+            `bbox_to_anchor` and `bbox_transform`. Valid location keys are
+            shown in the below table.
 
             .. _legend_table:
 
-            ==================  =======================================
-            Location            Valid keys
-            ==================  =======================================
-            outer left          ``'left'``, ``'l'``
-            outer right         ``'right'``, ``'r'``
-            outer bottom        ``'bottom'``, ``'b'``
-            outer top           ``'top'``, ``'t'``
-            "best" inset        ``'best'``, ``'inset'``, ``'i'``, ``0``
-            upper right inset   ``'upper right'``, ``'ur'``, ``1``
-            upper left inset    ``'upper left'``, ``'ul'``, ``2``
-            lower left inset    ``'lower left'``, ``'ll'``, ``3``
-            lower right inset   ``'lower right'``, ``'lr'``, ``4``
-            center left inset   ``'center left'``, ``'cl'``, ``5``
-            center right inset  ``'center right'``, ``'cr'``, ``6``
-            lower center inset  ``'lower center'``, ``'lc'``, ``7``
-            upper center inset  ``'upper center'``, ``'uc'``, ``8``
-            center inset        ``'center'``, ``'c'``, ``9``
-            "filled"            ``'fill'``
-            ==================  =======================================
+        %(axes.legend_loc)s
 
         width : unit-spec, optional
             For outer legends only. The space allocated for the legend
@@ -2937,28 +2926,48 @@ class Axes(maxes.Axes):
 
     @docstring._concatenate_inherited
     @docstring._snippet_manager
-    def text(
-        self, *args, border=False, bbox=False,
-        bordercolor='w', borderwidth=2, borderinvert=False, borderstyle='miter',
-        bboxcolor='w', bboxstyle='round', bboxalpha=0.5, bboxpad=None, **kwargs
-    ):
+    def text(self, *args, loc=None, **kwargs):
         """
         Add text to the axes.
 
         Parameters
         ----------
-        x, y, [z] : float
+        x, y, [z] : float, optional
             The coordinates for the text. `~proplot.axes.ThreeAxes` accept an
             optional third coordinate. If only two are provided this automatically
             redirects to the `~mpl_toolkits.mplot3d.Axes3D.text2D` method.
-        s, text : str
-            The string for the text.
+        s, text : str, default: ''
+            The text string.
         %(axes.transform)s
 
         Other parameters
         ----------------
-        border : bool, default: False
-            Whether to draw border around text.
+        loc : str, optional
+            The text location. If passed an `~matplotlib.offsetbox.AnchoredText`
+            instance is returned instead of a `~matplotlib.text.Text` instance.
+            This can be used instead of explicit x, y, [z] coordinates with e.g.
+            ``ax.text('label', loc='upper left')``). Valid location keys are
+            shown in the below table.
+
+            .. _text_table:
+
+            ============  ===================================
+            Location      Valid keys
+            ============  ===================================
+            upper right   ``'upper right'``, ``'ur'``, ``1``
+            upper left    ``'upper left'``, ``'ul'``, ``2``
+            lower left    ``'lower left'``, ``'ll'``, ``3``
+            lower right   ``'lower right'``, ``'lr'``, ``4``
+            center left   ``'center left'``, ``'cl'``, ``6``
+            center right  ``'center right'``, ``'cr'``, ``7``
+            lower center  ``'lower center'``, ``'lc'``, ``8``
+            upper center  ``'upper center'``, ``'uc'``, ``9``
+            center        ``'center'``, ``'c'``, ``10``
+            ============  ===================================
+
+        border : bool or dict, default: False
+            Whether to draw a border around the text. This can also be a
+            dictionary of `~matplotlib.patheffects.Stroke` properties.
         borderwidth : float, default: 2
             The width of the text border.
         bordercolor : color-spec, default: 'w'
@@ -2969,20 +2978,26 @@ class Axes(maxes.Axes):
             The `line join style \
 <https://matplotlib.org/stable/gallery/lines_bars_and_markers/joinstyle.html>`__
             used for the border.
-        bbox : bool, default: False
-            Whether to draw a bounding box around text.
-        bboxcolor : color-spec, default: 'w'
+        box : bool or dict, default: False
+            Whether to draw a bounding box around the text. This can also be a
+            dictionary of `~matplotlib.patches.FancyBboxPatch` properties.
+        boxcolor : color-spec, default: 'w'
             The color of the text bounding box.
-        bboxstyle : boxstyle, default: 'round'
+        boxstyle : boxstyle, default: 'round'
             The style of the bounding box.
-        bboxalpha : float, default: 0.5
+        boxalpha : float, default: 0.5
             The alpha for the bounding box.
-        bboxpad : float, default: :rc:`title.bboxpad`
+        boxpad : float, default: :rc:`title.pad`
             The padding for the bounding box.
         %(artist.text)s
 
         **kwargs
             Passed to `matplotlib.axes.Axes.text`.
+
+        Returns
+        -------
+        `matplotlib.text.Text` or `matplotlib.offsetbox.AnchoredText`
+            The text object. See `loc` for details.
 
         See also
         --------
@@ -2991,43 +3006,34 @@ class Axes(maxes.Axes):
         # Translate positional args
         # Audo-redirect to text2D for 3D axes if not enough arguments passed
         # NOTE: The transform must be passed positionally for 3D axes with 2D coords
-        keys = 'xy'
-        func = super().text
-        if self._name == 'three':
-            if len(args) >= 4 or 'z' in kwargs:
-                keys += 'z'
-            else:
-                func = self.text2D
-        keys = (*keys, ('s', 'text'), 'transform')
+        driver = super().text
+        coords = 'xy'
+        if self._name == 'three' and (len(args) > 3 or 'z' in kwargs):
+            driver = self.text2D
+            coords += 'z'
+        keys = (*coords, ('s', 'text'), 'transform')
         args, kwargs = _kwargs_to_args(keys, *args, **kwargs)
-        *args, transform = args
-        if any(arg is None for arg in args):
-            raise TypeError('Missing required positional argument.')
-        if transform is None:
-            transform = self.transData
+        if all(arg is None for arg in args[2:]):  # just 'text' or 'text', 'transform'
+            args = [None] * len(coords) + args[:2]
+        *coords, text, transform = args
+        text = _not_none(text, '')
+        transform = self._get_transform(transform, default=self.transData)
+        if loc is not None and all(arg is not None for arg in args[:len(coords)]):
+            warnings._warn_proplot(
+                'Got conflicting explicit Text coordinates and preset '
+                "AnchoredText location 'loc'. Ignoring the latter."
+            )
+        if loc is None:
+            obj = driver(*coords, text, transform=transform)
         else:
-            transform = self._get_transform(transform)
+            pad = self._title_pad / rc['font.size']  # points to em-widths
+            obj = moffsetbox.AnchoredText('', loc=loc, borderpad=pad)
+            obj.patch.set_visible(False)  # initially toggle this off
+            self.add_artist(obj)
         with warnings.catch_warnings():  # ignore duplicates (internal issues?)
             warnings.simplefilter('ignore', warnings.ProplotWarning)
             kwargs.update(_pop_props(kwargs, 'text'))
-
-        # Update the text object using a monkey patch
-        obj = func(*args, transform=transform, **kwargs)
-        obj.update = labels._update_label.__get__(obj)
-        obj.update(
-            {
-                'border': border,
-                'bordercolor': bordercolor,
-                'borderinvert': borderinvert,
-                'borderwidth': borderwidth,
-                'borderstyle': borderstyle,
-                'bbox': bbox,
-                'bboxcolor': bboxcolor,
-                'bboxstyle': bboxstyle,
-                'bboxalpha': bboxalpha,
-                'bboxpad': bboxpad,
-            }
-        )
+        labels._update_label(obj, **kwargs)
         return obj
 
     def _iter_axes(self, hidden=False, children=False, panels=True):

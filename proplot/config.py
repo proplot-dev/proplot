@@ -960,11 +960,11 @@ class Configurator(MutableMapping, dict):
             kw_matplotlib['axes.prop_cycle'] = cycler.cycler('color', cmap.colors)
             kw_matplotlib['patch.facecolor'] = 'C0'
 
-        # Turning bounding box on should turn border off and vice versa
-        elif contains('abc.bbox', 'title.bbox', 'abc.border', 'title.border'):
+        # Turning box on should turn border off and vice versa
+        elif contains('abc.box', 'title.box', 'abc.border', 'title.border'):
             if value:
                 name, this = key.split('.')
-                other = 'border' if this == 'bbox' else 'bbox'
+                other = 'border' if this == 'box' else 'box'
                 kw_proplot[name + '.' + other] = False
 
         # Fontsize

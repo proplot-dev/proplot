@@ -78,17 +78,18 @@ LEGEND_LOCS = {
     'fill': 'fill',
     'inset': 'best',
     'i': 'best',
-    0: 'best',
+    0: 'best',  # offsetbox codes
     1: 'upper right',
     2: 'upper left',
     3: 'lower left',
     4: 'lower right',
-    5: 'center left',
-    6: 'center right',
-    7: 'lower center',
-    8: 'upper center',
-    9: 'center',
-    'l': 'left',
+    5: 'center right',  # weird, but see _get_anchored_bbox in matplotlib/offsetbox.py
+    6: 'center left',
+    7: 'center right',
+    8: 'lower center',
+    9: 'upper center',
+    10: 'center',
+    'l': 'left',  # custom shorthands
     'r': 'right',
     'b': 'bottom',
     't': 'top',
@@ -97,14 +98,21 @@ LEGEND_LOCS = {
     'ul': 'upper left',
     'll': 'lower left',
     'lr': 'lower right',
-    'cr': 'center right',
     'cl': 'center left',
+    'cr': 'center right',
     'uc': 'upper center',
     'lc': 'lower center',
+    'ne': 'upper right',  # BboxBase.anchored shorthands
+    'nw': 'upper left',
+    'sw': 'lower left',
+    'se': 'lower right',
+    'w': 'center left',
+    'e': 'center right',
+    's': 'lower center',
+    'n': 'upper center',
 }
-for _loc in tuple(LEGEND_LOCS.values()):
-    if _loc not in LEGEND_LOCS:
-        LEGEND_LOCS[_loc] = _loc  # identity assignments
+for _loc in set(LEGEND_LOCS.values()):
+    LEGEND_LOCS[_loc] = _loc  # identity assignments
 TEXT_LOCS = {
     key: val for key, val in LEGEND_LOCS.items() if val in (
         'left', 'center', 'right',
@@ -808,28 +816,28 @@ _rc_proplot_table = {
         _validate_pt,
         'Width of the white border around a-b-c labels.'
     ),
-    'abc.bbox': (
+    'abc.box': (
         False,
         _validate_bool,
         'Whether to draw semi-transparent bounding boxes around a-b-c labels '
         'when :rcraw:`abc.loc` is inside the axes.'
     ),
-    'abc.bboxcolor': (
+    'abc.boxcolor': (
         WHITE,
         _validate_color,
         'a-b-c label bounding box color.'
     ),
-    'abc.bboxstyle': (
-        'square',
-        _validate_boxstyle,
-        'a-b-c label bounding box style.'
-    ),
-    'abc.bboxalpha': (
+    'abc.boxalpha': (
         0.5,
         _validate_float,
         'a-b-c label bounding box opacity.'
     ),
-    'abc.bboxpad': (
+    'abc.boxstyle': (
+        'square',
+        _validate_boxstyle,
+        'a-b-c label bounding box style.'
+    ),
+    'abc.boxpad': (
         None,
         _validate_or_none(_validate_pt),
         'Padding for the a-b-c label bounding box. By default this is scaled '
@@ -1805,28 +1813,28 @@ _rc_proplot_table = {
         _validate_pt,
         'Width of the border around titles.'
     ),
-    'title.bbox': (
+    'title.box': (
         False,
         _validate_bool,
         'Whether to draw semi-transparent bounding boxes around titles '
         'when :rcraw:`title.loc` is inside the axes.'
     ),
-    'title.bboxcolor': (
+    'title.boxcolor': (
         WHITE,
         _validate_color,
         'Axes title bounding box color.'
     ),
-    'title.bboxstyle': (
-        'square',
-        _validate_boxstyle,
-        'Axes title bounding box style.'
-    ),
-    'title.bboxalpha': (
+    'title.boxalpha': (
         0.5,
         _validate_float,
         'Axes title bounding box opacity.'
     ),
-    'title.bboxpad': (
+    'title.boxstyle': (
+        'square',
+        _validate_boxstyle,
+        'Axes title bounding box style.'
+    ),
+    'title.boxpad': (
         None,
         _validate_or_none(_validate_pt),
         'Padding for the title bounding box. By default this is scaled '
@@ -2047,6 +2055,16 @@ _rc_renamed = {  # {old_key: (new_key, version)} dictionary
     'cartopy.circular': ('geo.round', '0.10.0'),
     'cartopy.autoextent': ('geo.extent', '0.10.0'),
     'colorbar.rasterize': ('colorbar.rasterized', '0.10.0'),
+    'title.bbox': ('title.box', '0.11.0'),
+    'title.bboxcolor': ('title.boxcolor', '0.11.0'),
+    'title.bboxalpha': ('title.boxalpha', '0.11.0'),
+    'title.bboxstyle': ('title.boxstyle', '0.11.0'),
+    'title.bboxpad': ('title.boxpad', '0.11.0'),
+    'abc.bbox': ('abc.box', '0.11.0'),
+    'abc.bboxcolor': ('abc.boxcolor', '0.11.0'),
+    'abc.bboxalpha': ('abc.boxalpha', '0.11.0'),
+    'abc.bboxstyle': ('abc.boxstyle', '0.11.0'),
+    'abc.bboxpad': ('abc.boxpad', '0.11.0'),
 }
 
 # Validate the default settings dictionaries using a custom proplot _RcParams
