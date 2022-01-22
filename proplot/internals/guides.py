@@ -24,50 +24,51 @@ def _fill_guide_kw(kwargs, overwrite=False, **pairs):
     for key, value in pairs.items():
         if value is None:
             continue
-        keys = tuple(a for group in aliases for a in group if key in group)  # may be ()
-        if not any(kwargs.get(key) is not None for key in keys):  # note any(()) is True
-            if overwrite:
-                kwargs[key] = value
-            else:
-                kwargs.setdefault(key, value)
-
-
-def _guide_kw_from_obj(obj, name, kwargs):
-    """
-    Add to the dict from settings stored on the object if there are no conflicts.
-    """
-    # WARNING: Here we *do not* want to overwrite properties in the dictionary.
-    # Indicates e.g. calling colorbar(extend='both') after pcolor(extend='neither').
-    pairs = getattr(obj, f'_{name}_kw', None)
-    pairs = pairs or {}  # needed for some reason
-    _fill_guide_kw(kwargs, overwrite=False, **pairs)
-    if isinstance(obj, (tuple, list, np.ndarray)):
-        for iobj in obj:  # possibly iterate over matplotlib tuple/list subclasses
-            _guide_kw_from_obj(iobj, name, kwargs)
-    return kwargs
-
-
-def _guide_kw_to_obj(obj, name, kwargs):
-    """
-    Add the guide keyword dict to the objects.
-    """
-    try:
-        setattr(obj, f'_{name}_kw', kwargs)
-    except AttributeError:
-        pass
-    if isinstance(obj, (tuple, list, np.ndarray)):
-        for iobj in obj:
-            _guide_kw_to_obj(iobj, name, kwargs)
+        keys = tuple(k for opts in aliases for k in opts if key in opts)
+        keys = keys or (key,)  # e.g. 'extend' or something
+        keys_found = tuple(key for key in keys if kwargs.get(key) is not None)
+        if not keys_found:
+            kwargs[key] = value
+        elif overwrite:  # overwrite existing key
+            kwargs[keys_found[0]] = value
 
 
 def _guide_kw_to_arg(name, kwargs, **pairs):
     """
     Add to the `colorbar_kw` or `legend_kw` dict if there are no conflicts.
     """
-    # WARNING: Here we *do* want to overwrite properties in dictionary. Indicates
-    # updating kwargs during parsing (probably only relevant for ax.parametric).
+    # WARNING: Here we *do not* want to overwrite properties in the dictionary.
+    # Indicates e.g. calling colorbar(extend='both') after pcolor(extend='neither').
     kw = kwargs.setdefault(f'{name}_kw', {})
     _fill_guide_kw(kw, overwrite=True, **pairs)
+
+
+def _guide_kw_to_obj(obj, name, kwargs):
+    """
+    Store settings on the object from the input dict.
+    """
+    try:
+        setattr(obj, f'_{name}_kw', kwargs)
+    except AttributeError:
+        pass
+    if isinstance(obj, (tuple, list, np.ndarray)):
+        for member in obj:
+            _guide_kw_to_obj(member, name, kwargs)
+
+
+def _guide_obj_to_kw(obj, name, kwargs):
+    """
+    Add to the dict from settings stored on the object if there are no conflicts.
+    """
+    # WARNING: Here we *do* want to overwrite properties in dictionary. Indicates
+    # updating kwargs during parsing (probably only relevant for ax.parametric).
+    pairs = getattr(obj, f'_{name}_kw', None)
+    pairs = pairs or {}  # needed for some reason
+    _fill_guide_kw(kwargs, overwrite=False, **pairs)
+    if isinstance(obj, (tuple, list, np.ndarray)):
+        for member in obj:  # possibly iterate over matplotlib tuple/list subclasses
+            _guide_obj_to_kw(member, name, kwargs)
+    return kwargs
 
 
 def _iter_children(*args):

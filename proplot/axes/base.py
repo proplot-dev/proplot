@@ -1565,14 +1565,14 @@ class Axes(maxes.Axes):
         # WARNING: This should generally be last in the pipeline before calling
         # the plot function or looping over data columns. The colormap parser
         # and standardize functions both modify colorbar_kw and legend_kw.
+        legend_kw = legend_kw or {}
+        colorbar_kw = colorbar_kw or {}
         if colorbar:
-            colorbar_kw = colorbar_kw or {}
             colorbar_kw.setdefault('queue', queue_colorbar)
             self.colorbar(objs, loc=colorbar, **colorbar_kw)
         else:
             guides._guide_kw_to_obj(objs, 'colorbar', colorbar_kw)  # save for later
         if legend:
-            legend_kw = legend_kw or {}
             self.legend(objs, loc=legend, queue=True, **legend_kw)
         else:
             guides._guide_kw_to_obj(objs, 'legend', legend_kw)  # save for later
@@ -2849,7 +2849,7 @@ class Axes(maxes.Axes):
                 loc = {'vertical': 'right', 'horizontal': 'bottom'}[orientation]
         loc = _translate_loc(loc, 'colorbar', default=rc['colorbar.loc'])
         align = _translate_loc(align, 'panel', default='center', c='center', center='center')  # noqa: E501
-        kwargs = guides._guide_kw_from_obj(mappable, 'colorbar', kwargs)
+        kwargs = guides._guide_obj_to_kw(mappable, 'colorbar', kwargs)
         if queue:
             self._register_guide('colorbar', (mappable, values), (loc, align), **kwargs)
         else:
@@ -2915,7 +2915,7 @@ class Axes(maxes.Axes):
         loc = _not_none(loc=loc, location=location)
         loc = _translate_loc(loc, 'legend', default=rc['legend.loc'])
         align = _translate_loc(align, 'panel', default='center', c='center', center='center')  # noqa: E501
-        kwargs = guides._guide_kw_from_obj(handles, 'legend', kwargs)
+        kwargs = guides._guide_obj_to_kw(handles, 'legend', kwargs)
         if queue:
             self._register_guide('legend', (handles, labels), (loc, align), **kwargs)
         else:
