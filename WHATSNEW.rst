@@ -68,6 +68,8 @@ Style changes
   (previously this was only used for cartopy projections) (:commit:`5f1c67cc`).
 * Change :rcraw:`grid.labelpad` from ``4.0`` to ``3.0`` (:commit:`f95b828a`). This
   makes cartopy grid labels and polar axes labels a bit more compact.
+* Change :rcraw:`legend.handleheight` from ``1.5`` to ``2.0`` for less compressed
+  `~matplotlib.patches.Patch` handles (e.g. with error shading) (:commit:`2a5f6b48`).
 * Change :rcraw:`mathtext.default` from ``'regular'`` to ``'it'`` and change ``'sans'``
   to ``'regular'`` in :rcraw:`mathtext.rm`, :rcraw:`mathtext.sf`, :rcraw:`mathtext.bf`,
   and :rcraw:`mathtext.it` (:commit:`323`). See below for details.
