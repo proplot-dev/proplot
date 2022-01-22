@@ -982,7 +982,7 @@ class Axes(maxes.Axes):
         """
         The driver function for adding axes colorbars.
         """
-        # Parse input args
+        # Parse input arguments and apply defaults
         # TODO: Get the 'best' inset colorbar location using the legend algorithm
         # and implement inset colorbars the same as inset legends.
         grid = _not_none(grid=grid, edges=edges, drawedges=drawedges, default=rc['colorbar.grid'])  # noqa: E501
@@ -1001,21 +1001,13 @@ class Axes(maxes.Axes):
         ticklenratio = _not_none(ticklenratio, rc['tick.lenratio'])
         tickwidthratio = _not_none(tickwidthratio, rc['tick.widthratio'])
         rasterized = _not_none(rasterized, rc['colorbar.rasterized'])
+
+        # Build label and locator keyword argument dicts
+        # NOTE: This carefully handles the 'maxn' and 'maxn_minor' deprecations
+        kw_label = {}
         locator_kw = locator_kw or {}
         formatter_kw = formatter_kw or {}
         minorlocator_kw = minorlocator_kw or {}
-        for b, kw in enumerate((locator_kw, minorlocator_kw)):
-            key = 'maxn_minor' if b else 'maxn'
-            name = 'minorlocator' if b else 'locator'
-            nbins = kwargs.pop('maxn_minor' if b else 'maxn', None)
-            if nbins is not None:
-                kw['nbins'] = nbins
-                warnings._warn_proplot(
-                    f'The colorbar() keyword {key!r} was deprecated in v0.10. To '
-                    "achieve the same effect, you can pass 'nbins' to the new default "
-                    f"locator DiscreteLocator using {name}_kw={{'nbins': {nbins}}}."
-                )
-        kw_label = {}
         for key, value in (
             ('size', labelsize),
             ('weight', labelweight),
@@ -1032,6 +1024,17 @@ class Axes(maxes.Axes):
         ):
             if value is not None:
                 kw_ticklabels[key] = value
+        for b, kw in enumerate((locator_kw, minorlocator_kw)):
+            key = 'maxn_minor' if b else 'maxn'
+            name = 'minorlocator' if b else 'locator'
+            nbins = kwargs.pop('maxn_minor' if b else 'maxn', None)
+            if nbins is not None:
+                kw['nbins'] = nbins
+                warnings._warn_proplot(
+                    f'The colorbar() keyword {key!r} was deprecated in v0.10. To '
+                    "achieve the same effect, you can pass 'nbins' to the new default "
+                    f"locator DiscreteLocator using {name}_kw={{'nbins': {nbins}}}."
+                )
 
         # Generate and prepare the colorbar axes
         # NOTE: The inset axes function needs 'label' to know how to pad the box
@@ -1061,7 +1064,21 @@ class Axes(maxes.Axes):
             result = cax._parse_colorbar_arg(mappable, values, **kwargs)
             mappable, locator_default, formatter_default, kwargs = result
 
-        # Parse ticking keyword arguments
+        # Parse 'extendsize' and 'extendfrac' keywords
+        # TODO: Make this auto-adjust to the subplot size
+        if extendsize is not None and extendfrac is not None:
+            warnings._warn_proplot(
+                f'You cannot specify both an absolute extendsize={extendsize!r} '
+                f"and a relative extendfrac={extendfrac!r}. Ignoring 'extendfrac'."
+            )
+            extendfrac = None
+        if extendfrac is None:
+            width, height = cax._get_size_inches()
+            scale = height if kwargs.get('orientation') == 'vertical' else width
+            extendsize = units(extendsize, 'em', 'in')
+            extendfrac = extendsize / max(scale - 2 * extendsize, units(1, 'em', 'in'))
+
+        # Parse the tick locators and formatters
         # NOTE: This uses DiscreteLocator for default discrete minor ticks
         name = 'y' if kwargs.get('orientation') == 'vertical' else 'x'
         axis = cax.yaxis if kwargs.get('orientation') == 'vertical' else cax.xaxis
@@ -1084,26 +1101,15 @@ class Axes(maxes.Axes):
                 tickminor = rc[name + 'tick.minor.visible']
         if minorlocator is not None:
             minorlocator = constructor.Locator(minorlocator, **minorlocator_kw)
-
-        # Prepare colorbar keyword arguments
-        # WARNING: Critical to not pass empty major locators in matplotlib < 3.5
-        # See: https://github.com/lukelbd/proplot/issues/301
         if isinstance(locator, mticker.NullLocator) or not len(getattr(locator, 'locs', (None,))):  # noqa: E501
             minorlocator, tickminor = None, False  # attempted fix
         for ticker in (locator, formatter, minorlocator):
             if isinstance(ticker, mticker.TickHelper):
                 ticker.set_axis(axis)
-        if extendsize is not None and extendfrac is not None:
-            warnings._warn_proplot(
-                f'You cannot specify both an absolute extendsize={extendsize!r} '
-                f"and a relative extendfrac={extendfrac!r}. Ignoring 'extendfrac'."
-            )
-            extendfrac = None
-        if extendfrac is None:
-            width, height = cax._get_size_inches()
-            scale = height if kwargs.get('orientation') == 'vertical' else width
-            extendsize = units(extendsize, 'em', 'in')
-            extendfrac = extendsize / max(scale - 2 * extendsize, units(1, 'em', 'in'))
+
+        # Prepare colorbar keyword arguments
+        # WARNING: Critical to not pass empty major locators in matplotlib < 3.5
+        # See: https://github.com/lukelbd/proplot/issues/301
         kwargs.update(
             {
                 'cax': cax,
@@ -1120,9 +1126,7 @@ class Axes(maxes.Axes):
         else:
             kwargs['extend'] = extend
 
-        # Draw and update the colorbar
-        # WARNING: Must use colorbar set_label to set text,
-        # calling set_text on the axis will do nothing!
+        # Create colorbar and update ticks and axis direction
         # WARNING: Colorbar _ticker() internally makes dummy axis and updates view
         # limits. Here we apply actual axis rather than dummy, otherwise default nbins
         # of DiscreteLocator will not work. Not sure if this has side effects...
@@ -1135,13 +1139,17 @@ class Axes(maxes.Axes):
             obj.minorticks_on()
         else:
             obj.minorticks_off()
-        axis.set_tick_params(which='both', color=color, direction=tickdir)
-        axis.set_tick_params(which='major', length=ticklen, width=tickwidth)
-        axis.set_tick_params(which='minor', length=ticklen * ticklenratio, width=tickwidth * tickwidthratio)  # noqa: E501
         if getattr(mappable.norm, 'descending', None):
             axis.set_inverted(True)
         if reverse:  # potentially double reverse, although that would be weird...
             axis.set_inverted(True)
+
+        # Update other colorbar settings
+        # WARNING: Must use colorbar set_label to set text,
+        # calling set_text on the axis will do nothing!
+        axis.set_tick_params(which='both', color=color, direction=tickdir)
+        axis.set_tick_params(which='major', length=ticklen, width=tickwidth)
+        axis.set_tick_params(which='minor', length=ticklen * ticklenratio, width=tickwidth * tickwidthratio)  # noqa: E501
         if label is not None:
             obj.set_label(label)
         if labelloc is not None:
@@ -1158,7 +1166,7 @@ class Axes(maxes.Axes):
             obj.solids.set_rasterized(rasterized)
             cax._fix_patch_edges(obj.solids, edgefix=edgefix)
 
-        # Return after registering location
+        # Register location and return
         self._register_guide('colorbar', obj, (loc, align))  # possibly replace another
         return obj
 
@@ -1256,6 +1264,8 @@ class Axes(maxes.Axes):
         )
 
         # Add the legend and update patch properties
+        # TODO: Add capacity for categorical labels in a single legend like seaborn
+        # rather than manual handle overrides with multiple legends.
         if multi:
             objs = lax._parse_legend_centered(pairs, kw_frame=kw_frame, **kwargs)
         else:
@@ -1269,12 +1279,11 @@ class Axes(maxes.Axes):
                 lax.add_artist(obj)
 
         # Update legend patch and elements
-        # TODO: Add capacity for categorical labels in a single legend like seaborn
-        # rather than manual handle overrides with multiple legends.
         # WARNING: legendHandles only contains the *first* artist per legend because
         # HandlerBase.legend_artist() called in Legend._init_legend_box() only
         # returns the first artist. Instead we try to iterate through offset boxes.
         for obj in objs:
+            obj.set_clip_on(False)  # needed for tight bounding box calculations
             box = getattr(obj, '_legend_handle_box', None)
             for obj in guides._iter_children(box):
                 if isinstance(obj, mtext.Text):
@@ -1285,13 +1294,12 @@ class Axes(maxes.Axes):
                         kw['sizes'] = np.atleast_1d(kw_handle['markersize'])
                 obj.update(kw)
 
-        # Return after registering location
-        for obj in objs:
-            obj.set_clip_on(False)  # critical for tight bounding box calcs
+        # Register location and return
         if isinstance(objs[0], mpatches.FancyBboxPatch):
             objs = objs[1:]
         obj = objs[0] if len(objs) == 1 else tuple(objs)
         self._register_guide('legend', obj, (loc, align))  # possibly replace another
+
         return obj
 
     def _apply_title_above(self):
