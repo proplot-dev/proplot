@@ -12,7 +12,7 @@ from . import ic  # noqa: F401
 from . import warnings
 
 
-def _fill_guide_kw(kwargs, **pairs):
+def _fill_guide_kw(kwargs, overwrite=False, **pairs):
     """
     Add the keyword arguments to the dictionary if not already present.
     """
@@ -26,16 +26,21 @@ def _fill_guide_kw(kwargs, **pairs):
             continue
         keys = tuple(a for group in aliases for a in group if key in group)  # may be ()
         if not any(kwargs.get(key) is not None for key in keys):  # note any(()) is True
-            kwargs[key] = value
+            if overwrite:
+                kwargs[key] = value
+            else:
+                kwargs.setdefault(key, value)
 
 
 def _guide_kw_from_obj(obj, name, kwargs):
     """
     Add to the dict from settings stored on the object if there are no conflicts.
     """
+    # WARNING: Here we *do not* want to overwrite properties in the dictionary.
+    # Indicates e.g. calling colorbar(extend='both') after pcolor(extend='neither').
     pairs = getattr(obj, f'_{name}_kw', None)
     pairs = pairs or {}  # needed for some reason
-    _fill_guide_kw(kwargs, **pairs)
+    _fill_guide_kw(kwargs, overwrite=False, **pairs)
     if isinstance(obj, (tuple, list, np.ndarray)):
         for iobj in obj:  # possibly iterate over matplotlib tuple/list subclasses
             _guide_kw_from_obj(iobj, name, kwargs)
@@ -59,8 +64,10 @@ def _guide_kw_to_arg(name, kwargs, **pairs):
     """
     Add to the `colorbar_kw` or `legend_kw` dict if there are no conflicts.
     """
+    # WARNING: Here we *do* want to overwrite properties in dictionary. Indicates
+    # updating kwargs during parsing (probably only relevant for ax.parametric).
     kw = kwargs.setdefault(f'{name}_kw', {})
-    _fill_guide_kw(kw, **pairs)
+    _fill_guide_kw(kw, overwrite=True, **pairs)
 
 
 def _iter_children(*args):

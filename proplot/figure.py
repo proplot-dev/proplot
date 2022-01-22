@@ -1640,10 +1640,10 @@ class Figure(mfigure.Figure):
         # Fill this axes
         if cax is not None:
             with context._state_context(cax, _internal_call=True):  # do not wrap pcolor
-                return super().colorbar(mappable, cax=cax, **kwargs)
+                cb = super().colorbar(mappable, cax=cax, **kwargs)
         # Axes panel colorbar
         elif ax is not None:
-            return ax.colorbar(
+            cb = ax.colorbar(
                 mappable, values, space=space, pad=pad, width=width, **kwargs
             )
         # Figure panel colorbar
@@ -1653,7 +1653,8 @@ class Figure(mfigure.Figure):
                 loc, row=row, col=col, rows=rows, cols=cols, span=span,
                 width=width, space=space, pad=pad,
             )
-            return ax.colorbar(mappable, values, loc='fill', **kwargs)
+            cb = ax.colorbar(mappable, values, loc='fill', **kwargs)
+        return cb
 
     @docstring._concatenate_inherited
     @docstring._snippet_manager
@@ -1686,7 +1687,7 @@ class Figure(mfigure.Figure):
         ax = kwargs.pop('ax', None)
         # Axes panel legend
         if ax is not None:
-            return ax.legend(
+            leg = ax.legend(
                 handles, labels, space=space, pad=pad, width=width, **kwargs
             )
         # Figure panel legend
@@ -1696,7 +1697,8 @@ class Figure(mfigure.Figure):
                 loc, row=row, col=col, rows=rows, cols=cols, span=span,
                 width=width, space=space, pad=pad,
             )
-            return ax.legend(handles, labels, loc='fill', **kwargs)
+            leg = ax.legend(handles, labels, loc='fill', **kwargs)
+        return leg
 
     @docstring._snippet_manager
     def save(self, filename, **kwargs):
