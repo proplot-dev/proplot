@@ -912,17 +912,19 @@ def Locator(locator, *args, index=False, discrete=False, **kwargs):
 
     Parameters
     ----------
-    locator : `~matplotlib.ticker.Locator`, str, float, or sequence
+    locator : `~matplotlib.ticker.Locator`, str, bool, float, or sequence
         The locator specification, interpreted as follows:
 
         * If a `~matplotlib.ticker.Locator` instance already, the input
           argument is simply returned.
+        * If ``False``, a `~matplotlib.ticker.NullLocator` is used, and if
+          ``True``, the default `~matplotlib.ticker.AutoLocator` is used.
+        * If a number, this specifies the *step size* between tick locations.
+          Returns a `~matplotlib.ticker.MultipleLocator`.
         * If a sequence of numbers, these points are ticked. Returns
           a `~matplotlib.ticker.FixedLocator` by default,
           a `~proplot.ticker.IndexLocator` if `index` is ``True``, or
           a `~proplot.ticker.DiscreteLocator` if `discrete` is ``True``.
-        * If number, this specifies the *step size* between tick locations.
-          Returns a `~matplotlib.ticker.MultipleLocator`.
 
         Otherwise, `locator` should be a string corresponding to one
         of the "registered" locators (see below table). If `locator` is a
@@ -1013,6 +1015,10 @@ def Locator(locator, *args, index=False, discrete=False, **kwargs):
                 + ', '.join(map(repr, LOCATORS))
                 + '.'
             )
+    elif locator is True:
+        locator = mticker.AutoLocator(*args, **kwargs)
+    elif locator is False:
+        locator = mticker.NullLocator(*args, **kwargs)
     elif isinstance(locator, Number):  # scalar variable
         locator = mticker.MultipleLocator(locator, *args, **kwargs)
     elif np.iterable(locator):
@@ -1033,16 +1039,18 @@ def Formatter(formatter, *args, date=False, index=False, **kwargs):
 
     Parameters
     ----------
-    formatter : `~matplotlib.ticker.Formatter`, str, callable, or sequence
+    formatter : `~matplotlib.ticker.Formatter`, str, bool, callable, or sequence
         The formatter specification, interpreted as follows:
 
         * If a `~matplotlib.ticker.Formatter` instance already, the input
           argument is simply returned.
+        * If ``False``, a `~matplotlib.ticker.NullFormatter` is used, and if
+          ``True``, the default `~proplot.ticker.AutoFormatter` is used.
+        * If a function, the labels will be generated using this function.
+          Returns a `~matplotlib.ticker.FuncFormatter`.
         * If sequence of strings, the ticks are labeled with these strings.
           Returns a `~matplotlib.ticker.FixedFormatter` by default or
           an `~proplot.ticker.IndexFormatter` if `index` is ``True``.
-        * If a function, the labels will be generated using this function.
-          Returns a `~matplotlib.ticker.FuncFormatter`.
         * If a string containing ``{x}`` or ``{x:...}``, ticks will be
           formatted by calling ``string.format(x=number)``. Returns
           a `~matplotlib.ticker.StrMethodFormatter`.
@@ -1149,9 +1157,12 @@ def Formatter(formatter, *args, date=False, index=False, **kwargs):
                 + ', '.join(map(repr, FORMATTERS))
                 + '.'
             )
+    elif formatter is True:
+        formatter = pticker.AutoFormatter(*args, **kwargs)
+    elif formatter is False:
+        formatter = mticker.NullFormatter(*args, **kwargs)
     elif np.iterable(formatter):
-        cls = pticker.IndexFormatter if index else mticker.FixedFormatter
-        formatter = cls(formatter)
+        formatter = (mticker.FixedFormatter, pticker.IndexFormatter)[index](formatter)
     elif callable(formatter):
         formatter = mticker.FuncFormatter(formatter, *args, **kwargs)
     else:
