@@ -707,15 +707,17 @@ _rc_matplotlib_default = {
     'lines.linestyle': '-',
     'lines.linewidth': 1.5,
     'lines.markersize': 6.0,
-    'legend.borderaxespad': 0,  # looks sleeker flush against edge
-    'legend.borderpad': 0.5,  # a bit more space
-    'legend.columnspacing': 1.5,  # more compact
+    'legend.borderaxespad': 0,  # i.e. flush against edge
+    'legend.borderpad': 0.5,  # a bit more roomy
+    'legend.columnspacing': 1.5,  # a bit more compact (see handletextpad)
     'legend.edgecolor': BLACK,
     'legend.facecolor': WHITE,
-    'legend.fancybox': False,  # looks modern without curvy box
+    'legend.fancybox': False,  # i.e. BboxStyle 'square' not 'round'
     'legend.fontsize': SMALLSIZE,
     'legend.framealpha': FRAMEALPHA,
-    'legend.handletextpad': 0.5,
+    'legend.handleheight': 1.0,  # default is 0.7
+    'legend.handlelength': 2.0,  # default is 2.0
+    'legend.handletextpad': 0.5,  # a bit more compact (see columnspacing)
     'mathtext.default': 'it',
     'mathtext.fontset': 'custom',
     'mathtext.bf': 'regular:bold',  # custom settings implemented above
@@ -725,11 +727,11 @@ _rc_matplotlib_default = {
     'mathtext.sf': 'regular',
     'mathtext.tt': 'monospace',
     'patch.linewidth': LINEWIDTH,
-    'savefig.bbox': None,  # use custom tight layout
-    'savefig.directory': '',  # current directory
-    'savefig.dpi': 1000,  # academic journal recommendations for raster line art
-    'savefig.facecolor': WHITE,  # different from figure.facecolor
-    'savefig.format': 'pdf',  # most users use bitmap, but vector graphics are better
+    'savefig.bbox': None,  # do not use 'tight'
+    'savefig.directory': '',  # use the working directory
+    'savefig.dpi': 1000,  # use academic journal recommendation
+    'savefig.facecolor': WHITE,  # use white instead of 'auto'
+    'savefig.format': 'pdf',  # use vector graphics
     'savefig.transparent': False,
     'xtick.color': BLACK,
     'xtick.direction': TICKDIR,
