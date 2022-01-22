@@ -21,11 +21,10 @@ from . import plot
 try:
     import cartopy.crs as ccrs
     import cartopy.feature as cfeature
-    import cartopy.mpl.ticker as cticker
     from cartopy.crs import Projection
     from cartopy.mpl.geoaxes import GeoAxes as _GeoAxes
 except ModuleNotFoundError:
-    cfeature = cticker = ccrs = None
+    ccrs = cfeature = None
     _GeoAxes = Projection = object
 
 try:

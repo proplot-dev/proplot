@@ -38,10 +38,10 @@ except ImportError:
     Basemap = object
 try:
     import cartopy.crs as ccrs
-    import cartopy.mpl.ticker as cticker
     from cartopy.crs import Projection
 except ModuleNotFoundError:
-    Projection = ccrs = cticker = object
+    ccrs = None
+    Projection = object
 
 __all__ = [
     'Proj',
@@ -226,7 +226,7 @@ PROJ_DEFAULTS = {
         'lon_1': 0, 'lon_2': 0, 'width': 10000e3, 'height': 10000e3
     },
 }
-if ccrs is object:
+if ccrs is None:
     PROJS = {}
 else:
     PROJS = {
@@ -1469,7 +1469,7 @@ def Proj(
     # NOTE: Error message matches basemap invalid projection message
     elif backend == 'cartopy':
         # Parse keywoard arguments
-        import cartopy.crs as ccrs  # noqa: F401
+        import cartopy  # ensure present  # noqa: F401
         for key in ('round', 'boundinglat'):
             value = kwargs.pop(key, None)
             if value is not None:
@@ -1508,7 +1508,7 @@ def Proj(
     # on initialization and controls *all* features.
     else:
         # Parse input arguments
-        from mpl_toolkits.basemap import Basemap
+        from mpl_toolkits import basemap  # ensure present  # noqa: F401
         if name in ('eqc', 'pcarree'):
             name = 'cyl'  # PROJ package aliases
         defaults = {'fix_aspect': True, **PROJ_DEFAULTS.get(name, {})}
