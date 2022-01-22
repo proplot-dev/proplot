@@ -61,16 +61,18 @@ boundinglat : float, optional
     The edge latitude for the circle bounding North Pole and South Pole-centered
     projections. When basemap is the backend this argument must be passed to
     `~proplot.constructor.Proj` instead.
-latmax : float, default: 80
-    The maximum absolute latitude for longitude and latitude gridlines.
-    Longitude gridlines are cut off poleward of this latitude for all basemap
-    and cartopy projections (note this feature does not work in cartopy 0.18).
 longrid, latgrid, grid : bool, default: :rc:`grid`
     Whether to draw longitude and latitude gridlines.
-    Use the keyword `grid` to toggle both.
+    Use the keyword `grid` to toggle both at once.
 longridminor, latgridminor, gridminor : bool, default: :rc:`gridminor`
     Whether to draw "minor" longitude and latitude lines.
-    Use the keyword `gridminor` to toggle both.
+    Use the keyword `gridminor` to toggle both at once.
+latmax : float, default: 80
+    The maximum absolute latitude for gridlines. Longitude gridlines are cut off
+    poleward of this value (note this feature does not work in cartopy 0.18).
+nsteps : int, default: :rc:`grid.nsteps`
+    *For cartopy axes only.*
+    The number of interpolation steps used to draw gridlines.
 lonlines, latlines : optional
     Aliases for `lonlocator`, `latlocator`.
 lonlocator, latlocator : locator-spec, optional
@@ -94,17 +96,18 @@ lonminorlines_kw, latminorlines_kw : optional
     Aliases for `lonminorlocator_kw`, `latminorlocator_kw`.
 lonminorlocator_kw, latminorlocator_kw : optional
     As with `lonlocator_kw` and `latlocator_kw` but for the "minor" gridlines.
-labels : bool, default: :rc:`grid.labels`
-    Sets `lonlabels` and `latlabels` to ``True``. To draw labels
-    by default use e.g. ``pplt.rc['grid.labels'] = True``.
-lonlabels, latlabels : optional
-    Whether to label longitudes and latitudes, and on which sides
-    of the map. There are four different options:
+labels : bool, str, or sequence, default:
+    Sets `lonlabels` and `latlabels` to the same value. To draw
+    labels by default use e.g. ``pplt.rc['grid.labels'] = True``.
+lonlabels, latlabels, labels : str, bool, or sequence, :rc:`grid.labels`
+    Whether to add non-inline longitude and latitude gridline labels, and on
+    which sides of the map. Use the keyword `labels` to set both at once. The
+    argument must conform to one of the following options:
 
-    1. Boolean ``True``. Indicates the left side for latitudes,
-       bottom side for longitudes.
-    2. A string or tuple of strings indicating the side names, e.g.
-       ``'left'`` for latitudes or ``'bottom'`` for longitudes.
+    1. A boolean. ``True`` indicates the left side for latitudes, bottom
+       side for longitudes, and ``False`` disables all labels.
+    2. A string or sequence of strings indicating the side names, e.g.
+       ``'left'`` for latitudes or ``('top', 'bottom')`` for longitudes.
     3. A string indicating the side names with single characters, e.g.
        ``'lr'`` for latitudes or ``'bt'`` for longitudes.
     4. A boolean 2-tuple indicating whether to draw labels on the
@@ -115,11 +118,28 @@ lonlabels, latlabels : optional
        `~mpl_toolkits.basemap.Basemap.drawmeridians` and
        `~mpl_toolkits.basemap.Basemap.drawparallels` `labels` keyword.
 
+loninline, latinline, inlinelabels : bool, default: :rc:`grid.inlinelabels`
+    *For cartopy axes only.*
+    Whether to add inline longitude and latitude gridline labels. Use
+    the keyword `inlinelabels` to set both at once.
+rotatelabels : bool, default: :rc:`grid.rotatelabels`
+    *For cartopy axes only.*
+    Whether to rotate non-inline gridline labels so that they automatically
+    follow the map boundary curvature.
+labelpad : unit-spec, default: :rc:`grid.labelpad`
+    *For cartopy axes only.*
+    The padding between non-inline gridline labels and the map boundary.
+    %(units.pt)s
+dms : bool, default: :rc:`grid.dmslabels`
+    *For cartopy axes only.*
+    Whether the default locators and formatters should use "minutes" and "seconds" for
+    gridline labels on small scales rather than decimal degrees. Setting this to
+    ``False`` is equivalent to ``ax.format(lonlocator='deglon', latlocator='deglon')``
+    and ``ax.format(lonformatter='deglon', latformatter='deglat')``.
 lonformatter, latformatter : formatter-spec, optional
     Formatter used to style longitude and latitude gridline labels.
-    Passed to the `~proplot.constructor.Formatter` constructor.
-    Can be string, list of string, or `matplotlib.ticker.Formatter`
-    instance.
+    Passed to the `~proplot.constructor.Formatter` constructor. Can
+    be string, list of string, or `matplotlib.ticker.Formatter` instance.
 
     For basemap or cartopy < 0.18, the defaults are ``'deglon'`` and
     ``'deglat'``, which correspond to `~proplot.ticker.SimpleFormatter`
@@ -127,31 +147,10 @@ lonformatter, latformatter : formatter-spec, optional
     For cartopy >= 0.18, the defaults are ``'dmslon'`` and ``'dmslat'``,
     which uses cartopy's `~cartopy.mpl.ticker.LongitudeFormatter` and
     `~cartopy.mpl.ticker.LatitudeFormatter` formatters with ``dms=True``.
-    This formats gridlines that do not fall on whole degrees as "minutes"
-    and "seconds" rather than decimal degrees.
+    This formats gridlines that do not fall on whole degrees as "minutes" and
+    "seconds" rather than decimal degrees. Use ``dms=False`` to disable this.
 lonformatter_kw, latformatter_kw : dict-like, optional
     Keyword arguments passed to the `matplotlib.ticker.Formatter` class.
-loninline, latinline, inlinelabels : bool, default: :rc:`grid.inlinelabels`
-    *For cartopy axes only.*
-    Whether to draw inline longitude and latitude gridline labels. Setting to ``True``
-    also sets default values for `lonlabels`, `latlabels`, and `labels` to ``True``.
-rotatelabels : bool, default: :rc:`grid.rotatelabels`
-    *For cartopy axes only.*
-    Whether to rotate longitude and latitude gridline labels.
-labelpad : unit-spec, default: :rc:`grid.labelpad`
-    *For cartopy axes only.*
-    The padding between the map boundary and longitude and latitude gridline labels.
-    %(units.pt)s
-dms : bool, default: :rc:`grid.dmslabels`
-    *For cartopy axes only.*
-    Specifies whether the default locators and formatters should use
-    "minutes" and "seconds" for gridline labels on small scales rather
-    than decimal degrees. Setting this to ``False`` is equivalent to
-    specifying ``ax.format(lonlocator='deglon', latlocator='deglon')``
-    and ``ax.format(lonformatter='deglon', latformatter='deglat')``.
-nsteps : int, default: :rc:`grid.nsteps`
-    *For cartopy axes only.*
-    The number of interpolation steps used to draw gridlines.
 land, ocean, coast, rivers, lakes, borders, innerborders : bool, optional
     Toggles various geographic features. These are actually the
     :rcraw:`land`, :rcraw:`ocean`, :rcraw:`coast`, :rcraw:`rivers`,
@@ -164,20 +163,20 @@ land, ocean, coast, rivers, lakes, borders, innerborders : bool, optional
     :rcraw:`land.zorder`, use ``ax.format(landzorder=4)``.
 reso : {'lo', 'med', 'hi', 'x-hi', 'xx-hi'}, optional
     *For cartopy axes only.*
-    The resolution of geographic features. For basemap axes, this must
-    be passed to `~proplot.constructor.Proj`.
+    The resolution of geographic features. When basemap is the backend this
+    must be passed to `~proplot.constructor.Proj` instead.
 color : color-spec, default: :rc:`meta.color`
-    Color for the axes edge. Propagates to `labelcolor` unless specified
+    The color for the axes edge. Propagates to `labelcolor` unless specified
     otherwise (similar to `proplot.axes.CartesianAxes.format`).
 gridcolor : color-spec, default: :rc:`grid.color`
-    Color for the longitude and lagitude grid lines.
-labelcolor, gridlabelcolor : color-spec, default: `color` or :rc:`grid.labelcolor`
-    Color for the longitude and latitude grid labels.
-labelsize, gridlabelsize : unit-spec or str, default: :rc:`grid.labelsize`
-    Font size for the gridline labels.
+    The color for the gridline labels.
+labelcolor : color-spec, default: `color` or :rc:`grid.labelcolor`
+    The color for the gridline labels (`gridlabelcolor` is also allowed).
+labelsize : unit-spec or str, default: :rc:`grid.labelsize`
+    The font size for the gridline labels (`gridlabelsize` is also allowed).
     %(units.pt)s
-labelweight, gridlabelweight : str, default: :rc:`grid.labelweight`
-    Font weight for the gridline labels.
+labelweight : str, default: :rc:`grid.labelweight`
+    The font weight for the gridline labels (`gridlabelweight` is also allowed).
 """
 docstring._snippet_manager['geo.format'] = _format_docstring
 
@@ -509,8 +508,9 @@ class GeoAxes(plot.PlotAxes):
     def format(
         self, *,
         extent=None, round=None,
-        lonlim=None, latlim=None, boundinglat=None, latmax=None,
+        lonlim=None, latlim=None, boundinglat=None,
         longrid=None, latgrid=None, longridminor=None, latgridminor=None,
+        latmax=None, nsteps=None,
         lonlocator=None, lonlines=None,
         latlocator=None, latlines=None,
         lonminorlocator=None, lonminorlines=None,
@@ -521,10 +521,9 @@ class GeoAxes(plot.PlotAxes):
         latminorlocator_kw=None, latminorlines_kw=None,
         lonformatter=None, latformatter=None,
         lonformatter_kw=None, latformatter_kw=None,
-        labels=None, latlabels=None, lonlabels=None,
-        loninline=None, latinline=None, inlinelabels=None, rotatelabels=None,
+        labels=None, latlabels=None, lonlabels=None, rotatelabels=None,
+        loninline=None, latinline=None, inlinelabels=None, dms=None,
         labelpad=None, labelcolor=None, labelsize=None, labelweight=None,
-        dms=None, nsteps=None,
         **kwargs,
     ):
         """
