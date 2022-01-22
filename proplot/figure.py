@@ -756,7 +756,7 @@ class Figure(mfigure.Figure):
 
     def _parse_proj(
         self, proj=None, projection=None,
-        proj_kw=None, projection_kw=None, backend=None,
+        proj_kw=None, projection_kw=None, backend=None, basemap=None,
         **kwargs
     ):
         """
@@ -767,6 +767,12 @@ class Figure(mfigure.Figure):
         # Parse arguments
         proj = _not_none(proj=proj, projection=projection, default='cartesian')
         proj_kw = _not_none(proj_kw=proj_kw, projection_kw=projection_kw, default={})
+        if basemap is not None:
+            backend = ('cartopy', 'basemap')[bool(basemap)]
+            warnings._warn_proplot(
+                f'The {basemap!r} keyword was deprecated in version 0.10 and will be '
+                f'removed in a future release. Please use backend={backend!r} intead.'
+            )
         if isinstance(proj, str):
             proj = proj.lower()
         if isinstance(self, paxes.Axes):
