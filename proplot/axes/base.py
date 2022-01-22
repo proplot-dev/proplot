@@ -1745,18 +1745,18 @@ class Axes(maxes.Axes):
         ax.patch.set_facecolor('none')  # ignore axes.alpha application
 
         # Handle default keyword args
-        if side in ('bottom', 'top'):
+        if orientation is None:
+            orientation = 'horizontal' if side in ('bottom', 'top') else 'vertical'
+        if orientation == 'horizontal':
             outside, inside = 'bottom', 'top'
             if side == 'top':
                 outside, inside = inside, outside
             ticklocation = _not_none(ticklocation, outside)
-            orientation = _not_none(orientation, 'horizontal')
         else:
             outside, inside = 'left', 'right'
             if side == 'right':
                 outside, inside = inside, outside
             ticklocation = _not_none(ticklocation, outside)
-            orientation = _not_none(orientation, 'vertical')
         kwargs.update({'orientation': orientation, 'ticklocation': ticklocation})
         return ax, kwargs
 
@@ -1819,8 +1819,8 @@ class Axes(maxes.Axes):
         # Handle default keyword args
         if orientation is not None and orientation != 'horizontal':
             warnings._warn_proplot(
-                f'Orientation for inset colorbars must be horizontal, '
-                f'ignoring orientation={orientation!r}.'
+                f'Orientation for inset colorbars must be horizontal. '
+                f'Ignoring orientation={orientation!r}.'
             )
         ticklocation = _not_none(tickloc=tickloc, ticklocation=ticklocation)
         if ticklocation is not None and ticklocation != 'bottom':
@@ -2833,6 +2833,12 @@ class Axes(maxes.Axes):
         # The queue option lets us successively append objects (e.g. line handles)
         # to a list later used for colorbar levels. Same as legend.
         loc = _not_none(loc=loc, location=location)
+        orientation = kwargs.get('orientation', None)
+        if orientation is not None:  # possibly infer loc from orientation
+            if orientation not in ('vertical', 'horizontal'):
+                raise ValueError(f"Invalid colorbar orientation {orientation!r}. Must be 'vertical' or 'horizontal'.")   # noqa: E501
+            if loc is None:
+                loc = {'vertical': 'right', 'horizontal': 'bottom'}[orientation]
         loc = _translate_loc(loc, 'colorbar', default=rc['colorbar.loc'])
         align = _translate_loc(align, 'panel', default='center', c='center', center='center')  # noqa: E501
         kwargs = guides._guide_kw_from_obj(mappable, 'colorbar', kwargs)
