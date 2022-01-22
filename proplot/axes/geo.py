@@ -674,9 +674,39 @@ class GeoAxes(plot.PlotAxes):
         super().format(rc_kw=rc_kw, rc_mode=rc_mode, **kwargs)
 
     @property
+    def gridlines_major(self):
+        """
+        The cartopy `~cartopy.mpl.gridliner.Gridliner`
+        used for major gridlines or a 2-tuple containing the
+        (longitude, latitude) major gridlines returned by
+        basemap's `~mpl_toolkits.basemap.Basemap.drawmeridians`
+        and `~mpl_toolkits.basemap.Basemap.drawparallels`.
+        This can be used for customization and debugging.
+        """
+        if self._name == 'basemap':
+            return (self._lonlines_major, self._latlines_major)
+        else:
+            return self._gridlines_major
+
+    @property
+    def gridlines_minor(self):
+        """
+        The cartopy `~cartopy.mpl.gridliner.Gridliner`
+        used for minor gridlines or a 2-tuple containing the
+        (longitude, latitude) minor gridlines returned by
+        basemap's `~mpl_toolkits.basemap.Basemap.drawmeridians`
+        and `~mpl_toolkits.basemap.Basemap.drawparallels`.
+        This can be used for customization and debugging.
+        """
+        if self._name == 'basemap':
+            return (self._lonlines_minor, self._latlines_minor)
+        else:
+            return self._gridlines_minor
+
+    @property
     def projection(self):
         """
-        The `~cartopy.crs.Projection` or `~mpl_toolkits.basemap.Basemap`
+        The cartopy `~cartopy.crs.Projection` or basemap `~mpl_toolkits.basemap.Basemap`
         instance associated with this axes.
         """
         return self._map_projection
