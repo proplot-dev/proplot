@@ -39,7 +39,8 @@ Deprecated
 * Rename `rasterize` and :rcraw:`colorbar.rasterize` to `rasterized`, consistent
   with the existing matplotlib ``rasterized`` property (:commit:`31efafea`).
 * Rename `basemap` and :rcraw:`basemap` to `backend` and :rcraw:`geo.backend`, which
-  can take either of the values ``'cartopy'`` or ``'basemap'`` (:commit:`613ab0ea`).
+  can take either of the values ``'cartopy'`` or ``'basemap'``, and auto-translate and
+  emit warning when `basemap` is used (:commit:`613ab0ea`, :commit:`eb77cbca`).
 * Rename :rcraw:`cartopy.autoextent`, :rcraw:`cartopy.circular` to :rcraw:`geo.extent`,
   :rcraw:`geo.round`, with :rcraw:`geo.extent` taking either of the values ``'globe'``
   or ``'auto'`` (``cartopy.autoextent`` is translated when used) (:commit:`c4b93c9d`).
@@ -85,13 +86,10 @@ Features
 
 * Support passing lists for the `proplot.axes.Axes.format` keywords `abc` and `title`,
   in which case the label is picked by selecting the `~proplot.axes.Axes.number`
-  (minus 1) entry from the list (:pr:`294`) by `Pratiman Patel`.
+  (minus 1) entry from the list (:pr:`294`) by `Pratiman Patel`_.
 * Move the `extent` and `round` keywords (formerly `autoextent` and `circular` --
   see above) from `~proplot.axes.GeoAxes.__init__` to `proplot.axes.GeoAxes.format`,
   supporting toggling and passage to e.g. `~proplot.ui.subplots` (:commit:`5f1c67cc`).
-* Add :rcraw:`grid.geolabels` setting that auto-includes cartopy ``'geo'`` location
-  when toggling labels with e.g. ``lonlabels='left'`` or ``labels=True``, and support
-  passing passing it explicitly with e.g. ``labels='geo'`` (:commit:`9040cde0`).
 * Allow using the `~proplot.constructor.Proj` keyword `latlim` as Mercator projection
   limits and `lon0`, `lat0` aliases for `lon_0`, `lat_0` (:commit:`5f1c67cc`).
 * Add modifiable `proplot.figure.Figure.tight` property to retrieve and optionally
@@ -112,11 +110,20 @@ Features
   from the panel rather than the main subplot (:commit:`cfaeb177`).
 * Permit disabling a-b-c labels for a particular subplot by passing e.g.
   ``number=None`` instead of ``number=False`` (:commit:`f7308cbe`).
-* Make `proplot.ticker.IndexFormatter` public, since the matplotlib version
-  was entirely removed in version 3.5 (:commit:`c2dd8b2e`).
+* Add the public proplot class `proplot.ticker.IndexFormatter`, since the matplotlib
+  version was entirely removed in version 3.5 (:commit:`c2dd8b2e`).
 * Replace `matplotlib.ticker.IndexLocator` with `proplot.ticker.IndexLocator`,
   consistent with `~proplot.ticker.IndexFormatter`, and remove the limitation
   requiring data to be plotted on the axis (:commit:`c2dd8b2e`).
+* Permit picking the `~matplotlib.ticker.NullFormatter`, `~proplot.ticker.AutoFormatter`
+  `~matplotlib.ticker.NullLocator`, and `~matplotlib.ticker.AutoLocator` by passing
+  ``True`` or ``False`` to the corresponding constructor functions (:commit:`92ae0575`).
+* Add the `proplot.axes.GeoAxes.gridlines_major`, `proplot.axes.GeoAxes.gridlines_minor`
+  properties for additional customization of cartopy/basemap gridlines
+  or debugging gridline issues (:commit:`869f300f`).
+* Add :rcraw:`grid.geolabels` setting that auto-includes cartopy ``'geo'`` location
+  when toggling labels with e.g. ``lonlabels='left'`` or ``labels=True``, and support
+  passing it explicitly with e.g. ``labels='geo'`` (:commit:`9040cde0`).
 * Add `proplot.ticker.DiscreteLocator` analogous to `~matplotlib.ticker.FixedLocator`
   that ticks from a subset of fixed values, and add a `discrete` keyword and register
   as ``'discrete'`` in `proplot.constructor.Locator` (:commit:`b94a9b1e`).
@@ -175,6 +182,10 @@ Bug fixes
   arrays to plotting methods (:issue:`320`).
 * Fix issue where list-of-string colors passed to `~proplot.axes.Axes.scatter`
   are interpreted as data values (:issue:`316`).
+* Fix issue where settings passed to `~proplot.axes.Axes.colorbar` after e.g.
+  `~proplot.axes.PlotAxes.pcolor` with `colorbar_kw` are ignored (:issue:`314`).
+* Fix issues where passing the colorbar `orientation` without a `loc`, or using a non-
+  standard `orientation` for a given `loc`, triggers tickloc error (:issue:`314`).
 * Fix issue where background properties like `color` and `linewidth` cannot be
   passed to `~proplot.axes.Axes` instantiation commands (:commit:`b67b046c`).
 * Fix issue where manual data aspect ratio passed with `~proplot.axes.Axes.format`
