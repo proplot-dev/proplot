@@ -406,18 +406,23 @@ for span, share, title in zip(spans, shares, titles):
 # various `~proplot.axes.Axes.legend` spacing and padding arguments; various
 # `~proplot.axes.Axes.format` font size and padding arguments; the line width and
 # marker size arguments passed to `~proplot.axes.PlotAxes` commands; and all
-# applicable `~proplot.config.rc` settings. This feature is powered by the
-# `~proplot.utils.units` function.
+# applicable `~proplot.config.rc` settings, e.g. :rcraw:`subplots.refwidth`,
+# :rcraw:`legend.columnspacing`, and :rcraw:`axes.labelpad`. This feature is
+# powered by the physical units engine `~proplot.utils.units`.
 #
-# A table of acceptable physical units is found :ref:`here <units_table>`.
-# They include centimeters, millimeters, pixels,
-# `em-heights <https://en.wikipedia.org/wiki/Em_(typography)>`__,
+# When one of these keyword arguments is numeric, a default physical unit is
+# used. For subplot and figure sizes, the defult unit is inches. For gridspec and
+# legend spaces, the default unit is `em-widths
+# <https://en.wikipedia.org/wiki/Em_(typography)>`__.
+# For font sizes, text padding, and
+# line widths, the default unit is
+# `points <https://en.wikipedia.org/wiki/Point_(typography)>`__.
+# See the relevant documentation in the :ref:`API reference <api>` for details.
+# A table of acceptable physical units is found :ref:`here <units_table>`
+# -- they include centimeters, millimeters, pixels,
+# `em-widths <https://en.wikipedia.org/wiki/Em_(typography)>`__,
 # `en-heights <https://en.wikipedia.org/wiki/En_(typography)>`__,
 # and `points <https://en.wikipedia.org/wiki/Point_(typography)>`__.
-# The default physical unit (assumed when an argument is numeric) depends on the
-# context. For subplot and figure sizes, it is inches. For gridspec and legend spaces,
-# it is em-widths. For font sizes, text padding, and line widths, it is points.
-# See the relevant documentation in the :ref:`API reference <api>` for details.
 
 # %%
 import proplot as pplt

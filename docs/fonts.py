@@ -80,29 +80,29 @@ fig, axs = pplt.show_fonts(family='tex-gyre')
 # %% [raw] raw_mimetype="text/restructuredtext"
 # .. _ug_fonts_math:
 #
-# Math fonts
-# ----------
+# Math text fonts
+# ---------------
 #
-# Proplot changes the default :rcraw:`mathtext.fontset` to ``'custom'``.
-# This means that LaTeX-generated math text in a given string (i.e.,
-# text surrounded by ``'$dollar signs$'``) uses the same font
-# family as non-math text (see the matplotlib `math text guide
-# <https://matplotlib.org/stable/tutorials/text/mathtext.html#custom-fonts>`__
-# for details). This improves the consistency of figure text when switching
-# between different fonts. However, if you are need unusual math symbols
-# or complex math operators, you may want to change :rcraw:`font.name` to
-# something more suitable for math (e.g., the proplot-packaged font
-# ``'Fira Math'`` or the matplotlib-packaged font ``'DejaVu Sans'``; see
-# `this page <https://github.com/firamath/firamath>`__ for more on Fira Math).
-# Alternatively, you can change the math text without affecting non-math text
-# by setting :rcraw:`mathtext.fontset` back to one of matplotlib's
-# math-specialized font sets (e.g., ``'stixsans'`` or ``'dejavusans'``).
+# In matplotlib, math text rendered by TeX can be produced by surrounding
+# an expression with ``$dollar signs$``. To help math text jive better with
+# the new default :ref:`non-math text font <ug_fonts_included>`, proplot changes
+# :rcraw:`mathtext.fontset` to ``'custom'``. This means that math is drawn with
+# the italicized version of the non-math font (see the matplotlib `math text
+# guide <https://matplotlib.org/stable/tutorials/text/mathtext.html#custom-fonts>`__
+# for details). This generally improves the appearance of figures with simple
+# math expressions. However, if you need unusual math symbols or complex math
+# operators, you may want to change :rcraw:`font.name` to something more suitable
+# for math (e.g., the proplot-packaged font ``'Fira Math'`` or the matplotlib-packaged
+# font ``'DejaVu Sans'``; see `this page <https://github.com/firamath/firamath>`__ for
+# more on Fira Math). Alternatively, you can change the math text font alone by setting
+# :rcraw:`mathtext.fontset` back to one of matplotlib's math-specialized font sets
+# (e.g., ``'stixsans'`` or ``'dejavusans'``).
 #
 # A table of math text containing the sans-serif fonts packaged with proplot is shown
-# below. The dummy character "¤" is shown where a given math character is unavailable
+# below. The dummy glyph "¤" is shown where a given math character is unavailable
 # for a particular font (in practice, the fallback font :rc:`mathtext.fallback` is used
-# whenever a math character is unavailable, but the demo function disables this fallback
-# font in order to highlight the missing characters).
+# whenever a math character is unavailable, but `~proplot.demos.show_fonts` disables
+# this fallback font in order to highlight the missing characters).
 #
 # .. note::
 #

@@ -803,7 +803,9 @@ def show_colors(*, nhues=17, minsat=10, unknown='User', include=None, ignore=Non
     return fig, axs
 
 
-def show_fonts(*args, family=None, text=None, math=False, **kwargs):
+def show_fonts(
+    *args, family=None, user=None, text=None, math=False, fallback=False, **kwargs
+):
     """
     Generate a table of fonts. If a glyph for a particular font is unavailable,
     it is replaced with the "¤" dummy character.
@@ -818,17 +820,25 @@ def show_fonts(*args, family=None, text=None, math=False, **kwargs):
         :rcraw:`font.sans-serif` fonts are shown.
     family \
 : {'tex-gyre', 'sans-serif', 'serif', 'monospace', 'cursive', 'fantasy'}, optional
-        If provided, the *available* fonts in the corresponding families are shown.
-        The fonts belonging to these families are listed under the :rcraw:`font.serif`,
+        The family from which *available* fonts are shown. Default is ``'sans-serif'``
+        if no arguments were provided. Otherwise the default is to not show family
+        fonts. The fonts belonging to each family are listed under :rcraw:`font.serif`,
         :rcraw:`font.sans-serif`, :rcraw:`font.monospace`, :rcraw:`font.cursive`, and
-        :rcraw:`font.fantasy` settings. The special family ``'tex-gyre'`` includes
-        the `TeX Gyre <http://www.gust.org.pl/projects/e-foundry/tex-gyre>`__ fonts.
+        :rcraw:`font.fantasy`. The special family ``'tex-gyre'`` includes the
+        `TeX Gyre <http://www.gust.org.pl/projects/e-foundry/tex-gyre>`__ fonts.
+    user : bool, optional
+        Whether to include fonts in `~proplot.config.Configurator.user_folder` and
+        `~proplot.config.Configurator.local_folders` at the top of the table. Default
+        is ``True`` if called without any arguments and ``False`` otherwise.
     text : str, optional
         The sample text shown for each font. If not passed then default math or
         non-math sample text is used.
     math : bool, default: False
         Whether the default sample text should show non-math Latin characters or
         or math equations and Greek letters.
+    fallback : bool, default: False
+        Whether to use the fallback font :rcraw:`mathtext.fallback` for unavailable
+        characters. If ``False`` the dummy glyph "¤" is shown for missing characters.
     **kwargs
         Additional font properties passed to `~matplotlib.font_manager.FontProperties`.
         Default size is ``12`` and default weight, style, and strength are ``'normal'``.
@@ -875,8 +885,9 @@ def show_fonts(*args, family=None, text=None, math=False, **kwargs):
             warnings._warn_proplot(f'Input font name {opts[:1]!r} not found. Skipping.')
 
     # Add user and family FontProperties.
-    if not args and family is None:
-        family = 'sans-serif'
+    user = _not_none(user, not args and family is None)
+    family = _not_none(family, None if args else 'sans-serif')
+    if user:
         paths = _get_data_folders('fonts', default=False)
         for font in all_fonts:  # fonts sorted by unique name
             if os.path.dirname(font.fname) in paths:
@@ -894,33 +905,36 @@ def show_fonts(*args, family=None, text=None, math=False, **kwargs):
                 props.append(mfonts.FontProperties(name, **kwargs))
 
     # The default sample text
+    linespacing = 0.8 if text is None and math else 1.2
     if text is None:
         if not math:
             text = (
-                'the quick brown fox jumps over a lazy dog . , + -'
+                'the quick brown fox jumps over a lazy dog 01234 ; . , + - * ^ () ||'
                 '\n'
-                'THE QUICK BROWN FOX JUMPS OVER A LAZY DOG ! ? & # %'
+                'THE QUICK BROWN FOX JUMPS OVER A LAZY DOG 56789 : ! ? & # % $ [] {}'
             )
         else:
             text = (
+                '\n'
                 r'$\alpha\beta$ $\Gamma\gamma$ $\Delta\delta$ '
                 r'$\epsilon\zeta\eta$ $\Theta\theta$ $\kappa\mu\nu$ '
                 r'$\Lambda\lambda$ $\Pi\pi$ $\xi\rho\tau\chi$ $\Sigma\sigma$ '
                 r'$\Phi\phi$ $\Psi\psi$ $\Omega\omega$ '
-                r'$\ll { }^k \gg [ ]_l \propto ( )^m \cdot \left<\right>_n$'
+                r'$\{ \; \}^i$ $[ \; ]_j$ $( \; )^k$ $\left<  \right>_n$'
                 '\n'
                 r'$0^a + 1_b - 2^c \times 3_d = '
                 r'4.0^e \equiv 5.0_f \approx 6.0^g \sim 7_h \leq 8^i \geq 9_j'
-                r'\sum X \ll \int Y \gg \oint Z \propto \prod Q$'
-                '\n'
+                r'\ll \prod \, P \gg \sum \, Q \, '
+                r'\int \, Y \mathrm{d}y \propto \oint \;\, Z \mathrm{d}z$'
             )
 
     # Settings for rendering math text
     ctx = {'mathtext.fontset': 'custom'}
-    if _version_mpl < '3.4':
-        ctx['mathtext.fallback_to_cm'] = False
-    else:
-        ctx['mathtext.fallback'] = None
+    if not fallback:
+        if _version_mpl < '3.4':
+            ctx['mathtext.fallback_to_cm'] = False
+        else:
+            ctx['mathtext.fallback'] = None
     if 'size' not in kwargs:
         for prop in props:
             if prop.get_size() == rc['font.size']:
@@ -939,6 +953,7 @@ def show_fonts(*args, family=None, text=None, math=False, **kwargs):
     for ax, prop in zip(axs, props):
         name = prop.get_family()[0]
         ax.text(
-            0, 0.5, f'{name}:\n{text}', ha='left', va='center', fontproperties=prop
+            0, 0.5, f'{name}:\n{text} ', ha='left', va='center',
+            linespacing=linespacing, fontproperties=prop
         )
     return fig, axs

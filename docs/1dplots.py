@@ -470,17 +470,21 @@ ax.colorbar(m, loc='b', locator=2, label='parametric coordinate')
 # apply default *x* or *y* coordinates if you failed to provide them explicitly
 # and can *group* or *stack* successive columns of data if you pass 2D arrays instead
 # of 1D arrays -- just like `pandas`_. When bars are grouped, their widths and
-# positions are adjusted according to the number of bars in the group.
+# positions are adjusted according to the number of bars in the group. Grouping
+# is the default behavior and stacking can be enabled with ``stack=True``
+# or ``stacked=True``.
 #
 # The `~proplot.axes.PlotAxes.fill_between` and `~proplot.axes.PlotAxes.fill_betweenx`
 # commands have the new shorthands `~proplot.axes.PlotAxes.area`
 # and `~proplot.axes.PlotAxes.areax`. Similar to `~proplot.axes.PlotAxes.bar` and
 # `~proplot.axes.PlotAxes.barh`, they apply default *x* coordinates if you failed
 # to provide them explicitly, and can *overlay* or *stack* successive columns of
-# data if you pass 2D arrays instead of 1D arrays -- just like `pandas`_. Also, the
-# default *x* bounds for shading drawn with `~proplot.axes.PlotAxes.area` and *y*
-# bounds for shading drawn with `~proplot.axes.PlotAxes.areax` is now "sticky",
-# i.e. there is no padding between the shading and axes edges by default.
+# data if you pass 2D arrays instead of 1D arrays -- just like `pandas`_. Overlaying
+# is the default behavior but stacking can be enabled with ``stack=True`` or
+# ``stacked=True``. Also note the default *x* bounds for shading drawn with
+# `~proplot.axes.PlotAxes.area` and *y* bounds for shading drawn with
+# `~proplot.axes.PlotAxes.areax` is now "sticky", i.e. there is no padding
+# between the shading and axes edges by default.
 
 # .. important::
 #
