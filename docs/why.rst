@@ -325,9 +325,6 @@ concise figures.
   commands can easily draw colorbars and legends intended to reference more than
   one subplot in arbitrary contiguous rows and columns. See the
   :ref:`next section <why_colorbars_legends>` for details.
-* The `~proplot.axes.Axes.panel_axes` (shorthand `~proplot.axes.Axes.panel`) commands
-  can draw :ref:`thin panels <ug_panels>` along the edges of subplots. This
-  can be useful for plotting 1D summary statistics alongside 2D plots.
 * A-b-c labels can be added to subplots simply using the :rcraw:`abc`
   setting -- for example, ``pplt.rc['abc'] = 'A.'`` or ``axs.format(abc='A.')``.
   This is possible because `~proplot.figure.Figure.add_subplot` assigns a unique
@@ -335,8 +332,11 @@ concise figures.
 * The `proplot.gridspec.SubplotGrid.format` command can easily format multiple subplots
   at once or add colorbars, legends, panels, twin axes, or inset axes to multiple
   subplots at once. A `~proplot.gridspec.SubplotGrid` is returned by
-  `proplot.figure.Figure.subplots`, and can be indexed like a list or like a 2D
-  array (in which case the indices match the subplot grid extents).
+  `proplot.figure.Figure.subplots`, and can be indexed like a list or a 2D array.
+* The `~proplot.axes.Axes.panel_axes` (shorthand `~proplot.axes.Axes.panel`) commands
+  draw :ref:`thin panels <ug_panels>` along the edges of subplots. This can be useful
+  for plotting 1D summary statistics alongside 2D plots. You can also add twin axes and
+  panel axes to several subplots at once using `~proplot.gridspec.SubplotGrid` commands.
 
 Links
 -----
@@ -798,19 +798,22 @@ This may be confusing for users outside of the United States.
 Solution
 --------
 
-Proplot introduces the physical units engine `~proplot.utils.units` for
-interpreting `figsize`, `figwidth`, `figheight`, `refwidth`, `refheight`,
-`left`, `right`, `top`, `bottom`, `wspace`, `hspace`, and keyword arguments in a
-few other places. Acceptable units include inches, centimeters, millimeters,
+Proplot uses physical units for the `~proplot.gridspec.GridSpec` keywords
+`left`, `right`, `top`, `bottom`, `wspace`, `hspace`, `pad`, `outerpad`, and
+`innerpad`. The default unit (assumed when a numeric argument is passed) is
+`em-widths <https://en.wikipedia.org/wiki/Em_(typography)>`__. Em-widths are
+particularly appropriate for this context, as plot text can be a useful "ruler"
+when figuring out the amount of space you need. Proplot also permits arbitrary
+string units for these keywords, for the `~proplot.figure.Figure` keywords
+`figsize`, `figwidth`, `figheight`, `refwidth`, and `refheight`, and in a
+few other places. This is powered by the physical units engine `~proplot.utils.units`.
+Acceptable units include inches, centimeters, millimeters,
 pixels, `points <https://en.wikipedia.org/wiki/Point_(typography)>`__, `picas
-<https://en.wikipedia.org/wiki/Pica_(typography)>`__, and `em-heights
-<https://en.wikipedia.org/wiki/Em_(typography)>`__ (a table of acceptable units
-is found :ref:`here <units_table>`). Em-heights are particularly useful, as the
-figure text can be a useful "ruler" when figuring out the amount of space you
-need. The `~proplot.utils.units` function also translates rc settings assigned
-to `~proplot.config.rc_matplotlib` and `~proplot.config.rc_proplot`, e.g.
-:rcraw:`axes.labelpad`, :rcraw:`legend.handlelength`, and
-:rcraw:`subplot.refwidth`.
+<https://en.wikipedia.org/wiki/Pica_(typography)>`__, and (a table of acceptable
+units is found :ref:`here <units_table>`). Note the `~proplot.utils.units` engine
+also translates rc settings assigned to `~proplot.config.rc_matplotlib` and
+`~proplot.config.rc_proplot`, e.g. :rcraw:`subplots.refwidth`,
+# :rcraw:`legend.columnspacing`, and :rcraw:`axes.labelpad`.
 
 Links
 -----

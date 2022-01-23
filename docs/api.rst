@@ -10,25 +10,24 @@ the docs during a python session.
 
 Please note that proplot removes the associated documentation when functionality
 is deprecated (see :ref:`What's New <whats_new>`). However, proplot adheres to
-`semantic versioning <https://semver.org>`__, which means old code that uses deprecated
-functionality will 1) still work and 2) issue warnings rather than errors until the
-first major release (i.e. version 1.0.0).
+`semantic versioning <https://semver.org>`__, which means old code that uses
+deprecated functionality will still work and issue warnings rather than errors
+until the first major release (version 1.0.0).
 
 .. important::
 
    The color transformation functions like `to_rgba` and `scale_luminance` from
    proplot < 0.10.0 can now be found as methods on the new `~proplot.colors.Color`
-   class. Please see `~proplot.colors.Color` for the relevant documentation. Note that
-   old code that uses commands like ``pplt.to_rgba()`` and ``pplt.scale_luminance()``
-   will still work -- but it will result in a deprecation warning.
+   class. Note that old code that uses commands like ``pplt.to_rgba()`` and
+   ``pplt.scale_luminance()`` will still work (but result in a deprecation warning).
 
 .. important::
 
    The documentation for "wrapper" functions like `standardize_1d` and `cmap_changer`
-   from proplot < 0.8.0 like can now be found under individual `~proplot.axes.PlotAxes`
-   methods like `~proplot.axes.PlotAxes.pcolor`. Please see `~proplot.axes.PlotAxes` for
-   the relevant documentation. Note that calling ``help(ax.method)`` in a python session
-   will show both the proplot documentation and the original matplotlib documentation.
+   from proplot < 0.8.0 can now be found under individual `~proplot.axes.PlotAxes`
+   methods like `~proplot.axes.PlotAxes.plot` and `~proplot.axes.PlotAxes.pcolor`. Note
+   that calling ``help(ax.method)`` in a python session will show both the proplot
+   documentation and the original matplotlib documentation.
 
 Figure class
 ============

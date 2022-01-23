@@ -4,8 +4,6 @@
 #   use 3.2.1. Probably lots of basemap holdouts for next ~5 years.
 # * basemap geography is weird with the geos >= 3.9.0 required by cartopy >=
 #   0.19, but important to use 0.19 becuase it fixes padding, so live with it.
-# * cartopy 0.20 makes grid labels look nicer, but it requires python 3.9.
-#   will wait a couple years to catch up to them and keep python 3.6 for now.
 # * pyqt5 is needed by pyplot, RTD server *happens* to already have it
 #   but creating local environment will fail.
 # * jinja >= 3.0 and nbsphinx >= 0.8.2 seem to break default ReST roles when
@@ -16,13 +14,12 @@ name: proplot-dev
 channels:
   - conda-forge
 dependencies:
-  - python>=3.6
+  - python==3.8
   - numpy
   - pandas
   - xarray
-  - matplotlib==3.2.1
-  - cartopy==0.19.0.post1
-  - shapely==1.7.1
+  - matplotlib==3.2.2
+  - cartopy==0.20.2
   - ipykernel
   - pandoc
   - pip

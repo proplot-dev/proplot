@@ -1525,7 +1525,7 @@ def Proj(
             raise RuntimeError(
                 'Basemap is no longer maintained and is incompatible with '
                 'matplotlib >= 3.3. Please use cartopy as your geographic '
-                'plotting backend or downgrade to matplotlib <= 3.2.'
+                'plotting backend or downgrade to matplotlib < 3.3.'
             )
         reso = _not_none(
             reso=kwargs.pop('reso', None),
