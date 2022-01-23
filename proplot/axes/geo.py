@@ -844,9 +844,22 @@ class _CartopyAxes(GeoAxes, _GeoAxes):
                 lon_0 = self.axes.projection.proj4_params.get('lon_0', 0)
                 x_range = np.asarray(x_range) + lon_0
             return x_range, y_range
+        # Cartopy >= 0.18 monkey patch. Fixes issue where cartopy draws an overlapping
+        # dateline gridline (e.g. polar maps). See the nx -= 1 line in _draw_gridliner
+        def _draw_gridliner(self, *args, **kwargs):  # noqa: E306
+            result = type(self)._draw_gridliner(self, *args, **kwargs)
+            if _version_cartopy >= '0.18':
+                lon_lim, _ = self._axes_domain()
+                if abs(np.diff(lon_lim)) == abs(np.diff(self.crs.x_limits)):
+                    for collection in self.xline_artists:
+                        if not getattr(collection, '_cartopy_fix', False):
+                            collection.get_paths().pop(-1)
+                            collection._cartopy_fix = True
+            return result
         # Return the gridliner with monkey patch
         gl = self.gridlines(crs=ccrs.PlateCarree())
         gl._axes_domain = _axes_domain.__get__(gl)
+        gl._draw_gridliner = _draw_gridliner.__get__(gl)
         gl.xlines = gl.ylines = False
         self._toggle_gridliner_labels(gl, False, False, False, False, False)
         return gl
