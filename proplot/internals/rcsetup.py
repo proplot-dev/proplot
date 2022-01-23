@@ -1250,7 +1250,7 @@ _rc_proplot_table = {
         'draw them above patches but below lines and markers.'
     ),
     'grid.checkoverlap': (
-        False,
+        True,
         _validate_bool,
         'Whether to have cartopy automatically check for and remove overlapping '
         '`~proplot.axes.GeoAxes` gridline labels.'
