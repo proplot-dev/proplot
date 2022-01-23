@@ -28,8 +28,8 @@ with _benchmark('basemap'):
 # Import everything to top level
 with _benchmark('config'):
     from .config import *  # noqa: F401 F403
-with _benchmark('crs'):
-    from .crs import *  # noqa: F401 F403
+with _benchmark('proj'):
+    from .proj import *  # noqa: F401 F403
 with _benchmark('utils'):
     from .utils import *  # noqa: F401 F403
 with _benchmark('colors'):
@@ -52,6 +52,7 @@ with _benchmark('demos'):
     from .demos import *  # noqa: F401 F403
 
 # Dynamically add registered classes to top-level namespace
+from . import proj as crs  # backwards compatibility  # noqa: F401
 from .constructor import NORMS, LOCATORS, FORMATTERS, SCALES, PROJS
 _globals = globals()
 for _src in (NORMS, LOCATORS, FORMATTERS, SCALES, PROJS):

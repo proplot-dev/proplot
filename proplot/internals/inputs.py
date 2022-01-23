@@ -743,7 +743,6 @@ def _geo_inbounds(x, y, xmin=-180, xmax=180):
         x = np.roll(x, roll)
         y = np.roll(y, roll, axis=-1)
         x[:roll] -= 360  # make monotonic
-
     # Set NaN where data not in range xmin, xmax. Must be done for regional smaller
     # projections or get weird side-effects from valid data outside boundaries
     y, units = _to_masked_array(y)
@@ -755,7 +754,6 @@ def _geo_inbounds(x, y, xmin=-180, xmax=180):
     elif x.size == y.shape[-1]:  # test the centers and pad by one for safety
         where, = np.where((x < xmin) | (x > xmax))
         y[..., where[1:-1]] = nan
-
     return x, y
 
 
@@ -773,7 +771,6 @@ def _geo_globe(x, y, z, xmin=-180, modulo=False):
     z2 = np.repeat(p2, z.shape[1])
     y = ma.concatenate((ps[:1], y, ps[1:]))
     z = ma.concatenate((z1[None, :], z, z2[None, :]), axis=0)
-
     # Cover gaps over cartopy longitude seam
     # Ensure coordinates span 360 after modulus
     if modulo:
@@ -800,5 +797,4 @@ def _geo_globe(x, y, z, xmin=-180, modulo=False):
                 z = ma.concatenate((z[:, -1:], z), axis=1)
         else:
             raise ValueError('Unexpected shapes of coordinates or data arrays.')
-
     return x, y, z

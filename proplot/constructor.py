@@ -18,13 +18,13 @@ from numbers import Number
 import cycler
 import matplotlib.colors as mcolors
 import matplotlib.dates as mdates
-import matplotlib.projections as mproj
+import matplotlib.projections.polar as mpolar
 import matplotlib.scale as mscale
 import matplotlib.ticker as mticker
 import numpy as np
 
 from . import colors as pcolors
-from . import crs as pcrs
+from . import proj as pproj
 from . import scale as pscale
 from . import ticker as pticker
 from .config import rc
@@ -108,8 +108,8 @@ LOCATORS = {
     'deglon': partial(pticker.LongitudeLocator, dms=False),
     'deglat': partial(pticker.LatitudeLocator, dms=False),
 }
-if hasattr(mproj.polar, 'ThetaLocator'):
-    LOCATORS['theta'] = mproj.polar.ThetaLocator
+if hasattr(mpolar, 'ThetaLocator'):
+    LOCATORS['theta'] = mpolar.ThetaLocator
 if _version_cartopy >= '0.18':
     LOCATORS['dms'] = partial(pticker.DegreeLocator, dms=True)
     LOCATORS['dmslon'] = partial(pticker.LongitudeLocator, dms=True)
@@ -152,8 +152,8 @@ FORMATTERS = {  # note default LogFormatter uses ugly e+00 notation
     'deglon': partial(pticker.SimpleFormatter, suffix='\N{DEGREE SIGN}', negpos='WE', wraprange=(-180, 180)),  # noqa: E501
     'math': mticker.LogFormatterMathtext,  # deprecated (use SciNotation subclass)
 }
-if hasattr(mproj.polar, 'ThetaFormatter'):
-    FORMATTERS['theta'] = mproj.polar.ThetaFormatter
+if hasattr(mpolar, 'ThetaFormatter'):
+    FORMATTERS['theta'] = mpolar.ThetaFormatter
 if hasattr(mdates, 'ConciseDateFormatter'):
     FORMATTERS['concise'] = mdates.ConciseDateFormatter
 if _version_cartopy >= '0.18':
@@ -230,16 +230,16 @@ if ccrs is None:
     PROJS = {}
 else:
     PROJS = {
-        'aitoff': pcrs.Aitoff,
-        'hammer': pcrs.Hammer,
-        'kav7': pcrs.KavrayskiyVII,
-        'wintri': pcrs.WinkelTripel,
-        'npgnom': pcrs.NorthPolarGnomonic,
-        'spgnom': pcrs.SouthPolarGnomonic,
-        'npaeqd': pcrs.NorthPolarAzimuthalEquidistant,
-        'spaeqd': pcrs.SouthPolarAzimuthalEquidistant,
-        'nplaea': pcrs.NorthPolarLambertAzimuthalEqualArea,
-        'splaea': pcrs.SouthPolarLambertAzimuthalEqualArea,
+        'aitoff': pproj.Aitoff,
+        'hammer': pproj.Hammer,
+        'kav7': pproj.KavrayskiyVII,
+        'wintri': pproj.WinkelTripel,
+        'npgnom': pproj.NorthPolarGnomonic,
+        'spgnom': pproj.SouthPolarGnomonic,
+        'npaeqd': pproj.NorthPolarAzimuthalEquidistant,
+        'spaeqd': pproj.SouthPolarAzimuthalEquidistant,
+        'nplaea': pproj.NorthPolarLambertAzimuthalEqualArea,
+        'splaea': pproj.SouthPolarLambertAzimuthalEqualArea,
     }
     PROJS_MISSING = {
         'aea': 'AlbersEqualArea',

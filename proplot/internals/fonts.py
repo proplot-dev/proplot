@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Overrides related to math fonts
+Overrides related to math fonts.
 """
 import matplotlib as mpl
 from matplotlib.font_manager import findfont, ttfFontProperty
@@ -25,7 +25,7 @@ class _UnicodeFonts(UnicodeFonts):
 
     Works by permitting the ``rc['mathtext.rm']``, ``rc['mathtext.it']``,
     etc. settings to have the dummy value ``'regular'`` instead of a valid family
-    name, e.g. ``rc['mathtext.it'] == 'current:italic'`` (permitted through an
+    name, e.g. ``rc['mathtext.it'] == 'regular:italic'`` (permitted through an
     override of the `~matplotlib.rcsetup.validate_font_properties` validator).
     When this dummy value is detected then the font properties passed to
     `~matplotlib._mathtext.TrueTypeFont` are taken by replacing ``'regular'``

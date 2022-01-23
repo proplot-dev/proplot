@@ -18,7 +18,7 @@ import matplotlib.contour as mcontour
 import matplotlib.legend as mlegend
 import matplotlib.offsetbox as moffsetbox
 import matplotlib.patches as mpatches
-import matplotlib.projections as mprojections
+import matplotlib.projections as mproj
 import matplotlib.text as mtext
 import matplotlib.ticker as mticker
 import matplotlib.transforms as mtransforms
@@ -860,7 +860,7 @@ class Axes(maxes.Axes):
 
         # Create axes and apply locator. The locator lets the axes adjust
         # automatically if we used data coords. Called by ax.apply_aspect()
-        cls = mprojections.get_projection_class(kwargs.pop('projection'))
+        cls = mproj.get_projection_class(kwargs.pop('projection'))
         ax = cls(self.figure, bounds, zorder=zorder, label=label, **kwargs)
         ax.set_axes_locator(locator)
         ax._inset_parent = self
@@ -1745,7 +1745,7 @@ class Axes(maxes.Axes):
                 raise ValueError(f'Invalid align={align!r} for colorbar loc={side!r}.')
 
         # Add the axes as a child of the original axes
-        cls = mprojections.get_projection_class('proplot_cartesian')
+        cls = mproj.get_projection_class('proplot_cartesian')
         locator = self._make_inset_locator(bounds, self.transAxes)
         ax = cls(self.figure, locator(self, None).bounds, zorder=5)
         self.add_child_axes(ax)
@@ -1814,7 +1814,7 @@ class Axes(maxes.Axes):
         bounds_frame.extend((2 * xpad + length, 2 * ypad + width + labspace))
 
         # Make axes and frame with zorder matching default legend zorder
-        cls = mprojections.get_projection_class('proplot_cartesian')
+        cls = mproj.get_projection_class('proplot_cartesian')
         locator = self._make_inset_locator(bounds_inset, self.transAxes)
         ax = cls(self.figure, locator(self, None).bounds, zorder=5)
         ax.patch.set_facecolor('none')

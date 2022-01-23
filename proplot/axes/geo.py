@@ -12,7 +12,7 @@ import matplotlib.ticker as mticker
 import numpy as np
 
 from .. import constructor
-from .. import crs as pcrs
+from .. import proj as pproj
 from ..config import rc
 from ..internals import ic  # noqa: F401
 from ..internals import _not_none, _pop_rc, _version_cartopy, docstring, warnings
@@ -720,16 +720,16 @@ class _CartopyAxes(GeoAxes, _GeoAxes):
     _name_aliases = ('geo', 'geographic')  # default 'geographic' axes
     _proj_class = Projection
     _proj_north = (
-        pcrs.NorthPolarStereo,
-        pcrs.NorthPolarGnomonic,
-        pcrs.NorthPolarAzimuthalEquidistant,
-        pcrs.NorthPolarLambertAzimuthalEqualArea,
+        pproj.NorthPolarStereo,
+        pproj.NorthPolarGnomonic,
+        pproj.NorthPolarAzimuthalEquidistant,
+        pproj.NorthPolarLambertAzimuthalEqualArea,
     )
     _proj_south = (
-        pcrs.SouthPolarStereo,
-        pcrs.SouthPolarGnomonic,
-        pcrs.SouthPolarAzimuthalEquidistant,
-        pcrs.SouthPolarLambertAzimuthalEqualArea
+        pproj.SouthPolarStereo,
+        pproj.SouthPolarGnomonic,
+        pproj.SouthPolarAzimuthalEquidistant,
+        pproj.SouthPolarLambertAzimuthalEqualArea
     )
     _proj_polar = _proj_north + _proj_south
 
@@ -822,7 +822,7 @@ class _CartopyAxes(GeoAxes, _GeoAxes):
             return x_range, y_range
 
         # Cartopy < 0.18 gridliner method monkey patch. Always print number in range
-        # (180W, 180E). We choose #4 of the following choices 3 choices (see Issue #78):
+        # (180W, 180E). We choose #4 of the following choices (see Issue #120):
         # 1. lonlines go from -180 to 180, but get double 180 labels at dateline
         # 2. lonlines go from -180 to e.g. 150, but no lines from 150 to dateline
         # 3. lonlines go from lon_0 - 180 to lon_0 + 180 mod 360, but results
@@ -925,9 +925,9 @@ class _CartopyAxes(GeoAxes, _GeoAxes):
         if not polar:
             self.set_global()
         else:
-            if isinstance(self.projection, pcrs.NorthPolarGnomonic):
+            if isinstance(self.projection, pproj.NorthPolarGnomonic):
                 default_boundinglat = 30
-            elif isinstance(self.projection, pcrs.SouthPolarGnomonic):
+            elif isinstance(self.projection, pproj.SouthPolarGnomonic):
                 default_boundinglat = -30
             else:
                 default_boundinglat = 0

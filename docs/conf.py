@@ -84,7 +84,7 @@ try:
         import mpl_toolkits.basemap  # noqa: F401
 except ImportError:
     subprocess.check_call(
-        ['pip', 'install', 'git+https://github.com/matplotlib/basemap@v1.2.2rel']
+        ['pip', 'install', 'git+https://github.com/matplotlib/basemap@v1.3.0']
     )
 
 

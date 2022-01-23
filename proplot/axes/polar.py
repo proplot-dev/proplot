@@ -4,7 +4,7 @@ Polar axes using azimuth and radius instead of *x* and *y*.
 """
 import inspect
 
-import matplotlib.projections as mproj
+import matplotlib.projections.polar as mpolar
 import numpy as np
 
 from .. import constructor
@@ -93,7 +93,7 @@ labelweight, gridlabelweight : str, default: :rc:`grid.labelweight`
 docstring._snippet_manager['polar.format'] = _format_docstring
 
 
-class PolarAxes(shared._SharedAxes, plot.PlotAxes, mproj.PolarAxes):
+class PolarAxes(shared._SharedAxes, plot.PlotAxes, mpolar.PolarAxes):
     """
     Axes subclass for plotting in polar coordinates. Adds the `~PolarAxes.format`
     method and overrides several existing methods.
