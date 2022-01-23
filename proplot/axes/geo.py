@@ -1132,7 +1132,11 @@ class _CartopyAxes(GeoAxes, _GeoAxes):
                 )
                 lonarray = [False] * 5
         array = [
-            True if lon and lat else 'x' if lon else 'y' if lat else False
+            True if lon and lat
+            else 'x' if lon
+            else 'y' if lat
+            else False if lon is not None or lon is not None
+            else None
             for lon, lat in zip(lonarray, latarray)
         ]
         self._toggle_gridliner_labels(gl, *array[:2], *array[2:4], array[4])
