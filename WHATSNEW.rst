@@ -67,14 +67,15 @@ Style changes
 
 * Disable auto-reversal of dependent variable coordinates when the axis limits
   were previously fixed, and add documentation for this feature (:issue:`300`).
-* Disable auto-removal of gridlines in presence of `pcolor` plots in all matplotlib
-  versions and silence the matplotlib 3.5 deprecation warning (:commit:`ba405ac0`).
-* Apply the :rcraw:`geo.round` setting when instantiating basemap projections
+* Apply the :rcraw:`geo.round` setting when instantiating polar basemap projections
   (previously this was only used for cartopy projections) (:commit:`5f1c67cc`).
 * Change :rcraw:`grid.labelpad` from ``4.0`` to ``3.0`` (:commit:`f95b828a`). This
   makes cartopy grid labels and polar axes labels a bit more compact.
 * Change :rcraw:`legend.handleheight` from ``1.5`` to ``2.0`` for less compressed
   `~matplotlib.patches.Patch` handles (e.g. with error shading) (:commit:`2a5f6b48`).
+* Disable matplotlib's auto-removal of gridlines in presence of `pcolor` plots in all
+  versions and silence the matplotlib 3.5 deprecation warning (:commit:`ba405ac0`).
+  Now gridlines appear on top of pcolor meshes by default, just like filled contours.
 * Change :rcraw:`mathtext.default` from ``'regular'`` to ``'it'`` and change ``'sans'``
   to ``'regular'`` in :rcraw:`mathtext.rm`, :rcraw:`mathtext.sf`, :rcraw:`mathtext.bf`,
   and :rcraw:`mathtext.it` (:commit:`323`). See below for details.
@@ -94,16 +95,13 @@ Features
 * Support passing lists for the `proplot.axes.Axes.format` keywords `abc` and `title`,
   in which case the label is picked by selecting the `~proplot.axes.Axes.number`
   (minus 1) entry from the list (:pr:`294`) by `Pratiman Patel`_.
-* Move the `extent` and `round` keywords (formerly `autoextent` and `circular` --
-  see above) from `~proplot.axes.GeoAxes.__init__` to `proplot.axes.GeoAxes.format`,
-  supporting toggling and passage to e.g. `~proplot.ui.subplots` (:commit:`5f1c67cc`).
-* Allow using the `~proplot.constructor.Proj` keyword `latlim` as Mercator projection
-  limits and `lon0`, `lat0` aliases for `lon_0`, `lat_0` (:commit:`5f1c67cc`).
+* Permit disabling a-b-c labels for a particular subplot by passing e.g. ``number=None``
+  instead of ``number=False`` (:commit:`f7308cbe`). ``None`` is a bit more intuitive.
 * Add modifiable `proplot.figure.Figure.tight` property to retrieve and optionally
   toggle the tight layout setting (:commit:`46f46c26`).
 * Add a top-level `~proplot.ui.subplot` command that returns a figure and a single
   subplot, analogous to `~proplot.ui.subplots` (:commit:`8459c24c`).
-* Improve performance of the "tight layout" algorithm in geographic plots by skipping
+* Improve performance of the "tight layout" algorithm in cartopy axes by skipping
   artists clipped by the axes background patch boundary (:commit:`f891e4f0`).
 * Permit passing `~proplot.gridspec.GridSpec` instances to
   `~proplot.figure.Figure.add_subplots` to quickly draw a subplot
@@ -111,12 +109,24 @@ Features
 * Add `~proplot.gridspec.GridSpec.copy` method to re-use the same gridspec geometry
   for multiple figures (re-using an existing gridspec is otherwise not possible)
   (:commit:`8dc7fe3e`, :commit:`be410341`, :commit:`a82a512c`).
+* Permit adding additional outer panels or colorbars (or panels) by calling methods
+  from the panel rather than the main subplot (:commit:`cfaeb177`).
 * Permit adding "filled" colorbars to non-subplots and `length` greater than one
   by implementing with a non-subplot child axes and inset locator (:commit:`9fc94d21`).
-* Permit adding additional panels (or outer legends or colorbars) by calling
-  from the panel rather than the main subplot (:commit:`cfaeb177`).
-* Permit disabling a-b-c labels for a particular subplot by passing e.g.
-  ``number=None`` instead of ``number=False`` (:commit:`f7308cbe`).
+* Allow using the `~proplot.constructor.Proj` keyword `latlim` as Mercator projection
+  limits and `lon0`, `lat0` aliases for `lon_0`, `lat_0` (:commit:`5f1c67cc`).
+* Add the `~proplot.axes.GeoAxes` `labels` side options ``'neither'``, ``'both'``, and
+  ``'all'``, analogous to Cartesian axes `tickloc` options (:commit:`0f4e03d2`).
+* Add the :rcraw:`grid.checkoverlap` setting to optionally disable the auto-removal of
+  overlapping cartopy grid labels (only works in cartopy >= 0.20) (:commit:`3ff02a38`).
+* Add the `proplot.axes.GeoAxes.gridlines_major`, `proplot.axes.GeoAxes.gridlines_minor`
+  properties for additional customization or debugging issues (:commit:`869f300f`).
+* Move the `extent` and `round` keywords (formerly `autoextent` and `circular` --
+  see above) from `~proplot.axes.GeoAxes.__init__` to `proplot.axes.GeoAxes.format`,
+  supporting toggling and passage to e.g. `~proplot.ui.subplots` (:commit:`5f1c67cc`).
+* Add :rcraw:`grid.geolabels` setting that auto-includes cartopy ``'geo'`` location
+  when toggling labels with e.g. ``lonlabels='left'`` or ``labels=True``, and support
+  passing it explicitly with e.g. ``labels='geo'`` (:commit:`9040cde0`).
 * Add the public proplot class `proplot.ticker.IndexFormatter`, since the matplotlib
   version was entirely removed in version 3.5 (:commit:`c2dd8b2e`).
 * Replace `matplotlib.ticker.IndexLocator` with `proplot.ticker.IndexLocator`,
@@ -125,12 +135,6 @@ Features
 * Permit picking the `~matplotlib.ticker.NullFormatter`, `~proplot.ticker.AutoFormatter`
   `~matplotlib.ticker.NullLocator`, and `~matplotlib.ticker.AutoLocator` by passing
   ``True`` or ``False`` to the corresponding constructor functions (:commit:`92ae0575`).
-* Add the `proplot.axes.GeoAxes.gridlines_major`, `proplot.axes.GeoAxes.gridlines_minor`
-  properties for additional customization of cartopy/basemap gridlines
-  or debugging gridline issues (:commit:`869f300f`).
-* Add :rcraw:`grid.geolabels` setting that auto-includes cartopy ``'geo'`` location
-  when toggling labels with e.g. ``lonlabels='left'`` or ``labels=True``, and support
-  passing it explicitly with e.g. ``labels='geo'`` (:commit:`9040cde0`).
 * Add `proplot.ticker.DiscreteLocator` analogous to `~matplotlib.ticker.FixedLocator`
   that ticks from a subset of fixed values, and add a `discrete` keyword and register
   as ``'discrete'`` in `proplot.constructor.Locator` (:commit:`b94a9b1e`).
@@ -177,6 +181,10 @@ Bug fixes
   can no longer be turned on (:issue:`307`).
 * Fix cartopy >= 0.20 issue where user-specified longitude/latitude gridline label
   sides ignored due to using booleans instead of ``'x'``, ``'y'`` (:commit:`2ac40715`).
+* Fix cartopy >= 0.18 issue where longitude gridlines and labels 360 degrees east of
+  gridlines on the left edge of the map are unnecessarily removed (:commit:`bcf4fde3`).
+* Fix cartopy <= 0.17 issue where longitude gridlines and labels east of dateline are
+  not drawn, and remove outdated gridliner monkey patches (:commit:`aa51512b`).
 * Fix issue where outer colorbars are drawn twice due to adding them as both
   figure-wide axes and child axes (:issue:`304`).
 * Fix issue where silently-deprecated `aspect` parameter passed to
