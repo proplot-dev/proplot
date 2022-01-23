@@ -118,9 +118,9 @@ Colormaps and normalizers
 Projection classes
 ==================
 
-.. automodule:: proplot.crs
+.. automodule:: proplot.proj
 
-.. automodsumm:: proplot.crs
+.. automodsumm:: proplot.proj
    :toctree: api
 
 
