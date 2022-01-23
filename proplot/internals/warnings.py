@@ -20,6 +20,21 @@ catch_warnings = warnings.catch_warnings
 simplefilter = warnings.simplefilter
 
 
+def _next_release():
+    """
+    Message indicating the next major release.
+    """
+    from .. import __version__
+    try:
+        num = int(__version__[0]) + 1
+    except TypeError:
+        string = 'the next major release'
+    else:
+        which = 'first' if num == 1 else 'next'
+        string = f'the {which} major release (version {num}.0.0)'
+    return string
+
+
 def _warn_proplot(message, action=None):
     """
     Emit a `ProplotWarning` and show the stack level outside of matplotlib and
@@ -48,8 +63,8 @@ def _rename_objs(version, **kwargs):
     for old_name, new_obj in kwargs.items():
         new_name = new_obj.__name__
         message = (
-            f'{old_name!r} was deprecated in version {version} and will be '
-            f'removed in a future release. Please use {new_name!r} instead.'
+            f'{old_name!r} was deprecated in version {version} and may be '
+            f'removed in {_next_release()}. Please use {new_name!r} instead.'
         )
         if isinstance(new_obj, type):
             class _deprecate_obj(new_obj):
@@ -90,8 +105,8 @@ def _rename_kwargs(version, **kwargs_rename):
                     # Nice warning message, but user's desired behavior fails
                     key_new = key_new.format(value)
                 _warn_proplot(
-                    f'Keyword {key_old!r} was deprecated in version {version} and will '
-                    f'be removed in a future release. Please use {key_new!r} instead.'
+                    f'Keyword {key_old!r} was deprecated in version {version} and may '
+                    f'be removed in {_next_release()}. Please use {key_new!r} instead.'
                 )
             return func_orig(*args, **kwargs)
         return _deprecate_kwargs

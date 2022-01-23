@@ -757,7 +757,7 @@ def _fontsize_to_pt(size):
         )
 
 
-@warnings._rename_kwargs('0.6', units='dest')
+@warnings._rename_kwargs('0.6.0', units='dest')
 def units(
     value, numeric=None, dest=None, *, fontsize=None, figure=None, axes=None, width=None
 ):
@@ -899,7 +899,7 @@ def units(
 
 # Deprecations
 shade, saturate = warnings._rename_objs(
-    '0.6',
+    '0.6.0',
     shade=scale_luminance,
     saturate=scale_saturation,
 )

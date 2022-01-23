@@ -13,14 +13,19 @@
 What's new?
 ===========
 
-This page lists the API changes with each version. Please note that
-when functions and keywords are renamed, they are not removed -- requesting
-the old name will issue a warning rather than an error. Authors are shown next to
-each change. Where not indicated, `Luke Davis`_ was the author.
-
-See the :ref:`author page <authors>` for a list of contributors, and see
-the :ref:`contribution guide <contributions>` if you are interested in
+This page lists the API changes with each version. Authors are shown next to
+each change. Where not indicated, `Luke Davis`_ was the author. See the
+:ref:`author page <authors>` for a list of contributors, and see the
+:ref:`contribution guide <contributions>` if you are interested in
 submitting your own changes.
+
+.. important::
+
+   Please note that when classes, functions, keywords, or settings are deprecated,
+   they are not removed -- using the old syntax will result in a warning rather than
+   an error and preserve the original functionality. Since proplot adheres to `semantic
+   versioning <https://semver.org>`__, we will not consider removing the deprecated
+   syntax until the first major release (i.e., version 1.0.0).
 
 Version 1.0.0 (2022-XX-XX)
 ==========================

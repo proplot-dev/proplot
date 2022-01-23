@@ -2092,7 +2092,7 @@ class PlotAxes(base.Axes):
             warnings._warn_proplot(f'Ignoring unused keyword arg(s): {pop}')
         return (c, kwargs)
 
-    @warnings._rename_kwargs('0.6', centers='values')
+    @warnings._rename_kwargs('0.6.0', centers='values')
     def _parse_cmap(
         self, *args,
         cmap=None, cmap_kw=None, c=None, color=None, colors=None,
@@ -4094,5 +4094,5 @@ class PlotAxes(base.Axes):
     _level_parsers = (_parse_level_list, _parse_level_count, _parse_level_lim)
 
     # Rename the shorthands
-    boxes = warnings._rename_objs('0.8', boxes=box)
-    violins = warnings._rename_objs('0.8', violins=violin)
+    boxes = warnings._rename_objs('0.8.0', boxes=box)
+    violins = warnings._rename_objs('0.8.0', violins=violin)

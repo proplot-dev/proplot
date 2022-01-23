@@ -1743,7 +1743,7 @@ class Configurator(MutableMapping, dict):
         return _filter_style_dict(rcdict, warn=False)
 
     # Renamed methods
-    load_file = warnings._rename_objs('0.8', load_file=load)
+    load_file = warnings._rename_objs('0.8.0', load_file=load)
 
 
 # Initialize locations
@@ -1764,8 +1764,8 @@ rc = Configurator(skip_cycle=True)
 
 # Deprecated
 RcConfigurator = warnings._rename_objs(
-    '0.8', RcConfigurator=Configurator,
+    '0.8.0', RcConfigurator=Configurator,
 )
 inline_backend_fmt = warnings._rename_objs(
-    '0.6', inline_backend_fmt=config_inline_backend
+    '0.6.0', inline_backend_fmt=config_inline_backend
 )

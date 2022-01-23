@@ -117,59 +117,59 @@ for _cmap_diverging in (  # remaining diverging cmaps (see PlotAxes._parse_cmap)
 ):
     CMAPS_DIVERGING[_cmap_diverging.lower()] = _cmap_diverging.lower()
 CMAPS_REMOVED = {
-    'Blue0': '0.6',
-    'Cool': '0.6',
-    'Warm': '0.6',
-    'Hot': '0.6',
-    'Floral': '0.6',
-    'Contrast': '0.6',
-    'Sharp': '0.6',
-    'Viz': '0.6',
+    'Blue0': '0.6.0',
+    'Cool': '0.6.0',
+    'Warm': '0.6.0',
+    'Hot': '0.6.0',
+    'Floral': '0.6.0',
+    'Contrast': '0.6.0',
+    'Sharp': '0.6.0',
+    'Viz': '0.6.0',
 }
 CMAPS_RENAMED = {
-    'GrayCycle': ('MonoCycle', '0.6'),
-    'Blue1': ('Blues1', '0.7'),
-    'Blue2': ('Blues2', '0.7'),
-    'Blue3': ('Blues3', '0.7'),
-    'Blue4': ('Blues4', '0.7'),
-    'Blue5': ('Blues5', '0.7'),
-    'Blue6': ('Blues6', '0.7'),
-    'Blue7': ('Blues7', '0.7'),
-    'Blue8': ('Blues8', '0.7'),
-    'Blue9': ('Blues9', '0.7'),
-    'Green1': ('Greens1', '0.7'),
-    'Green2': ('Greens2', '0.7'),
-    'Green3': ('Greens3', '0.7'),
-    'Green4': ('Greens4', '0.7'),
-    'Green5': ('Greens5', '0.7'),
-    'Green6': ('Greens6', '0.7'),
-    'Green7': ('Greens7', '0.7'),
-    'Green8': ('Greens8', '0.7'),
-    'Orange1': ('Yellows1', '0.7'),
-    'Orange2': ('Yellows2', '0.7'),
-    'Orange3': ('Yellows3', '0.7'),
-    'Orange4': ('Oranges2', '0.7'),
-    'Orange5': ('Oranges1', '0.7'),
-    'Orange6': ('Oranges3', '0.7'),
-    'Orange7': ('Oranges4', '0.7'),
-    'Orange8': ('Yellows4', '0.7'),
-    'Brown1': ('Browns1', '0.7'),
-    'Brown2': ('Browns2', '0.7'),
-    'Brown3': ('Browns3', '0.7'),
-    'Brown4': ('Browns4', '0.7'),
-    'Brown5': ('Browns5', '0.7'),
-    'Brown6': ('Browns6', '0.7'),
-    'Brown7': ('Browns7', '0.7'),
-    'Brown8': ('Browns8', '0.7'),
-    'Brown9': ('Browns9', '0.7'),
-    'RedPurple1': ('Reds1', '0.7'),
-    'RedPurple2': ('Reds2', '0.7'),
-    'RedPurple3': ('Reds3', '0.7'),
-    'RedPurple4': ('Reds4', '0.7'),
-    'RedPurple5': ('Reds5', '0.7'),
-    'RedPurple6': ('Purples1', '0.7'),
-    'RedPurple7': ('Purples2', '0.7'),
-    'RedPurple8': ('Purples3', '0.7'),
+    'GrayCycle': ('MonoCycle', '0.6.0'),
+    'Blue1': ('Blues1', '0.7.0'),
+    'Blue2': ('Blues2', '0.7.0'),
+    'Blue3': ('Blues3', '0.7.0'),
+    'Blue4': ('Blues4', '0.7.0'),
+    'Blue5': ('Blues5', '0.7.0'),
+    'Blue6': ('Blues6', '0.7.0'),
+    'Blue7': ('Blues7', '0.7.0'),
+    'Blue8': ('Blues8', '0.7.0'),
+    'Blue9': ('Blues9', '0.7.0'),
+    'Green1': ('Greens1', '0.7.0'),
+    'Green2': ('Greens2', '0.7.0'),
+    'Green3': ('Greens3', '0.7.0'),
+    'Green4': ('Greens4', '0.7.0'),
+    'Green5': ('Greens5', '0.7.0'),
+    'Green6': ('Greens6', '0.7.0'),
+    'Green7': ('Greens7', '0.7.0'),
+    'Green8': ('Greens8', '0.7.0'),
+    'Orange1': ('Yellows1', '0.7.0'),
+    'Orange2': ('Yellows2', '0.7.0'),
+    'Orange3': ('Yellows3', '0.7.0'),
+    'Orange4': ('Oranges2', '0.7.0'),
+    'Orange5': ('Oranges1', '0.7.0'),
+    'Orange6': ('Oranges3', '0.7.0'),
+    'Orange7': ('Oranges4', '0.7.0'),
+    'Orange8': ('Yellows4', '0.7.0'),
+    'Brown1': ('Browns1', '0.7.0'),
+    'Brown2': ('Browns2', '0.7.0'),
+    'Brown3': ('Browns3', '0.7.0'),
+    'Brown4': ('Browns4', '0.7.0'),
+    'Brown5': ('Browns5', '0.7.0'),
+    'Brown6': ('Browns6', '0.7.0'),
+    'Brown7': ('Browns7', '0.7.0'),
+    'Brown8': ('Browns8', '0.7.0'),
+    'Brown9': ('Browns9', '0.7.0'),
+    'RedPurple1': ('Reds1', '0.7.0'),
+    'RedPurple2': ('Reds2', '0.7.0'),
+    'RedPurple3': ('Reds3', '0.7.0'),
+    'RedPurple4': ('Reds4', '0.7.0'),
+    'RedPurple5': ('Reds5', '0.7.0'),
+    'RedPurple6': ('Purples1', '0.7.0'),
+    'RedPurple7': ('Purples2', '0.7.0'),
+    'RedPurple8': ('Purples3', '0.7.0'),
 }
 
 # Color constants
@@ -1584,11 +1584,11 @@ class ContinuousColormap(mcolors.LinearSegmentedColormap, _Colormap):
 
     # Deprecated
     to_listed = warnings._rename_objs(
-        '0.8',
+        '0.8.0',
         to_listed=to_discrete
     )
     concatenate, punched, truncated, updated = warnings._rename_objs(
-        '0.6',
+        '0.6.0',
         concatenate=append,
         punched=cut,
         truncated=truncate,
@@ -1864,7 +1864,7 @@ class DiscreteColormap(mcolors.ListedColormap, _Colormap):
 
     # Rename methods
     concatenate, truncated, updated = warnings._rename_objs(
-        '0.6',
+        '0.6.0',
         concatenate=append,
         truncated=truncate,
         updated=copy,
@@ -2077,7 +2077,7 @@ class PerceptualColormap(ContinuousColormap):
 
     @classmethod
     @docstring._snippet_manager
-    @warnings._rename_kwargs('0.7', fade='saturation', shade='luminance')
+    @warnings._rename_kwargs('0.7.0', fade='saturation', shade='luminance')
     def from_color(cls, *args, **kwargs):
         """
         Return a simple monochromatic "sequential" colormap that blends from white
@@ -2272,7 +2272,7 @@ class PerceptualColormap(ContinuousColormap):
 
     # Deprecated
     to_linear_segmented = warnings._rename_objs(
-        '0.8',
+        '0.8.0',
         to_linear_segmented=to_continuous
     )
 
@@ -2341,7 +2341,7 @@ class DiscreteNorm(mcolors.BoundaryNorm):
     # test for class membership, crucially including _process_values(), which
     # if it doesn't detect BoundaryNorm will try to use DiscreteNorm.inverse().
     @warnings._rename_kwargs(
-        '0.7', extend='unique', descending='DiscreteNorm(descending_levels)'
+        '0.7.0', extend='unique', descending='DiscreteNorm(descending_levels)'
     )
     def __init__(self, levels, norm=None, unique=None, step=None, clip=False):
         """
@@ -3026,13 +3026,14 @@ class ColormapDatabase(MutableMapping, dict):
         if not self._has_item(test) and test in CMAPS_REMOVED:
             version = CMAPS_REMOVED[test]
             raise ValueError(
-                f'Proplot colormap {key!r} was removed in version {version}.'
+                f'The colormap name {key!r} was removed in version {version}.'
             )
         if not self._has_item(test) and test in CMAPS_RENAMED:
             test_new, version = CMAPS_RENAMED[test]
             warnings._warn_proplot(
-                f'Colormap {test!r} was renamed in version {version} and will be '
-                f'removed in a future release. Please use {test_new!r} instead.'  # noqa: E501
+                f'The colormap name {test!r} was deprecated in version {version} '
+                f'and may be removed in {warnings._next_release()}. Please use '
+                f'the colormap name {test_new!r} instead.'
             )
             key = re.sub(test, test_new, key, flags=re.IGNORECASE)
         return key
@@ -3118,7 +3119,7 @@ _color_database = _init_color_database()
     PerceptuallyUniformColormap,
     LinearSegmentedNorm,
 ) = warnings._rename_objs(  # noqa: E501
-    '0.8',
+    '0.8.0',
     ListedColormap=DiscreteColormap,
     LinearSegmentedColormap=ContinuousColormap,
     PerceptuallyUniformColormap=PerceptualColormap,

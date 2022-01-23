@@ -1575,4 +1575,4 @@ for _src, _name in (
     SubplotGrid._add_command(_src, _name)
 
 # Deprecated
-SubplotsContainer = warnings._rename_objs('0.8', SubplotsContainer=SubplotGrid)
+SubplotsContainer = warnings._rename_objs('0.8.0', SubplotsContainer=SubplotGrid)

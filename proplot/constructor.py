@@ -360,7 +360,7 @@ def _modify_colormap(cmap, *, cut, left, right, reverse, shift, alpha, samples):
 
 
 @warnings._rename_kwargs(
-    '0.8', fade='saturation', shade='luminance', to_listed='discrete'
+    '0.8.0', fade='saturation', shade='luminance', to_listed='discrete'
 )
 def Colormap(
     *args, name=None, listmode='perceptual', filemode='continuous', discrete=False,
@@ -1560,5 +1560,5 @@ def Proj(
 
 # Deprecated
 Colors = warnings._rename_objs(
-    '0.8', Colors=get_colors
+    '0.8.0', Colors=get_colors
 )

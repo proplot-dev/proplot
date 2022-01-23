@@ -511,7 +511,9 @@ class Figure(mfigure.Figure):
     # simply used in the warning message.
     @docstring._obfuscate_kwargs
     @docstring._snippet_manager
-    @warnings._rename_kwargs('0.7', axpad='innerpad', autoformat='pplt.rc.autoformat = {}')  # noqa: E501
+    @warnings._rename_kwargs(
+        '0.7.0', axpad='innerpad', autoformat='pplt.rc.autoformat = {}'
+    )
     def __init__(
         self, *, refnum=None, ref=None, refaspect=None, aspect=None,
         refwidth=None, refheight=None, axwidth=None, axheight=None,
@@ -770,8 +772,8 @@ class Figure(mfigure.Figure):
         if basemap is not None:
             backend = ('cartopy', 'basemap')[bool(basemap)]
             warnings._warn_proplot(
-                f'The {basemap!r} keyword was deprecated in version 0.10 and will be '
-                f'removed in a future release. Please use backend={backend!r} intead.'
+                f'The {basemap!r} keyword was deprecated in version 0.10.0 and will be '
+                f'removed in a future release. Please use backend={backend!r} instead.'
             )
         if isinstance(proj, str):
             proj = proj.lower()
@@ -1463,7 +1465,9 @@ class Figure(mfigure.Figure):
             gs._auto_layout_tight(renderer)
         _align_content()
 
-    @warnings._rename_kwargs('0.10', mathtext_fallback='pplt.rc.mathtext_fallback = {}')
+    @warnings._rename_kwargs(
+        '0.10.0', mathtext_fallback='pplt.rc.mathtext_fallback = {}'
+    )
     @docstring._snippet_manager
     def format(
         self, axs=None, *,
