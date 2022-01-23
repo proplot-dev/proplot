@@ -797,47 +797,16 @@ class _CartopyAxes(GeoAxes, _GeoAxes):
         """
         Create monkey patched "major" and "minor" gridliners managed by proplot.
         """
-        # Cartopy 0.18 monkey patch. This fixes issue where we get overlapping
-        # gridlines on dateline. See the "nx -= 1" line in Gridliner._draw_gridliner
-        # TODO: Submit cartopy PR. This is awful but necessary for quite a while if
-        # the time between v0.17 and v0.18 is any indication.
-        def _draw_gridliner(self, *args, **kwargs):
-            result = type(self)._draw_gridliner(self, *args, **kwargs)
-            if _version_cartopy >= '0.18':
-                lon_lim, _ = self._axes_domain()
-                if abs(np.diff(lon_lim)) == abs(np.diff(self.crs.x_limits)):
-                    for collection in self.xline_artists:
-                        if not getattr(collection, '_cartopy_fix', False):
-                            collection.get_paths().pop(-1)
-                            collection._cartopy_fix = True
-            return result
-
-        # Cartopy < 0.18 monkey patch. This is part of filtering valid label coordinates
-        # to values between lon_0 - 180 and lon_0 + 180.
+        # Cartopy < 0.18 monkey patch. Helps filter valid coordates to lon_0 +/- 180
         def _axes_domain(self, *args, **kwargs):
             x_range, y_range = type(self)._axes_domain(self, *args, **kwargs)
             if _version_cartopy < '0.18':
                 lon_0 = self.axes.projection.proj4_params.get('lon_0', 0)
                 x_range = np.asarray(x_range) + lon_0
             return x_range, y_range
-
-        # Cartopy < 0.18 gridliner method monkey patch. Always print number in range
-        # (180W, 180E). We choose #4 of the following choices (see Issue #120):
-        # 1. lonlines go from -180 to 180, but get double 180 labels at dateline
-        # 2. lonlines go from -180 to e.g. 150, but no lines from 150 to dateline
-        # 3. lonlines go from lon_0 - 180 to lon_0 + 180 mod 360, but results
-        #    in non-monotonic array causing double gridlines east of dateline
-        # 4. lonlines go from lon_0 - 180 to lon_0 + 180 monotonic, but prevents
-        #    labels from being drawn outside of range (-180, 180)
-        def _add_gridline_label(self, value, axis, upper_end):
-            if _version_cartopy < '0.18':
-                if axis == 'x':
-                    value = (value + 180) % 360 - 180
-            return type(self)._add_gridline_label(self, value, axis, upper_end)
+        # Return the gridliner with monkey patch
         gl = self.gridlines(crs=ccrs.PlateCarree())
-        gl._draw_gridliner = _draw_gridliner.__get__(gl)  # apply monkey patch
         gl._axes_domain = _axes_domain.__get__(gl)
-        gl._add_gridline_label = _add_gridline_label.__get__(gl)
         gl.xlines = gl.ylines = False
         self._toggle_gridliner_labels(gl, False, False, False, False, False)
         return gl
@@ -1068,7 +1037,8 @@ class _CartopyAxes(GeoAxes, _GeoAxes):
             gl.ylines = latgrid
         lonlines = self._get_lonticklocs(which=which)
         latlines = self._get_latticklocs(which=which)
-        lonlines = (np.asarray(lonlines) + 180) % 360 - 180  # specific to _CartopyAxes
+        if _version_cartopy >= '0.18':  # see lukelbd/proplot#208
+            lonlines = (np.asarray(lonlines) + 180) % 360 - 180  # only for cartopy
         gl.xlocator = mticker.FixedLocator(lonlines)
         gl.ylocator = mticker.FixedLocator(latlines)
 
