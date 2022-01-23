@@ -1249,58 +1249,59 @@ _rc_proplot_table = {
         "everything. If ``True``, draw them above everything. If ``'line'``, "
         'draw them above patches but below lines and markers.'
     ),
+    'grid.checkoverlap': (
+        False,
+        _validate_bool,
+        'Whether to have cartopy automatically check for and remove overlapping '
+        '`~proplot.axes.GeoAxes` gridline labels.'
+    ),
     'grid.dmslabels': (
         True,
         _validate_bool,
-        'Whether to use degrees-minutes-seconds rather than decimals for gridline '
-        'labels on cartopy `~proplot.axes.GeoAxes`.'
+        'Whether to use degrees-minutes-seconds rather than decimals for '
+        'cartopy `~proplot.axes.GeoAxes` gridlines.'
     ),
     'grid.geolabels': (
         True,
         _validate_bool,
         "Whether to include the ``'geo'`` spine in cartopy >= 0.20 when otherwise "
-        'toggling left, right, bottom, or top outer labels.'
+        'toggling left, right, bottom, or top `~proplot.axes.GeoAxes` gridline labels.'
     ),
     'grid.inlinelabels': (
         False,
         _validate_bool,
-        'Whether to use inline labels for cartopy `~proplot.axes.GeoAxes` '
-        'longitude and latitude gridlines.'
+        'Whether to add inline labels for cartopy `~proplot.axes.GeoAxes` gridlines.'
     ),
     'grid.labels': (
         False,
         _validate_bool,
-        'Whether to use outer labels for cartopy and basemap `~proplot.axes.GeoAxes` '
-        'longitude and latitude gridlines.'
+        'Whether to add outer labels for `~proplot.axes.GeoAxes` gridlines.'
     ),
     'grid.labelcolor': (
         BLACK,
         _validate_color,
-        'Font color for longitude and latitude gridline labels in '
-        '`~proplot.axes.GeoAxes`.'
+        'Font color for `~proplot.axes.GeoAxes` gridline labels.'
     ),
     'grid.labelpad': (
         GRIDPAD,
         _validate_pt,
-        'Padding between map boundary edge and longitude and '
-        'latitude labels for `~proplot.axes.GeoAxes`.' + _addendum_pt
+        'Padding between the map boundary and cartopy `~proplot.axes.GeoAxes` '
+        'gridline labels.' + _addendum_pt
     ),
     'grid.labelsize': (
         SMALLSIZE,
         _validate_fontsize,
-        'Font size for longitude and latitude gridline labels in '
-        '`~proplot.axes.GeoAxes`.' + _addendum_font
+        'Font size for `~proplot.axes.GeoAxes` gridline labels.' + _addendum_font
     ),
     'grid.labelweight': (
         'normal',
         _validate_fontweight,
-        'Font weight for longitude and latitude gridline labels in '
-        '`~proplot.axes.GeoAxes`.'
+        'Font weight for `~proplot.axes.GeoAxes` gridline labels.'
     ),
     'grid.nsteps': (
         250,
         _validate_int,
-        'Number of interpolation steps used to draw cartopy gridlines.'
+        'Number of points used to draw cartopy `~proplot.axes.GeoAxes` gridlines.'
     ),
     'grid.pad': (
         GRIDPAD,
@@ -1310,8 +1311,7 @@ _rc_proplot_table = {
     'grid.rotatelabels': (
         False,  # False limits projections where labels are available
         _validate_bool,
-        'Whether to rotate longitude and latitude gridline labels for cartopy '
-        '`~proplot.axes.GeoAxes`.'
+        'Whether to rotate cartopy `~proplot.axes.GeoAxes` gridline labels.'
     ),
     'grid.style': (
         '-',

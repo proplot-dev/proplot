@@ -21,10 +21,11 @@ from . import plot
 try:
     import cartopy.crs as ccrs
     import cartopy.feature as cfeature
+    import cartopy.mpl.gridliner as cgridliner
     from cartopy.crs import Projection
     from cartopy.mpl.geoaxes import GeoAxes as _GeoAxes
 except ModuleNotFoundError:
-    ccrs = cfeature = None
+    ccrs = cfeature = cgridliner = None
     _GeoAxes = Projection = object
 
 try:
@@ -173,6 +174,23 @@ labelweight : str, default: :rc:`grid.labelweight`
     The font weight for the gridline labels (`gridlabelweight` is also allowed).
 """
 docstring._snippet_manager['geo.format'] = _format_docstring
+
+
+class _GeoLabel(object):
+    """
+    Optionally omit overlapping check if an rc setting is disabled.
+    """
+    def check_overlapping(self, *args, **kwargs):
+        if rc['grid.checkoverlap']:
+            return super().check_overlapping(*args, **kwargs)
+        else:
+            return False
+
+
+# Add monkey patch to gridliner module
+if cgridliner is not None and hasattr(cgridliner, 'Label'):  # only recent versions
+    _cls = type('Label', (_GeoLabel, cgridliner.Label), {})
+    cgridliner.Label = _cls
 
 
 class _GeoAxis(object):
