@@ -19,8 +19,8 @@ import functools
 import json
 import os
 import re
-from collections.abc import MutableMapping
-from numbers import Integral, Number
+from collections.abc import MutableMapping, MutableSequence
+from numbers import Integral, Number, Real
 from xml.etree import ElementTree
 
 import matplotlib.cm as mcm
@@ -29,6 +29,7 @@ import numpy as np
 import numpy.ma as ma
 
 from .config import rc
+from .externals import hsluv
 from .internals import ic  # noqa: F401
 from .internals import (
     _kwargs_to_args,
@@ -38,9 +39,9 @@ from .internals import (
     inputs,
     warnings,
 )
-from .utils import set_alpha, to_hex, to_rgb, to_rgba, to_xyz, to_xyza
 
 __all__ = [
+    'Color',
     'DiscreteColormap',
     'ContinuousColormap',
     'PerceptualColormap',
@@ -267,7 +268,50 @@ COLORS_REPLACE = (
     ('yelloworange', 'yellow orange'),
 )
 
-# Simple snippets
+# Color snippets
+_docstring_rgba = """
+color : color-spec
+    A color specification. Sanitized with `to_rgba`.
+"""
+_docstring_hex = """
+color : str
+    An 8-digit HEX string indicating red, green, blue, and alpha channel values.
+"""
+_docstring_convert = """
+color : color-spec
+    The color. Can be a 3-tuple or 4-tuple of channel values, a hex
+    string, a registered color name, a cycle color like ``'C0'``, or
+    a 2-tuple colormap coordinate specification like ``('magma', 0.5)``
+    (see `~proplot.colors.ColorDatabase` for details).
+
+    If `space` is ``'rgb'``, this is a tuple of RGB values, and any
+    channels are larger than ``2``, the channels are assumed to be
+    on the ``0`` to ``255`` scale and are divided by ``255``.
+space : {'rgb', 'hsv', 'hcl', 'hpl', 'hsl'}, optional
+    The colorspace for the input channel values. Ignored unless `color`
+    is a tuple of numbers.
+cycle : str, default: :rcraw:`cycle`
+    The registered color cycle name used to interpret colors that
+    look like ``'C0'``, ``'C1'``, etc.
+clip : bool, default: True
+    Whether to clip channel values into the valid ``0`` to ``1`` range.
+    Setting this to ``False`` can result in invalid colors.
+"""
+_docstring_seealso = """
+Color.set_hue
+Color.set_saturation
+Color.set_luminance
+Color.set_alpha
+Color.shift_hue
+Color.scale_luminance
+Color.scale_saturation
+"""
+docstring._snippet_manager['colors.color'] = _docstring_rgba
+docstring._snippet_manager['colors.hex'] = _docstring_hex
+docstring._snippet_manager['colors.convert'] = _docstring_convert
+docstring._snippet_manager['colors.seealso'] = _docstring_seealso
+
+# Colormap snippets
 _N_docstring = """
 N : int, default: :rc:`image.lut`
     Number of points in the colormap lookup table.
@@ -671,6 +715,414 @@ def _standardize_colors(input, space, margin):
     return output
 
 
+class Color(MutableSequence, list):
+    """
+    A basic color class for storing HEX strings.
+    """
+    def _transform_color(self, func, space):
+        """
+        Standardize input for color transformation functions.
+        """
+        *color, opacity = self.to_rgba()
+        color = self.to_xyz(color, space=space)
+        color = func(list(color))  # apply transform
+        return self.to_hex((*color, opacity), space=space)
+
+    @docstring._snippet_manager
+    def shift_hue(self, shift=0, space='hcl'):
+        """
+        Shift the hue channel of a color.
+
+        Parameters
+        ----------
+        %(colors.color)s
+        shift : float, optional
+            The HCL hue channel is offset by this value.
+        %(utils.space)s
+
+        Returns
+        -------
+        %(colors.hex)s
+
+        See also
+        --------
+        %(colors.seealso)s
+        """
+        def func(channels):
+            channels[0] += shift
+            channels[0] %= 360
+            return channels
+        return self._transform_color(func, space)
+
+    @docstring._snippet_manager
+    def scale_saturation(self, scale=1, space='hcl'):
+        """
+        Scale the saturation channel of a color.
+
+        Parameters
+        ----------
+        %(colors.color)s
+        scale : float, optional
+            The HCL saturation channel is multiplied by this value.
+        %(utils.space)s
+
+        Returns
+        -------
+        %(colors.hex)s
+
+        See also
+        --------
+        %(colors.seealso)s
+        """
+        def func(channels):
+            channels[1] *= scale
+            return channels
+        return self._transform_color(func, space)
+
+    @docstring._snippet_manager
+    def scale_luminance(self, scale=1, space='hcl'):
+        """
+        Scale the luminance channel of a color.
+
+        Parameters
+        ----------
+        %(colors.color)s
+        scale : float, optional
+            The luminance channel is multiplied by this value.
+        %(utils.space)s
+
+        Returns
+        -------
+        %(colors.hex)s
+
+        See also
+        --------
+        %(colors.seealso)s
+        """
+        def func(channels):
+            channels[2] *= scale
+            return channels
+        return self._transform_color(func, space)
+
+    @docstring._snippet_manager
+    def set_hue(self, hue, space='hcl'):
+        """
+        Return a color with a different hue and the same luminance and saturation
+        as the input color.
+
+        Parameters
+        ----------
+        %(colors.color)s
+        hue : float, optional
+            The new hue. Should lie between ``0`` and ``360`` degrees.
+        %(utils.space)s
+
+        Returns
+        -------
+        %(colors.hex)s
+
+        See also
+        --------
+        %(colors.seealso)s
+        """
+        def func(channels):
+            channels[0] = hue
+            return channels
+        return self._transform_color(func, space)
+
+    @docstring._snippet_manager
+    def set_saturation(self, saturation, space='hcl'):
+        """
+        Return a color with a different saturation and the same hue and luminance
+        as the input color.
+
+        Parameters
+        ----------
+        %(colors.color)s
+        saturation : float, optional
+            The new saturation. Should lie between ``0`` and ``360`` degrees.
+        %(utils.space)s
+
+        Returns
+        -------
+        %(colors.hex)s
+
+        See also
+        --------
+        %(colors.seealso)s
+        """
+        def func(channels):
+            channels[1] = saturation
+            return channels
+        return self._transform_color(func, space)
+
+    @docstring._snippet_manager
+    def set_luminance(self, luminance, space='hcl'):
+        """
+        Return a color with a different luminance and the same hue and saturation
+        as the input color.
+
+        Parameters
+        ----------
+        %(colors.color)s
+        luminance : float, optional
+            The new luminance. Should lie between ``0`` and ``100``.
+        %(utils.space)s
+
+        Returns
+        -------
+        %(colors.hex)s
+
+        See also
+        --------
+        %(colors.seealso)s
+        """
+        def func(channels):
+            channels[2] = luminance
+            return channels
+        return self._transform_color(func, space)
+
+    @docstring._snippet_manager
+    def set_alpha(self, alpha):
+        """
+        Return a color with the opacity channel set to the specified value.
+
+        Parameters
+        ----------
+        %(colors.color)s
+        alpha : float, optional
+            The new opacity. Should be between ``0`` and ``1``.
+
+        Returns
+        -------
+        %(colors.hex)s
+
+        See also
+        --------
+        %(colors.seealso)s
+        """
+        def func(channels):
+            channels[3] = alpha
+            return channels
+        return self._transform_color(func, alpha)
+
+    def _translate_cycle_color(self, cycle=None):
+        """
+        Parse the input cycle color.
+        """
+        if isinstance(cycle, str):
+            from .colors import _cmap_database
+            try:
+                cycle = _cmap_database[cycle].colors
+            except (KeyError, AttributeError):
+                cycles = sorted(
+                    name
+                    for name, cmap in _cmap_database.items()
+                    if isinstance(cmap, mcolors.ListedColormap)
+                )
+                raise ValueError(
+                    f'Invalid color cycle {cycle!r}. Options are: '
+                    + ', '.join(map(repr, cycles))
+                    + '.'
+                )
+        elif cycle is None:
+            cycle = rc['axes.prop_cycle'].by_key()
+            if 'color' not in cycle:
+                cycle = ['k']
+            else:
+                cycle = cycle['color']
+        else:
+            raise ValueError(f'Invalid cycle {cycle!r}.')
+        return cycle[int(self[-1]) % len(cycle)]
+
+    @docstring._snippet_manager
+    def to_hex(self, color, space='rgb', cycle=None, keep_alpha=True):
+        """
+        Translate the color from an arbitrary colorspace to a HEX string.
+        This is a generalization of `matplotlib.colors.convert_hex`.
+
+        Parameters
+        ----------
+        %(colors.convert)s
+        keep_alpha : bool, default: True
+            Whether to keep the opacity channel. If ``True`` an 8-digit HEX
+            is returned. Otherwise a 6-digit HEX is returned.
+
+        Returns
+        -------
+        %(colors.hex)s
+
+        See also
+        --------
+        to_rgb
+        to_rgba
+        to_xyz
+        to_xyza
+        """
+        rgba = self.to_rgba(color, space=space, cycle=cycle)
+        return mcolors.convert_hex(rgba, keep_alpha=keep_alpha)
+
+    @docstring._snippet_manager
+    def to_rgb(self, color, space='rgb', cycle=None):
+        """
+        Translate the color from an arbitrary colorspace to an RGB tuple. This is
+        a generalization of `matplotlib.colors.convert_rgb` and the inverse of `to_xyz`.
+
+        Parameters
+        ----------
+        %(colors.convert)s
+
+        Returns
+        -------
+        color : 3-tuple
+            An RGB tuple.
+
+        See also
+        --------
+        to_hex
+        to_rgba
+        to_xyz
+        to_xyza
+        """
+        return self.to_rgba(color, space=space, cycle=cycle)[:3]
+
+    @docstring._snippet_manager
+    def to_rgba(self, color, space='rgb', cycle=None, clip=True):
+        """
+        Translate the color from an arbitrary colorspace to an RGBA tuple. This is a
+        generalization of `matplotlib.colors.convert_rgba` and the inverse of `to_xyz`.
+
+        Parameters
+        ----------
+        %(colors.convert)s
+
+        Returns
+        -------
+        color : 4-tuple
+            An RGBA tuple.
+
+        See also
+        --------
+        to_hex
+        to_rgb
+        to_xyz
+        to_xyza
+        """
+        # Translate color cycle strings
+        if re.match(r'\AC[0-9]\Z', color):
+            color = self._translate_cycle_color(cycle=cycle)
+
+        # Translate RGB strings and (colormap, index) tuples
+        # NOTE: Cannot use is_color_like because might have HSL channel values
+        opacity = 1
+        if (
+            isinstance(color, str)
+            or np.iterable(color) and len(color) == 2
+        ):
+            color = mcolors.convert_rgba(color)  # also enforced validity
+        if (
+            not np.iterable(color)
+            or len(color) not in (3, 4)
+            or not all(isinstance(c, Real) for c in color)
+        ):
+            raise ValueError(f'Invalid color-spec {color!r}.')
+        if len(color) == 4:
+            *color, opacity = color
+
+        # Translate arbitrary colorspaces
+        if space == 'rgb':
+            if any(c > 2 for c in color):
+                color = tuple(c / 255 for c in color)  # scale to within 0-1
+            else:
+                pass
+        elif space == 'hsv':
+            color = hsluv.hsl_to_rgb(*color)
+        elif space == 'hcl':
+            color = hsluv.hcl_to_rgb(*color)
+        elif space == 'hsl':
+            color = hsluv.hsluv_to_rgb(*color)
+        elif space == 'hpl':
+            color = hsluv.hpluv_to_rgb(*color)
+        else:
+            raise ValueError(f'Invalid colorspace {space!r}.')
+
+        # Clip values. This should only be disabled when testing
+        # translation functions.
+        if clip:
+            color = np.clip(color, 0, 1)  # clip to valid range
+
+        # Return RGB or RGBA
+        return (*color, opacity)
+
+    @docstring._snippet_manager
+    def to_xyz(self, color, space='hcl'):
+        """
+        Translate color in *any* format to a tuple of channel values in *any*
+        colorspace. This is the inverse of `to_rgb`.
+
+        Parameters
+        ----------
+        %(colors.color)s
+        space : {'hcl', 'hpl', 'hsl', 'hsv', 'rgb'}, optional
+            The colorspace for the output channel values.
+
+        Returns
+        -------
+        color : 3-tuple
+            Tuple of channel values for the colorspace `space`.
+
+        See also
+        --------
+        to_hex
+        to_rgb
+        to_rgba
+        to_xyza
+        """
+        return self.to_xyza(color, space)[:3]
+
+    @docstring._snippet_manager
+    def to_xyza(self, color, space='hcl'):
+        """
+        Translate color in *any* format to a tuple of channel values in *any*
+        colorspace. This is the inverse of `to_rgba`.
+
+        Parameters
+        ----------
+        %(colors.color)s
+        space : {'hcl', 'hpl', 'hsl', 'hsv', 'rgb'}, optional
+            The colorspace for the output channel values.
+
+        Returns
+        -------
+        color : 3-tuple
+            Tuple of channel values for the colorspace `space`.
+
+        See also
+        --------
+        to_hex
+        to_rgb
+        to_rgba
+        to_xyz
+        """
+        # Run tuple conversions
+        # NOTE: Don't pass color tuple, because we may want to permit
+        # out-of-bounds RGB values to invert conversion
+        *color, opacity = self.to_rgba(color)
+        if space == 'rgb':
+            pass
+        elif space == 'hsv':
+            color = hsluv.rgb_to_hsl(*color)  # rgb_to_hsv would also work
+        elif space == 'hcl':
+            color = hsluv.rgb_to_hcl(*color)
+        elif space == 'hsl':
+            color = hsluv.rgb_to_hsluv(*color)
+        elif space == 'hpl':
+            color = hsluv.rgb_to_hpluv(*color)
+        else:
+            raise ValueError(f'Invalid colorspace {space}.')
+        return (*color, opacity)
+
+
 class _Colormap(object):
     """
     Mixin class used to add some helper methods.
@@ -693,9 +1145,9 @@ class _Colormap(object):
 
         # Get data string
         if ext == 'hex':
-            data = ', '.join(mcolors.to_hex(color) for color in colors)
+            data = ', '.join(mcolors.convert_hex(color) for color in colors)
         elif ext in ('txt', 'rgb'):
-            rgb = mcolors.to_rgba if alpha else mcolors.to_rgb
+            rgb = mcolors.convert_rgba if alpha else mcolors.convert_rgb
             data = [rgb(color) for color in colors]
             data = '\n'.join(' '.join(f'{num:0.6f}' for num in line) for line in data)
         else:
@@ -878,7 +1330,7 @@ class _Colormap(object):
                 )
             # Convert to array
             x = np.linspace(0, 1, len(data))
-            data = [to_rgb(color) for color in data]
+            data = [Color(color) for color in data]
 
         # Invalid extension
         else:
