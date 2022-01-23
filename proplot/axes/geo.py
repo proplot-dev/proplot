@@ -99,19 +99,22 @@ lonlabels, latlabels, labels : str, bool, or sequence, :rc:`grid.labels`
     which sides of the map. Use the keyword `labels` to set both at once. The
     argument must conform to one of the following options:
 
-    1. A boolean. ``True`` indicates the left side for latitudes, bottom
-       side for longitudes, and ``False`` disables all labels.
-    2. A string or sequence of strings indicating the side names, e.g.
-       ``'left'`` for latitudes or ``('top', 'bottom')`` for longitudes.
-    3. A string indicating the side names with single characters, e.g.
-       ``'lr'`` for latitudes or ``'bt'`` for longitudes.
-    4. A boolean 2-tuple indicating whether to draw labels on the
-       ``(left, right)`` sides for latitudes, or ``(bottom, top)``
-       sides for longitudes.
-    5. A boolean 4-tuple indicating whether to draw labels on the
-       ``(left, right, bottom, top)`` sides, as with the basemap
-       `~mpl_toolkits.basemap.Basemap.drawmeridians` and
-       `~mpl_toolkits.basemap.Basemap.drawparallels` `labels` keyword.
+    * A boolean. ``True`` indicates the bottom side for longitudes and
+      the left side for latitudes, and ``False`` disables all labels.
+    * A string or sequence of strings indicating the side names, e.g.
+      ``'top'`` for longitudes or ``('left', 'right')`` for latitudes.
+    * A string indicating the side names with single characters, e.g.
+      ``'bt'`` for longitudes or ``'lr'`` for latitudes.
+    * A string matching ``'neither'`` (no labels), ``'both'`` (equivalent
+      to ``'bt'`` for longitudes and ``'lr'`` for latitudes), or ``'all'``
+      (equivalent to ``'lrbt'``, i.e. all sides).
+    * A boolean 2-tuple indicating whether to draw labels
+      on the ``(bottom, top)`` sides for longitudes,
+      and the ``(left, right)`` sides for latitudes.
+    * A boolean 4-tuple indicating whether to draw labels on the
+      ``(left, right, bottom, top)`` sides, as with the basemap
+      `~mpl_toolkits.basemap.Basemap.drawmeridians` and
+      `~mpl_toolkits.basemap.Basemap.drawparallels` `labels` keyword.
 
 loninline, latinline, inlinelabels : bool, default: :rc:`grid.inlinelabels`
     *For cartopy axes only.*
@@ -502,12 +505,18 @@ class GeoAxes(plot.PlotAxes):
             array = [False] * 5
             opts = ('left', 'right', 'bottom', 'top', 'geo')
             for string in strings:
-                if string in opts:
+                if string == 'all':
+                    string = 'lrbt'
+                elif string == 'both':
+                    string = 'bt' if lon else 'lr'
+                elif string == 'neither':
+                    string = ''
+                elif string in opts:
                     string = string[0]
-                elif set(string) - set('lrbtg'):
+                if set(string) - set('lrbtg'):
                     raise ValueError(
                         f'Invalid {which}label string {string!r}. Must be one of '
-                        + ', '.join(map(repr, opts))
+                        + ', '.join(map(repr, (*opts, 'neither', 'both', 'all')))
                         + " or a string of single-letter characters like 'lr'."
                     )
                 for char in string:

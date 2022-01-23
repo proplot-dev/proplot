@@ -186,7 +186,7 @@ axs.format(
 #      <https://scitools.org.uk/cartopy/docs/latest/gallery/lines_and_polygons/always_circular_stereo.html>`__
 #      from the cartopy website). To disable this feature, set :rcraw:`geo.round` to
 #      ``False`` or pass ``round=False` to `~proplot.axes.GeoAxes.format`. Please note
-#      that cartopy cannot add gridline labels to polar plots with circular boundaries.
+#      that older versions of cartopy cannot add gridlines to maps bounded by circles.
 #    * To make things more consistent, the `~proplot.constructor.Proj` constructor
 #      function lets you supply native `PROJ <https://proj.org>`__ keyword names
 #      for the cartopy `~cartopy.crs.Projection` classes (e.g., `lon0` instead
@@ -212,15 +212,17 @@ for i, proj in enumerate(('cyl', 'hammer', 'npstere')):
     ax2 = fig.subplot(gs[i, 1], proj=proj, backend='basemap')  # basemap backend
 
 # Format projections
-fig.format(
+axs = fig.subplotgrid
+axs.format(
     land=True,
     suptitle='Figure with several projections',
     toplabels=('Cartopy examples', 'Basemap examples'),
     toplabelweight='normal',
     latlines=30, lonlines=60,
-    lonlabels='b', latlabels='r',  # or lonlabels=True, labels=True, etc.
 )
-fig.subplotgrid[-2:].format(latlines=20, lonlines=30)  # dense gridlines for polar plots
+axs[:2].format(lonlabels='b', latlabels='r')  # or lonlabels=True, lonlabels='bottom',
+axs[2:4].format(lonlabels=False, latlabels='both')
+axs[4:].format(lonlabels='all', lonlines=30)
 pplt.rc.reset()
 
 
