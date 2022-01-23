@@ -243,9 +243,11 @@ class DiscreteLocator(mticker.Locator):
 
 class DegreeLocator(mticker.MaxNLocator):
     """
-    Locate geographic gridlines with degree-minute-second support.
-    Adapted from cartopy.
+    Locate geographic gridlines with degree-minute-second support. Adapted from cartopy.
     """
+    # NOTE: This is identical to cartopy except they only define LongitutdeLocator
+    # for common methods whereas we use DegreeLocator. More intuitive this way in
+    # case users need degree-minute-seconds for non-specific degree axis.
     # NOTE: Locator implementation is weird AF. __init__ just calls set_params with all
     # keyword args and fills in missing params with default_params class attribute.
     # Unknown params result in warning instead of error.
@@ -280,14 +282,13 @@ class DegreeLocator(mticker.MaxNLocator):
         self._guess_steps(vmin, vmax)
         return super()._raw_ticks(vmin, vmax)
 
-    def bin_boundaries(self, vmin, vmax):  # matplotlib <2.2.0
-        return self._raw_ticks(vmin, vmax)  # may call Latitude/LongitudeLocator copies
+    def bin_boundaries(self, vmin, vmax):  # matplotlib < 2.2.0
+        return self._raw_ticks(vmin, vmax)  # may call Latitude/Longitude Locator copies
 
 
 class LongitudeLocator(DegreeLocator):
     """
-    Locate longitude gridlines with degree-minute-second support.
-    Adapted from cartopy.
+    Locate longitude gridlines with degree-minute-second support. Adapted from cartopy.
     """
     @docstring._snippet_manager
     def __init__(self, *args, **kwargs):
@@ -296,28 +297,10 @@ class LongitudeLocator(DegreeLocator):
         """
         super().__init__(*args, **kwargs)
 
-    def tick_values(self, vmin, vmax):
-        # NOTE: Proplot ensures vmin, vmax are always the *actual* longitude range
-        # accounting for central longitude position.
-        ticks = super().tick_values(vmin, vmax)
-        if np.isclose(ticks[0] + 360, ticks[-1]):
-            eps = 1e-10
-            if ticks[-1] % 360 > 0:
-                # Make sure the label appears on *right*, not on
-                # top of the leftmost label.
-                ticks[-1] -= eps
-            else:
-                # Formatter formats label as 1e-10... so there is simply no way to
-                # put label on right. Just shift this location off the map edge so
-                # parallels still extend all the way to the edge, but label disappears.
-                ticks[-1] += eps
-        return ticks
-
 
 class LatitudeLocator(DegreeLocator):
     """
-    Locate latitude gridlines with degree-minute-second support.
-    Adapted from cartopy.
+    Locate latitude gridlines with degree-minute-second support. Adapted from cartopy.
     """
     @docstring._snippet_manager
     def __init__(self, *args, **kwargs):
@@ -741,7 +724,7 @@ class FracFormatter(mticker.Formatter):
         ----------
         symbol : str, default: ''
             The constant symbol, e.g. ``r'$\pi$'``.
-        number : float, default: 1`
+        number : float, default: 1
             The constant value, e.g. `numpy.pi`.
         """
         self._symbol = symbol
@@ -782,7 +765,7 @@ class _CartopyFormatter(object):
     # NOTE: Cartopy formatters pre 0.18 required axis, and *always* translated
     # input values from map projection coordinates to Plate Carrée coordinates.
     # After 0.18 you can avoid this behavior by not setting axis but really
-    # dislike that inconsistency. Solution is temporarily change projection.
+    # dislike that inconsistency. Solution is temporarily assign PlateCarre().
     def __init__(self, *args, **kwargs):
         import cartopy  # noqa: F401 (ensure available)
         super().__init__(*args, **kwargs)
@@ -797,8 +780,7 @@ class _CartopyFormatter(object):
 
 class DegreeFormatter(_CartopyFormatter, _PlateCarreeFormatter):
     """
-    Format longitude and latitude gridline labels.
-    Adapted from cartopy.
+    Formatter for longitude and latitude gridline labels. Adapted from cartopy.
     """
     @docstring._snippet_manager
     def __init__(self, *args, **kwargs):

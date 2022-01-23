@@ -213,23 +213,22 @@ class _GeoAxis(object):
         # giant lists of 10,000 gridline locations.
         if len(ticks) == 0:
             return ticks
-        range_ = max(ticks) - min(ticks)
+        range_ = np.max(ticks) - np.min(ticks)
         vmin = max(vmin, ticks[0] - range_)
         vmax = min(vmax, ticks[-1] + range_)
 
         # Pad the reported tick range up to specified range
         step = ticks[1] - ticks[0]  # MaxNLocator/AutoMinorLocator steps are equal
-        ticks_lo = np.arange(ticks[0], vmin, -step)[1:][::-1].tolist()
-        ticks_hi = np.arange(ticks[-1], vmax, step)[1:].tolist()
-        ticks = ticks_lo + ticks + ticks_hi
+        ticks_lo = np.arange(ticks[0], vmin, -step)[1:][::-1]
+        ticks_hi = np.arange(ticks[-1], vmax, step)[1:]
+        ticks = np.concatenate((ticks_lo, ticks, ticks_hi))
         return ticks
 
     def get_scale(self):
         return 'linear'
 
     def get_tick_space(self):
-        # Just use the long-standing default of nbins=9
-        return 9
+        return 9  # longstanding default of nbins=9
 
     def get_major_formatter(self):
         return self.major.formatter
@@ -241,14 +240,14 @@ class _GeoAxis(object):
         return self.minor.locator
 
     def get_majorticklocs(self):
-        return self._get_sanitized_ticks(self.major.locator)
+        return self._get_ticklocs(self.major.locator)
 
     def get_minorticklocs(self):
-        return self._get_sanitized_ticks(self.minor.locator)
+        return self._get_ticklocs(self.minor.locator)
 
     def set_major_formatter(self, formatter, default=False):
-        # NOTE: Cartopy formatters check Formatter.axis.axes.projection and has
-        # special projection-dependent behavior.
+        # NOTE: Cartopy formatters check Formatter.axis.axes.projection
+        # in order to implement special projection-dependent behavior.
         self.major.formatter = formatter
         formatter.set_axis(self)
         self.isDefault_majfmt = default
@@ -286,27 +285,41 @@ class _LonAxis(_GeoAxis):
         self.set_major_locator(constructor.Locator(locator), default=True)
         self.set_minor_locator(mticker.AutoMinorLocator(), default=True)
 
-    def _get_sanitized_ticks(self, locator):
+    def _get_ticklocs(self, locator):
         # Prevent ticks from looping around
-        eps = 5e-10  # more than 1e-10 because we use 1e-10 in _LongitudeLocator
-        ticks = sorted(locator())
-        while ticks and ticks[-1] - eps > ticks[0] + 360 + eps:  # cut off looped ticks
-            ticks = ticks[:-1]
+        # NOTE: Cartopy 0.17 formats numbers offset by eps with the cardinal indicator
+        # (e.g. 0 degrees for map centered on 180 degrees). So skip in that case.
+        # NOTE: Common strange issue is e.g. MultipleLocator(60) starts out at
+        # -60 degrees for a map from 0 to 360 degrees. If always trimmed circular
+        # locations from right then would cut off rightmost gridline. Workaround is
+        # to trim on the side closest to central longitude (in this case the left).
+        eps = 1e-10
+        lon0 = self.axes._get_lon0()
+        ticks = np.sort(locator())
+        while ticks.size:
+            if np.isclose(ticks[0] + 360, ticks[-1]):
+                if _version_cartopy >= '0.18' or not np.isclose(ticks[0] % 360, 0):
+                    ticks[-1] -= eps  # ensure label appears on *right* not left
+                break
+            elif ticks[0] + 360 < ticks[-1]:
+                idx = (1, None) if lon0 - ticks[0] > ticks[-1] - lon0 else (None, -1)
+                ticks = ticks[slice(*idx)]  # cut off ticks looped over globe
+            else:
+                break
 
         # Append extra ticks in case longitude/latitude limits do not encompass
         # the entire view range of map, e.g. for Lambert Conformal sectors.
         # NOTE: Try to avoid making 10,000 element lists. Just wrap extra ticks
         # up to the width of *reported* longitude range.
         if isinstance(locator, (mticker.MaxNLocator, mticker.AutoMinorLocator)):
-            lon0 = self.axes._get_lon0()
             ticks = self._pad_ticks(ticks, lon0 - 180 + eps, lon0 + 180 - eps)
 
         return ticks
 
     def get_view_interval(self):
         # NOTE: Proplot tries to set its *own* view intervals to avoid dateline
-        # weirdness, but if geo.extent is 'auto' the interval will be unset, so
-        # we are forced to use _get_extent().
+        # weirdness, but if rc['geo.extent'] is 'auto' the interval will be unset.
+        # In this case we use _get_extent() as a backup.
         interval = self._interval
         if interval is None:
             extent = self._get_extent()
@@ -332,12 +345,12 @@ class _LatAxis(_GeoAxis):
         self.set_major_locator(constructor.Locator(locator), default=True)
         self.set_minor_locator(mticker.AutoMinorLocator(), default=True)
 
-    def _get_sanitized_ticks(self, locator):
+    def _get_ticklocs(self, locator):
         # Adjust latitude ticks to fix bug in some projections. Harmless for basemap.
-        # NOTE: Maybe this is fixed by cartopy 0.18?
-        eps = 5e-10
-        ticks = sorted(locator())
-        if ticks:
+        # NOTE: Maybe this was fixed by cartopy 0.18?
+        eps = 1e-10
+        ticks = np.sort(locator())
+        if ticks.size:
             if ticks[0] == -90:
                 ticks[0] += eps
             if ticks[-1] == 90:
@@ -350,7 +363,7 @@ class _LatAxis(_GeoAxis):
 
         # Filter ticks to latmax range
         latmax = self.get_latmax()
-        ticks = [l for l in ticks if -latmax <= l <= latmax]
+        ticks = ticks[(ticks >= -latmax) & (ticks <= latmax)]
 
         return ticks
 
