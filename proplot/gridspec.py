@@ -718,22 +718,21 @@ class GridSpec(mgridspec.GridSpec):
                     continue  # no interface
                 idx1, = np.where(filt & filt1)
                 idx2, = np.where(filt & filt2)
-                if idx1.size != 1 or idx2.size != 1:
+                if not idx1.size or not idx2.size:
                     continue
-                idx1, idx2 = idx1[0], idx2[0]
                 # Put axes into unique groups and store as (l, r) or (b, t) pairs.
-                ax1, ax2 = axs[idx1], axs[idx2]
+                axs1, axs2 = [axs[_] for _ in idx1], [axs[_] for _ in idx2]
                 if x != 'x':  # order bottom-to-top
-                    ax1, ax2 = ax2, ax1
+                    axs1, axs2 = axs2, axs1
                 newgroup = True
                 for (group1, group2) in groups:
-                    if ax1 in group1 or ax2 in group2:
+                    if any(_ in group1 for _ in axs1) or any(_ in group2 for _ in axs2):
                         newgroup = False
-                        group1.add(ax1)
-                        group2.add(ax2)
+                        group1.update(axs1)
+                        group2.update(axs2)
                         break
                 if newgroup:
-                    groups.append([{ax1}, {ax2}])  # form new group
+                    groups.append([set(axs1), set(axs2)])  # form new group
             # Determing the spaces using cached tight bounding boxes
             # NOTE: Set gridspec space to zero if there are no adjacent edges
             margins = []
