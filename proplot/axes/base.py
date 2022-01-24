@@ -15,7 +15,6 @@ import matplotlib.cm as mcm
 import matplotlib.colors as mcolors
 import matplotlib.container as mcontainer
 import matplotlib.contour as mcontour
-import matplotlib.gridspec as mgridspec
 import matplotlib.legend as mlegend
 import matplotlib.offsetbox as moffsetbox
 import matplotlib.patches as mpatches
@@ -1735,10 +1734,6 @@ class Axes(maxes.Axes):
                 bounds = (2 * delta, 0, length, 1)
             else:
                 raise ValueError(f'Invalid align={align!r} for colorbar loc={side!r}.')
-            idx = ('left', 'center', 'right').index(align)
-            wratios = [delta] * 3
-            wratios[idx] = length
-            nrows, ncols, hratios = 1, 3, (1,)
         else:
             if align == 'bottom':
                 bounds = (0, 0, 1, length)
@@ -1748,26 +1743,14 @@ class Axes(maxes.Axes):
                 bounds = (0, 2 * delta, 1, length)
             else:
                 raise ValueError(f'Invalid align={align!r} for colorbar loc={side!r}.')
-            idx = ('top', 'center', 'bottom').index(align)
-            hratios = [delta] * 3
-            hratios[idx] = length
-            nrows, ncols, wratios = 3, 1, (1,)
 
         # Add the axes as a child of the original axes
         # WARNING: Matplotlib < 3.2 (or possibly matplotlib < 3.1) has major issues
         # scaling with locator (makes tiny-length colorbars). Try to use gridspec.
         cls = mproj.get_projection_class('proplot_cartesian')
-        if isinstance(self, maxes.SubplotBase):
-            ss = self.get_subplotspec()
-            gs = mgridspec.GridSpecFromSubplotSpec(nrows, ncols, ss, hspace=0, wspace=0)
-            gs.set_width_ratios(wratios)
-            gs.set_height_ratios(hratios)
-            ss = type(ss)(gs, idx, idx)
-            ax = maxes.subplot_class_factory(cls)(self.figure, ss, zorder=5)
-        else:
-            locator = self._make_inset_locator(bounds, self.transAxes)
-            ax = cls(self.figure, locator(self, None).bounds, zorder=5)
-            ax.set_axes_locator(locator)
+        locator = self._make_inset_locator(bounds, self.transAxes)
+        ax = cls(self.figure, locator(self, None).bounds, zorder=5)
+        ax.set_axes_locator(locator)
         self.add_child_axes(ax)
         ax.patch.set_facecolor('none')  # ignore axes.alpha application
 
