@@ -97,7 +97,7 @@ Features
   (minus 1) entry from the list (:pr:`294`) by `Pratiman Patel`_.
 * Permit disabling a-b-c labels for a particular subplot by passing e.g. ``number=None``
   instead of ``number=False`` (:commit:`f7308cbe`). ``None`` is a bit more intuitive.
-* Add modifiable `proplot.figure.Figure.tight` property to retrieve and optionally
+* Add the modifiable `proplot.figure.Figure.tight` property to retrieve and optionally
   toggle the tight layout setting (:commit:`46f46c26`).
 * Add a top-level `~proplot.ui.subplot` command that returns a figure and a single
   subplot, analogous to `~proplot.ui.subplots` (:commit:`8459c24c`).
@@ -105,6 +105,13 @@ Features
   artists clipped by the axes background patch boundary (:commit:`f891e4f0`).
 * Improve default appearance of figures with top/right panels and colorbars and with
   the tight layout algorithm disabled (:commit:`c4a3babb`).
+* Allow passing `wequal`, `hequal`, and `equal` to `~proplot.figure.Figure`
+  along with other scalar gridspec parameters (:commit:`d9e62c54`).
+* Add the :rcraw:`subplots.equalspace` and :rcraw:`subplots.groupspace` settings
+  to control tight layout default values for `equal` and `group` (:commit:`b4bf072d`).
+* Add the `wgroup`, `hgroup`, and `group` keywords (analogous to `wequal`, etc.)
+  to optionally disable tight layout behavior of comparing adjacent subplot "groups"
+  rather than all subplots in the row or column (:commit:`b4bf072d`).
 * Permit passing `~proplot.gridspec.GridSpec` instances to
   `~proplot.figure.Figure.add_subplots` to quickly draw a subplot
   inside each gridspec slot in row or column-major order (:commit:`a9ad7429`).
@@ -119,8 +126,6 @@ Features
   limits and `lon0`, `lat0` aliases for `lon_0`, `lat_0` (:commit:`5f1c67cc`).
 * Add the `~proplot.axes.GeoAxes` `labels` side options ``'neither'``, ``'both'``, and
   ``'all'``, analogous to Cartesian axes `tickloc` options (:commit:`0f4e03d2`).
-* Add the :rcraw:`grid.checkoverlap` setting to optionally disable the auto-removal of
-  overlapping cartopy grid labels (only works in cartopy >= 0.20) (:commit:`3ff02a38`).
 * Add the `proplot.axes.GeoAxes.gridlines_major`, `proplot.axes.GeoAxes.gridlines_minor`
   properties for additional customization or debugging issues (:commit:`869f300f`).
 * Move the `extent` and `round` keywords (formerly `autoextent` and `circular` --
@@ -129,6 +134,8 @@ Features
 * Add :rcraw:`grid.geolabels` setting that auto-includes cartopy ``'geo'`` location
   when toggling labels with e.g. ``lonlabels='left'`` or ``labels=True``, and support
   passing it explicitly with e.g. ``labels='geo'`` (:commit:`9040cde0`).
+* Add the :rcraw:`grid.checkoverlap` setting to optionally disable the auto-removal of
+  overlapping cartopy grid labels (only works in cartopy >= 0.20) (:commit:`3ff02a38`).
 * Add the public proplot class `proplot.ticker.IndexFormatter`, since the matplotlib
   version was entirely removed in version 3.5 (:commit:`c2dd8b2e`).
 * Replace `matplotlib.ticker.IndexLocator` with `proplot.ticker.IndexLocator`,
