@@ -749,7 +749,9 @@ def _geo_inbounds(x, y, xmin=-180, xmax=180):
     y, units = _to_masked_array(y)
     nan = y.fill_value
     y = y.filled()
-    if x.size - 1 == y.shape[-1]:  # test western/eastern grid cell edges
+    if not y.shape:
+        pass
+    elif x.size - 1 == y.shape[-1]:  # test western/eastern grid cell edges
         mask = (x[1:] < xmin) | (x[:-1] > xmax)
         y[..., mask] = nan
     elif x.size == y.shape[-1]:  # test the centers and pad by one for safety
