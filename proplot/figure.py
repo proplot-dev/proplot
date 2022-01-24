@@ -927,12 +927,16 @@ class Figure(mfigure.Figure):
         side = _translate_loc(side, 'panel', default=_not_none(orig, 'right'))
 
         # Add and setup the panel accounting for index changes
-        # NOTE: Always put tick labels on the 'outside'
+        # NOTE: Always put tick labels on the 'outside' and permit arbitrary
+        # keyword arguments passed from the user.
         gs = self.gridspec
         if not gs:
             raise RuntimeError('The gridspec must be active.')
-        ss, share = gs._insert_panel_slot(side, ax, **kwargs)
-        pax = self.add_subplot(ss, autoshare=False, number=False)
+        kw = _pop_params(kwargs, gs._insert_panel_slot)
+        ss, share = gs._insert_panel_slot(side, ax, **kw)
+        kwargs['autoshare'] = False
+        kwargs.setdefault('number', False)  # power users might number panels
+        pax = self.add_subplot(ss, **kwargs)
         pax._panel_side = side
         pax._panel_share = share
         pax._panel_parent = ax
@@ -963,7 +967,8 @@ class Figure(mfigure.Figure):
             span = _not_none(span=span, col=col, cols=cols)
 
         # Add and setup panel
-        # NOTE: This relies on panel slot obfuscation built into gridspec
+        # NOTE: This is only called internally by colorbar and legend so
+        # do not need to pass aribtrary axes keyword arguments.
         gs = self.gridspec
         if not gs:
             raise RuntimeError('The gridspec must be active.')

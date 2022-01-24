@@ -499,8 +499,7 @@ class GridSpec(mgridspec.GridSpec):
         return slot, iratio, slice(start, stop + 1)
 
     def _insert_panel_slot(
-        self, side, arg, *,
-        share=None, width=None, space=None, pad=None, filled=False,
+        self, side, arg, *, share=None, width=None, space=None, pad=None, filled=False,
     ):
         """
         Insert a panel slot into the existing gridspec. The `side` is the panel side
