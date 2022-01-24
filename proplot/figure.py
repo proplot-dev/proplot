@@ -756,10 +756,22 @@ class Figure(mfigure.Figure):
         """
         return context._state_context(self, _is_authorized=True)
 
+    @staticmethod
+    def _parse_backend(backend=None, basemap=None):
+        """
+        Handle deprication of basemap and cartopy package.
+        """
+        if basemap is not None:
+            backend = ('cartopy', 'basemap')[bool(basemap)]
+            warnings._warn_proplot(
+                f"The 'basemap' keyword was deprecated in version 0.10.0 and will be "
+                f'removed in a future release. Please use backend={backend!r} instead.'
+            )
+        return backend
+
     def _parse_proj(
         self, proj=None, projection=None,
-        proj_kw=None, projection_kw=None, backend=None, basemap=None,
-        **kwargs
+        proj_kw=None, projection_kw=None, backend=None, basemap=None, **kwargs
     ):
         """
         Translate the user-input projection into a registered matplotlib
@@ -769,12 +781,7 @@ class Figure(mfigure.Figure):
         # Parse arguments
         proj = _not_none(proj=proj, projection=projection, default='cartesian')
         proj_kw = _not_none(proj_kw=proj_kw, projection_kw=projection_kw, default={})
-        if basemap is not None:
-            backend = ('cartopy', 'basemap')[bool(basemap)]
-            warnings._warn_proplot(
-                f'The {basemap!r} keyword was deprecated in version 0.10.0 and will be '
-                f'removed in a future release. Please use backend={backend!r} instead.'
-            )
+        backend = self._parse_backend(basemap, backend)
         if isinstance(proj, str):
             proj = proj.lower()
         if isinstance(self, paxes.Axes):
@@ -1057,8 +1064,8 @@ class Figure(mfigure.Figure):
         return ax
 
     def _add_subplots(
-        self, array=None, nrows=1, ncols=1, order='C',
-        proj=None, projection=None, proj_kw=None, projection_kw=None, backend=None,
+        self, array=None, nrows=1, ncols=1, order='C', proj=None, projection=None,
+        proj_kw=None, projection_kw=None, backend=None, basemap=None,
         **kwargs
     ):
         """
@@ -1127,6 +1134,7 @@ class Figure(mfigure.Figure):
         proj = _axes_dict(naxs, proj, kw=False, default='cartesian')
         proj_kw = _not_none(projection_kw=projection_kw, proj_kw=proj_kw) or {}
         proj_kw = _axes_dict(naxs, proj_kw, kw=True)
+        backend = self._parse_backend(basemap, backend)
         backend = _axes_dict(naxs, backend, kw=False)
         axes_kw = {
             num: {'proj': proj[num], 'proj_kw': proj_kw[num], 'backend': backend[num]}

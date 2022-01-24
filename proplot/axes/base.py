@@ -868,8 +868,8 @@ class Axes(maxes.Axes):
         self.add_child_axes(ax)
 
         # Add zoom indicator (NOTE: requires matplotlib >= 3.0)
-        zoom = _not_none(zoom, self._name == 'cartesian' and ax._name == 'cartesian')
-        ax._inset_zoom = zoom
+        zoom_default = self._name == 'cartesian' and ax._name == 'cartesian'
+        zoom = ax._inset_zoom = _not_none(zoom, zoom_default)
         if zoom:
             zoom_kw = zoom_kw or {}
             ax.indicate_inset_zoom(**zoom_kw)
