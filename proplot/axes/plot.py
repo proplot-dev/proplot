@@ -2262,13 +2262,13 @@ class PlotAxes(base.Axes):
             warnings._warn_proplot(f'Ignoring unused keyword args(s): {params}')
 
         # Update outgoing args
-        # NOTE: With contour(..., discrete=False, levels=levels) users can bypass
-        # proplot's level selection and use native matplotlib level selection
-        if plot_contours:
-            kwargs['levels'] = levels
-            kwargs['extend'] = extend
+        # NOTE: ContourSet natively stores 'extend' on the result but for other
+        # classes we need to hide it on the object.
         kwargs.update({'cmap': cmap, 'norm': norm})
-        guides._add_guide_kw('colorbar', kwargs, extend=extend)
+        if plot_contours:
+            kwargs.update({'levels': levels, 'extend': extend})
+        else:
+            guides._add_guide_kw('colorbar', kwargs, extend=extend)
 
         return kwargs
 

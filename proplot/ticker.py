@@ -169,8 +169,8 @@ class DiscreteLocator(mticker.Locator):
             The minimum number of ticks to select. See also `nbins`.
         """
         self.locs = np.asarray(locs)
-        self.set_params(**{**self.default_params, **kwargs})
         self._nbins = None  # otherwise unset
+        self.set_params(**{**self.default_params, **kwargs})
 
     def __call__(self):
         """
@@ -213,21 +213,22 @@ class DiscreteLocator(mticker.Locator):
         # _parse_autolev interpolates evenly in the norm-space (e.g. 1, 3.16, 10, 31.6
         # for a LogNorm) rather than in linear-space (e.g. 1, 5, 10, 15, 20).
         locs = self.locs
-        if self.axis is None:
+        axis = self.axis
+        if axis is None:
             return locs
         nbins = self._nbins
         steps = self._steps
         if nbins is None:
-            nbins = self.axis.get_tick_space()
+            nbins = axis.get_tick_space()
             nbins = max((1, self._min_n_ticks - 1, nbins))
         step = max(1, int(np.ceil(locs.size / nbins)))
         fact = 10 ** max(0, -AutoFormatter._decimal_place(step))  # e.g. 2 for 100
         idx = min(len(steps) - 1, np.searchsorted(steps, step / fact))
         step = int(np.round(steps[idx] * fact))
         if self._minor:  # tick every half font size
-            if isinstance(self.axis, maxis.XAxis):
+            if isinstance(axis, maxis.XAxis):
                 fact = 6  # unscale heuristic scaling of 3 em-widths
-            elif isinstance(self.axis, maxis.YAxis):
+            elif isinstance(axis, maxis.YAxis):
                 fact = 4  # unscale standard scaling of 2 em-widths
             else:
                 fact = 2  # fall back to just one em-width

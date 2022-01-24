@@ -1079,14 +1079,8 @@ class Axes(maxes.Axes):
             extendfrac = extendsize / max(scale - 2 * extendsize, units(1, 'em', 'in'))
 
         # Parse the tick locators and formatters
-        # WARNING: Confusingly the only default way to have auto-adjusting
-        # colorbar tiks is to specify no locator. Then _get_ticker_locator_formatter
-        # uses the default ScalarFormatter on the axis that already has a set axis.
-        # Otherwise it sets a default axis with locator.create_dummy_axis() in
-        # update_ticks() which does not track axis size. Workaround is to manually
-        # set the locator and formatter axis... however this messes up colorbar lengths
-        # in matplotlib < 3.2. So we only apply this conditionally and in earlier
-        # verisons recognize that DiscreteLocator will behave like FixedLocator.
+        # NOTE: This auto constructs minor DiscreteLocotors from major DiscreteLocator
+        # instances (but bypasses if labels are categorical).
         name = 'y' if kwargs.get('orientation') == 'vertical' else 'x'
         axis = cax.yaxis if kwargs.get('orientation') == 'vertical' else cax.xaxis
         locator = _not_none(locator, locator_default, None)
@@ -1096,19 +1090,46 @@ class Axes(maxes.Axes):
         discrete = isinstance(mappable.norm, pcolors.DiscreteNorm)
         if locator is not None:
             locator = constructor.Locator(locator, **locator_kw)
-        if minorlocator is None and isinstance(locator, pticker.DiscreteLocator):
+        if minorlocator is not None:
+            minorlocator = constructor.Locator(minorlocator, **minorlocator_kw)
+        elif isinstance(locator, pticker.DiscreteLocator):
             if categorical:  # never add default minor ticks
                 pass
             elif tickminor or tickminor is None:
-                minorlocator = pticker.DiscreteLocator(list(locator.locs), minor=True)
+                minorlocator = pticker.DiscreteLocator(np.array(locator.locs), minor=True)  # noqa: E501
         if tickminor is None:
             if discrete or categorical:  # never use the default minor locator
                 tickminor = False
             else:
                 tickminor = rc[name + 'tick.minor.visible']
-        if minorlocator is not None:
-            minorlocator = constructor.Locator(minorlocator, **minorlocator_kw)
-        if isinstance(locator, mticker.NullLocator) or not len(getattr(locator, 'locs', (None,))):  # noqa: E501
+
+        # Special handling for colorbar keyword arguments
+        # WARNING: Critical to not pass empty major locators in matplotlib < 3.5
+        # See this issue: https://github.com/lukelbd/proplot/issues/301
+        # WARNING: Proplot 'supports' passing one extend to a mappable function
+        # then overwriting by passing another 'extend' to colobar. But contour
+        # colorbars break when you try to change its 'extend'. Matplotlib gets
+        # around this by just silently ignoring 'extend' passed to colorbar() but
+        # we issue warning. Also note ContourSet.extend existed in matplotlib 3.0.
+        # WARNING: Confusingly the only default way to have auto-adjusting
+        # colorbar ticks is to specify no locator. Then _get_ticker_locator_formatter
+        # uses the default ScalarFormatter on the axis that already has a set axis.
+        # Otherwise it sets a default axis with locator.create_dummy_axis() in
+        # update_ticks() which does not track axis size. Workaround is to manually
+        # set the locator and formatter axis... however this messes up colorbar lengths
+        # in matplotlib < 3.2. So we only apply this conditionally and in earlier
+        # verisons recognize that DiscreteLocator will behave like FixedLocator.
+        if not isinstance(mappable, mcontour.ContourSet):
+            extend = _not_none(extend, 'neither')
+            kwargs['extend'] = extend
+        elif extend is not None and extend != mappable.extend:
+            warnings._warn_proplot(
+                'Ignoring extend={extend!r}. ContourSet extend cannot be changed.'
+            )
+        if (
+            isinstance(locator, mticker.NullLocator)
+            or hasattr(locator, 'locs') and len(locator.locs) == 0
+        ):
             minorlocator, tickminor = None, False  # attempted fix
         for ticker in (locator, formatter, minorlocator):
             if _version_mpl < '3.2':
@@ -1116,32 +1137,15 @@ class Axes(maxes.Axes):
             elif isinstance(ticker, mticker.TickHelper):
                 ticker.set_axis(axis)
 
-        # Prepare colorbar keyword arguments
-        # WARNING: Critical to not pass empty major locators in matplotlib < 3.5
-        # See: https://github.com/lukelbd/proplot/issues/301
-        kwargs.update(
-            {
-                'cax': cax,
-                'ticks': locator,
-                'format': formatter,
-                'extendfrac': extendfrac,
-                'drawedges': grid,
-            }
-        )
-        kwargs.setdefault('spacing', 'uniform')
-        extend = _not_none(extend, 'neither')
-        if isinstance(mappable, mcontour.ContourSet):
-            mappable.extend = extend  # required in mpl >= 3.3, else optional
-        else:
-            kwargs['extend'] = extend
-
         # Create colorbar and update ticks and axis direction
-        # WARNING: Colorbar _ticker() internally makes dummy axis and updates view
-        # limits. Here we apply actual axis rather than dummy, otherwise default nbins
-        # of DiscreteLocator will not work. Not sure if this has side effects...
-        obj = cax._colorbar_fill = cax.figure.colorbar(mappable, **kwargs)
+        # NOTE: This also adds the guides._update_ticks() monkey patch that triggers
+        # updates to DiscreteLocator when parent axes is drawn.
+        obj = cax._colorbar_fill = cax.figure.colorbar(
+            mappable, cax=cax, ticks=locator, format=formatter,
+            drawedges=grid, extendfrac=extendfrac, **kwargs
+        )
         obj.minorlocator = minorlocator  # backwards compatibility
-        obj.update_ticks = guides._update_ticks.__get__(obj)  # backwards compatibility
+        obj.update_ticks = guides._update_ticks.__get__(obj)  # backwards compatible
         if minorlocator is not None:
             obj.update_ticks()
         elif tickminor:
@@ -1154,8 +1158,8 @@ class Axes(maxes.Axes):
             axis.set_inverted(True)
 
         # Update other colorbar settings
-        # WARNING: Must use colorbar set_label to set text,
-        # calling set_text on the axis will do nothing!
+        # WARNING: Must use the colorbar set_label to set text. Calling set_label
+        # on the actual axis will do nothing!
         axis.set_tick_params(which='both', color=color, direction=tickdir)
         axis.set_tick_params(which='major', length=ticklen, width=tickwidth)
         axis.set_tick_params(which='minor', length=ticklen * ticklenratio, width=tickwidth * tickwidthratio)  # noqa: E501
@@ -2682,7 +2686,7 @@ class Axes(maxes.Axes):
         self._add_queued_guides()
         self._apply_title_above()
         if self._colorbar_fill:
-            self._colorbar_fill.update_ticks(manual_only=True)  # only update if needed
+            self._colorbar_fill.update_ticks(manual_only=True)  # only if needed
         if self._inset_parent is not None and self._inset_zoom:
             self.indicate_inset_zoom()
         super().draw(renderer, *args, **kwargs)
@@ -2694,7 +2698,7 @@ class Axes(maxes.Axes):
         self._add_queued_guides()
         self._apply_title_above()
         if self._colorbar_fill:
-            self._colorbar_fill.update_ticks(manual_only=True)  # only update if needed
+            self._colorbar_fill.update_ticks(manual_only=True)  # only if needed
         if self._inset_parent is not None and self._inset_zoom:
             self.indicate_inset_zoom()
         self._tight_bbox = super().get_tightbbox(renderer, *args, **kwargs)
