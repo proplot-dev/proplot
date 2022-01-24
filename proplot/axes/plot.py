@@ -1889,8 +1889,8 @@ class PlotAxes(base.Axes):
         if autoguide and autoformat:
             title = inputs._meta_title(labels)
             if title:  # safely update legend_kw and colorbar_kw
-                guides._guide_kw_to_arg('legend', kwargs, title=title)
-                guides._guide_kw_to_arg('colorbar', kwargs, label=title)
+                guides._add_guide_kw('legend', kwargs, title=title)
+                guides._add_guide_kw('colorbar', kwargs, label=title)
 
         # Apply the basic x and y settings
         autox = autox and self._name == 'cartesian'
@@ -2008,8 +2008,8 @@ class PlotAxes(base.Axes):
         if autoguide and autoformat:
             title = inputs._meta_title(zs[0])
             if title:  # safely update legend_kw and colorbar_kw
-                guides._guide_kw_to_arg('legend', kwargs, title=title)
-                guides._guide_kw_to_arg('colorbar', kwargs, label=title)
+                guides._add_guide_kw('legend', kwargs, title=title)
+                guides._add_guide_kw('colorbar', kwargs, label=title)
 
         # Finally strip metadata
         x = inputs._to_numpy_array(x)
@@ -2268,7 +2268,7 @@ class PlotAxes(base.Axes):
             kwargs['levels'] = levels
             kwargs['extend'] = extend
         kwargs.update({'cmap': cmap, 'norm': norm})
-        guides._guide_kw_to_arg('colorbar', kwargs, extend=extend)
+        guides._add_guide_kw('colorbar', kwargs, extend=extend)
 
         return kwargs
 
@@ -2570,7 +2570,7 @@ class PlotAxes(base.Axes):
                 locator = mticker.FixedLocator(locator)
             else:
                 locator = pticker.DiscreteLocator(locator)
-            guides._guide_kw_to_arg('colorbar', kwargs, locator=locator)
+            guides._add_guide_kw('colorbar', kwargs, locator=locator)
         if np.iterable(levels):
             levels = _restrict_levels(levels)
             if len(levels) == 0:  # skip
@@ -2918,8 +2918,8 @@ class PlotAxes(base.Axes):
         c, colorbar_kw = inputs._meta_coords(c, which='')  # convert string labels
         if c.size == 1 and y.size != 1:
             c = np.arange(y.size)  # convert dummy label for single color
-        guides._guide_kw_to_arg('colorbar', kw, **colorbar_kw)
-        guides._guide_kw_to_arg('colorbar', kw, locator=c)
+        guides._add_guide_kw('colorbar', kw, **colorbar_kw)
+        guides._add_guide_kw('colorbar', kw, locator=c)
 
         # Interpolate values to allow for smooth gradations between values or just
         # to color siwtchover halfway between points (interp True, False respectively)

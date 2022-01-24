@@ -1569,8 +1569,6 @@ class Axes(maxes.Axes):
         """
         Update queues for on-the-fly legends and colorbars or track keyword arguments.
         """
-        # TODO: Support auto-splitting artists passed to legend into
-        # their legend elements. Play with this.
         # WARNING: This should generally be last in the pipeline before calling
         # the plot function or looping over data columns. The colormap parser
         # and standardize functions both modify colorbar_kw and legend_kw.
@@ -1579,12 +1577,12 @@ class Axes(maxes.Axes):
         if colorbar:
             colorbar_kw.setdefault('queue', queue_colorbar)
             self.colorbar(objs, loc=colorbar, **colorbar_kw)
-        else:
-            guides._guide_kw_to_obj(objs, 'colorbar', colorbar_kw)  # save for later
+        else:  # store keyword arguments for later
+            guides._cache_guide_kw(objs, 'colorbar', colorbar_kw)
         if legend:
             self.legend(objs, loc=legend, queue=True, **legend_kw)
-        else:
-            guides._guide_kw_to_obj(objs, 'legend', legend_kw)  # save for later
+        else:  # store keyword arguments for later
+            guides._cache_guide_kw(objs, 'legend', legend_kw)
 
     @staticmethod
     def _parse_frame(guide, fancybox=None, shadow=None, **kwargs):
@@ -2858,12 +2856,11 @@ class Axes(maxes.Axes):
                 loc = {'vertical': 'right', 'horizontal': 'bottom'}[orientation]
         loc = _translate_loc(loc, 'colorbar', default=rc['colorbar.loc'])
         align = _translate_loc(align, 'panel', default='center', c='center', center='center')  # noqa: E501
-        kwargs = guides._guide_obj_to_kw(mappable, 'colorbar', kwargs)
+        kwargs = guides._flush_guide_kw(mappable, 'colorbar', kwargs)
         if queue:
             self._register_guide('colorbar', (mappable, values), (loc, align), **kwargs)
         else:
-            cb = self._add_colorbar(mappable, values, loc=loc, align=align, **kwargs)
-            return cb
+            return self._add_colorbar(mappable, values, loc=loc, align=align, **kwargs)
 
     @docstring._concatenate_inherited  # also obfuscates params
     @docstring._snippet_manager
@@ -2924,12 +2921,11 @@ class Axes(maxes.Axes):
         loc = _not_none(loc=loc, location=location)
         loc = _translate_loc(loc, 'legend', default=rc['legend.loc'])
         align = _translate_loc(align, 'panel', default='center', c='center', center='center')  # noqa: E501
-        kwargs = guides._guide_obj_to_kw(handles, 'legend', kwargs)
+        kwargs = guides._flush_guide_kw(handles, 'legend', kwargs)
         if queue:
             self._register_guide('legend', (handles, labels), (loc, align), **kwargs)
         else:
-            leg = self._add_legend(handles, labels, loc=loc, align=align, **kwargs)
-            return leg
+            return self._add_legend(handles, labels, loc=loc, align=align, **kwargs)
 
     @docstring._concatenate_inherited
     @docstring._snippet_manager

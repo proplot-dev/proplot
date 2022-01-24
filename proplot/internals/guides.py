@@ -12,7 +12,50 @@ from . import ic  # noqa: F401
 from . import warnings
 
 
-def _fill_guide_kw(kwargs, overwrite=False, **pairs):
+def _add_guide_kw(name, kwargs, **opts):
+    """
+    Add to the `colorbar_kw` or `legend_kw` dict if there are no conflicts.
+    """
+    # NOTE: Here we *do not* want to overwrite properties in the dictionary.
+    # Indicates e.g. calling colorbar(extend='both') after pcolor(extend='neither').
+    kwargs = kwargs.setdefault(f'{name}_kw', {})
+    _update_kw(kwargs, overwrite=True, **opts)
+
+
+def _cache_guide_kw(obj, name, kwargs):
+    """
+    Cache settings on the object from the input keyword arguments.
+    """
+    # NOTE: Here we overwrite the hidden dictionary if it already exists.
+    # This is only called once in _update_guide() so its fine.
+    try:
+        setattr(obj, f'_{name}_kw', kwargs)
+    except AttributeError:
+        pass
+    if isinstance(obj, (tuple, list, np.ndarray)):
+        for member in obj:
+            _cache_guide_kw(member, name, kwargs)
+
+
+def _flush_guide_kw(obj, name, kwargs):
+    """
+    Flux settings cached on the object into the keyword arguments.
+    """
+    # NOTE: Here we *do* want to overwrite properties in dictionary. Indicates
+    # updating kwargs during parsing (probably only relevant for ax.parametric).
+    # WARNING: Absolutely *critical* to clear the dictionary after applied from
+    # the object. Otherwise e.g. use same DiscreteLocator for two colorbars.
+    opts = getattr(obj, f'_{name}_kw', None)
+    if opts:
+        delattr(obj, f'_{name}_kw')
+        _update_kw(kwargs, overwrite=False, **opts)
+    if isinstance(obj, (tuple, list, np.ndarray)):
+        for member in obj:  # possibly iterate over matplotlib tuple/list subclasses
+            _flush_guide_kw(member, name, kwargs)
+    return kwargs
+
+
+def _update_kw(kwargs, overwrite=False, **opts):
     """
     Add the keyword arguments to the dictionary if not already present.
     """
@@ -21,7 +64,7 @@ def _fill_guide_kw(kwargs, overwrite=False, **pairs):
         ('locator', 'ticks'),
         ('format', 'formatter', 'ticklabels')
     )
-    for key, value in pairs.items():
+    for key, value in opts.items():
         if value is None:
             continue
         keys = tuple(k for opts in aliases for k in opts if key in opts)
@@ -31,44 +74,6 @@ def _fill_guide_kw(kwargs, overwrite=False, **pairs):
             kwargs[key] = value
         elif overwrite:  # overwrite existing key
             kwargs[keys_found[0]] = value
-
-
-def _guide_kw_to_arg(name, kwargs, **pairs):
-    """
-    Add to the `colorbar_kw` or `legend_kw` dict if there are no conflicts.
-    """
-    # WARNING: Here we *do not* want to overwrite properties in the dictionary.
-    # Indicates e.g. calling colorbar(extend='both') after pcolor(extend='neither').
-    kw = kwargs.setdefault(f'{name}_kw', {})
-    _fill_guide_kw(kw, overwrite=True, **pairs)
-
-
-def _guide_kw_to_obj(obj, name, kwargs):
-    """
-    Store settings on the object from the input dict.
-    """
-    try:
-        setattr(obj, f'_{name}_kw', kwargs)
-    except AttributeError:
-        pass
-    if isinstance(obj, (tuple, list, np.ndarray)):
-        for member in obj:
-            _guide_kw_to_obj(member, name, kwargs)
-
-
-def _guide_obj_to_kw(obj, name, kwargs):
-    """
-    Add to the dict from settings stored on the object if there are no conflicts.
-    """
-    # WARNING: Here we *do* want to overwrite properties in dictionary. Indicates
-    # updating kwargs during parsing (probably only relevant for ax.parametric).
-    pairs = getattr(obj, f'_{name}_kw', None)
-    pairs = pairs or {}  # needed for some reason
-    _fill_guide_kw(kwargs, overwrite=False, **pairs)
-    if isinstance(obj, (tuple, list, np.ndarray)):
-        for member in obj:  # possibly iterate over matplotlib tuple/list subclasses
-            _guide_obj_to_kw(member, name, kwargs)
-    return kwargs
 
 
 def _iter_children(*args):
@@ -103,12 +108,12 @@ def _update_ticks(self, manual_only=False):
     # NOTE: Matplotlib 3.5+ does not define _use_auto_colorbar_locator since
     # ticks are always automatically adjusted by its colorbar subclass. This
     # override is thus backwards and forwards compatible.
-    use_auto = getattr(self, '_use_auto_colorbar_locator', lambda: True)
-    if use_auto():
+    attr = '_use_auto_colorbar_locator'
+    if not hasattr(self, attr) or getattr(self, attr)():
         if manual_only:
             pass
         else:
-            mcolorbar.Colorbar.update_ticks(self)  # here AutoMinorLocator auto updates
+            mcolorbar.Colorbar.update_ticks(self)  # AutoMinorLocator auto updates
     else:
         mcolorbar.Colorbar.update_ticks(self)  # update necessary
         minorlocator = getattr(self, 'minorlocator', None)
