@@ -254,13 +254,13 @@ class GridSpec(mgridspec.GridSpec):
         # Capture rc settings used for default spacing
         # NOTE: This is consistent with conversion of 'em' units to inches on gridspec
         # instantiation. In general it seems strange for future changes to rc settings
-        # to magically update an existing gridspec layout. This also may improve
-        # lookup time since get_grid_positions() is called heaviliy.
+        # to magically update an existing gridspec layout. This also may improve draw
+        # time as manual or auto figure resizes repeatedly call get_grid_positions().
         scales = {'in': 0, 'inout': 0.5, 'out': 1, None: 1}
         self._xtickspace = scales[rc['xtick.direction']] * rc['xtick.major.size']
         self._ytickspace = scales[rc['ytick.direction']] * rc['ytick.major.size']
         self._xticklabelspace = _fontsize_to_pt(rc['xtick.labelsize']) + rc['xtick.major.pad']  # noqa: E501
-        self._yticklabelspace = 3 * _fontsize_to_pt(rc['ytick.labelsize']) + rc['ytick.major.pad']  # noqa: E501
+        self._yticklabelspace = 2 * _fontsize_to_pt(rc['ytick.labelsize']) + rc['ytick.major.pad']  # noqa: E501
         self._labelspace = _fontsize_to_pt(rc['axes.labelsize']) + rc['axes.labelpad']
         self._titlespace = _fontsize_to_pt(rc['axes.titlesize']) + rc['axes.titlepad']
 
@@ -507,9 +507,6 @@ class GridSpec(mgridspec.GridSpec):
         and the `arg` is either an axes instance or the figure row-column span.
         """
         # Parse input args and get user-input properties, default properties
-        # NOTE: This gives totally wrong space for 'right' and 'top' colorbars with
-        # tick locations on the outside but that's ok... otherwise would have to
-        # modify existing space which is overkill. People should use tight layout
         fig = self.figure
         if fig is None:
             raise RuntimeError('Figure must be assigned to gridspec.')
@@ -519,13 +516,19 @@ class GridSpec(mgridspec.GridSpec):
         pad = units(pad, 'em', 'in')
         space = units(space, 'em', 'in')
         width = units(width, 'in')
-        share = False if filled else _not_none(share, True)
+        share = False if filled else share if share is not None else True
         which = 'w' if side in ('left', 'right') else 'h'
         panels = getattr(self, f'_{which}panels')
         pads = getattr(self, f'_{which}pad_total')  # no copies!
         ratios = getattr(self, f'_{which}ratios_total')
         spaces = getattr(self, f'_{which}space_total')
         spaces_default = getattr(self, f'_{which}space_total_default')
+        new_outer_slot = idx in (-1, len(panels))
+        new_inner_slot = not new_outer_slot and panels[idx] != slot
+
+        # Retrieve default spaces
+        # NOTE: Cannot use 'wspace' and 'hspace' for top and right colorbars because
+        # that adds an unnecessary tick space. So bypass _get_default_space totally.
         pad_default = (
             self._panelpad
             if slot != 'f'
@@ -533,16 +536,29 @@ class GridSpec(mgridspec.GridSpec):
             or side in ('right', 'bottom') and panels[-1] == 'f'
             else self._innerpad
         )
-        space_default = (
+        inner_space_default = (
             _not_none(pad, pad_default)
             if side in ('top', 'right')
             else self._get_default_space(
                 'hspace_total' if side == 'bottom' else 'wspace_total',
-                title=False,  # no title space
-                share=3 if share else 0,
+                title=False,  # no title between subplot and panel
+                share=3 if share else 0,  # space for main subplot labels
                 pad=_not_none(pad, pad_default),
             )
         )
+        outer_space_default = self._get_default_space(
+            'bottom' if not share and side == 'top'
+            else 'left' if not share and side == 'right'
+            else side,
+            title=True,  # room for titles deflected above panels
+            pad=self._outerpad if new_outer_slot else self._innerpad,
+        )
+        if new_inner_slot:
+            outer_space_default += self._get_default_space(
+                'hspace_total' if side in ('bottom', 'top') else 'wspace_total',
+                share=None,  # use external share setting
+                pad=0,  # use no additional padding
+            )
         width_default = units(
             rc['colorbar.width' if filled else 'subplots.panelwidth'], 'in'
         )
@@ -550,32 +566,34 @@ class GridSpec(mgridspec.GridSpec):
         # Adjust space, ratio, and panel indicator arrays
         # If slot exists, overwrite width, pad, space if they were provided by the user
         # If slot does not exist, modify gemoetry and add insert new spaces
-        newrow = newcol = None
-        idx_off = 1 * bool(side in ('top', 'left'))
-        idx_space = idx - 1 * bool(side in ('bottom', 'right'))
-        slot_exists = idx not in (-1, len(panels)) and panels[idx] == slot
-        if slot_exists:
-            spaces_default[idx_space] = space_default
+        attr = 'ncols' if side in ('left', 'right') else 'nrows'
+        idx_offset = int(side in ('top', 'left'))
+        idx_inner_space = idx - int(side in ('bottom', 'right'))  # inner colorbar space
+        idx_outer_space = idx - int(side in ('top', 'left'))  # outer colorbar space
+        if new_outer_slot or new_inner_slot:
+            idx += idx_offset
+            idx_inner_space += idx_offset
+            idx_outer_space += idx_offset
+            newcol, newrow = (idx, None) if attr == 'ncols' else (None, idx)
+            setattr(self, f'_{attr}_total', 1 + getattr(self, f'_{attr}_total'))
+            panels.insert(idx, slot)
+            ratios.insert(idx, _not_none(width, width_default))
+            pads.insert(idx_inner_space, _not_none(pad, pad_default))
+            spaces.insert(idx_inner_space, space)
+            spaces_default.insert(idx_inner_space, inner_space_default)
+            if new_inner_slot:
+                spaces_default.insert(idx_outer_space, outer_space_default)
+            else:
+                setattr(self, f'_{side}_default', outer_space_default)
+        else:
+            newrow = newcol = None
+            spaces_default[idx_inner_space] = inner_space_default
             if width is not None:
                 ratios[idx] = width
             if pad is not None:
-                pads[idx_space] = pad
+                pads[idx_inner_space] = pad
             if space is not None:
-                spaces[idx_space] = space
-        else:
-            idx += idx_off
-            idx_space += idx_off
-            if side in ('left', 'right'):
-                newcol = idx
-                self._ncols_total += 1
-            else:
-                newrow = idx
-                self._nrows_total += 1
-            panels.insert(idx, slot)
-            ratios.insert(idx, _not_none(width, width_default))
-            pads.insert(idx_space, _not_none(pad, pad_default))
-            spaces.insert(idx_space, space)
-            spaces_default.insert(idx_space, space_default)
+                spaces[idx_inner_space] = space
 
         # Update the figure and axes and return a SubplotSpec
         # NOTE: For figure panels indices are determined by user-input spans.
@@ -591,8 +609,8 @@ class GridSpec(mgridspec.GridSpec):
 
     def _get_space(self, key):
         """
-        Get the currently active space accounting for both default
-        values and explicit user-specified values.
+        Return the currently active vector inner space or scalar outer space
+        accounting for both default values and explicit user overrides.
         """
         # NOTE: Default panel spaces should have been filled by _insert_panel_slot.
         # They use 'panelpad' and the panel-local 'share' setting. This function
@@ -622,8 +640,8 @@ class GridSpec(mgridspec.GridSpec):
 
     def _get_default_space(self, key, pad=None, share=None, title=True):
         """
-        Return suitable default spacing given a shared axes setting.
-        This is only relevant when "tight layout" is disabled.
+        Return suitable default scalar inner or outer space given a shared axes
+        setting. This is only relevant when "tight layout" is disabled.
         """
         # NOTE: Internal spacing args are stored in inches to simplify the
         # get_grid_positions() calculations.
@@ -642,7 +660,7 @@ class GridSpec(mgridspec.GridSpec):
         elif key == 'bottom':
             pad = _not_none(pad, self._outerpad)
             space = self._labelspace + self._xticklabelspace + self._xtickspace
-        elif key in ('wspace', 'wspace_total'):
+        elif key == 'wspace_total':
             pad = _not_none(pad, self._innerpad)
             share = _not_none(share, fig._sharey, 0)
             space = self._ytickspace
@@ -650,7 +668,7 @@ class GridSpec(mgridspec.GridSpec):
                 space += self._yticklabelspace
             if share < 1:
                 space += self._labelspace
-        elif key in ('hspace', 'hspace_total'):
+        elif key == 'hspace_total':
             pad = _not_none(pad, self._innerpad)
             share = _not_none(share, fig._sharex, 0)
             space = self._xtickspace
