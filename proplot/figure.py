@@ -525,6 +525,7 @@ class Figure(mfigure.Figure):
         wspace=None, hspace=None, space=None,
         tight=None, outerpad=None, innerpad=None, panelpad=None,
         wpad=None, hpad=None, pad=None,
+        wequal=None, hequal=None, equal=None,
         **kwargs
     ):
         """
@@ -618,19 +619,11 @@ class Figure(mfigure.Figure):
         # 'subplots_adjust' would be confusing since we switch to absolute
         # units and that function is heavily used outside of proplot.
         params = {
-            'left': left,
-            'right': right,
-            'top': top,
-            'bottom': bottom,
-            'wspace': wspace,
-            'hspace': hspace,
-            'space': space,
-            'wpad': wpad,
-            'hpad': hpad,
-            'pad': pad,
-            'outerpad': outerpad,
-            'innerpad': innerpad,
-            'panelpad': panelpad,
+            'left': left, 'right': right, 'top': top, 'bottom': bottom,
+            'wspace': wspace, 'hspace': hspace, 'space': space,
+            'wequal': wequal, 'hequal': hequal, 'equal': equal,
+            'wpad': wpad, 'hpad': hpad, 'pad': pad,
+            'outerpad': outerpad, 'innerpad': innerpad, 'panelpad': panelpad,
         }
         self._gridspec_params = params  # used to initialize the gridspec
         for key, value in tuple(params.items()):
