@@ -103,6 +103,8 @@ Features
   subplot, analogous to `~proplot.ui.subplots` (:commit:`8459c24c`).
 * Improve performance of the "tight layout" algorithm in cartopy axes by skipping
   artists clipped by the axes background patch boundary (:commit:`f891e4f0`).
+* Improve default appearance of figures with top/right panels and colorbars and with
+  the tight layout algorithm disabled (:commit:`c4a3babb`).
 * Permit passing `~proplot.gridspec.GridSpec` instances to
   `~proplot.figure.Figure.add_subplots` to quickly draw a subplot
   inside each gridspec slot in row or column-major order (:commit:`a9ad7429`).
@@ -175,6 +177,12 @@ Bug fixes
   subfigures is incorrect (:commit:`9246835f`).
 * Fix matplotlib >= 3.4 issue where alternate axes are drawn twice due to adding them
   as child axes and failing to remove from the ``fig._localaxes`` stack (:issue:`303`).
+* Fix annoying matplotlib < 3.2.0 :rcraw:`examples.directory` deprecation
+  warning message (:issue:`196`).
+* Fix matplotlib < 3.2.0 issue where :rcraw:`axes.inbounds` feature fails due
+  to private API invocation (:commit:`e3e739e4`).
+* Fix basic matplotlib < 3.1.2 usage issue due to missing
+  `~matplotlib.rcsetup.validate_fontweight` validator (:commit:`1d2d05b7`).
 * Fix cartopy >= 0.20 issue where added projections like ``'wintri'`` fail
   due to an ImportError (:issue:`324`).
 * Fix cartopy >= 0.20 issue where inline longitude and latitude gridline labels
@@ -185,6 +193,10 @@ Bug fixes
   gridlines on the left edge of the map are unnecessarily removed (:commit:`bcf4fde3`).
 * Fix cartopy <= 0.17 issue where longitude gridlines and labels east of dateline are
   not drawn, and remove outdated gridliner monkey patches (:commit:`aa51512b`).
+* Fix issue where tight layout algorithm can fail when labels from another subplot
+  span over an empty gridspec slot (:issue:`313`).
+* Fix issue where tight layout algorithm fails in the presence of subplots
+  with overlapping or identical subplotspecs (:commit:`87f098b6`).
 * Fix issue where outer colorbars are drawn twice due to adding them as both
   figure-wide axes and child axes (:issue:`304`).
 * Fix issue where silently-deprecated `aspect` parameter passed to
