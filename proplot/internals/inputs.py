@@ -241,7 +241,7 @@ def _from_data(data, *args):
     return args
 
 
-def _preprocess_args(*keys, keywords=None, allow_extra=True):
+def _redirect_or_preprocess(*keys, keywords=None, allow_extra=True):
     """
     Redirect internal plotting calls to native matplotlib methods. Also convert
     keyword args to positional and pass arguments through 'data' dictionary.
@@ -252,12 +252,12 @@ def _preprocess_args(*keys, keywords=None, allow_extra=True):
     if isinstance(keywords, str):
         keywords = (keywords,)
 
-    def decorator(func):
+    def _decorator(func):
         name = func.__name__
         from . import _kwargs_to_args
 
         @functools.wraps(func)
-        def _redirect_or_standardize(self, *args, **kwargs):
+        def _redirect_or_preprocess(self, *args, **kwargs):
             if getattr(self, '_internal_call', None):
                 # Redirect internal matplotlib call to native function
                 from ..axes import PlotAxes
@@ -299,8 +299,9 @@ def _preprocess_args(*keys, keywords=None, allow_extra=True):
                 # Call main function
                 return func(self, *args, **kwargs)  # call unbound method
 
-        return _redirect_or_standardize
-    return decorator
+        return _redirect_or_preprocess
+
+    return _decorator
 
 
 # Stats utiltiies

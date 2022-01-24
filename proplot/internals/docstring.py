@@ -61,12 +61,12 @@ def _obfuscate_signature(func, dummy):
 
 def _concatenate_inherited(func, prepend_summary=False):
     """
-    Concatenate docstrings from a matplotlib axes method with a proplot axes
-    method and obfuscate the call signature.
+    Concatenate docstrings from a matplotlib axes method with a proplot
+    axes method and obfuscate the call signature.
     """
+    # Get matplotlib axes func
     # NOTE: Do not bother inheriting from cartopy GeoAxes. Cartopy completely
     # truncates the matplotlib docstrings (which is kind of not great).
-    # Get matplotlib axes func
     qual = func.__qualname__
     if 'Axes' in qual:
         cls = maxes.Axes
@@ -80,20 +80,13 @@ def _concatenate_inherited(func, prepend_summary=False):
     if not doc_orig:  # should never happen
         return func
 
-    # Prepend summary
-    if prepend_summary:
-        regex = re.search(r'\.( | *\n|\Z)', doc_orig)
-        if regex:
-            doc = doc_orig[:regex.start() + 1] + '\n\n' + doc
-
-    # Exit if this is documentation generated for website
-    if rc_matplotlib['docstring.hardcopy']:
-        func.__doc__ = doc
-        return func
-
-    # Concatenate docstrings and copy summary
-    # Make sure different sections are very visible
-    doc = f"""
+    # Optionally prepend the function summary
+    # Concatenate docstrings only if this is not generated for website
+    regex = re.search(r'\.( | *\n|\Z)', doc_orig)
+    if regex and prepend_summary:
+        doc = doc_orig[:regex.start() + 1] + '\n\n' + doc
+    if not rc_matplotlib['docstring.hardcopy']:
+        doc = f"""
 =====================
 Proplot documentation
 =====================
@@ -106,10 +99,11 @@ Matplotlib documentation
 
 {doc_orig}
 """
-    func.__doc__ = inspect.cleandoc(doc)  # dedents and trims whitespace
-    func = _obfuscate_params(func)
 
-    # Return
+    # Return docstring
+    # NOTE: Also obfuscate parameters to avoid partial coverage of call signatures
+    func.__doc__ = inspect.cleandoc(doc)
+    func = _obfuscate_params(func)
     return func
 
 

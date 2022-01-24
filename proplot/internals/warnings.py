@@ -59,7 +59,7 @@ def _rename_objs(version, **kwargs):
     class(es). Each key should be an old name, and each argument should be the new
     object to point to. Do not document the deprecated object(s) to discourage use.
     """
-    wrappers = []
+    objs = []
     for old_name, new_obj in kwargs.items():
         new_name = new_obj.__name__
         message = (
@@ -67,22 +67,24 @@ def _rename_objs(version, **kwargs):
             f'removed in {_next_release()}. Please use {new_name!r} instead.'
         )
         if isinstance(new_obj, type):
-            class _deprecate_obj(new_obj):
+            class _deprecated_class(new_obj):
                 def __init__(self, *args, new_obj=new_obj, message=message, **kwargs):
                     _warn_proplot(message)
                     super().__init__(*args, **kwargs)
+            _deprecated_class.__name__ = old_name
+            objs.append(_deprecated_class)
         elif callable(new_obj):
-            def _deprecate_obj(*args, new_obj=new_obj, message=message, **kwargs):
+            def _deprecated_function(*args, new_obj=new_obj, message=message, **kwargs):
                 _warn_proplot(message)
                 return new_obj(*args, **kwargs)
+            _deprecated_function.__name__ = old_name
+            objs.append(_deprecated_function)
         else:
             raise ValueError(f'Invalid deprecated object replacement {new_obj!r}.')
-        _deprecate_obj.__name__ = old_name
-        wrappers.append(_deprecate_obj)
-    if len(wrappers) == 1:
-        return wrappers[0]
+    if len(objs) == 1:
+        return objs[0]
     else:
-        return tuple(wrappers)
+        return tuple(objs)
 
 
 def _rename_kwargs(version, **kwargs_rename):
@@ -91,9 +93,9 @@ def _rename_kwargs(version, **kwargs_rename):
     Each key should be an old keyword, and each argument should be the new keyword
     or *instructions* for what to use instead.
     """
-    def decorator(func_orig):
+    def _decorator(func_orig):
         @functools.wraps(func_orig)
-        def _deprecate_kwargs(*args, **kwargs):
+        def _deprecate_kwargs_wrapper(*args, **kwargs):
             for key_old, key_new in kwargs_rename.items():
                 if key_old not in kwargs:
                     continue
@@ -109,5 +111,5 @@ def _rename_kwargs(version, **kwargs_rename):
                     f'be removed in {_next_release()}. Please use {key_new!r} instead.'
                 )
             return func_orig(*args, **kwargs)
-        return _deprecate_kwargs
-    return decorator
+        return _deprecate_kwargs_wrapper
+    return _decorator

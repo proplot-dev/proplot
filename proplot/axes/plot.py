@@ -2752,7 +2752,7 @@ class PlotAxes(base.Axes):
         """
         return self.plotx(*args, **kwargs)
 
-    @inputs._preprocess_args('x', 'y', allow_extra=True)
+    @inputs._redirect_or_preprocess('x', 'y', allow_extra=True)
     @docstring._concatenate_inherited
     @docstring._snippet_manager
     def plot(self, *args, **kwargs):
@@ -2762,7 +2762,7 @@ class PlotAxes(base.Axes):
         kwargs = _parse_vert(default_vert=True, **kwargs)
         return self._apply_plot(*args, **kwargs)
 
-    @inputs._preprocess_args('y', 'x', allow_extra=True)
+    @inputs._redirect_or_preprocess('y', 'x', allow_extra=True)
     @docstring._snippet_manager
     def plotx(self, *args, **kwargs):
         """
@@ -2803,7 +2803,7 @@ class PlotAxes(base.Axes):
         self._update_guide(objs, **guide_kw)
         return cbook.silent_list('Line2D', objs)  # always return list
 
-    @inputs._preprocess_args('x', 'y', allow_extra=True)
+    @inputs._redirect_or_preprocess('x', 'y', allow_extra=True)
     @docstring._concatenate_inherited
     @docstring._snippet_manager
     def step(self, *args, **kwargs):
@@ -2813,7 +2813,7 @@ class PlotAxes(base.Axes):
         kwargs = _parse_vert(default_vert=True, **kwargs)
         return self._apply_step(*args, **kwargs)
 
-    @inputs._preprocess_args('y', 'x', allow_extra=True)
+    @inputs._redirect_or_preprocess('y', 'x', allow_extra=True)
     @docstring._snippet_manager
     def stepx(self, *args, **kwargs):
         """
@@ -2868,7 +2868,7 @@ class PlotAxes(base.Axes):
         self._update_guide(obj, **guide_kw)
         return obj
 
-    @inputs._preprocess_args('x', 'y')
+    @inputs._redirect_or_preprocess('x', 'y')
     @docstring._concatenate_inherited
     @docstring._snippet_manager
     def stem(self, *args, **kwargs):
@@ -2878,7 +2878,7 @@ class PlotAxes(base.Axes):
         kwargs = _parse_vert(default_orientation='vertical', **kwargs)
         return self._apply_stem(*args, **kwargs)
 
-    @inputs._preprocess_args('x', 'y')
+    @inputs._redirect_or_preprocess('x', 'y')
     @docstring._snippet_manager
     def stemx(self, *args, **kwargs):
         """
@@ -2887,7 +2887,7 @@ class PlotAxes(base.Axes):
         kwargs = _parse_vert(default_orientation='horizontal', **kwargs)
         return self._apply_stem(*args, **kwargs)
 
-    @inputs._preprocess_args('x', 'y', ('c', 'color', 'colors', 'values'))
+    @inputs._redirect_or_preprocess('x', 'y', ('c', 'color', 'colors', 'values'))
     @docstring._snippet_manager
     def parametric(self, x, y, c, *, interp=0, scalex=True, scaley=True, **kwargs):
         """
@@ -3020,7 +3020,7 @@ class PlotAxes(base.Axes):
         )
 
     # WARNING: breaking change from native 'ymin' and 'ymax'
-    @inputs._preprocess_args('x', 'y1', 'y2', ('c', 'color', 'colors'))
+    @inputs._redirect_or_preprocess('x', 'y1', 'y2', ('c', 'color', 'colors'))
     @docstring._snippet_manager
     def vlines(self, *args, **kwargs):
         """
@@ -3030,7 +3030,7 @@ class PlotAxes(base.Axes):
         return self._apply_lines(*args, **kwargs)
 
     # WARNING: breaking change from native 'xmin' and 'xmax'
-    @inputs._preprocess_args('y', 'x1', 'x2', ('c', 'color', 'colors'))
+    @inputs._redirect_or_preprocess('y', 'x1', 'x2', ('c', 'color', 'colors'))
     @docstring._snippet_manager
     def hlines(self, *args, **kwargs):
         """
@@ -3126,7 +3126,7 @@ class PlotAxes(base.Axes):
     # NOTE: Matplotlib internally applies scatter 'c' arguments as the
     # 'facecolors' argument to PathCollection. So perfectly reasonable to
     # point both 'color' and 'facecolor' arguments to the 'c' keyword here.
-    @inputs._preprocess_args(
+    @inputs._redirect_or_preprocess(
         'x',
         'y',
         _get_aliases('collection', 'sizes'),
@@ -3142,7 +3142,7 @@ class PlotAxes(base.Axes):
         kwargs = _parse_vert(default_vert=True, **kwargs)
         return self._apply_scatter(*args, **kwargs)
 
-    @inputs._preprocess_args(
+    @inputs._redirect_or_preprocess(
         'y',
         'x',
         _get_aliases('collection', 'sizes'),
@@ -3218,7 +3218,7 @@ class PlotAxes(base.Axes):
         """
         return self.fill_betweenx(*args, **kwargs)
 
-    @inputs._preprocess_args('x', 'y1', 'y2', 'where')
+    @inputs._redirect_or_preprocess('x', 'y1', 'y2', 'where')
     @docstring._concatenate_inherited
     @docstring._snippet_manager
     def fill_between(self, *args, **kwargs):
@@ -3228,7 +3228,7 @@ class PlotAxes(base.Axes):
         kwargs = _parse_vert(default_vert=True, **kwargs)
         return self._apply_fill(*args, **kwargs)
 
-    @inputs._preprocess_args('y', 'x1', 'x2', 'where')
+    @inputs._redirect_or_preprocess('y', 'x1', 'x2', 'where')
     @docstring._concatenate_inherited
     @docstring._snippet_manager
     def fill_betweenx(self, *args, **kwargs):
@@ -3315,7 +3315,7 @@ class PlotAxes(base.Axes):
             else cbook.silent_list('BarContainer', objs)
         )
 
-    @inputs._preprocess_args('x', 'height', 'width', 'bottom')
+    @inputs._redirect_or_preprocess('x', 'height', 'width', 'bottom')
     @docstring._concatenate_inherited
     @docstring._snippet_manager
     def bar(self, *args, **kwargs):
@@ -3327,7 +3327,7 @@ class PlotAxes(base.Axes):
 
     # WARNING: Swap 'height' and 'width' here so that they are always relative
     # to the 'tall' axis. This lets people always pass 'width' as keyword
-    @inputs._preprocess_args('y', 'height', 'width', 'left')
+    @inputs._redirect_or_preprocess('y', 'height', 'width', 'left')
     @docstring._concatenate_inherited
     @docstring._snippet_manager
     def barh(self, *args, **kwargs):
@@ -3339,7 +3339,7 @@ class PlotAxes(base.Axes):
 
     # WARNING: 'labels' and 'colors' no longer passed through `data` (seems like
     # extremely niche usage... `data` variables should be data-like)
-    @inputs._preprocess_args('x', 'explode')
+    @inputs._redirect_or_preprocess('x', 'explode')
     @docstring._concatenate_inherited
     @docstring._snippet_manager
     def pie(self, x, explode, *, labelpad=None, labeldistance=None, **kwargs):
@@ -3491,7 +3491,7 @@ class PlotAxes(base.Axes):
         """
         return self.boxploth(*args, **kwargs)
 
-    @inputs._preprocess_args('positions', 'y')
+    @inputs._redirect_or_preprocess('positions', 'y')
     @docstring._concatenate_inherited
     @docstring._snippet_manager
     def boxplot(self, *args, **kwargs):
@@ -3501,7 +3501,7 @@ class PlotAxes(base.Axes):
         kwargs = _parse_vert(default_vert=True, **kwargs)
         return self._apply_boxplot(*args, **kwargs)
 
-    @inputs._preprocess_args('positions', 'x')
+    @inputs._redirect_or_preprocess('positions', 'x')
     @docstring._snippet_manager
     def boxploth(self, *args, **kwargs):
         """
@@ -3594,7 +3594,7 @@ class PlotAxes(base.Axes):
         """
         return self.violinploth(*args, **kwargs)
 
-    @inputs._preprocess_args('positions', 'y')
+    @inputs._redirect_or_preprocess('positions', 'y')
     @docstring._concatenate_inherited
     @docstring._snippet_manager
     def violinplot(self, *args, **kwargs):
@@ -3604,7 +3604,7 @@ class PlotAxes(base.Axes):
         kwargs = _parse_vert(default_vert=True, **kwargs)
         return self._apply_violinplot(*args, **kwargs)
 
-    @inputs._preprocess_args('positions', 'x')
+    @inputs._redirect_or_preprocess('positions', 'x')
     @docstring._snippet_manager
     def violinploth(self, *args, **kwargs):
         """
@@ -3657,7 +3657,7 @@ class PlotAxes(base.Axes):
         self._update_guide(res, **guide_kw)
         return obj
 
-    @inputs._preprocess_args('x', 'bins', keywords='weights')
+    @inputs._redirect_or_preprocess('x', 'bins', keywords='weights')
     @docstring._concatenate_inherited
     @docstring._snippet_manager
     def hist(self, *args, **kwargs):
@@ -3667,7 +3667,7 @@ class PlotAxes(base.Axes):
         kwargs = _parse_vert(default_orientation='vertical', **kwargs)
         return self._apply_hist(*args, **kwargs)
 
-    @inputs._preprocess_args('y', 'bins', keywords='weights')
+    @inputs._redirect_or_preprocess('y', 'bins', keywords='weights')
     @docstring._snippet_manager
     def histh(self, *args, **kwargs):
         """
@@ -3676,7 +3676,7 @@ class PlotAxes(base.Axes):
         kwargs = _parse_vert(default_orientation='horizontal', **kwargs)
         return self._apply_hist(*args, **kwargs)
 
-    @inputs._preprocess_args('x', 'y', 'bins', keywords='weights')
+    @inputs._redirect_or_preprocess('x', 'y', 'bins', keywords='weights')
     @docstring._concatenate_inherited
     @docstring._snippet_manager
     def hist2d(self, x, y, bins, **kwargs):
@@ -3689,7 +3689,7 @@ class PlotAxes(base.Axes):
         return super().hist2d(x, y, default_discrete=False, **kwargs)
 
     # WARNING: breaking change from native 'C'
-    @inputs._preprocess_args('x', 'y', 'weights')
+    @inputs._redirect_or_preprocess('x', 'y', 'weights')
     @docstring._concatenate_inherited
     @docstring._snippet_manager
     def hexbin(self, x, y, weights, **kwargs):
@@ -3712,7 +3712,7 @@ class PlotAxes(base.Axes):
         self._update_guide(m, queue_colorbar=False, **guide_kw)
         return m
 
-    @inputs._preprocess_args('x', 'y', 'z')
+    @inputs._redirect_or_preprocess('x', 'y', 'z')
     @docstring._concatenate_inherited
     @docstring._snippet_manager
     def contour(self, x, y, z, **kwargs):
@@ -3733,7 +3733,7 @@ class PlotAxes(base.Axes):
         self._update_guide(m, queue_colorbar=False, **guide_kw)
         return m
 
-    @inputs._preprocess_args('x', 'y', 'z')
+    @inputs._redirect_or_preprocess('x', 'y', 'z')
     @docstring._concatenate_inherited
     @docstring._snippet_manager
     def contourf(self, x, y, z, **kwargs):
@@ -3757,7 +3757,7 @@ class PlotAxes(base.Axes):
         self._update_guide(m, queue_colorbar=False, **guide_kw)
         return m
 
-    @inputs._preprocess_args('x', 'y', 'z')
+    @inputs._redirect_or_preprocess('x', 'y', 'z')
     @docstring._concatenate_inherited
     @docstring._snippet_manager
     def pcolor(self, x, y, z, **kwargs):
@@ -3777,7 +3777,7 @@ class PlotAxes(base.Axes):
         self._update_guide(m, queue_colorbar=False, **guide_kw)
         return m
 
-    @inputs._preprocess_args('x', 'y', 'z')
+    @inputs._redirect_or_preprocess('x', 'y', 'z')
     @docstring._concatenate_inherited
     @docstring._snippet_manager
     def pcolormesh(self, x, y, z, **kwargs):
@@ -3797,7 +3797,7 @@ class PlotAxes(base.Axes):
         self._update_guide(m, queue_colorbar=False, **guide_kw)
         return m
 
-    @inputs._preprocess_args('x', 'y', 'z')
+    @inputs._redirect_or_preprocess('x', 'y', 'z')
     @docstring._concatenate_inherited
     @docstring._snippet_manager
     def pcolorfast(self, x, y, z, **kwargs):
@@ -3855,7 +3855,7 @@ class PlotAxes(base.Axes):
         self.format(**kw)
         return obj
 
-    @inputs._preprocess_args('x', 'y', 'u', 'v', ('c', 'color', 'colors'))
+    @inputs._redirect_or_preprocess('x', 'y', 'u', 'v', ('c', 'color', 'colors'))
     @docstring._concatenate_inherited
     @docstring._snippet_manager
     def barbs(self, x, y, u, v, c, **kwargs):
@@ -3874,7 +3874,7 @@ class PlotAxes(base.Axes):
         m = self._plot_native('barbs', *a, **kw)
         return m
 
-    @inputs._preprocess_args('x', 'y', 'u', 'v', ('c', 'color', 'colors'))
+    @inputs._redirect_or_preprocess('x', 'y', 'u', 'v', ('c', 'color', 'colors'))
     @docstring._concatenate_inherited
     @docstring._snippet_manager
     def quiver(self, x, y, u, v, c, **kwargs):
@@ -3904,7 +3904,7 @@ class PlotAxes(base.Axes):
         return self.streamplot(*args, **kwargs)
 
     # WARNING: breaking change from native streamplot() fifth positional arg 'density'
-    @inputs._preprocess_args(
+    @inputs._redirect_or_preprocess(
         'x', 'y', 'u', 'v', ('c', 'color', 'colors'), keywords='start_points'
     )
     @docstring._concatenate_inherited
@@ -3926,7 +3926,7 @@ class PlotAxes(base.Axes):
         self._update_guide(m.lines, queue_colorbar=False, **guide_kw)  # use lines
         return m
 
-    @inputs._preprocess_args('x', 'y', 'z')
+    @inputs._redirect_or_preprocess('x', 'y', 'z')
     @docstring._concatenate_inherited
     @docstring._snippet_manager
     def tricontour(self, x, y, z, **kwargs):
@@ -3949,7 +3949,7 @@ class PlotAxes(base.Axes):
         self._update_guide(m, queue_colorbar=False, **guide_kw)
         return m
 
-    @inputs._preprocess_args('x', 'y', 'z')
+    @inputs._redirect_or_preprocess('x', 'y', 'z')
     @docstring._concatenate_inherited
     @docstring._snippet_manager
     def tricontourf(self, x, y, z, **kwargs):
@@ -3975,7 +3975,7 @@ class PlotAxes(base.Axes):
         self._update_guide(m, queue_colorbar=False, **guide_kw)
         return m
 
-    @inputs._preprocess_args('x', 'y', 'z')
+    @inputs._redirect_or_preprocess('x', 'y', 'z')
     @docstring._concatenate_inherited
     @docstring._snippet_manager
     def tripcolor(self, x, y, z, **kwargs):
@@ -3998,7 +3998,7 @@ class PlotAxes(base.Axes):
         return m
 
     # WARNING: breaking change from native 'X'
-    @inputs._preprocess_args('z')
+    @inputs._redirect_or_preprocess('z')
     @docstring._concatenate_inherited
     @docstring._snippet_manager
     def imshow(self, z, **kwargs):
@@ -4013,7 +4013,7 @@ class PlotAxes(base.Axes):
         return m
 
     # WARNING: breaking change from native 'Z'
-    @inputs._preprocess_args('z')
+    @inputs._redirect_or_preprocess('z')
     @docstring._concatenate_inherited
     @docstring._snippet_manager
     def matshow(self, z, **kwargs):
@@ -4024,7 +4024,7 @@ class PlotAxes(base.Axes):
         return super().matshow(z, **kwargs)
 
     # WARNING: breaking change from native 'Z'
-    @inputs._preprocess_args('z')
+    @inputs._redirect_or_preprocess('z')
     @docstring._concatenate_inherited
     @docstring._snippet_manager
     def spy(self, z, **kwargs):
