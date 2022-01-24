@@ -27,7 +27,7 @@ submitting your own changes.
    versioning <https://semver.org>`__, we will not consider removing the deprecated
    syntax until the first major release (i.e., version 1.0.0).
 
-Version 1.0.0 (2022-XX-XX)
+Version 1.0.0 (####-##-##)
 ==========================
 
 This will be published when more comprehensive testing is completed
@@ -177,7 +177,7 @@ Bug fixes
   subfigures is incorrect (:commit:`9246835f`).
 * Fix matplotlib >= 3.4 issue where alternate axes are drawn twice due to adding them
   as child axes and failing to remove from the ``fig._localaxes`` stack (:issue:`303`).
-* Fix annoying matplotlib < 3.2.0 :rcraw:`examples.directory` deprecation
+* Fix matplotlib < 3.2.0 annoying :rcraw:`examples.directory` deprecation
   warning message (:issue:`196`).
 * Fix matplotlib < 3.2.0 issue where :rcraw:`axes.inbounds` feature fails due
   to private API invocation (:commit:`e3e739e4`).
@@ -197,6 +197,8 @@ Bug fixes
   span over an empty gridspec slot (:issue:`313`).
 * Fix issue where tight layout algorithm fails in the presence of subplots
   with overlapping or identical subplotspecs (:commit:`87f098b6`).
+* Fix issue where `proplot.axes.Cartesian.format` keyword arguments cannot be
+  passed to `~proplot.axes.Axes.panel_axes` (:commit:`1b3d0d48`).
 * Fix issue where outer colorbars are drawn twice due to adding them as both
   figure-wide axes and child axes (:issue:`304`).
 * Fix issue where silently-deprecated `aspect` parameter passed to
