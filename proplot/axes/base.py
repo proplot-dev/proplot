@@ -1079,7 +1079,14 @@ class Axes(maxes.Axes):
             extendfrac = extendsize / max(scale - 2 * extendsize, units(1, 'em', 'in'))
 
         # Parse the tick locators and formatters
-        # NOTE: This uses DiscreteLocator for default discrete minor ticks
+        # WARNING: Confusingly the only default way to have auto-adjusting
+        # colorbar tiks is to specify no locator. Then _get_ticker_locator_formatter
+        # uses the default ScalarFormatter on the axis that already has a set axis.
+        # Otherwise it sets a default axis with locator.create_dummy_axis() in
+        # update_ticks() which does not track axis size. Workaround is to manually
+        # set the locator and formatter axis... however this messes up colorbar lengths
+        # in matplotlib < 3.2. So we only apply this conditionally and in earlier
+        # verisons recognize that DiscreteLocator will behave like FixedLocator.
         name = 'y' if kwargs.get('orientation') == 'vertical' else 'x'
         axis = cax.yaxis if kwargs.get('orientation') == 'vertical' else cax.xaxis
         locator = _not_none(locator, locator_default, None)
@@ -1104,7 +1111,9 @@ class Axes(maxes.Axes):
         if isinstance(locator, mticker.NullLocator) or not len(getattr(locator, 'locs', (None,))):  # noqa: E501
             minorlocator, tickminor = None, False  # attempted fix
         for ticker in (locator, formatter, minorlocator):
-            if isinstance(ticker, mticker.TickHelper):
+            if _version_mpl < '3.2':
+                pass  # see notes above
+            elif isinstance(ticker, mticker.TickHelper):
                 ticker.set_axis(axis)
 
         # Prepare colorbar keyword arguments
@@ -1745,8 +1754,6 @@ class Axes(maxes.Axes):
                 raise ValueError(f'Invalid align={align!r} for colorbar loc={side!r}.')
 
         # Add the axes as a child of the original axes
-        # WARNING: Matplotlib < 3.2 (or possibly matplotlib < 3.1) has major issues
-        # scaling with locator (makes tiny-length colorbars). Try to use gridspec.
         cls = mproj.get_projection_class('proplot_cartesian')
         locator = self._make_inset_locator(bounds, self.transAxes)
         ax = cls(self.figure, locator(self, None).bounds, zorder=5)
@@ -2677,7 +2684,7 @@ class Axes(maxes.Axes):
         self._add_queued_guides()
         self._apply_title_above()
         if self._colorbar_fill:
-            self._colorbar_fill.update_ticks(manual_only=True)  # only update if needed!
+            self._colorbar_fill.update_ticks(manual_only=True)  # only update if needed
         if self._inset_parent is not None and self._inset_zoom:
             self.indicate_inset_zoom()
         super().draw(renderer, *args, **kwargs)
@@ -2689,7 +2696,7 @@ class Axes(maxes.Axes):
         self._add_queued_guides()
         self._apply_title_above()
         if self._colorbar_fill:
-            self._colorbar_fill.update_ticks(manual_only=True)  # only update if needed!
+            self._colorbar_fill.update_ticks(manual_only=True)  # only update if needed
         if self._inset_parent is not None and self._inset_zoom:
             self.indicate_inset_zoom()
         self._tight_bbox = super().get_tightbbox(renderer, *args, **kwargs)
