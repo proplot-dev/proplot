@@ -28,8 +28,7 @@
 #
 # This section documents several useful features for working with `polar`_ plots
 # and :ref:`geographic projections <ug_geo>`. The geographic features are powered by
-# `cartopy`_ (or, optionally, `basemap`_).
-# Note that these features are *optional* --
+# `cartopy`_ (or, optionally, `basemap`_). Note that these features are *optional* --
 # installation of cartopy or basemap are not required to use proplot.
 #
 # %% [raw] raw_mimetype="text/restructuredtext"
@@ -193,13 +192,16 @@ axs.format(
 #      of `central_longitude`) and instantiates `~mpl_toolkits.basemap.Basemap`
 #      projections with sensible default PROJ parameters rather than raising an error
 #      when they are omitted (e.g., ``lon0=0`` as the default for most projections).
-#    * Basemap is `no longer maintained \
-#      <https://matplotlib.org/basemap/users/intro.html#cartopy-new-management-and-eol-announcement>`__
-#      and will not work with matplotlib versions more recent than 3.2.2. However,
-#      basemap gridline labels often look nicer than cartopy -- especially when
-#      "inline" cartopy labels are disabled. This is the main reason proplot continues
-#      to support basemap. When cartopy gridline labels improve, basemap support
-#      may be deprecated.
+#
+# .. warning::
+#
+#    The `basemap`_ package is `no longer actively maintained \
+#    <https://matplotlib.org/basemap/users/intro.html#cartopy-new-management-and-eol-announcement>`__
+#    and will not work with matplotlib versions more recent than 3.2.2. We originally
+#    included basemap support because its gridline labeling was more powerful
+#    than cartopy gridline labeling. However, as cartopy gridline labeling has
+#    significantly improved since version 0.18, proplot may deprecate basemap support
+#    in a future release and fully remove basemap support by version 1.0.0.
 
 # %%
 import proplot as pplt
