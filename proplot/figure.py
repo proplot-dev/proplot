@@ -526,6 +526,7 @@ class Figure(mfigure.Figure):
         tight=None, outerpad=None, innerpad=None, panelpad=None,
         wpad=None, hpad=None, pad=None,
         wequal=None, hequal=None, equal=None,
+        wgroup=None, hgroup=None, group=None,
         **kwargs
     ):
         """
@@ -622,6 +623,7 @@ class Figure(mfigure.Figure):
             'left': left, 'right': right, 'top': top, 'bottom': bottom,
             'wspace': wspace, 'hspace': hspace, 'space': space,
             'wequal': wequal, 'hequal': hequal, 'equal': equal,
+            'wgroup': wgroup, 'hgroup': hgroup, 'group': group,
             'wpad': wpad, 'hpad': hpad, 'pad': pad,
             'outerpad': outerpad, 'innerpad': innerpad, 'panelpad': panelpad,
         }

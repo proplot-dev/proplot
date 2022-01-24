@@ -74,9 +74,12 @@ wpad, hpad, pad : unit-spec or sequence, optional
     %(units.em)s
 """
 _tight_docstring = """
-wequal, hequal, equal :  bool, default: False
+wequal, hequal, equal :  bool, default: :rc:`subplots.equalspace`
     Whether to make the tight layout algorithm apply equal spacing
     between columns, rows, or both.
+wgroup, hgroup, group :  bool, default: :rc:`subplot.groupspace`
+    Whether to make the tight layout algorithm just consider spaces between
+    adjacent subplots instead of entire columns and rows of subplots.
 outerpad : unit-spec, default: :rc:`subplots.outerpad`
     The scalar tight layout padding around the left, right, top, bottom figure edges.
     %(units.em)s
@@ -276,8 +279,10 @@ class GridSpec(mgridspec.GridSpec):
         self._panelpad = units(panelpad, 'em', 'in')
         self._hpad_total = [units(pad, 'em', 'in')] * (nrows - 1)
         self._wpad_total = [units(pad, 'em', 'in')] * (ncols - 1)
-        self._hequal = False
-        self._wequal = False
+        self._hequal = rc['subplots.equalspace']
+        self._wequal = rc['subplots.equalspace']
+        self._hgroup = rc['subplots.groupspace']
+        self._wgroup = rc['subplots.groupspace']
         self._hpanels = [''] * nrows  # axes and figure panel identification
         self._wpanels = [''] * ncols
         self._fpanels = {  # array representation of figure panel spans
@@ -691,11 +696,13 @@ class GridSpec(mgridspec.GridSpec):
             return
         if w == 'w':
             x, y = 'xy'
+            group = self._wgroup
             nacross = self.nrows_total
             space = self.wspace_total
             pad = self.wpad_total
         else:
             x, y = 'yx'
+            group = self._hgroup
             nacross = self.ncols_total
             space = self.hspace_total
             pad = self.hpad_total
@@ -736,9 +743,14 @@ class GridSpec(mgridspec.GridSpec):
                         break
                 else:
                     if axs1 and axs2:
-                        groups.append([set(axs1), set(axs2)])  # form new group
+                        groups.append((set(axs1), set(axs2)))  # form new group
             # Determing the spaces using cached tight bounding boxes
             # NOTE: Set gridspec space to zero if there are no adjacent edges
+            if not group:
+                groups = [(
+                    set(ax for (group1, _) in groups for ax in group1),
+                    set(ax for (_, group2) in groups for ax in group2),
+                )]
             margins = []
             for (group1, group2) in groups:
                 x1 = max(ax._range_tightbbox(x)[1] for ax in group1)
@@ -915,6 +927,7 @@ class GridSpec(mgridspec.GridSpec):
         wspace=None, hspace=None, space=None,
         wpad=None, hpad=None, pad=None,
         wequal=None, hequal=None, equal=None,
+        wgroup=None, hgroup=None, group=None,
         outerpad=None, innerpad=None, panelpad=None,
         hratios=None, wratios=None, width_ratios=None, height_ratios=None,
     ):
@@ -924,24 +937,29 @@ class GridSpec(mgridspec.GridSpec):
         # Assign scalar args
         # WARNING: The key signature here is critical! Used in ui.py to
         # separate out figure keywords and gridspec keywords.
-        def _assign_scalar(key, value):
+        def _assign_scalar(key, value, convert=True):
             if value is None:
                 return
             if not np.isscalar(value):
                 raise ValueError(f'Unexpected {key}={value!r}. Must be scalar.')
-            value = units(value, 'em', 'in')
+            if convert:
+                value = units(value, 'em', 'in')
             setattr(self, f'_{key}', value)
         hequal = _not_none(hequal, equal)
         wequal = _not_none(wequal, equal)
+        hgroup = _not_none(hgroup, group)
+        wgroup = _not_none(wgroup, group)
         _assign_scalar('left', left)
         _assign_scalar('right', right)
         _assign_scalar('bottom', bottom)
         _assign_scalar('top', top)
-        _assign_scalar('hequal', hequal)
-        _assign_scalar('wequal', wequal)
         _assign_scalar('panelpad', panelpad)
         _assign_scalar('outerpad', outerpad)
         _assign_scalar('innerpad', innerpad)
+        _assign_scalar('hequal', hequal, convert=False)
+        _assign_scalar('wequal', wequal, convert=False)
+        _assign_scalar('hgroup', hgroup, convert=False)
+        _assign_scalar('wgroup', wgroup, convert=False)
 
         # Assign vector args
         # NOTE: Here we employ obfuscation that skips 'panel' indices. So users could

@@ -242,34 +242,53 @@ pplt.rc.reset()
 # This padding can be set locally by passing an array of values to `wpad`
 # and `hpad` (analogous to `wspace` and `hspace`), or by passing the `pad`
 # keyword when creating :ref:`panel axes <ug_panels>` or :ref:`outer
-# colorbars or legends <ug_guides_loc>` (analogous to `space`). Finally, passing
-# ``wequal=True``, ``hequal=True``, or ``equal=True`` constrains the tight layout
-# algorithm to produce equal spacing between main subplot rows or columns (note
-# that equal spacing is the default behavior when tight layout is disabled).
+# colorbars or legends <ug_guides_loc>` (analogous to `space`).
 #
 # All the spacing arguments described above can be specified with a
 # :ref:`unit string <ug_units>` interpreted by `~proplot.utils.units`.
 # The default unit assumed for numeric arguments is an "em-width" (i.e., a
 # :rcraw:`font.size` width -- see the :ref:`units table <units_table>` for details).
+#
+# .. note::
+
+#    The core behavior of the tight layout algorithm can be modified with a few
+#    keyword arguments and settings. Using ``wequal=True``, ``hequal=True``, or
+#    ``equal=True`` (or setting :rcraw:`subplots.equalspace` to ``True``) constrains
+#    the tight layout algorithm to produce equal spacing between main subplot columns
+#    or rows (note that equal spacing is the default behavior when tight layout is
+#    disabled). Similarly, using ``wgroup=False``, ``hgroup=False``, or ``group=False``
+#    (or setting :rcraw:`subplots.groupspace` to ``False``) disables the default
+#    behavior of only comparing subplot extent between adjacent subplot "groups"
+#    and instead compares subplot extents across entire columns and rows.
 
 # %%
 import proplot as pplt
 
 # Stress test of the tight layout algorithm
 # Add large labels along the edge of one subplot
-for equal, descrip in enumerate(('variable', 'equal')):
+equals = [('unequal', False), ('equal', True)]
+groups = [('grouped', True), ('ungrouped', False)]
+for i in range(2):
+    name1, equal = equals[i]
+    name2, group = groups[i]
+    suffix = ' (default)' if i == 0 else ''
+    suptitle = f'Tight layout with "{name1}" and "{name2}" row-column spacing{suffix}'
     fig, axs = pplt.subplots(
-        nrows=3, ncols=3, refwidth=1.1, share=False, equal=bool(equal)
+        nrows=3, ncols=3, refwidth=1.1, share=False, equal=equal, group=group,
     )
     axs[1].format(
         xlabel='xlabel\nxlabel',
         ylabel='ylabel\nylabel\nylabel\nylabel'
     )
+    axs[3:6:2].format(
+        title='Title\nTitle',
+        titlesize='med',
+    )
     axs.format(
         grid=False,
         toplabels=('Column 1', 'Column 2', 'Column 3'),
         leftlabels=('Row 1', 'Row 2', 'Row 3'),
-        suptitle=f'Tight layout with {descrip} row-column spacing',
+        suptitle=suptitle,
     )
 
 # %%

@@ -1635,6 +1635,18 @@ _rc_proplot_table = {
         'Whether to align axis labels during draw. See `aligning labels '
         '<https://matplotlib.org/stable/gallery/subplots_axes_and_figures/align_labels_demo.html>`__.'  # noqa: E501
     ),
+    'subplots.equalspace': (
+        False,
+        _validate_bool,
+        'Whether to make the tight layout algorithm assign the same space for '
+        'every row and the same space for every column.'
+    ),
+    'subplots.groupspace': (
+        True,
+        _validate_bool,
+        'Whether to make the tight layout algorithm consider space between only '
+        'adjacent subplot "groups" rather than every subplot in the row or column.'
+    ),
     'subplots.innerpad': (
         1,
         _validate_em,
