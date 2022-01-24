@@ -245,14 +245,17 @@ def _get_default_style_dict():
     # when user-supplied stylesheets have deprecated params.
     # WARNING: Some deprecated rc params remain in dictionary as None so we
     # filter them out. Beware if hidden attribute changes.
+    # WARNING: The examples.directory deprecation was handled specially inside
+    # RcParams in early versions. Manually pop it out here.
     rcdict = _filter_style_dict(mpl.rcParamsDefault, warn=False)
     with warnings.catch_warnings():
         warnings.simplefilter('ignore', mpl.MatplotlibDeprecationWarning)
         rcdict = dict(RcParams(rcdict))
     for attr in ('_deprecated_set', '_deprecated_remain_as_none'):
-        if hasattr(mpl, attr):  # _deprecated_set is in matplotlib before v3
-            for deprecated in getattr(mpl, attr):
-                rcdict.pop(deprecated, None)
+        deprecated = getattr(mpl, attr, ())
+        for key in deprecated:  # _deprecated_set is in matplotlib < 3.4
+            rcdict.pop(key, None)
+    rcdict.pop('examples.directory', None)  # special case for matplotlib < 3.2
     return rcdict
 
 
