@@ -709,30 +709,35 @@ class GridSpec(mgridspec.GridSpec):
         for i, (s, p) in enumerate(zip(space, pad)):
             # Find axes that abutt aginst this row or column space
             groups = []
-            filt1 = ralong[:, 1] == i  # i.e. r / b edge abutts against this
-            filt2 = ralong[:, 0] == i + 1  # i.e. l / t edge abutts against this
             for j in range(nacross):  # e.g. each row
                 # Get the indices for axes that meet this row or column edge.
+                # NOTE: Rigorously account for empty and overlapping slots here
                 filt = (racross[:, 0] <= j) & (j <= racross[:, 1])
                 if sum(filt) < 2:
                     continue  # no interface
-                idx1, = np.where(filt & filt1)
-                idx2, = np.where(filt & filt2)
-                if not idx1.size or not idx2.size:
-                    continue
+                ii = i
+                idx1 = idx2 = np.array(())
+                while ii >= 0 and idx1.size == 0:
+                    filt1 = ralong[:, 1] == ii  # i.e. r / b edge abutts against this
+                    idx1, = np.where(filt & filt1)
+                    ii -= 1
+                ii = i + 1
+                while ii <= len(space) and idx2.size == 0:
+                    filt2 = ralong[:, 0] == ii  # i.e. l / t edge abutts against this
+                    idx2, = np.where(filt & filt2)
+                    ii += 1
                 # Put axes into unique groups and store as (l, r) or (b, t) pairs.
                 axs1, axs2 = [axs[_] for _ in idx1], [axs[_] for _ in idx2]
                 if x != 'x':  # order bottom-to-top
                     axs1, axs2 = axs2, axs1
-                newgroup = True
                 for (group1, group2) in groups:
                     if any(_ in group1 for _ in axs1) or any(_ in group2 for _ in axs2):
-                        newgroup = False
                         group1.update(axs1)
                         group2.update(axs2)
                         break
-                if newgroup:
-                    groups.append([set(axs1), set(axs2)])  # form new group
+                else:
+                    if axs1 and axs2:
+                        groups.append([set(axs1), set(axs2)])  # form new group
             # Determing the spaces using cached tight bounding boxes
             # NOTE: Set gridspec space to zero if there are no adjacent edges
             margins = []
