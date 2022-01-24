@@ -524,6 +524,8 @@ class _RcParams(MutableMapping, dict):
 
 
 # Borrow validators from matplotlib and construct some new ones
+# WARNING: Instead of validate_fontweight matplotlib used validate_string
+# until version 3.1.2. So use that as backup here.
 # WARNING: We create custom 'or none' validators since their
 # availability seems less consistent across matplotlib versions.
 _validate_pt = _validate_units('pt')
@@ -534,7 +536,7 @@ _validate_int = msetup.validate_int
 _validate_float = msetup.validate_float
 _validate_string = msetup.validate_string
 _validate_fontname = msetup.validate_stringlist  # same as 'font.family'
-_validate_fontweight = msetup.validate_fontweight
+_validate_fontweight = getattr(msetup, 'validate_fontweight', _validate_string)
 
 # Special style validators
 # See: https://matplotlib.org/stable/api/_as_gen/matplotlib.patches.FancyBboxPatch.html
