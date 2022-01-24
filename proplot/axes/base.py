@@ -708,7 +708,7 @@ class Axes(maxes.Axes):
             name = re.sub('Axes(Subplot)?', 'AxesPanel', name)
             params['side'] = self._panel_side
         try:
-            nrows, ncols, num1, num2 = ax.get_subplotspec()._get_geometry()
+            nrows, ncols, num1, num2 = ax.get_subplotspec().get_topmost_subplotspec()._get_geometry()  # noqa: E501
             params[prefix + 'index'] = (num1, num2)
         except (IndexError, ValueError, AttributeError):  # e.g. a loose axes
             left, bottom, width, height = np.round(self._position.bounds, 2)
@@ -2178,7 +2178,7 @@ class Axes(maxes.Axes):
         """
         if not isinstance(self, maxes.SubplotBase):
             raise RuntimeError('Axes must be a subplot.')
-        ss = self.get_subplotspec()
+        ss = self.get_subplotspec().get_topmost_subplotspec()
         row1, row2, col1, col2 = ss._get_rows_columns()
         if s == 'x':
             return (col1, col2)

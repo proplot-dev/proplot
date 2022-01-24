@@ -444,7 +444,7 @@ class GridSpec(mgridspec.GridSpec):
         # NOTE: This always "stacks" new panels on old panels
         if isinstance(arg, maxes.SubplotBase) and isinstance(arg, paxes.Axes):
             slot = side[0]
-            ss = arg.get_subplotspec()
+            ss = arg.get_subplotspec().get_topmost_subplotspec()
             offset = len(arg._panel_dict[side]) + 1
             row1, row2, col1, col2 = ss._get_rows_columns()
             if side in ('left', 'right'):
@@ -838,7 +838,8 @@ class GridSpec(mgridspec.GridSpec):
         ax = fig._subplot_dict.get(fig._refnum, None)
         if ax is None:  # drawing before subplots are added?
             return
-        y1, y2, x1, x2 = ax.get_subplotspec()._get_rows_columns()
+        ss = ax.get_subplotspec().get_topmost_subplotspec()
+        y1, y2, x1, x2 = ss._get_rows_columns()
         refhspace = sum(self.hspace_total[y1:y2])
         refwspace = sum(self.wspace_total[x1:x2])
         refhpanel = sum(self.hratios_total[i] for i in range(y1, y2 + 1) if self._hpanels[i])  # noqa: E501
@@ -1378,7 +1379,7 @@ class SubplotGrid(MutableSequence, list):
                 row1_key, col1_key = divmod(ss_key.num1, gs.ncols)
                 row2_key, col2_key = divmod(ss_key.num2, gs.ncols)
             for ax in self:
-                ss = ax._get_topmost_axes().get_subplotspec()
+                ss = ax._get_topmost_axes().get_subplotspec().get_topmost_subplotspec()
                 row1, col1 = divmod(ss.num1, gs.ncols)
                 row2, col2 = divmod(ss.num2, gs.ncols)
                 inrow = row1_key <= row1 <= row2_key or row1_key <= row2 <= row2_key
@@ -1463,7 +1464,7 @@ class SubplotGrid(MutableSequence, list):
             item = item._get_topmost_axes()
             if not isinstance(item, maxes.SubplotBase):
                 raise ValueError(message.format(f'the axes {item!r}'))
-            gs = item.get_subplotspec().get_gridspec()
+            gs = item.get_subplotspec().get_topmost_subplotspec().get_gridspec()
             if not isinstance(gs, GridSpec):
                 raise ValueError(message.format(f'the GridSpec {gs!r}'))
             if gridspec and gs is not gridspec:
@@ -1540,7 +1541,7 @@ class SubplotGrid(MutableSequence, list):
             raise ValueError('Unknown gridspec for empty SubplotGrid.')
         ax = self[0]
         ax = ax._get_topmost_axes()
-        return ax.get_subplotspec().get_gridspec()
+        return ax.get_subplotspec().get_topmost_subplotspec().get_gridspec()
 
     @property
     def shape(self):
