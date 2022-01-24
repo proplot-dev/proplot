@@ -1810,7 +1810,7 @@ class PlotAxes(base.Axes):
                     trans.y0 = extents[1] = min(convert(ymin), extents[1])
                 if ymax is not None:
                     trans.y1 = extents[3] = max(convert(ymax), extents[3])
-                self._request_autoscale_view()
+                getattr(self, '_request_autoscale_view', self.autoscale_view)()
             if autox and not autoy and y.shape == x.shape:
                 # Reset the x data limits
                 ymin, ymax = sorted(self.get_ylim())
@@ -1821,7 +1821,7 @@ class PlotAxes(base.Axes):
                     trans.x0 = extents[0] = min(convert(xmin), extents[0])
                 if xmax is not None:
                     trans.x1 = extents[2] = max(convert(xmax), extents[2])
-                    self._request_autoscale_view()
+                getattr(self, '_request_autoscale_view', self.autoscale_view)()
         except Exception as err:
             warnings._warn_proplot(
                 'Failed to restrict automatic y (x) axis limit algorithm to '
