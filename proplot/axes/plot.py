@@ -2489,12 +2489,15 @@ class PlotAxes(base.Axes):
         # NOTE: This should have no effect if levels were generated automatically.
         # However want to apply these to manual-input levels as well.
         def _restrict_levels(levels):
+            kw = {}
+            if len(levels) > 2:
+                kw['atol'] = 1e-5 * np.min(np.diff(levels))
             if nozero:
-                levels = levels[levels != 0]
+                levels = [lev for lev in levels if not np.isclose(lev, 0, **kw)]
             if positive:
-                levels = levels[levels >= 0]
+                levels = [lev for lev in levels if lev > 0 or np.isclose(lev, 0, **kw)]
             if negative:
-                levels = levels[levels <= 0]
+                levels = [lev for lev in levels if lev < 0 or np.isclose(lev, 0, **kw)]
             return levels
 
         # Helper function to sanitize input levels
