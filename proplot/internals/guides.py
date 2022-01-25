@@ -11,6 +11,16 @@ import numpy as np
 from . import ic  # noqa: F401
 from . import warnings
 
+# Global constants
+REMOVE_AFTER_FLUSH = (
+    'pad', 'space', 'width', 'length', 'shrink', 'align', 'queue',
+)
+GUIDE_ALIASES = (
+    ('title', 'label'),
+    ('locator', 'ticks'),
+    ('format', 'formatter', 'ticklabels')
+)
+
 
 def _add_guide_kw(name, kwargs, **opts):
     """
@@ -50,6 +60,8 @@ def _flush_guide_kw(obj, name, kwargs):
     opts = getattr(obj, f'_{name}_kw', None)
     if opts:
         _update_kw(kwargs, overwrite=False, **opts)
+        for key in REMOVE_AFTER_FLUSH:
+            opts.pop(key, None)
     if isinstance(obj, (tuple, list, np.ndarray)):
         for member in obj:  # possibly iterate over matplotlib tuple/list subclasses
             _flush_guide_kw(member, name, kwargs)
@@ -60,15 +72,10 @@ def _update_kw(kwargs, overwrite=False, **opts):
     """
     Add the keyword arguments to the dictionary if not already present.
     """
-    aliases = (
-        ('title', 'label'),
-        ('locator', 'ticks'),
-        ('format', 'formatter', 'ticklabels')
-    )
     for key, value in opts.items():
         if value is None:
             continue
-        keys = tuple(k for opts in aliases for k in opts if key in opts)
+        keys = tuple(k for opts in GUIDE_ALIASES for k in opts if key in opts)
         keys = keys or (key,)  # e.g. 'extend' or something
         keys_found = tuple(key for key in keys if kwargs.get(key) is not None)
         if not keys_found:

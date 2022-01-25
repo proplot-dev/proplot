@@ -1567,26 +1567,29 @@ class Axes(maxes.Axes):
             kwargs_full.update(kwargs)
 
     def _update_guide(
-        self, objs, colorbar=None, colorbar_kw=None, queue_colorbar=True,
-        legend=None, legend_kw=None,
+        self, objs, legend=None, legend_kw=None, queue_legend=True,
+        colorbar=None, colorbar_kw=None, queue_colorbar=True,
     ):
         """
         Update queues for on-the-fly legends and colorbars or track keyword arguments.
         """
+        # WARNING: Important to always cache the keyword arguments so e.g.
+        # duplicate subsequent calls still enforce user and default behavior.
         # WARNING: This should generally be last in the pipeline before calling
         # the plot function or looping over data columns. The colormap parser
         # and standardize functions both modify colorbar_kw and legend_kw.
         legend_kw = legend_kw or {}
         colorbar_kw = colorbar_kw or {}
-        if colorbar:
-            colorbar_kw.setdefault('queue', queue_colorbar)
-            self.colorbar(objs, loc=colorbar, **colorbar_kw)
-        else:  # store keyword arguments for later
-            guides._cache_guide_kw(objs, 'colorbar', colorbar_kw)
+        guides._cache_guide_kw(objs, 'legend', legend_kw)
+        guides._cache_guide_kw(objs, 'colorbar', colorbar_kw)
         if legend:
-            self.legend(objs, loc=legend, queue=True, **legend_kw)
-        else:  # store keyword arguments for later
-            guides._cache_guide_kw(objs, 'legend', legend_kw)
+            align = legend_kw.pop('align', None)
+            queue = legend_kw.pop('queue', queue_legend)
+            self.legend(objs, loc=legend, align=align, queue=queue, **legend_kw)
+        if colorbar:
+            align = colorbar_kw.pop('align', None)
+            queue = colorbar_kw.pop('queue', queue_colorbar)
+            self.colorbar(objs, loc=colorbar, align=align, queue=queue, **colorbar_kw)
 
     @staticmethod
     def _parse_frame(guide, fancybox=None, shadow=None, **kwargs):
@@ -2792,10 +2795,7 @@ class Axes(maxes.Axes):
 
     @docstring._obfuscate_params
     @docstring._snippet_manager
-    def colorbar(
-        self, mappable, values=None,
-        loc=None, location=None, align=None, queue=False, **kwargs
-    ):
+    def colorbar(self, mappable, values=None, loc=None, location=None, **kwargs):
         """
         Add an inset colorbar or an outer colorbar along the edge of the axes.
 
@@ -2848,19 +2848,23 @@ class Axes(maxes.Axes):
         proplot.figure.Figure.colorbar
         matplotlib.figure.Figure.colorbar
         """
-        # Either draw right now or queue up for later
-        # The queue option lets us successively append objects (e.g. line handles)
-        # to a list later used for colorbar levels. Same as legend.
-        loc = _not_none(loc=loc, location=location)
+        # Translate location and possibly infer from orientation. Also optionally
+        # infer align setting from keywords stored on object.
         orientation = kwargs.get('orientation', None)
+        kwargs = guides._flush_guide_kw(mappable, 'colorbar', kwargs)
+        loc = _not_none(loc=loc, location=location)
         if orientation is not None:  # possibly infer loc from orientation
             if orientation not in ('vertical', 'horizontal'):
                 raise ValueError(f"Invalid colorbar orientation {orientation!r}. Must be 'vertical' or 'horizontal'.")   # noqa: E501
             if loc is None:
                 loc = {'vertical': 'right', 'horizontal': 'bottom'}[orientation]
         loc = _translate_loc(loc, 'colorbar', default=rc['colorbar.loc'])
-        align = _translate_loc(align, 'panel', default='center', c='center', center='center')  # noqa: E501
-        kwargs = guides._flush_guide_kw(mappable, 'colorbar', kwargs)
+        align = kwargs.pop('align', None)
+        align = _translate_loc(align, 'align', default='center')
+
+        # Either draw right now or queue up for later. The queue option lets us
+        # successively append objects (e.g. lines) to a colorbar artist list.
+        queue = kwargs.pop('queue', False)
         if queue:
             self._register_guide('colorbar', (mappable, values), (loc, align), **kwargs)
         else:
@@ -2868,10 +2872,7 @@ class Axes(maxes.Axes):
 
     @docstring._concatenate_inherited  # also obfuscates params
     @docstring._snippet_manager
-    def legend(
-        self, handles=None, labels=None,
-        loc=None, location=None, align=None, queue=False, **kwargs
-    ):
+    def legend(self, handles=None, labels=None, loc=None, location=None, **kwargs):
         """
         Add an *inset* legend or *outer* legend along the edge of the axes.
 
@@ -2919,13 +2920,17 @@ class Axes(maxes.Axes):
         proplot.figure.Figure.legend
         matplotlib.axes.Axes.legend
         """
-        # Either draw right now or queue up for later
-        # Handles can be successively added to a single location this way. This
-        # is used internally for on-the-fly legends.
+        # Translate location and possibly infer from orientation. Also optionally
+        # infer align setting from keywords stored on object.
+        kwargs = guides._flush_guide_kw(handles, 'legend', kwargs)
         loc = _not_none(loc=loc, location=location)
         loc = _translate_loc(loc, 'legend', default=rc['legend.loc'])
-        align = _translate_loc(align, 'panel', default='center', c='center', center='center')  # noqa: E501
-        kwargs = guides._flush_guide_kw(handles, 'legend', kwargs)
+        align = kwargs.pop('align', None)
+        align = _translate_loc(align, 'align', default='center')
+
+        # Either draw right now or queue up for later. Handles can be successively
+        # added to a single location this way. Used for on-the-fly legends.
+        queue = kwargs.pop('queue', False)
         if queue:
             self._register_guide('legend', (handles, labels), (loc, align), **kwargs)
         else:

@@ -106,22 +106,27 @@ for _loc in tuple(LEGEND_LOCS.values()):
     if _loc not in LEGEND_LOCS:
         LEGEND_LOCS[_loc] = _loc  # identity assignments
 TEXT_LOCS = {
-    key: value for key, value in LEGEND_LOCS.items() if value in (
+    key: val for key, val in LEGEND_LOCS.items() if val in (
         'left', 'center', 'right',
         'upper left', 'upper center', 'upper right',
         'lower left', 'lower center', 'lower right',
     )
 }
 COLORBAR_LOCS = {
-    key: value for key, value in LEGEND_LOCS.items() if value in (
+    key: val for key, val in LEGEND_LOCS.items() if val in (
         'fill', 'best',
         'left', 'right', 'top', 'bottom',
         'upper left', 'upper right', 'lower left', 'lower right',
     )
 }
 PANEL_LOCS = {
-    key: value for key, value in LEGEND_LOCS.items() if value in (
+    key: val for key, val in LEGEND_LOCS.items() if val in (
         'left', 'right', 'top', 'bottom'
+    )
+}
+ALIGN_LOCS = {
+    key: val for key, val in LEGEND_LOCS.items() if isinstance(key, str) and val in (
+        'left', 'right', 'top', 'bottom', 'center',
     )
 }
 

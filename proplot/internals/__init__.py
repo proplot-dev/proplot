@@ -391,7 +391,9 @@ def _translate_loc(loc, mode, *, default=None, **kwargs):
     # Create specific options dictionary
     # NOTE: This is not inside validators.py because it is also used to
     # validate various user-input locations.
-    if mode == 'panel':
+    if mode == 'align':
+        loc_dict = rcsetup.ALIGN_LOCS
+    elif mode == 'panel':
         loc_dict = rcsetup.PANEL_LOCS
     elif mode == 'legend':
         loc_dict = rcsetup.LEGEND_LOCS
