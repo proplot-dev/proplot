@@ -2724,8 +2724,8 @@ class Axes(maxes.Axes):
         # Includes both proplot syntax with positional arguments interpreted as
         # color arguments and oldschool matplotlib cycler(key, value) syntax.
         if len(args) == 2 and isinstance(args[0], str) and np.iterable(args[1]):
-            if _pop_props({args[0]: object()}, 'line'):
-                kwargs = {args[0]: args[1]}
+            if _pop_props({args[0]: object()}, 'line'):  # if a valid line property
+                kwargs = {args[0]: args[1]}  # pass as keyword argument
                 args = ()
         cycle = self._active_cycle = constructor.Cycle(*args, **kwargs)
         return super().set_prop_cycle(cycle)  # set the property cycler after validation

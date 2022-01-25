@@ -2273,11 +2273,26 @@ class PlotAxes(base.Axes):
         return kwargs
 
     def _parse_cycle(
-        self, ncycle=None, *,
-        cycle=None, cycle_kw=None, cycle_manually=None, return_cycle=False, **kwargs
+        self, ncycle=None, *, cycle=None, cycle_kw=None,
+        cycle_manually=None, return_cycle=False, **kwargs
     ):
         """
         Parse property cycle-related arguments.
+
+        Parameters
+        ----------
+        ncycle : int, optional
+            The number of samples to draw for the cycle.
+        cycle : cycle-spec, optional
+            The property cycle specifier.
+        cycle_kw : dict-like, optional
+            The property cycle keyword arguments
+        cycle_manually : dict-like, optional
+            Mapping of property cycle keys to plotting function keys. Used
+            to translate property cycle line properties to scatter properties.
+        return_cycle : bool, optional
+            Whether to simply return the property cycle or apply it. The cycle is
+            only applied (and therefore reset) if it differs from the current one.
         """
         # Create the property cycler and update it if necessary
         # NOTE: Matplotlib Cycler() objects have built-in __eq__ operator
@@ -2348,11 +2363,11 @@ class PlotAxes(base.Axes):
         symmetric : bool, optional
             Whether the resulting levels should be symmetric about zero.
 
-        Parameters
-        ----------
+        Returns
+        -------
         levels : list of float
             The level edges.
-        kwargs
+        **kwargs
             Unused arguments.
         """
         # Input args
@@ -2467,7 +2482,7 @@ class PlotAxes(base.Axes):
         -------
         levels : list of float
             The level edges.
-        kwargs
+        **kwargs
             Unused arguments.
         """
         # Helper function that restricts levels
@@ -2621,7 +2636,7 @@ class PlotAxes(base.Axes):
         -------
         vmin, vmax : float
             The minimum and maximum.
-        kwargs
+        **kwargs
             Unused arguemnts.
         """
         # Parse vmin and vmax

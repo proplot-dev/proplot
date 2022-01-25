@@ -16,13 +16,6 @@ until the first major release (version 1.0.0).
 
 .. important::
 
-   The color transformation functions like `to_rgba` and `scale_luminance` from
-   proplot < 0.10.0 can now be found as methods on the new `~proplot.colors.Color`
-   class. Note that old code that uses commands like ``pplt.to_rgba()`` and
-   ``pplt.scale_luminance()`` will still work (but result in a deprecation warning).
-
-.. important::
-
    The documentation for "wrapper" functions like `standardize_1d` and `cmap_changer`
    from proplot < 0.8.0 can now be found under individual `~proplot.axes.PlotAxes`
    methods like `~proplot.axes.PlotAxes.plot` and `~proplot.axes.PlotAxes.pcolor`. Note
