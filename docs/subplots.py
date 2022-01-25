@@ -20,8 +20,8 @@
 #
 # This section documents a variety of features related to proplot subplots,
 # including a-b-c subplot labels, axis sharing between subplots, automatic
-# "tight layout" spacing between subplots, and a unique feature where the
-# figure dimensions are automatically adjusted based on the subplot geometry.
+# "tight layout" spacing between subplots, and a unique feature where the figure
+# width and/or height are automatically adjusted based on the subplot geometry.
 #
 # .. note::
 #
@@ -30,7 +30,7 @@
 #    does not officially support the "nested" matplotlib structures
 #    `~matplotlib.gridspec.GridSpecFromSubplotSpec` and `~matplotlib.figure.SubFigure`.
 #    These restrictions have the advantage of 1) considerably simplifying the
-#    :ref:`tight layout <ug_tight>` and :ref:`figure dimensions <ug_autosize>`
+#    :ref:`tight layout <ug_tight>` and :ref:`figure size <ug_autosize>`
 #    algorithms and 2) reducing the ambiguity of :ref:`a-b-c label assignment <ug_abc>`
 #    and :ref:`automatic axis sharing <ug_share>` between subplots. If you need the
 #    features associated with "nested" matplotlib structures, some are reproducible
@@ -105,8 +105,8 @@ axs.format(
 # %% [raw] raw_mimetype="text/restructuredtext"
 # .. _ug_autosize:
 #
-# Figure dimensions
-# -----------------
+# Figure width and height
+# -----------------------
 #
 # Proplot automatically adjusts the figure width and height by default to
 # respect the physical size of the "reference" subplot and the geometry of the
@@ -152,7 +152,7 @@ axs.format(
 #      `~matplotlib.axes.Axes.set_aspect` or filling the subplot with a
 #      :ref:`geographic projection <ug_geo>`, `~proplot.axes.PlotAxes.imshow`
 #      plot, or `~proplot.axes.PlotAxes.heatmap` plot), then this is used as
-#      the default value for the refernece aspect ratio `refaspect`. This helps
+#      the default value for the reference aspect ratio `refaspect`. This helps
 #      minimize excess space between grids of subplots with fixed aspect ratios.
 #    * For the simplest subplot grids (e.g., those created by passing integers to
 #      `~proplot.figure.Figure.add_subplot` or passing `ncols` or `nrows` to
@@ -213,8 +213,8 @@ pplt.rc.reset()
 # %% [raw] raw_mimetype="text/restructuredtext"
 # .. _ug_tight:
 #
-# Subplot spacing
-# ---------------
+# Spaces and tight layout
+# -----------------------
 #
 # Proplot automatically adjusts the spacing between subplots
 # by default to accomadate labels using its own `"tight layout" algorithm
@@ -265,36 +265,6 @@ pplt.rc.reset()
 import proplot as pplt
 
 # Stress test of the tight layout algorithm
-# Add large labels along the edge of one subplot
-equals = [('unequal', False), ('equal', True)]
-groups = [('grouped', True), ('ungrouped', False)]
-for i in range(2):
-    name1, equal = equals[i]
-    name2, group = groups[i]
-    suffix = ' (default)' if i == 0 else ''
-    suptitle = f'Tight layout with "{name1}" and "{name2}" row-column spacing{suffix}'
-    fig, axs = pplt.subplots(
-        nrows=3, ncols=3, refwidth=1.1, share=False, equal=equal, group=group,
-    )
-    axs[1].format(
-        xlabel='xlabel\nxlabel',
-        ylabel='ylabel\nylabel\nylabel\nylabel'
-    )
-    axs[3:6:2].format(
-        title='Title\nTitle',
-        titlesize='med',
-    )
-    axs.format(
-        grid=False,
-        toplabels=('Column 1', 'Column 2', 'Column 3'),
-        leftlabels=('Row 1', 'Row 2', 'Row 3'),
-        suptitle=suptitle,
-    )
-
-# %%
-import proplot as pplt
-
-# Stress test of the tight layout algorithm
 # This time override the algorithm between selected subplot rows/columns
 fig, axs = pplt.subplots(
     ncols=4, nrows=3, refwidth=1.1, span=False,
@@ -317,6 +287,34 @@ axs[:, 3].format(ytickloc='both')
 axs[-1, :].format(xlabel='xlabel', title='Title\nTitle\nTitle')
 axs[:, 0].format(ylabel='ylabel')
 
+
+# %%
+import proplot as pplt
+
+# Stress test of the tight layout algorithm
+# Add large labels along the edge of one subplot
+equals = [('unequal', False), ('unequal', False), ('equal', True)]
+groups = [('grouped', True), ('ungrouped', False), ('grouped', True)]
+for (name1, equal), (name2, group) in zip(equals, groups):
+    suffix = ' (default)' if group and not equal else ''
+    suptitle = f'Tight layout with "{name1}" and "{name2}" row-column spacing{suffix}'
+    fig, axs = pplt.subplots(
+        nrows=3, ncols=3, refwidth=1.1, share=False, equal=equal, group=group,
+    )
+    axs[1].format(
+        xlabel='xlabel\nxlabel',
+        ylabel='ylabel\nylabel\nylabel\nylabel'
+    )
+    axs[3:6:2].format(
+        title='Title\nTitle',
+        titlesize='med',
+    )
+    axs.format(
+        grid=False,
+        toplabels=('Column 1', 'Column 2', 'Column 3'),
+        leftlabels=('Row 1', 'Row 2', 'Row 3'),
+        suptitle=suptitle,
+    )
 
 # %% [raw] raw_mimetype="text/restructuredtext" tags=[]
 # .. _ug_share:

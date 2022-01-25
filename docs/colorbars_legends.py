@@ -128,7 +128,7 @@ fig.format(
 #    from a list of artists. For :ref:`2D commands <ug_2dplots>`, this will "stack"
 #    colorbars in outer locations, or replace existing colorbars in inset locations.
 #    By contrast, specifying the same `legend` location will always add items to
-#    the same legend rather than "stacking" them.
+#    the same legend rather than creating "stacks".
 
 # %%
 import proplot as pplt
@@ -265,9 +265,8 @@ for ax, title in zip(axs, ('2D {} #1', '2D {} #2', 'Line {} #1', 'Line {} #2')):
 # ---------------------
 #
 # The basic usage of `proplot.axes.Axes.colorbar` and `proplot.figure.Figure.colorbar`
-# includes a few useful improvements compared to the matplotlib commands. The following
-# feature is useful for labeling discrete plot elements that bear some numeric
-# relationship to one another:
+# is somehwat more flexible thatn in matplotlib. The following core feature is useful
+# for labeling discrete plot elements that bear some numeric relationship to each other:
 
 # * Calling ``colorbar`` with a list of `~matplotlib.artist.Artist`\ s,
 #   a `~matplotlib.colors.Colormap` name or object, or a list of colors
@@ -351,8 +350,8 @@ fig.format(
 # -------------------
 #
 # The basic usage of `proplot.axes.Axes.legend` and `proplot.figure.Figure.legend`
-# includes a few useful improvements compared to the matplotlib commands.
-# The following core features are the same as matplotlib:
+# is somewhat more flexible than in matplotlib. The following core features are
+# the same as matplotlib:
 
 # * Calling ``legend`` without positional arguments will
 #   automatically fill the legend with the labeled artist in the
@@ -385,7 +384,7 @@ fig.format(
 #   the `label` keyword to a contouring command (e.g., `~proplot.axes.PlotAxes.contour`
 #   or `~proplot.axes.PlotAxes.contourf`).
 #
-# `proplot.axes.Axes.legend` and `proplot.figure.Figure.legend` also include a few
+# `proplot.axes.Axes.legend` and `proplot.figure.Figure.legend` also include some
 # additional features. To draw legends with centered rows, pass ``center=True`` or
 # a list of lists of "handles" to ``legend`` (this stacks several single-row,
 # horizontally centered legends and adds an encompassing frame behind them).

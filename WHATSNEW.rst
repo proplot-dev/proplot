@@ -61,33 +61,40 @@ Deprecated
   recommend  the alternative ``locator_kw={'nbins': n}`` (:commit:`b94a9b1e`).
   The new default locator `~proplot.ticker.DiscreteLocator` means that these
   settings should not need to be used as much (see below).
+* Constructor funcs `~proplot.constructor.Locator`, `~proplot.constructor.Formatter`,
+  `~proplot.constructor.Scale`, and `~proplot.constructor.Norm` now return a `copy.copy`
+  when an instance of the relevant class is passed (:commit:`521351a2`). This helps
+  prevent unexpected and hard-to-debug behavior caused by reusing mutable instances.
 
 Style changes
 -------------
 
-* Disable auto-reversal of dependent variable coordinates when the axis limits
+* Disable automatic reversal of dependent variable coordinates when the axis limits
   were previously fixed, and add documentation for this feature (:issue:`300`).
-* Apply the :rcraw:`geo.round` setting when instantiating polar basemap projections
-  (previously this was only used for cartopy projections) (:commit:`5f1c67cc`).
+* Automatically disable minor colorbar and axis ticks when applying non-numeric major
+  tick labels with a `~matplotlib.ticker.FixedFormatter` (:commit:`c747ae44`).
+* Use `~proplot.ticker.DiscreteLocator` for major/minor discrete colorbar ticks instead
+  of `~matplotlib.ticker.FixedLocator` and auto-update the tick selection whenever
+  the axes is drawn (:commit:`b94a9b1e`, :commit:`92bb937e`, :commit:`302c239e`).
+* Disable matplotlib's auto-removal of gridlines in presence of `pcolor` plots in all
+  versions and silence the matplotlib 3.5 deprecation warning (:commit:`ba405ac0`).
+  Now gridlines appear on top of pcolor meshes by default, just like filled contours.
+* Apply the :rcraw:`geo.round` setting (formerly :rcraw:`cartopy.circular`) when
+  instantiating polar basemap projections (:commit:`5f1c67cc`). Previously
+  this setting was only used for cartopy projections.
+* Put outer legends or colorbars on the same panel axes if their `align` values
+  differ and (for colorbars only) their `length`\ s do not overlap (:commit:`91ac49b7`).
+  This permits e.g. aligned "bottom left" and "bottom right" outer legends.
+* Change the sample `~proplot.demos.show_fonts` text with `math` keyword to show math
+  or non-math, sort fonts by input order or by their appearance in the `rc` list, and
+  permit `FontProperties` or fontspec input and property keywords (:commit:`34d6ec14`).
+* Change :rcraw:`mathtext.default` from ``'regular'`` to ``'it'``, and change ``'sans'``
+  appearing in the :rcraw:`mathtext.rm`, :rcraw:`mathtext.sf`, :rcraw:`mathtext.bf`, and
+  :rcraw:`mathtext.it` settings to ``'regular'`` (:commit:`323`). See below for details.
 * Change :rcraw:`grid.labelpad` from ``4.0`` to ``3.0`` (:commit:`f95b828a`). This
   makes cartopy grid labels and polar axes labels a bit more compact.
 * Change :rcraw:`legend.handleheight` from ``1.5`` to ``2.0`` for less compressed
   `~matplotlib.patches.Patch` handles (e.g. with error shading) (:commit:`2a5f6b48`).
-* Disable matplotlib's auto-removal of gridlines in presence of `pcolor` plots in all
-  versions and silence the matplotlib 3.5 deprecation warning (:commit:`ba405ac0`).
-  Now gridlines appear on top of pcolor meshes by default, just like filled contours.
-* Change :rcraw:`mathtext.default` from ``'regular'`` to ``'it'`` and change ``'sans'``
-  to ``'regular'`` in :rcraw:`mathtext.rm`, :rcraw:`mathtext.sf`, :rcraw:`mathtext.bf`,
-  and :rcraw:`mathtext.it` (:commit:`323`). See below for details.
-* Change the sample `~proplot.demos.show_fonts` text with `math` keyword to show math
-  or non-math, sort fonts by input order or by their appearance in the `rc` list, and
-  permit `FontProperties` or fontspec input and property keywords (:commit:`34d6ec14`).
-* Use `~proplot.ticker.DiscreteLocator` for major/minor discrete colorbar ticks instead
-  of `~matplotlib.ticker.FixedLocator` and auto-update the tick selection whenever
-  the axes is drawn (:commit:`b94a9b1e`, :commit:`92bb937e`, :commit:`302c239e`).
-* Put outer legends or colorbars on the same panel axes if their `align` values
-  differ and (for colorbars only) their `length`\ s do not overlap (:commit:`91ac49b7`).
-  This permits e.g. aligned "bottom left" and "bottom right" outer legends.
 
 Features
 --------
@@ -147,8 +154,6 @@ Features
 * Add `proplot.ticker.DiscreteLocator` analogous to `~matplotlib.ticker.FixedLocator`
   that ticks from a subset of fixed values, and add a `discrete` keyword and register
   as ``'discrete'`` in `proplot.constructor.Locator` (:commit:`b94a9b1e`).
-* Auto disable minor colorbar and axis ticks when major ticks have non-numeric
-  labels set by `~matplotlib.ticker.FixedFormatter` (:commit:`c747ae44`).
 * Support specifying `transform` plotting command arguments as registered cartopy
   projections rather than `~cartopy.crs.CRS` instances (:commit:`c7a9fc95`).
 * Permit passing `vmin` and `vmax` to `proplot.axes.Axes.colorbar`, as quick

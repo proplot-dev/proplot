@@ -2925,8 +2925,9 @@ class ColorDatabase(MutableMapping, dict):
         * For a color cycle, use e.g. ``color=('colorblind', 2)``.
           The number is the color list index.
 
-        This works with anywhere that colors are used in matplotlib, for example
-        as ``'color'``, ``'edgecolor'``, or ``'facecolor'`` arguments.
+        This works everywhere that colors are used in matplotlib, for
+        example as `color`, `edgecolor', or `facecolor` keyword arguments
+        passed to `~proplot.axes.PlotAxes` commands.
         """
         key = self._parse_key(key)
         return dict.__getitem__(self, key)
