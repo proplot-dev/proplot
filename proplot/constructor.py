@@ -10,6 +10,7 @@ The constructor functions used to build class instances from simple shorthand ar
 # NOTE: Used to include the raw variable names that define string keys as
 # part of documentation, but this is redundant and pollutes the namespace.
 # User should just inspect docstrings, use trial-error, or see online tables.
+import copy
 import os
 import re
 from functools import partial
@@ -851,9 +852,9 @@ def Norm(norm, *args, **kwargs):
     ----------
     norm : str or `~matplotlib.colors.Normalize`
         The normalizer specification. If a `~matplotlib.colors.Normalize`
-        instance already, the input argument is simply returned. Otherwise,
-        `norm` should be a string corresponding to one of the "registered"
-        colormap normalizers (see below table).
+        instance already, a `copy.copy` of the instance is returned.
+        Otherwise, `norm` should be a string corresponding to one of
+        the "registered" colormap normalizers (see below table).
 
         If `norm` is a list or tuple and the first element is a "registered"
         normalizer name, subsequent elements are passed to the normalizer class
@@ -892,7 +893,7 @@ def Norm(norm, *args, **kwargs):
     if np.iterable(norm) and not isinstance(norm, str):
         norm, *args = *norm, *args
     if isinstance(norm, mcolors.Normalize):
-        return norm
+        return copy.copy(norm)
     if not isinstance(norm, str):
         raise ValueError(f'Invalid norm name {norm!r}. Must be string.')
     if norm not in NORMS:
@@ -915,8 +916,8 @@ def Locator(locator, *args, index=False, discrete=False, **kwargs):
     locator : `~matplotlib.ticker.Locator`, str, bool, float, or sequence
         The locator specification, interpreted as follows:
 
-        * If a `~matplotlib.ticker.Locator` instance already, the input
-          argument is simply returned.
+        * If a `~matplotlib.ticker.Locator` instance already,
+          a `copy.copy` of the instance is returned.
         * If ``False``, a `~matplotlib.ticker.NullLocator` is used, and if
           ``True``, the default `~matplotlib.ticker.AutoLocator` is used.
         * If a number, this specifies the *step size* between tick locations.
@@ -995,7 +996,7 @@ def Locator(locator, *args, index=False, discrete=False, **kwargs):
     ):
         locator, *args = *locator, *args
     if isinstance(locator, mticker.Locator):
-        return locator
+        return copy.copy(locator)
     if isinstance(locator, str):
         if locator == 'index':  # defaults
             args = args or (1,)
@@ -1042,8 +1043,8 @@ def Formatter(formatter, *args, date=False, index=False, **kwargs):
     formatter : `~matplotlib.ticker.Formatter`, str, bool, callable, or sequence
         The formatter specification, interpreted as follows:
 
-        * If a `~matplotlib.ticker.Formatter` instance already, the input
-          argument is simply returned.
+        * If a `~matplotlib.ticker.Formatter` instance already,
+          a `copy.copy` of the instance is returned.
         * If ``False``, a `~matplotlib.ticker.NullFormatter` is used, and if
           ``True``, the default `~proplot.ticker.AutoFormatter` is used.
         * If a function, the labels will be generated using this function.
@@ -1142,7 +1143,7 @@ def Formatter(formatter, *args, date=False, index=False, **kwargs):
     ):
         formatter, *args = *formatter, *args
     if isinstance(formatter, mticker.Formatter):
-        return formatter
+        return copy.copy(formatter)
     if isinstance(formatter, str):
         if re.search(r'{x(:.+)?}', formatter):  # str.format
             formatter = mticker.StrMethodFormatter(formatter, *args, **kwargs)
@@ -1177,10 +1178,10 @@ def Scale(scale, *args, **kwargs):
     Parameters
     ----------
     scale : `~matplotlib.scale.ScaleBase`, str, or tuple
-        The axis scale specification. If a `~matplotlib.scale.ScaleBase`
-        instance already, the input argument is simply returned. Otherwise,
-        `scale` should be a string corresponding to one of the
-        "registered" axis scales or axis scale presets (see below table).
+        The axis scale specification. If a `~matplotlib.scale.ScaleBase` instance
+        already, a `copy.copy` of the instance is returned. Otherwise, `scale`
+        should be a string corresponding to one of the "registered" axis scales
+        or axis scale presets (see below table).
 
         If `scale` is a list or tuple and the first element is a
         "registered" scale name, subsequent elements are passed to the
@@ -1241,7 +1242,7 @@ def Scale(scale, *args, **kwargs):
     if np.iterable(scale) and not isinstance(scale, str):
         scale, *args = *scale, *args
     if isinstance(scale, mscale.ScaleBase):
-        return scale
+        return copy.copy(scale)
     if not isinstance(scale, str):
         raise ValueError(f'Invalid scale name {scale!r}. Must be string.')
     scale = scale.lower()

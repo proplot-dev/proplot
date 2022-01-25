@@ -43,11 +43,12 @@ def _flush_guide_kw(obj, name, kwargs):
     """
     # NOTE: Here we *do* want to overwrite properties in dictionary. Indicates
     # updating kwargs during parsing (probably only relevant for ax.parametric).
-    # WARNING: Absolutely *critical* to clear the dictionary after applied from
-    # the object. Otherwise e.g. use same DiscreteLocator for two colorbars.
+    # NOTE: Previously had problems reusing same keyword arguments for more than one
+    # colorbar() because locator or formatter axis would get reset. Old solution was
+    # to delete the _guide_kw but that destroyed default behavior. New solution is
+    # to keep _guide_kw but have constructor functions return shallow copies.
     opts = getattr(obj, f'_{name}_kw', None)
     if opts:
-        delattr(obj, f'_{name}_kw')
         _update_kw(kwargs, overwrite=False, **opts)
     if isinstance(obj, (tuple, list, np.ndarray)):
         for member in obj:  # possibly iterate over matplotlib tuple/list subclasses
