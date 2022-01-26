@@ -79,10 +79,10 @@ into the figure architecture and apply settings to several different objects.
 It seems like there should be a more unified, straightforward way to change
 settings without sacrificing the advantages of object-oriented design.
 
-Solution
---------
+Changes
+-------
 
-Proplot introduces the `proplot.axes.Axes.format` command to resolve this.
+Proplot includes the `proplot.axes.Axes.format` command to resolve this.
 Think of this as an expanded and thoroughly documented version of the
 `matplotlib.artist.Artist.update` command. `~proplot.axes.Axes.format` can modify things
 like axis labels and titles and apply new :ref:`"rc" settings <why_rc>` to existing
@@ -155,8 +155,8 @@ are referenced with "registered" string names,
 as are `basemap projections <https://matplotlib.org/basemap/users/mapsetup.html>`__.
 So, why not "register" everything else?
 
-Solution
---------
+Changes
+-------
 
 In proplot, tick locators, tick formatters, axis scales, property cycles, colormaps,
 normalizers, and `cartopy`_ projections are all "registered". This is accomplished
@@ -237,8 +237,8 @@ parameters like `left`, `bottom`, and `wspace`. However, this algorithm is disab
 by default, and it cannot apply different amounts of spacing between different
 subplot row and column boundaries.
 
-Solution
---------
+Changes
+-------
 
 By default, proplot fixes the physical dimensions of a *reference subplot* rather
 than the figure. The reference subplot dimensions are controlled with the `refwidth`,
@@ -311,8 +311,8 @@ valuable page space. It is also generally necessary to add "a-b-c" labels to
 figures with multiple subplots before submitting them to publications, but
 matplotlib has no built-in way of doing this.
 
-Solution
---------
+Changes
+-------
 
 Proplot makes it easier to work with multiple subplots and create clear,
 concise figures.
@@ -365,8 +365,8 @@ This can cause asymmetry in figures with more than one subplot. It is also gener
 difficult to draw "inset" colorbars in matplotlib and to generate outer colorbars
 with consistent widths (i.e., not too "skinny" or "fat").
 
-Solution
---------
+Changes
+-------
 
 Proplot includes a simple framework for drawing colorbars and legends
 that reference :ref:`individual subplots <ug_guides_loc>` and
@@ -416,8 +416,8 @@ A few common plotting tasks take a lot of work using matplotlib alone. The `seab
 `xarray`_, and `pandas`_ packages offer improvements, but it would be nice to
 have this functionality built right into matplotlib's interface.
 
-Solution
---------
+Changes
+-------
 
 Proplot uses the `~proplot.axes.PlotAxes` subclass to add various `seaborn`_,
 `xarray`_, and `pandas`_ features to existing matplotlib plotting commands
@@ -548,8 +548,8 @@ rather than longitude-latitude coordinates. This choice is confusing for
 many users, since the vast majority of geophysical data are stored with
 longitude-latitude (i.e., "Plate Carrée") coordinates.
 
-Solution
---------
+Changes
+-------
 
 Proplot can succinctly create detailed geographic plots using either cartopy or
 basemap as "backends". By default, cartopy is used, but basemap can be used by passing
@@ -609,8 +609,8 @@ learning a different syntax from matplotlib, and tends to encourage using the
 ``plot`` commands also include features that would be useful additions to matplotlib
 in their own right, without requiring special containers and a separate interface.
 
-Solution
---------
+Changes
+-------
 
 Proplot reproduces many of the `xarray.DataArray.plot`,
 `pandas.DataFrame.plot`, and `pandas.Series.plot`
@@ -676,8 +676,8 @@ However in our opinion, it is not very aesthetically pleasing. It is also
 difficult to switch to other fonts on limited systems or systems with fonts
 stored in incompatible file formats (see :ref:`below <why_dotproplot>`).
 
-Solution
---------
+Changes
+-------
 
 Proplot adds new colormaps, colors, and fonts to help you make more
 aesthetically pleasing figures.
@@ -732,12 +732,12 @@ scratch. Meanwhile, property cycles used for individual plot elements are implem
 with the `~cycler.Cycler` class. They are easier to modify but they cannot be
 "registered" by name like colormaps.
 
-The `seaborn`_ package introduces "color palettes" to make working with colormaps
-and property cycles easier, but it would be nice to have similar features integrated
-more closely with matplotlib.
+The `seaborn`_ package includes "color palettes" to make working with colormaps
+and property cycles easier, but it would be nice to have similar features
+integrated more closely with matplotlib's colormap and property cycle constructs.
 
-Solution
---------
+Changes
+-------
 
 Proplot tries to make it easy to manipulate colormaps and property cycles.
 
@@ -795,8 +795,8 @@ readjusted.
 Matplotlib also requires users to set the figure size `figsize` in inches.
 This may be confusing for users outside of the United States.
 
-Solution
---------
+Changes
+-------
 
 Proplot uses physical units for the `~proplot.gridspec.GridSpec` keywords
 `left`, `right`, `top`, `bottom`, `wspace`, `hspace`, `pad`, `outerpad`, and
@@ -834,8 +834,8 @@ useful to set all at once, like spine and label colors. It might also
 be useful to change these settings for individual subplots rather
 than globally.
 
-Solution
---------
+Changes
+-------
 
 In proplot, you can use the `~proplot.config.rc` object to change both native
 matplotlib settings (found in `~proplot.config.rc_matplotlib`) and added proplot
@@ -872,8 +872,8 @@ future use. It is also difficult to get matplotlib to use custom ``.ttf`` and
 ``.otf`` font files, which may be desirable when you are working on
 Linux servers with limited font selections.
 
-Solution
---------
+Changes
+-------
 
 Proplot settings can be changed persistently by editing the default ``proplotrc``
 file in the location given by `~proplot.config.Configurator.user_file` (this is
