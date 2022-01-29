@@ -1199,7 +1199,7 @@ class Axes(maxes.Axes):
         ncol = _not_none(ncols=ncols, ncol=ncol)
         order = _not_none(order, 'C')
         frameon = _not_none(frame=frame, frameon=frameon, default=rc['legend.frameon'])
-        fontsize = _not_none(kwargs.pop('fontsize', None), rc['legend.fontsize'])
+        fontsize = _not_none(fontsize, rc['legend.fontsize'])
         titlefontsize = _not_none(
             title_fontsize=kwargs.pop('title_fontsize', None),
             titlefontsize=titlefontsize,
