@@ -776,7 +776,7 @@ class Figure(mfigure.Figure):
         # Parse arguments
         proj = _not_none(proj=proj, projection=projection, default='cartesian')
         proj_kw = _not_none(proj_kw=proj_kw, projection_kw=projection_kw, default={})
-        backend = self._parse_backend(basemap, backend)
+        backend = self._parse_backend(backend, basemap)
         if isinstance(proj, str):
             proj = proj.lower()
         if isinstance(self, paxes.Axes):
@@ -1134,7 +1134,7 @@ class Figure(mfigure.Figure):
         proj = _axes_dict(naxs, proj, kw=False, default='cartesian')
         proj_kw = _not_none(projection_kw=projection_kw, proj_kw=proj_kw) or {}
         proj_kw = _axes_dict(naxs, proj_kw, kw=True)
-        backend = self._parse_backend(basemap, backend)
+        backend = self._parse_backend(backend, basemap)
         backend = _axes_dict(naxs, backend, kw=False)
         axes_kw = {
             num: {'proj': proj[num], 'proj_kw': proj_kw[num], 'backend': backend[num]}

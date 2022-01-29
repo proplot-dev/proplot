@@ -57,6 +57,7 @@ from . import (  # noqa: F401
     warnings
 )
 from .versions import _version_mpl, _version_cartopy  # noqa: F401
+from .warnings import ProplotWarning  # noqa: F401
 
 
 # Style aliases. We use this rather than matplotlib's normalize_kwargs and _alias_maps.
