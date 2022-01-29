@@ -808,8 +808,8 @@ string units for these keywords, for the `~proplot.figure.Figure` keywords
 `figsize`, `figwidth`, `figheight`, `refwidth`, and `refheight`, and in a
 few other places. This is powered by the physical units engine `~proplot.utils.units`.
 Acceptable units include inches, centimeters, millimeters,
-pixels, `points <https://en.wikipedia.org/wiki/Point_(typography)>`__, `picas
-<https://en.wikipedia.org/wiki/Pica_(typography)>`__, and (a table of acceptable
+pixels, `points <https://en.wikipedia.org/wiki/Point_(typography)>`__, and `picas
+<https://en.wikipedia.org/wiki/Pica_(typography)>`__ (a table of acceptable
 units is found :ref:`here <units_table>`). Note the `~proplot.utils.units` engine
 also translates rc settings assigned to `~proplot.config.rc_matplotlib` and
 `~proplot.config.rc_proplot`, e.g. :rcraw:`subplots.refwidth`,

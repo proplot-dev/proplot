@@ -1607,7 +1607,7 @@ class Figure(mfigure.Figure):
         space=None, pad=None, width=None, **kwargs
     ):
         """
-        Draw a colorbar along the side of the figure.
+        Add a colorbar along the side of the figure.
 
         Parameters
         ----------
@@ -1676,7 +1676,7 @@ class Figure(mfigure.Figure):
         space=None, pad=None, width=None, **kwargs
     ):
         """
-        Draw a legend along the side of the figure.
+        Add a legend along the side of the figure.
 
         Parameters
         ----------

@@ -471,7 +471,7 @@ class ExpScale(_Scale, mscale.ScaleBase):
 
         (\log_a(x) - \log_a(C))/b
 
-    which in appearence is equivalent to `LogScale` since it is just a linear
+    which in appearance is equivalent to `LogScale` since it is just a linear
     transformation of the logarithm.
     """
     #: The registered scale name

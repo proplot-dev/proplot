@@ -48,7 +48,7 @@
 #    so that the figure backgrounds shown by the `matplotlib backend
 #    <https://matplotlib.org/faq/usage_faq#what-is-a-backend>`__ are light gray
 #    (the :rcraw:`savefig.facecolor` applied to saved figures is still white).
-#    Proplot also controls the appearence of figures in Jupyter notebooks
+#    Proplot also controls the appearance of figures in Jupyter notebooks
 #    using the new :rcraw:`inlinefmt` setting, which is passed to
 #    `~proplot.config.config_inline_backend` on import. This
 #    imposes a higher-quality default `"inline" format
@@ -232,8 +232,9 @@ fig.save('~/example4.png')
 #   In other words, if you make a single subplot with ``fig, axs = pplt.subplots()``,
 #   then ``axs[0].method(...)`` is equivalent to ``axs.method(...)``.
 # * `~proplot.gridspec.SubplotGrid` permits list-like 1D indexing, e.g. ``axs[1]``
-#   to return the second subplot. The subplots in the grid are sorted by `number`
-#   (see :ref:`this page <ug_abc>` for details on changing the `number` order).
+#   to return the second subplot. The subplots in the grid are sorted by
+#   `~proplot.axes.Axes.number` (see :ref:`this page <ug_abc>` for details
+#   on changing the `~proplot.axes.Axes.number` order).
 # * `~proplot.gridspec.SubplotGrid` permits array-like 2D indexing, e.g.
 #   ``axs[1, 0]`` to return the subplot in the second row, first column, or
 #   ``axs[:, 0]`` to return a `~proplot.gridspec.SubplotGrid` of every subplot
@@ -242,8 +243,7 @@ fig.save('~/example4.png')
 #
 # `~proplot.gridspec.SubplotGrid` includes methods for working
 # simultaneously with different subplots. Currently, this includes
-# the `~proplot.gridspec.SubplotGrid` commands
-# `~proplot.gridspec.SubplotGrid.format`,
+# the commands `~proplot.gridspec.SubplotGrid.format`,
 # `~proplot.gridspec.SubplotGrid.panel_axes`,
 # `~proplot.gridspec.SubplotGrid.inset_axes`,
 # `~proplot.gridspec.SubplotGrid.altx`, and `~proplot.gridspec.SubplotGrid.alty`.
@@ -257,7 +257,7 @@ fig.save('~/example4.png')
 #    `~proplot.figure.Figure.add_subplot`, a `~proplot.gridspec.SubplotGrid`
 #    containing the numbered subplots is available via the
 #    `proplot.figure.Figure.subplotgrid` property. As with subplots made
-#    all-at-once, the subplots in the grid are sorted by `number`.
+#    all-at-once, the subplots in the grid are sorted by `~proplot.axes.Axes.number`.
 
 # %%
 import proplot as pplt
@@ -353,7 +353,9 @@ fig.colorbar(m, loc='b', label='label')
 # a "python-style" object-oriented interface with instance-level commands
 # like `matplotlib.axes.Axes.set_title`, and a "MATLAB-style" interface
 # that tracks current axes and provides global commands like
-# `matplotlib.pyplot.title`. Proplot provides the ``format`` command as an
+# `matplotlib.pyplot.title`.
+#
+# Proplot provides the ``format`` command as an
 # alternative "python-style" command for formatting a variety of plot elements.
 # While matplotlib's one-liner commands still work, ``format`` only needs to be
 # called once and tends to cut down on boilerplate code. You can call
@@ -399,17 +401,16 @@ fig.colorbar(m, loc='b', label='label')
 #   See :ref:`this section <ug_config>` for more on rc settings.
 #
 # A ``format`` command is available on every figure and axes.
-# Notably, `proplot.figure.Figure.format` accepts both figure and axes
-# settings (applying them to each numbered subplot by default). Likewise,
-# `proplot.axes.Axes.format` accepts both axes and figure settings.
-# There is also a `proplot.gridspec.SubplotGrid.format` command
-# that can be used to change settings for a subset of subplots
-# -- for example, ``axs[:2].format(xtickminor=True)``
+# `proplot.figure.Figure.format` accepts both figure and axes
+# settings (applying them to each numbered subplot by default).
+# Similarly, `proplot.axes.Axes.format` accepts both axes and figure
+# settings. There is also a `proplot.gridspec.SubplotGrid.format`
+# command that can be used to change settings for a subset of
+# subplots -- for example, ``axs[:2].format(xtickminor=True)``
 # turns on minor ticks for the first two subplots (see
 # :ref:`this section <ug_subplotgrid>` for more on subplot grids).
-#
-# The below example shows the many different keyword arguments
-# accepted by ``format``, and demonstrates how ``format`` can be
+# The below example shows the many keyword arguments accepted
+# by ``format``, and demonstrates how ``format`` can be
 # used to succinctly and efficiently customize plots.
 
 # %%

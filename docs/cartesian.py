@@ -359,8 +359,8 @@ pplt.rc.reset()
 #   axis scales now accept the keywords `base`, `linthresh`, `linscale`, and
 #   `subs` rather than keywords with trailing ``x`` or ``y``.
 #
-# Proplot also includes a few new axis scales. The ``'cutoff'`` scale (see
-# `~proplot.scale.CutoffScale`) is useful when the statistical distribution
+# Proplot also includes a few new axis scales. The ``'cutoff'`` scale
+# `~proplot.scale.CutoffScale` is useful when the statistical distribution
 # of your data is very unusual. The ``'sine'`` scale `~proplot.scale.SineLatitudeScale`
 # scales the axis with a sine function (resulting in an area-weighted spherical latitude
 # coordinate) and the ``'mercator'`` scale `~proplot.scale.MercatorLatitudeScale`

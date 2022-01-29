@@ -469,7 +469,7 @@ for ax, gamma in zip(axs, (0.7, 1.0, 1.4)):
 # `HCLWizard <http://hclwizard.org:64230/hclwizard/>`__,
 # `HCL picker <http://tristen.ca/hcl-picker/>`__,
 # `SciVisColor <https://sciviscolor.org/home/colormaps/>`__,
-# and `CCC-tool <https://ccctool.com>`__,
+# and `CCC-tool <https://ccctool.com>`__.
 #
 # To add colormaps downloaded from any of these sources, save the color data file
 # to the ``cmaps`` subfolder inside `~proplot.config.Configurator.user_folder`,
@@ -477,6 +477,6 @@ for ax, gamma in zip(axs, (0.7, 1.0, 1.4)):
 # or an arbitrary parent directory (see `~proplot.config.Configurator.local_folders`).
 # After adding the file, call `~proplot.config.register_cmaps` or restart your python
 # session. You can also use `~proplot.colors.ContinuousColormap.from_file` or manually
-# pass `~proplot.config.ContinuousColormap` instances or file paths to
+# pass `~proplot.colors.ContinuousColormap` instances or file paths to
 # `~proplot.config.register_cmaps`. See `~proplot.config.register_cmaps`
 # for a table of recognized file extensions.

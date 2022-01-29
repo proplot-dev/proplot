@@ -45,9 +45,8 @@
 # A-b-c labels
 # ------------
 #
-# Proplot can quickly add "a-b-c" labels to subplots. This is possible because we
-# assign a `~proplot.axes.Axes.number` to each subplot.
-#
+# Proplot can quickly add "a-b-c" labels using the
+# `~proplot.axes.Axes.number` assigned to each subplot.
 # If you add subplots one-by-one with `~proplot.figure.Figure.add_subplot`, you can
 # manually specify the number with the `number` keyword. By default, the subplot number
 # is incremented by ``1`` each time you call `~proplot.figure.Figure.add_subplot`.
@@ -213,8 +212,8 @@ pplt.rc.reset()
 # %% [raw] raw_mimetype="text/restructuredtext"
 # .. _ug_tight:
 #
-# Spaces and tight layout
-# -----------------------
+# Spacing and tight layout
+# ------------------------
 #
 # Proplot automatically adjusts the spacing between subplots
 # by default to accomadate labels using its own `"tight layout" algorithm
@@ -319,8 +318,8 @@ for (name1, equal), (name2, group) in zip(equals, groups):
 # %% [raw] raw_mimetype="text/restructuredtext" tags=[]
 # .. _ug_share:
 #
-# Axis sharing
-# ------------
+# Axis label sharing
+# ------------------
 #
 # Figures with lots of subplots often have :ref:`redundant labels <why_redundant>`.
 # To help address this, the matplotlib command `matplotlib.pyplot.subplots` includes

@@ -2874,7 +2874,7 @@ class Axes(maxes.Axes):
     @docstring._snippet_manager
     def legend(self, handles=None, labels=None, loc=None, location=None, **kwargs):
         """
-        Add an *inset* legend or *outer* legend along the edge of the axes.
+        Add an inset legend or outer legend along the edge of the axes.
 
         Parameters
         ----------
@@ -3068,7 +3068,7 @@ class Axes(maxes.Axes):
     def number(self):
         """
         The axes number. This controls the order of a-b-c labels and the
-        order of appearence in the `~proplot.gridspec.SubplotGrid` returned
+        order of appearance in the `~proplot.gridspec.SubplotGrid` returned
         by `~proplot.figure.Figure.subplots`.
         """
         return self._number
