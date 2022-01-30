@@ -2585,14 +2585,6 @@ class PlotAxes(base.Axes):
         # NOTE: The level restriction should have no effect if levels were generated
         # automatically. However want to apply these to manual-input levels as well.
         if levels is not None:
-            # Apply default locator
-            locator = values if np.iterable(values) else levels
-            locator = _restrict_levels(locator)
-            if norm in ('segments', 'segmented') or isinstance(norm, pcolors.SegmentedNorm):  # noqa: E501
-                locator = mticker.FixedLocator(locator)
-            else:
-                locator = pticker.DiscreteLocator(locator)
-            guides._add_guide_kw('colorbar', kwargs, locator=locator)
             # Apply default norm
             levels = _restrict_levels(levels)
             if len(levels) == 0:  # skip
@@ -2605,6 +2597,15 @@ class PlotAxes(base.Axes):
                     norm = _not_none(norm, 'segmented')
             if norm in ('segments', 'segmented'):
                 norm_kw['levels'] = levels
+            # Apply default locator
+            # WARNING: This must come after default application of segmented norm
+            locator = values if np.iterable(values) else levels
+            locator = _restrict_levels(locator)
+            if norm in ('segments', 'segmented') or isinstance(norm, pcolors.SegmentedNorm):  # noqa: E501
+                locator = mticker.FixedLocator(locator)
+            else:
+                locator = pticker.DiscreteLocator(locator)
+            guides._add_guide_kw('colorbar', kwargs, locator=locator)
 
         return levels, vmin, vmax, norm, norm_kw, kwargs
 
