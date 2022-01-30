@@ -377,10 +377,8 @@ leftlabels_kw, toplabels_kw, rightlabels_kw, bottomlabels_kw : dict-like, option
 figtitle
     Alias for `suptitle`.
 suptitle : str, optional
-    The figure "super" title, centered between the left edge of the lefmost
-    column of subplots and the right edge of the rightmost column of subplots, and
-    automatically offset above figure titles. This is an improvement on matplotlib's
-    "super" title, which just centers the text between figure edges.
+    The figure "super" title, centered between the left edge of the leftmost
+    subplot and the right edge of the rightmost subplot.
 suptitlepad : float, default: :rc:`suptitle.pad`
     The padding between the super title and the axes content.
     %(units.pt)s
@@ -1059,7 +1057,10 @@ class Axes(maxes.Axes):
             pop = _pop_params(kwargs, cax._parse_colorbar_arg, ignore_internal=True)
             locator_default = formatter_default = None
             if pop:
-                warnings._warn_proplot(f'Input is already a ScalarMappable. Ignoring unused keyword arg(s): {pop}')  # noqa: E501
+                warnings._warn_proplot(
+                    f'Input is already a ScalarMappable. '
+                    f'Ignoring unused keyword arg(s): {pop}'
+                )
         else:
             result = cax._parse_colorbar_arg(mappable, values, **kwargs)
             mappable, locator_default, formatter_default, kwargs = result
@@ -1081,6 +1082,8 @@ class Axes(maxes.Axes):
         # Parse the tick locators and formatters
         # NOTE: This auto constructs minor DiscreteLocotors from major DiscreteLocator
         # instances (but bypasses if labels are categorical).
+        # NOTE: Almost always DiscreteLocator will be associated with DiscreteNorm.
+        # But otherwise disable minor ticks or else get issues (see mpl #22233).
         name = 'y' if kwargs.get('orientation') == 'vertical' else 'x'
         axis = cax.yaxis if kwargs.get('orientation') == 'vertical' else cax.xaxis
         locator = _not_none(locator, locator_default, None)
@@ -1092,16 +1095,19 @@ class Axes(maxes.Axes):
             locator = constructor.Locator(locator, **locator_kw)
         if minorlocator is not None:
             minorlocator = constructor.Locator(minorlocator, **minorlocator_kw)
-        elif isinstance(locator, pticker.DiscreteLocator):
-            if categorical:  # never add default minor ticks
+        if isinstance(locator, pticker.DiscreteLocator):
+            if categorical:  # no minor ticks and convert DiscreteLocator
+                locator = mticker.FixedLocator(np.array(locator.locs))
+            elif minorlocator is not None:
                 pass
             elif tickminor or tickminor is None:
                 minorlocator = pticker.DiscreteLocator(np.array(locator.locs), minor=True)  # noqa: E501
-        if tickminor is None:
-            if discrete or categorical:  # never use the default minor locator
-                tickminor = False
-            else:
-                tickminor = rc[name + 'tick.minor.visible']
+        if tickminor is not None:  # whether to apply minorticks_on()
+            pass
+        elif discrete or categorical:  # never use the default minor locator
+            tickminor = False
+        else:
+            tickminor = rc[name + 'tick.minor.visible']
 
         # Special handling for colorbar keyword arguments
         # WARNING: Critical to not pass empty major locators in matplotlib < 3.5
@@ -1640,7 +1646,7 @@ class Axes(maxes.Axes):
         ):
             mappable = [obj[0] for obj in mappable]
 
-        # A colormap instance
+        # Colormap instance
         if isinstance(mappable, mcolors.Colormap) or isinstance(mappable, str):
             cmap = constructor.Colormap(mappable)
             if values is None and isinstance(cmap, pcolors.DiscreteColormap):
@@ -1706,12 +1712,12 @@ class Axes(maxes.Axes):
                 if val is None:
                     val = i
                 ticks.append(val)
-            if not any(isinstance(_, str) for _ in ticks):
-                locator = pticker.DiscreteLocator(ticks)
-            else:
+            if any(isinstance(_, str) for _ in ticks):
                 formatter = mticker.FixedFormatter(list(map(str, ticks)))
                 ticks = np.arange(len(ticks))
                 locator = mticker.FixedLocator(ticks)
+            else:
+                locator = pticker.DiscreteLocator(ticks)
             if len(ticks) == 1:
                 levels = [ticks[0] - 1, ticks[0] + 1]
             else:
