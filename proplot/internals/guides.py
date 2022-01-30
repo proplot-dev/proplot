@@ -26,10 +26,10 @@ def _add_guide_kw(name, kwargs, **opts):
     """
     Add to the `colorbar_kw` or `legend_kw` dict if there are no conflicts.
     """
-    # NOTE: Here we *do not* want to overwrite properties in the dictionary.
-    # Indicates e.g. calling colorbar(extend='both') after pcolor(extend='neither').
+    # NOTE: Here we *do not* want to overwrite properties in dictionary. Indicates
+    # e.g. default locator inferred from levels or default title inferred from metadata.
     kwargs = kwargs.setdefault(f'{name}_kw', {})
-    _update_kw(kwargs, overwrite=True, **opts)
+    _update_kw(kwargs, overwrite=False, **opts)
 
 
 def _cache_guide_kw(obj, name, kwargs):
@@ -51,8 +51,8 @@ def _flush_guide_kw(obj, name, kwargs):
     """
     Flux settings cached on the object into the keyword arguments.
     """
-    # NOTE: Here we *do* want to overwrite properties in dictionary. Indicates
-    # updating kwargs during parsing (probably only relevant for ax.parametric).
+    # NOTE: Here we *do not* overwrite properties in the dictionary by default.
+    # Indicates e.g. calling colorbar(extend='both') after pcolor(extend='neither').
     # NOTE: Previously had problems reusing same keyword arguments for more than one
     # colorbar() because locator or formatter axis would get reset. Old solution was
     # to delete the _guide_kw but that destroyed default behavior. New solution is
