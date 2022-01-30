@@ -1318,8 +1318,12 @@ class Figure(mfigure.Figure):
         # WARNING: In case users added labels then changed the subplot geometry we
         # have to remove labels whose axes don't match the current 'align' axes.
         axs = self._get_align_axes(side)
-        if not labels or not axs:
+        if not axs:
             return  # occurs if called while adding axes
+        if not labels:
+            labels = [None for _ in axs]  # indicates that text should not be updated
+        if not kw and all(_ is None for _ in labels):
+            return  # nothing to update
         if len(labels) != len(axs):
             raise ValueError(
                 f'Got {len(labels)} {side} labels but found {len(axs)} axes '
