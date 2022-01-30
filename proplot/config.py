@@ -1411,16 +1411,17 @@ class Configurator(MutableMapping, dict):
         >>> ax.format(ticklen=5, metalinewidth=2)
         """
         # Add input dictionaries
+        # WARNING: Critical to fully apply
         for arg in args:
             if not isinstance(arg, dict):
-                raise ValueError('Non-dictionary argument {arg!r}.')
+                raise ValueError(f'Non-dictionary argument {arg!r}.')
             kwargs.update(arg)
 
         # Add settings from file
         if file is not None:
-            kw_proplot, kw_matplotlib = self._load_file(file)
-            kwargs.update(kw_proplot)
-            kwargs.update(kw_matplotlib)
+            kw = self._load_file(file)
+            kw = {key: value for key, value in kw.items() if key not in kwargs}
+            kwargs.update(kw)
 
         # Activate context object
         if mode not in range(3):
@@ -1569,10 +1570,11 @@ class Configurator(MutableMapping, dict):
         """
         Return dictionaries of proplot and matplotlib settings loaded from the file.
         """
-        added = set()
+        # WARNING: Critical to not yet apply _get_item_dicts() syncing or else we
+        # can overwrite input settings (e.g. label.size followed by font.size).
         path = os.path.expanduser(path)
-        kw_proplot = {}
-        kw_matplotlib = {}
+        added = set()
+        rcdict = {}
         with open(path, 'r') as fh:
             for idx, line in enumerate(fh):
                 # Strip comments
@@ -1587,7 +1589,7 @@ class Configurator(MutableMapping, dict):
                     warnings._warn_proplot(f'Illegal {message}:\n{line}"')
                     continue
                 # Detect duplicates
-                key, val = map(str.strip, pair)
+                key, value = map(str.strip, pair)
                 if key in added:
                     warnings._warn_proplot(f'Duplicate rc key {key!r} on {message}.')
                 added.add(key)
@@ -1595,25 +1597,26 @@ class Configurator(MutableMapping, dict):
                 with warnings.catch_warnings():
                     warnings.simplefilter('error', warnings.ProplotWarning)
                     try:
-                        ikw_proplot, ikw_matplotlib = self._get_item_dicts(key, val)
+                        key, value = self._validate_key(key, value)
+                        value = self._validate_value(key, value)
                     except KeyError:
                         warnings.simplefilter('default', warnings.ProplotWarning)
                         warnings._warn_proplot(f'Invalid rc key {key!r} on {message}.')
                         continue
                     except ValueError as err:
                         warnings.simplefilter('default', warnings.ProplotWarning)
-                        warnings._warn_proplot(f'Invalid rc val {val!r} for key {key!r} on {message}: {err}')  # noqa: E501
+                        warnings._warn_proplot(f'Invalid rc value {value!r} for key {key!r} on {message}: {err}')  # noqa: E501
                         continue
                     except warnings.ProplotWarning as err:
                         warnings.simplefilter('default', warnings.ProplotWarning)
                         warnings._warn_proplot(f'Outdated rc key {key!r} on {message}: {err}')  # noqa: E501
                         warnings.simplefilter('ignore', warnings.ProplotWarning)
-                        ikw_proplot, ikw_matplotlib = self._get_item_dicts(key, val)
+                        key, value = self._validate_key(key, value)
+                        value = self._validate_value(key, value)
                 # Update the settings
-                kw_proplot.update(ikw_proplot)
-                kw_matplotlib.update(ikw_matplotlib)
+                rcdict[key] = value
 
-        return kw_proplot, kw_matplotlib
+        return rcdict
 
     def load(self, path):
         """
@@ -1628,9 +1631,9 @@ class Configurator(MutableMapping, dict):
         --------
         Configurator.save
         """
-        kw_proplot, kw_matplotlib = self._load_file(path)
-        rc_proplot.update(kw_proplot)
-        rc_matplotlib.update(kw_matplotlib)
+        rcdict = self._load_file(path)
+        for key, value in rcdict.items():
+            self.__setitem__(key, value)
 
     @staticmethod
     def _save_rst(path):
@@ -1688,10 +1691,12 @@ class Configurator(MutableMapping, dict):
         backup : bool, default: True
             Whether to "backup" an existing file by renaming with the suffix ``.bak``
             or overwrite an existing file.
-        comment : bool, default: `user`
-            Whether to comment out the default settings.
+        comment : bool, optional
+            Whether to comment out the default settings. If not passed
+            this takes the same value as `user`.
         description : bool, default: False
-            Whether to include descriptions of each setting as comments.
+            Whether to include descriptions of each setting (as seen in the
+            :ref:`user guide table <ug_rctable>`) as comments.
 
         See also
         --------
