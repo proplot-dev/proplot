@@ -2490,14 +2490,15 @@ class PlotAxes(base.Axes):
         # However want to apply these to manual-input levels as well.
         def _restrict_levels(levels):
             kw = {}
+            levels = np.asarray(levels)
             if len(levels) > 2:
                 kw['atol'] = 1e-5 * np.min(np.diff(levels))
             if nozero:
-                levels = [lev for lev in levels if not np.isclose(lev, 0, **kw)]
+                levels = levels[~np.isclose(levels, 0, **kw)]
             if positive:
-                levels = [lev for lev in levels if lev > 0 or np.isclose(lev, 0, **kw)]
+                levels = levels[(levels > 0) | np.isclose(levels, 0, **kw)]
             if negative:
-                levels = [lev for lev in levels if lev < 0 or np.isclose(lev, 0, **kw)]
+                levels = levels[(levels < 0) | np.isclose(levels, 0, **kw)]
             return levels
 
         # Helper function to sanitize input levels
@@ -2570,26 +2571,29 @@ class PlotAxes(base.Axes):
             pop = _pop_params(kwargs, self._parse_level_count, ignore_internal=True)
             if pop:
                 warnings._warn_proplot(f'Ignoring unused keyword arg(s): {pop}')
-        if not np.iterable(levels) and not skip_autolev:
+        elif not skip_autolev:
             levels, kwargs = self._parse_level_count(
                 *args, levels=levels, norm=norm, norm_kw=norm_kw, extend=extend,
                 negative=negative, positive=positive, **kwargs
             )
+        else:
+            levels = values = None
 
         # Determine default colorbar locator and norm and apply filters
         # NOTE: DiscreteNorm does not currently support vmin and
         # vmax different from level list minimum and maximum.
         # NOTE: The level restriction should have no effect if levels were generated
         # automatically. However want to apply these to manual-input levels as well.
-        locator = values if np.iterable(values) else levels
-        if np.iterable(locator):
+        if levels is not None:
+            # Apply default locator
+            locator = values if np.iterable(values) else levels
             locator = _restrict_levels(locator)
             if norm in ('segments', 'segmented') or isinstance(norm, pcolors.SegmentedNorm):  # noqa: E501
                 locator = mticker.FixedLocator(locator)
             else:
                 locator = pticker.DiscreteLocator(locator)
             guides._add_guide_kw('colorbar', kwargs, locator=locator)
-        if np.iterable(levels):
+            # Apply default norm
             levels = _restrict_levels(levels)
             if len(levels) == 0:  # skip
                 pass
@@ -2602,14 +2606,6 @@ class PlotAxes(base.Axes):
             if norm in ('segments', 'segmented'):
                 norm_kw['levels'] = levels
 
-        # Filter the level boundaries
-        if np.iterable(levels):
-            if nozero:
-                levels = levels[levels != 0]
-            if positive:
-                levels = levels[levels >= 0]
-            if negative:
-                levels = levels[levels <= 0]
         return levels, vmin, vmax, norm, norm_kw, kwargs
 
     def _parse_level_lim(
