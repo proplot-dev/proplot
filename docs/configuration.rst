@@ -66,6 +66,8 @@ you can simply omit the dots. For example, to change the
   fig, ax = pplt.subplots()
   ax.format(titleloc=value)
 
+.. _ug_rcmatplotlib:
+
 Matplotlib settings
 -------------------
 
@@ -82,7 +84,7 @@ Proplot settings
 
 Proplot settings are natively stored in the `~proplot.config.rc_proplot` dictionary.
 They should almost always be changed with `~proplot.config.rc` rather than
-`~proplot.config.rc_proplot` to ensure that :ref:`meta-settings <ug_meta>` are
+`~proplot.config.rc_proplot` to ensure that :ref:`meta-settings <ug_rcmeta>` are
 synced. These settings are not found in `~matplotlib.rcParams` -- they either
 control proplot-managed features (e.g., a-b-c labels and geographic gridlines)
 or they represent existing matplotlib settings with more clear or succinct names.
@@ -109,7 +111,7 @@ Here's a broad overview of the new settings:
 * The ``land``, ``ocean``, ``rivers``, ``lakes``, ``borders``, and ``innerborders``
   categories control geographic content managed by `~proplot.axes.GeoAxes`.
 
-.. _ug_meta:
+.. _ug_rcmeta:
 
 Meta-settings
 -------------
@@ -146,6 +148,8 @@ Here's a broad overview of the "meta-settings":
   (or, equivalently, :rcraw:`gridwidthratio`).
 * Setting :rcraw:`title.border` or :rcraw:`abc.border` to ``True`` automatically
   sets :rcraw:`title.bbox` or :rcraw:`abc.bbox` to ``False``, and vice versa.
+
+.. _ug_rctable:
 
 Table of settings
 -----------------

@@ -203,13 +203,15 @@ Bug fixes
   sides ignored due to using booleans instead of ``'x'``, ``'y'`` (:commit:`2ac40715`).
 * Fix cartopy >= 0.18 issue where longitude gridlines and labels 360 degrees east of
   gridlines on the left edge of the map are unnecessarily removed (:commit:`bcf4fde3`).
-* Fix cartopy <= 0.17 issue where longitude gridlines and labels east of dateline are
+* Fix cartopy < 0.18 issue where longitude gridlines and labels east of dateline are
   not drawn, and remove outdated gridliner monkey patches (:commit:`aa51512b`).
 * Fix issue where tight layout algorithm can fail when labels from another subplot
   span over an empty gridspec slot (:issue:`313`).
 * Fix issue where tight layout algorithm fails in the presence of subplots
   with overlapping or identical subplotspecs (:commit:`87f098b6`).
-* Fix issue where `proplot.axes.Cartesian.format` keyword arguments cannot be
+* Fix issue where super label settings (e.g. size) cannot be updated after they
+  are initially created (:commit:`2cd72fd3`).
+* Fix issue where `proplot.axes.CartesianAxes.format` keyword arguments cannot be
   passed to `~proplot.axes.Axes.panel_axes` (:commit:`1b3d0d48`).
 * Fix issue where outer colorbars are drawn twice due to adding them as both
   figure-wide axes and child axes (:issue:`304`).

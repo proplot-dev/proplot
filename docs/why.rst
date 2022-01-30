@@ -820,6 +820,12 @@ Links
 
 * For more on physical units,
   see :ref:`this page <ug_units>`.
+* For more on `~proplot.gridspec.GridSpec` spacing units,
+  see :ref:`this page <ug_tight>`
+* For more on colorbar width units,
+  see :ref:`this page <ug_colorbar>`,
+* For more on panel width units,
+  see :ref:`this page <ug_panels>`,
 
 .. _why_rc:
 
@@ -840,7 +846,7 @@ Changes
 In proplot, you can use the `~proplot.config.rc` object to change both native
 matplotlib settings (found in `~proplot.config.rc_matplotlib`) and added proplot
 settings (found in `~proplot.config.rc_proplot`). Assigned settings are always
-validated, and special settings like ``meta.edgecolor``, ``meta.linewidth``, and
+validated, and "meta" settings like ``meta.edgecolor``, ``meta.linewidth``, and
 ``font.smallsize`` can be used to update many settings all at once. Settings can
 be changed with ``pplt.rc.key = value``, ``pplt.rc[key] = value``,
 ``pplt.rc.update(key=value)``, using `proplot.axes.Axes.format`, or using
@@ -854,8 +860,14 @@ Links
 
 * For an introduction,
   see :ref:`this page <ug_rc>`.
-* For more on global settings,
+* For more on changing settings,
   see :ref:`this page <ug_config>`.
+* For more on proplot settings,
+  see :ref:`this page <ug_rcproplot>`.
+* For more on meta settings,
+  see :ref:`this page <ug_rcmeta>`.
+* For a table of the new settings,
+  see :ref:`this page <ug_rctable>`.
 
 .. _why_dotproplot:
 
@@ -866,8 +878,8 @@ Limitation
 ----------
 
 Matplotlib `~matplotlib.rcParams` can be changed persistently by placing
-``matplotlibrc`` files in the same directory as your python script. But it
-can be difficult to design and store your own colormaps and color cycles for
+:ref:`matplotlibrc <ug_mplrc>` files in the same directory as your python script.
+But it can be difficult to design and store your own colormaps and color cycles for
 future use. It is also difficult to get matplotlib to use custom ``.ttf`` and
 ``.otf`` font files, which may be desirable when you are working on
 Linux servers with limited font selections.

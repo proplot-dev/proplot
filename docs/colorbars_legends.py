@@ -290,19 +290,19 @@ for ax, title in zip(axs, ('2D {} #1', '2D {} #2', 'Line {} #1', 'Line {} #2')):
 # are restricted based on the axis length using `~proplot.ticker.DiscreteLocator`.
 # You can easily toggle minor ticks using ``tickminor=True``.
 #
-# The geometry of colorbars is also better constrained in proplot. You can set
-# the colorbar width in :ref:`physical units <ug_units>` using the `width` keyword
-# (physical units help avoid the common issue where colorbars appear "too skinny"
-# or "too fat" and preserves their appearance when the figure size changes).
-# The default widths for outer and inset colorbars are controlled with
-# :rcraw:`colorbar.width` and :rcraw:`colorbar.insetwidth`. Similarly, you can
-# control the colorbar length with the `length` keyword. The default length
-# for inset colorbars is controlled by :rcraw:`colorbar.insetlength`, and the
-# outer colorbar length is always relative to the subplot grid with a default of ``1``.
-# You can also specify the size of the colorbar "extensions" in physical units rather
+# Similar to :ref:`axes panels <ug_panels>`, the geometry of proplot colorbars is
+# specified with :ref:`physical units <ug_units>` (this helps avoid the common issue
+# where colorbars appear "too skinny" or "too fat" and preserves their appearance
+# when the figure size changes). You can specify the colorbar width locally using the
+# `width` keyword or globally using the :rcraw:`colorbar.width` setting (for outer
+# colorbars) and the :rcraw:`colorbar.insetwidth` setting (for inset colorbars).
+# Similarly, you can specify the colorbar length locally with the `length` keyword or
+# globally using the :rcraw:`colorbar.insetlength` setting. The outer colorbar length
+# is always relative to the subplot grid and always has a default of ``1``. You
+# can also specify the size of the colorbar "extensions" in physical units rather
 # than relative units using the `extendsize` keyword rather than matplotlib's
-# `extendfrac`. The default sizes for outer and inset colorbars are
-# controlled by :rcraw:`colorbar.extend` and :rcraw:`colorbar.insetextend`.
+# `extendfrac`. The default `extendsize` values are :rcraw:`colorbar.extend` (for
+# outer colorbars) and :rcraw:`colorbar.insetextend` (for inset colorbars).
 # See `~proplot.axes.Axes.colorbar` for details.
 
 # %%
