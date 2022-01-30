@@ -1597,19 +1597,16 @@ class Configurator(MutableMapping, dict):
                     try:
                         ikw_proplot, ikw_matplotlib = self._get_item_dicts(key, val)
                     except KeyError:
-                        warnings._warn_proplot(
-                            f'Invalid rc key {key!r} on {message}.', 'default'
-                        )
+                        warnings.simplefilter('default', warnings.ProplotWarning)
+                        warnings._warn_proplot(f'Invalid rc key {key!r} on {message}.')
                         continue
                     except ValueError as err:
-                        warnings._warn_proplot(
-                            f'Invalid rc val {val!r} for key {key!r} on {message}: {err}', 'default'  # noqa: E501
-                        )
+                        warnings.simplefilter('default', warnings.ProplotWarning)
+                        warnings._warn_proplot(f'Invalid rc val {val!r} for key {key!r} on {message}: {err}')  # noqa: E501
                         continue
                     except warnings.ProplotWarning as err:
-                        warnings._warn_proplot(
-                            f'Outdated rc key {key!r} on {message}: {err}', 'default'
-                        )
+                        warnings.simplefilter('default', warnings.ProplotWarning)
+                        warnings._warn_proplot(f'Outdated rc key {key!r} on {message}: {err}')  # noqa: E501
                         warnings.simplefilter('ignore', warnings.ProplotWarning)
                         ikw_proplot, ikw_matplotlib = self._get_item_dicts(key, val)
                 # Update the settings

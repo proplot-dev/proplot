@@ -35,7 +35,7 @@ def _next_release():
     return string
 
 
-def _warn_proplot(message, action=None):
+def _warn_proplot(message):
     """
     Emit a `ProplotWarning` and show the stack level outside of matplotlib and
     proplot. This is adapted from matplotlib's warning system.
@@ -47,10 +47,7 @@ def _warn_proplot(message, action=None):
             break  # this is the first external frame
         frame = frame.f_back
         stacklevel += 1
-    with warnings.catch_warnings():
-        if action:  # used internally
-            warnings.simplefilter(action, ProplotWarning)
-        warnings.warn(message, ProplotWarning, stacklevel=stacklevel)
+    warnings.warn(message, ProplotWarning, stacklevel=stacklevel)
 
 
 def _rename_objs(version, **kwargs):
