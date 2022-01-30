@@ -2929,10 +2929,10 @@ class PlotAxes(base.Axes):
 
         # Interpret color values
         # NOTE: This permits string label input for 'values'
-        c, colorbar_kw = inputs._meta_coords(c, which='')  # convert string labels
+        c, guide_kw = inputs._meta_coords(c, which='')  # convert string labels
         if c.size == 1 and y.size != 1:
             c = np.arange(y.size)  # convert dummy label for single color
-        guides._add_guide_kw('colorbar', kw, **colorbar_kw)
+        guides._add_guide_kw('colorbar', kw, **guide_kw)
         guides._add_guide_kw('colorbar', kw, locator=c)
 
         # Interpolate values to allow for smooth gradations between values or just

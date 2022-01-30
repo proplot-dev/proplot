@@ -1411,7 +1411,6 @@ class Configurator(MutableMapping, dict):
         >>> ax.format(ticklen=5, metalinewidth=2)
         """
         # Add input dictionaries
-        # WARNING: Critical to fully apply
         for arg in args:
             if not isinstance(arg, dict):
                 raise ValueError(f'Non-dictionary argument {arg!r}.')

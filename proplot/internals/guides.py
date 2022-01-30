@@ -28,8 +28,13 @@ def _add_guide_kw(name, kwargs, **opts):
     """
     # NOTE: Here we *do not* want to overwrite properties in dictionary. Indicates
     # e.g. default locator inferred from levels or default title inferred from metadata.
-    kwargs = kwargs.setdefault(f'{name}_kw', {})
-    _update_kw(kwargs, overwrite=False, **opts)
+    attr = f'{name}_kw'
+    if not opts:
+        return
+    if not kwargs.get(attr, None):
+        kwargs[attr] = {}  # permit e.g. colorbar_kw=None
+    guide_kw = kwargs[attr]
+    _update_kw(guide_kw, overwrite=False, **opts)
 
 
 def _cache_guide_kw(obj, name, kwargs):
@@ -57,11 +62,11 @@ def _flush_guide_kw(obj, name, kwargs):
     # colorbar() because locator or formatter axis would get reset. Old solution was
     # to delete the _guide_kw but that destroyed default behavior. New solution is
     # to keep _guide_kw but have constructor functions return shallow copies.
-    opts = getattr(obj, f'_{name}_kw', None)
-    if opts:
-        _update_kw(kwargs, overwrite=False, **opts)
+    guide_kw = getattr(obj, f'_{name}_kw', None)
+    if guide_kw:
+        _update_kw(kwargs, overwrite=False, **guide_kw)
         for key in REMOVE_AFTER_FLUSH:
-            opts.pop(key, None)
+            guide_kw.pop(key, None)
     if isinstance(obj, (tuple, list, np.ndarray)):
         for member in obj:  # possibly iterate over matplotlib tuple/list subclasses
             _flush_guide_kw(member, name, kwargs)
