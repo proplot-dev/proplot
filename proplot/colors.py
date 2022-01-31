@@ -2355,12 +2355,10 @@ class DiscreteNorm(mcolors.BoundaryNorm):
             of the normalizer are set to the minimum and maximum values in `levels`.
         unique : {'neither', 'both', 'min', 'max'}, optional
             Which out-of-bounds regions should be assigned unique colormap colors.
-            Possible values are equivalent to the `extend` values. The normalizer
-            needs this information so it can ensure the colorbar always spans the
-            full range of colormap colors. Internally, proplot sets this automatically
-            depending on whether the colormap is cyclic and whether "extreme" colors
-            were designated separately using `~matplotlib.colors.Colormap.set_under`
-            and/or `~matplotlib.colors.Colormap.set_over`.
+            Possible values are equivalent to the `extend` values. Internally, proplot
+            sets this depending on the user-input `extend`, whether the colormap is
+            cyclic, and whether `~matplotlib.colors.Colormap.set_under`
+            or `~matplotlib.colors.Colormap.set_over` were called for the colormap.
         step : float, optional
             The intensity of the transition to out-of-bounds colors as a fraction
             of the adjacent step between in-bounds colors. Internally, proplot sets
@@ -2376,16 +2374,15 @@ class DiscreteNorm(mcolors.BoundaryNorm):
         ----
         This normalizer also makes sure that levels always span the full range
         of colors in the colormap, whether `extend` is set to ``'min'``, ``'max'``,
-        ``'neither'``, or ``'both'``. By default, when `extend` is not ``'both'``,
-        matplotlib cuts off the most intense colors (reserved for "out of bounds"
-        data), even though they are not being used. Note that this means
-        using a diverging colormap with ``extend='max'`` or ``extend='min'``
-        will shift the central color by default. But that is very strange
-        usage anyway... so please just don't do that :)
+        ``'neither'``, or ``'both'``. In matplotlib, when `extend` is not ``'both'``,
+        the most intense colors are cut off (reserved for "out of bounds" data),
+        even though they are not being used.
 
         See also
         --------
         proplot.constructor.Norm
+        proplot.colors.SegmentedNorm
+        proplot.ticker.DiscreteLocator
         """
         # Parse input arguments
         # NOTE: This must be a subclass BoundaryNorm, so ColorbarBase will
@@ -2435,26 +2432,25 @@ class DiscreteNorm(mcolors.BoundaryNorm):
             mids[0] += step * (mids[1] - mids[2])
         if unique in ('max', 'both'):
             mids[-1] += step * (mids[-2] - mids[-3])
+        mmin, mmax = np.min(mids), np.max(mids)
         if vcenter is None:
-            mids = _interpolate_scalar(mids, np.min(mids), np.max(mids), vmin, vmax)
+            mids = _interpolate_scalar(mids, mmin, mmax, vmin, vmax)
         else:
-            mids[mids < vcenter] = _interpolate_scalar(
-                mids[mids < vcenter], np.min(mids), vcenter, vmin, vcenter
-            )
-            mids[mids >= vcenter] = _interpolate_scalar(
-                mids[mids >= vcenter], vcenter, np.max(mids), vcenter, vmax
-            )
+            mask1, mask2 = mids < vcenter, mids >= vcenter
+            mids[mask1] = _interpolate_scalar(mids[mask1], mmin, vcenter, vmin, vcenter)
+            mids[mask2] = _interpolate_scalar(mids[mask2], vcenter, mmax, vcenter, vmax)
 
-        # Attributes
+        # Instance attributes
         # NOTE: If clip is True, we clip values to the centers of the end bins
         # rather than vmin/vmax to prevent out-of-bounds colors from getting an
         # in-bounds bin color due to landing on a bin edge.
         # NOTE: With unique='min' the minimimum in-bounds and out-of-bounds
         # colors are the same so clip=True will have no effect. Same goes
         # for unique='max' with maximum colors.
+        eps = 1e-10
         dest = norm(mids)
-        dest[0] -= 1e-10  # dest guaranteed to be numpy.float64
-        dest[-1] += 1e-10
+        dest[0] -= eps  # dest guaranteed to be numpy.float64
+        dest[-1] += eps
         self._descending = descending
         self._bmin = np.min(mids)
         self._bmax = np.max(mids)
@@ -2470,7 +2466,7 @@ class DiscreteNorm(mcolors.BoundaryNorm):
         # up with unpredictable fill value, weird "out-of-bounds" colors
         self._norm_clip = None
         if isinstance(norm, mcolors.LogNorm):
-            self._norm_clip = (5e-249, None)
+            self._norm_clip = (1e-249, None)
 
     def __call__(self, value, clip=None):
         """
@@ -2504,41 +2500,56 @@ class DiscreteNorm(mcolors.BoundaryNorm):
 
     def inverse(self, value):  # noqa: U100
         """
-        Raise an error. Inversion after discretization is impossible.
+        Raise an error.
+
+        Raises
+        ------
+        ValueError
+            Inversion after discretization is impossible.
         """
         raise ValueError('DiscreteNorm is not invertible.')
 
     @property
     def descending(self):
         """
-        Whether the normalizer levels are descending.
+        Boolean indicating whether the levels are descending.
         """
         return self._descending
 
 
 class SegmentedNorm(mcolors.Normalize):
     """
-    Normalizer that scales data linearly with respect to the interpolated
-    index in an arbitrary monotonically increasing level sequence.
+    Normalizer that scales data linearly with respect to the
+    interpolated index in an arbitrary monotonic level sequence.
     """
     def __init__(self, levels, vmin=None, vmax=None, clip=False):
         """
         Parameters
         ----------
         levels : sequence of float
-            The level boundaries. Must be monotonically increasing or decreasing.
-        vmin, vmax : None
-            Ignored but included for consistency with other normalizers. These are
-            set to the minimum and maximum of `levels`.
+            The level boundaries. Must be monotonically increasing
+            or decreasing.
+        vmin : float, optional
+            Ignored but included for consistency with other normalizers.
+            Set to the minimum of `levels`.
+        vmax : float, optional
+            Ignored but included for consistency with other normalizers.
+            Set to the minimum of `levels`.
         clip : bool, optional
-            Whether to clip values falling outside of the minimum and
-            maximum levels.
+            Whether to clip values falling outside of the minimum
+            and maximum of `levels`.
+
+        See also
+        --------
+        proplot.constructor.Norm
+        proplot.colors.DiscreteNorm
 
         Note
         ----
-        This normalizer adapts the algorithm used by
-        `~matplotlib.colors.LinearSegmentedColormap`
-        to select colors in-between indices in segment data tables.
+        The algorithm this normalizer uses to select normalized values
+        in-between level list indices is adapted from the algorithm
+        `~matplotlib.colors.LinearSegmentedColormap` uses to select channel
+        values in-between segment data points (hence the name `SegmentedNorm`).
 
         Example
         -------
@@ -2554,18 +2565,19 @@ class SegmentedNorm(mcolors.Normalize):
         >>> ax.contourf(data, levels=levels)
         """
         # WARNING: Tried using descending levels by adding 1 - yq to __call__() and
-        # inverse() but then tick labels fail. Instead just silently reverse here.
+        # inverse() but then tick labels fail. Instead just silently reverse here and
+        # the corresponding DiscreteLocator should enforce the descending axis.
         levels, _ = _sanitize_levels(levels)
         dest = np.linspace(0, 1, len(levels))
-        vmin, vmax = np.min(levels), np.max(levels)
+        vmin = np.min(levels)
+        vmax = np.max(levels)
         super().__init__(vmin=vmin, vmax=vmax, clip=clip)
         self._x = self.boundaries = levels  # 'boundaries' are used in PlotAxes
         self._y = dest
 
     def __call__(self, value, clip=None):
         """
-        Normalize the data values to 0-1. Inverse
-        of `~SegmentedNorm.inverse`.
+        Normalize the data values to 0-1. Inverse of `~SegmentedNorm.inverse`.
 
         Parameters
         ----------
@@ -2586,7 +2598,7 @@ class SegmentedNorm(mcolors.Normalize):
 
     def inverse(self, value):
         """
-        Inverse operation of `~SegmentedNorm.__call__`.
+        Inverse of `~SegmentedNorm.__call__`.
 
         Parameters
         ----------
@@ -2603,7 +2615,7 @@ class SegmentedNorm(mcolors.Normalize):
 class DivergingNorm(mcolors.Normalize):
     """
     Normalizer that ensures some central data value lies at the central
-    colormap color.  The default central value is ``0``.
+    colormap color. The default central value is ``0``.
     """
     def __str__(self):
         return type(self).__name__ + f'(center={self.vcenter!r})'
@@ -2616,15 +2628,16 @@ class DivergingNorm(mcolors.Normalize):
         ----------
         vcenter : float, default: 0
             The data value corresponding to the central colormap position.
-        vmin, vmax : float, optional
-            The minimum and maximum data values.
+        vmin : float, optional
+            The minimum data value.
+        vmax : float, optional
+            The maximum data value.
         fair : bool, optional
-            If ``True`` (default), the speeds of the color gradations on
-            either side of the center point are equal, but colormap colors may
-            be omitted. If ``False``, all colormap colors are included, but
-            the color gradations on one side may be faster than the other side.
-            ``False`` should be used with great care, as it may result in
-            a misleading interpretation of your data.
+            If ``True`` (default), the speeds of the color gradations on either side
+            of the center point are equal, but colormap colors may be omitted. If
+            ``False``, all colormap colors are included, but the color gradations on
+            one side may be faster than the other side. ``False`` should be used with
+            great care, as it may result in a misleading interpretation of your data.
         clip : bool, optional
             Whether to clip values falling outside of `vmin` and `vmax`.
 
@@ -2637,17 +2650,15 @@ class DivergingNorm(mcolors.Normalize):
         # NOTE: This is a stale PR that plans to implement the same features.
         # https://github.com/matplotlib/matplotlib/pull/15333#issuecomment-537545430
         # Since proplot is starting without matplotlib's baggage we can just implement
-        # DivergingNorm like they would prefer if they didn't have to worry about
+        # a diverging norm like they would prefer if they didn't have to worry about
         # confusing users: single class, default "fair" scaling that can be turned off.
         super().__init__(vmin, vmax, clip)
-        self.vmin = vmin
-        self.vmax = vmax
         self.vcenter = vcenter
         self.fair = fair
 
     def __call__(self, value, clip=None):
         """
-        Normalize data values to 0-1.
+        Normalize the data values to 0-1.
 
         Parameters
         ----------

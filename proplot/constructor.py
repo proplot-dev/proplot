@@ -164,7 +164,7 @@ if _version_cartopy >= '0.18':
 
 # Scale registry and presets
 SCALES = mscale._scale_mapping
-SCALE_PRESETS = {
+SCALES_PRESETS = {
     'quadratic': ('power', 2,),
     'cubic': ('power', 3,),
     'quartic': ('power', 4,),
@@ -1246,19 +1246,19 @@ def Scale(scale, *args, **kwargs):
     if not isinstance(scale, str):
         raise ValueError(f'Invalid scale name {scale!r}. Must be string.')
     scale = scale.lower()
-    if scale in SCALE_PRESETS:
+    if scale in SCALES_PRESETS:
         if args or kwargs:
             warnings._warn_proplot(
                 f'Scale {scale!r} is a scale *preset*. Ignoring positional '
                 'argument(s): {args} and keyword argument(s): {kwargs}. '
             )
-        scale, *args = SCALE_PRESETS[scale]
+        scale, *args = SCALES_PRESETS[scale]
     if scale in SCALES:
         scale = SCALES[scale]
     else:
         raise ValueError(
             f'Unknown scale or preset {scale!r}. Options are: '
-            + ', '.join(map(repr, (*SCALES, *SCALE_PRESETS)))
+            + ', '.join(map(repr, (*SCALES, *SCALES_PRESETS)))
             + '.'
         )
     return scale(*args, **kwargs)

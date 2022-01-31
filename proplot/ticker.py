@@ -136,8 +136,8 @@ class IndexLocator(mticker.Locator):
 
 class DiscreteLocator(mticker.Locator):
     """
-    A tick locator suitable for discretized colorbars. Adds ticks to some subset
-    of the location list depending on the available space determined from
+    A tick locator suitable for discretized colorbars. Adds ticks to some
+    subset of the location list depending on the available space determined from
     `~matplotlib.axis.Axis.get_tick_space`. Zero will be used if it appears in the
     location list, and step sizes along the location list are restricted to "nice"
     intervals by default.
@@ -244,7 +244,8 @@ class DiscreteLocator(mticker.Locator):
 
 class DegreeLocator(mticker.MaxNLocator):
     """
-    Locate geographic gridlines with degree-minute-second support. Adapted from cartopy.
+    Locate geographic gridlines with degree-minute-second support.
+    Adapted from cartopy.
     """
     # NOTE: This is identical to cartopy except they only define LongitutdeLocator
     # for common methods whereas we use DegreeLocator. More intuitive this way in
@@ -289,7 +290,8 @@ class DegreeLocator(mticker.MaxNLocator):
 
 class LongitudeLocator(DegreeLocator):
     """
-    Locate longitude gridlines with degree-minute-second support. Adapted from cartopy.
+    Locate longitude gridlines with degree-minute-second support.
+    Adapted from cartopy.
     """
     @docstring._snippet_manager
     def __init__(self, *args, **kwargs):
@@ -301,7 +303,8 @@ class LongitudeLocator(DegreeLocator):
 
 class LatitudeLocator(DegreeLocator):
     """
-    Locate latitude gridlines with degree-minute-second support. Adapted from cartopy.
+    Locate latitude gridlines with degree-minute-second support.
+    Adapted from cartopy.
     """
     @docstring._snippet_manager
     def __init__(self, *args, **kwargs):
@@ -347,6 +350,11 @@ class AutoFormatter(mticker.ScalarFormatter):
         ----------------
         **kwargs
             Passed to `matplotlib.ticker.ScalarFormatter`.
+
+        See also
+        --------
+        proplot.constructor.Formatter
+        proplot.ticker.SimpleFormatter
 
         Note
         ----
@@ -417,9 +425,8 @@ class AutoFormatter(mticker.ScalarFormatter):
 
     def _fix_small_number(self, x, string, precision_offset=2):
         """
-        Fix formatting for non-zero number that gets formatted as zero. The `offset`
-        controls the offset from the true floating point precision at which we want
-        to limit maximum precision of the string.
+        Fix formatting for non-zero formatted as zero. The `offset` controls the offset
+        from true floating point precision at which we want to limit string precision.
         """
         # Add just enough precision for small numbers. Default formatter is
         # only meant to be used for linear scales and cannot handle the wide
@@ -433,10 +440,7 @@ class AutoFormatter(mticker.ScalarFormatter):
         if m and x != 0:
             # Get initial precision spit out by algorithm
             decimals, = m.groups()
-            if decimals:
-                precision_init = len(decimals.lstrip(decimal_point))
-            else:
-                precision_init = 0
+            precision_init = len(decimals.lstrip(decimal_point)) if decimals else 0
 
             # Format with precision below floating point error
             x -= getattr(self, 'offset', 0)  # guard against API change
@@ -446,8 +450,7 @@ class AutoFormatter(mticker.ScalarFormatter):
             precision = min(precision_true, precision_max)
             string = ('{:.%df}' % precision).format(x)
 
-            # If number is zero after ignoring floating point error, generate
-            # zero with precision matching original string.
+            # If zero ignoring floating point error then match original precision
             if REGEX_ZERO.match(string):
                 string = ('{:.%df}' % precision_init).format(0)
 
@@ -563,6 +566,11 @@ class SimpleFormatter(mticker.Formatter):
         %(ticker.precision)s
         %(ticker.zerotrim)s
         %(ticker.auto)s
+
+        See also
+        --------
+        proplot.constructor.Formatter
+        proplot.ticker.AutoFormatter
         """
         precision, zerotrim = _default_precision_zerotrim(precision, zerotrim)
         self._precision = precision
@@ -606,7 +614,8 @@ class SimpleFormatter(mticker.Formatter):
 
 class IndexFormatter(mticker.Formatter):
     """
-    Format numbers by assigning fixed strings to non-negative indices.
+    Format numbers by assigning fixed strings to non-negative indices. Generally
+    paired with `IndexLocator` or `~matplotlib.ticker.FixedLocator`.
     """
     # NOTE: This was deprecated in matplotlib 3.3. For details check out
     # https://github.com/matplotlib/matplotlib/issues/16631 and bring some popcorn.
@@ -633,6 +642,11 @@ class SciFormatter(mticker.Formatter):
         ----------
         %(ticker.precision)s
         %(ticker.zerotrim)s
+
+        See also
+        --------
+        proplot.constructor.Formatter
+        proplot.ticker.AutoFormatter
         """
         precision, zerotrim = _default_precision_zerotrim(precision, zerotrim)
         self._precision = precision
@@ -685,6 +699,11 @@ class SigFigFormatter(mticker.Formatter):
         base : float, default: 1
             The base unit for rounding. For example ``SigFigFormatter(2, base=5)``
             rounds to the nearest 5 with up to 2 digits (e.g., 87 --> 85, 8.7 --> 8.5).
+
+        See also
+        --------
+        proplot.constructor.Formatter
+        proplot.ticker.AutoFormatter
         """
         self._sigfig = _not_none(sigfig, 3)
         self._zerotrim = _not_none(zerotrim, rc['formatter.zerotrim'])
@@ -716,8 +735,7 @@ class SigFigFormatter(mticker.Formatter):
 class FracFormatter(mticker.Formatter):
     r"""
     Format numbers as integers or integer fractions. Optionally express the
-    values relative to some constant like `numpy.pi`. This is powered by the
-    builtin `fractions.Fraction` class and `fractions.Fraction.limit_denominator`.
+    values relative to some constant like `numpy.pi`.
     """
     def __init__(self, symbol='', number=1):
         r"""
@@ -727,6 +745,16 @@ class FracFormatter(mticker.Formatter):
             The constant symbol, e.g. ``r'$\pi$'``.
         number : float, default: 1
             The constant value, e.g. `numpy.pi`.
+
+        Note
+        ----
+        The fractions shown by this formatter are resolved using the builtin
+        `fractions.Fraction` class and `fractions.Fraction.limit_denominator`.
+
+        See also
+        --------
+        proplot.constructor.Formatter
+        proplot.ticker.AutoFormatter
         """
         self._symbol = symbol
         self._number = number
@@ -781,7 +809,8 @@ class _CartopyFormatter(object):
 
 class DegreeFormatter(_CartopyFormatter, _PlateCarreeFormatter):
     """
-    Formatter for longitude and latitude gridline labels. Adapted from cartopy.
+    Formatter for longitude and latitude gridline labels.
+    Adapted from cartopy.
     """
     @docstring._snippet_manager
     def __init__(self, *args, **kwargs):

@@ -14,8 +14,6 @@ from . import ticker as pticker
 from .internals import ic  # noqa: F401
 from .internals import _not_none, _version_mpl, warnings
 
-scales = mscale._scale_mapping
-
 __all__ = [
     'CutoffScale',
     'ExpScale',
@@ -142,7 +140,11 @@ class LinearScale(_Scale, mscale.LinearScale):
     name = 'linear'
 
     def __init__(self, **kwargs):
-        """"""  # empty docstring
+        """
+        See also
+        --------
+        proplot.constructor.Scale
+        """
         super().__init__(**kwargs)
         self._transform = mtransforms.IdentityTransform()
 
@@ -162,6 +164,10 @@ class LogitScale(_Scale, mscale.LogitScale):
         nonpos : {'mask', 'clip'}
           Values outside of (0, 1) can be masked as invalid, or clipped to a
           number very close to 0 or 1.
+
+        See also
+        --------
+        proplot.constructor.Scale
         """
         super().__init__(**kwargs)
         # self._default_major_formatter = mticker.LogitFormatter()
@@ -194,6 +200,10 @@ class LogScale(_Scale, mscale.LogScale):
         basex, basey, nonposx, nonposy, subsx, subsy
             Aliases for the above keywords. These used to be conditional
             on the *name* of the axis.
+
+        See also
+        --------
+        proplot.constructor.Scale
         """
         keys = ('base', 'nonpos', 'subs')
         super().__init__(**_parse_logscale_args(*keys, **kwargs))
@@ -234,6 +244,10 @@ class SymmetricalLogScale(_Scale, mscale.SymmetricalLogScale):
         basex, basey, linthreshx, linthreshy, linscalex, linscaley, subsx, subsy
             Aliases for the above keywords. These keywords used to be
             conditional on the name of the axis.
+
+        See also
+        --------
+        proplot.constructor.Scale
         """
         keys = ('base', 'linthresh', 'linscale', 'subs')
         super().__init__(**_parse_logscale_args(*keys, **kwargs))
@@ -289,6 +303,12 @@ class FuncScale(_Scale, mscale.ScaleBase):
             `~proplot.constructor.Formatter` constructor function. By default, these are
             the same as the default formatters on the input transform. If the input
             transform was not an axis scale, these are borrowed from `parent_scale`.
+
+        See also
+        --------
+        proplot.constructor.Scale
+        proplot.axes.CartesianAxes.dualx
+        proplot.axes.CartesianAxes.dualy
         """
         # Parse input args
         # NOTE: Permit *arbitrary* parent axis scales and infer default locators and
@@ -397,8 +417,7 @@ class PowerScale(_Scale, mscale.ScaleBase):
         power : float, optional
             The power :math:`c` to which :math:`x` is raised.
         inverse : bool, optional
-            If ``True``, the "forward" direction performs
-            the inverse operation :math:`x^{1/c}`.
+            If ``True`` this performs the inverse operation :math:`x^{1/c}`.
         """
         super().__init__()
         if not inverse:
@@ -486,11 +505,13 @@ class ExpScale(_Scale, mscale.ScaleBase):
         b : float, optional
             The scale for the exponent, i.e. the :math:`b` in :math:`Ca^{bx}`.
         c : float, optional
-            The coefficient of the exponential, i.e. the :math:`C`
-            in :math:`Ca^{bx}`.
+            The coefficient of the exponential, i.e. the :math:`C` in :math:`Ca^{bx}`.
         inverse : bool, optional
-            If ``True``, the "forward" direction performs the inverse
-            operation.
+            If ``True``, the "forward" direction performs the inverse operation.
+
+        See also
+        --------
+        proplot.constructor.Scale
         """
         super().__init__()
         if not inverse:
@@ -576,8 +597,12 @@ class MercatorLatitudeScale(_Scale, mscale.ScaleBase):
         Parameters
         ----------
         thresh : float, optional
-            Threshold between 0 and 90, used to constrain axis limits between
-            ``-thresh`` and ``+thresh``.
+            Threshold between 0 and 90, used to constrain axis limits
+            between ``-thresh`` and ``+thresh``.
+
+        See also
+        --------
+        proplot.constructor.Scale
         """
         super().__init__()
         if thresh >= 90:
@@ -660,7 +685,11 @@ class SineLatitudeScale(_Scale, mscale.ScaleBase):
     name = 'sine'
 
     def __init__(self):
-        """"""  # no parameters
+        """
+        See also
+        --------
+        proplot.constructor.Scale
+        """
         super().__init__()
         self._transform = SineLatitudeTransform()
         self._default_major_formatter = pticker.AutoFormatter(suffix='\N{DEGREE SIGN}')
@@ -743,6 +772,10 @@ class CutoffScale(_Scale, mscale.ScaleBase):
             * If ``scale_i == numpy.inf``, the axis *discretely jumps* from
               ``thresh_i`` to ``thresh_i+1``. The final scale ``scale_N``
               *cannot* be ``numpy.inf``.
+
+        See also
+        --------
+        proplot.constructor.Scale
 
         Example
         -------
@@ -834,7 +867,11 @@ class InverseScale(_Scale, mscale.ScaleBase):
     name = 'inverse'
 
     def __init__(self):
-        """"""  # empty docstring
+        """
+        See also
+        --------
+        proplot.constructor.Scale
+        """
         super().__init__()
         self._transform = InverseTransform()
         self._default_major_locator = mticker.LogLocator(10)
@@ -886,18 +923,19 @@ def _scale_factory(scale, axis, *args, **kwargs):  # noqa: U100
     *args, **kwargs
         Passed to `~matplotlib.scale.ScaleBase` if `scale` is a string.
     """
+    mapping = mscale._scale_mapping
     if isinstance(scale, mscale.ScaleBase):
         if args or kwargs:
             warnings._warn_proplot(f'Ignoring args {args} and keyword args {kwargs}.')
         return scale  # do nothing
     else:
         scale = scale.lower()
-        if scale not in scales:
+        if scale not in mapping:
             raise ValueError(
                 f'Unknown axis scale {scale!r}. Options are '
-                + ', '.join(map(repr, scales)) + '.'
+                + ', '.join(map(repr, mapping)) + '.'
             )
-        return scales[scale](*args, **kwargs)
+        return mapping[scale](*args, **kwargs)
 
 
 # Monkey patch matplotlib scale factory with version that accepts ScaleBase instances.
