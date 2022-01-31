@@ -3068,7 +3068,7 @@ class PlotAxes(base.Axes):
             else:
                 s = s.copy()
                 s.flat[:] = utils.units(s.flat, 'pt')
-                s = s.astype(np.float) ** 2
+                s = s.astype(np.float64) ** 2
         if absolute_size is None:
             if _inside_seaborn_call():
                 absolute_size = True

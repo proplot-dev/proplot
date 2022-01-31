@@ -71,7 +71,7 @@ def _is_numeric(data):
     array = _to_numpy_array(data)
     return len(data) and (
         np.issubdtype(array.dtype, np.number)
-        or np.issubdtype(array.dtype, np.object)
+        or np.issubdtype(array.dtype, object)
         and all(isinstance(_, np.number) for _ in array.flat)
     )
 
@@ -82,9 +82,9 @@ def _is_categorical(data):
     """
     array = _to_numpy_array(data)
     return len(data) and (
-        np.issubdtype(array.dtype, np.str)
-        or np.issubdtype(array.dtype, np.object)
-        and any(isinstance(_, np.str) for _ in array.flat)
+        np.issubdtype(array.dtype, str)
+        or np.issubdtype(array.dtype, object)
+        and any(isinstance(_, str) for _ in array.flat)
     )
 
 
@@ -161,7 +161,7 @@ def _to_masked_array(data, *, copy=False):
     else:
         data = ma.masked_invalid(data, copy=copy)
     if np.issubdtype(data.dtype, np.integer):
-        data = data.astype(np.float)
+        data = data.astype(np.float64)
     if np.issubdtype(data.dtype, np.number):
         data.fill_value *= np.nan  # default float fill_value is 1e+20 or 1e+20 + 0j
     else:
@@ -508,7 +508,7 @@ def _safe_range(data, lo=0, hi=100):
     if data.size:
         min_ = np.min(data) if lo <= 0 else np.percentile(data, lo)
         if hasattr(min_, 'dtype') and np.issubdtype(min_.dtype, np.integer):
-            min_ = np.float(min_)
+            min_ = np.float64(min_)
         try:
             is_finite = np.isfinite(min_)
         except TypeError:
@@ -520,7 +520,7 @@ def _safe_range(data, lo=0, hi=100):
     if data.size:
         max_ = np.max(data) if hi >= 100 else np.percentile(data, hi)
         if hasattr(max_, 'dtype') and np.issubdtype(max_.dtype, np.integer):
-            max_ = np.float(max_)
+            max_ = np.float64(max_)
         try:
             is_finite = np.isfinite(min_)
         except TypeError:

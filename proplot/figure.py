@@ -1075,14 +1075,12 @@ class Figure(mfigure.Figure):
         # TODO: Consider deprecating and asking users to use add_subplot()
         def _axes_dict(naxs, input, kw=False, default=None):
             # First build up dictionary
-            # 1. 'string' or {1: 'string1', (2, 3): 'string2'}
-            if not kw:
+            if not kw:  # 'string' or {1: 'string1', (2, 3): 'string2'}
                 if np.iterable(input) and not isinstance(input, (str, dict)):
                     input = {num + 1: item for num, item in enumerate(input)}
                 elif not isinstance(input, dict):
                     input = {range(1, naxs + 1): input}
-            # 2. {'prop': value} or {1: {'prop': value1}, (2, 3): {'prop': value2}}
-            else:
+            else:  # {key: value} or {1: {key: value1}, (2, 3): {key: value2}}
                 nested = [isinstance(_, dict) for _ in input.values()]
                 if not any(nested):  # any([]) == False
                     input = {range(1, naxs + 1): input.copy()}
@@ -1118,7 +1116,7 @@ class Figure(mfigure.Figure):
         else:
             array = np.atleast_1d(array)
             array[array == None] = 0  # None or 0 both valid placeholders  # noqa: E711
-            array = array.astype(np.int)
+            array = array.astype(int)
             if array.ndim == 1:  # interpret as single row or column
                 array = array[None, :] if order == 'C' else array[:, None]
             elif array.ndim != 2:

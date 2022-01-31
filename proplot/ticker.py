@@ -183,7 +183,7 @@ class DiscreteLocator(mticker.Locator):
         Set the parameters for this locator. See `DiscreteLocator` for details.
         """
         if steps is not None:
-            steps = np.unique(np.asarray(steps, dtype=np.int))  # also sorts, makes 1D
+            steps = np.unique(np.asarray(steps, dtype=int))  # also sorts, makes 1D
             if np.any(steps < 1) or np.any(steps > 10):
                 raise ValueError('Steps must fall between one and ten (inclusive).')
             if steps[0] != 1:
