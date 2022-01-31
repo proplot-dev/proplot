@@ -1089,25 +1089,18 @@ class Axes(maxes.Axes):
         locator = _not_none(locator, locator_default, None)
         formatter = _not_none(formatter, formatter_default, 'auto')
         formatter = constructor.Formatter(formatter, **formatter_kw)
-        categorical = isinstance(formatter, mticker.FixedFormatter)
-        discrete = isinstance(mappable.norm, pcolors.DiscreteNorm)
         if locator is not None:
             locator = constructor.Locator(locator, **locator_kw)
         if minorlocator is not None:
             minorlocator = constructor.Locator(minorlocator, **minorlocator_kw)
-        if isinstance(locator, pticker.DiscreteLocator):
-            if categorical:  # no minor ticks and convert DiscreteLocator
-                locator = mticker.FixedLocator(np.array(locator.locs))
-            elif minorlocator is not None:
-                pass
-            elif tickminor or tickminor is None:
-                minorlocator = pticker.DiscreteLocator(np.array(locator.locs), minor=True)  # noqa: E501
-        if tickminor is not None:  # whether to apply minorticks_on()
-            pass
-        elif discrete or categorical:  # never use the default minor locator
-            tickminor = False
-        else:
-            tickminor = rc[name + 'tick.minor.visible']
+        discrete = isinstance(locator, pticker.DiscreteLocator)
+        categorical = isinstance(formatter, mticker.FixedFormatter)
+        tickminor = False if categorical else rc[name + 'tick.minor.visible']
+        if categorical and discrete:
+            locator = mticker.FixedLocator(np.array(locator.locs))  # convert locator
+        if tickminor and isinstance(mappable.norm, mcolors.BoundaryNorm):
+            locs = np.array(locator.locs if discrete else mappable.norm.boundaries)
+            minorlocator = pticker.DiscreteLocator(locs, minor=True)
 
         # Special handling for colorbar keyword arguments
         # WARNING: Critical to not pass empty major locators in matplotlib < 3.5
