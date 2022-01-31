@@ -813,7 +813,7 @@ pixels, `points <https://en.wikipedia.org/wiki/Point_(typography)>`__, and `pica
 units is found :ref:`here <units_table>`). Note the `~proplot.utils.units` engine
 also translates rc settings assigned to `~proplot.config.rc_matplotlib` and
 `~proplot.config.rc_proplot`, e.g. :rcraw:`subplots.refwidth`,
-# :rcraw:`legend.columnspacing`, and :rcraw:`axes.labelpad`.
+:rcraw:`legend.columnspacing`, and :rcraw:`axes.labelpad`.
 
 Links
 -----
@@ -823,7 +823,7 @@ Links
 * For more on `~proplot.gridspec.GridSpec` spacing units,
   see :ref:`this page <ug_tight>`
 * For more on colorbar width units,
-  see :ref:`this page <ug_colorbar>`,
+  see :ref:`this page <ug_colorbars>`,
 * For more on panel width units,
   see :ref:`this page <ug_panels>`,
 
@@ -878,7 +878,7 @@ Limitation
 ----------
 
 Matplotlib `~matplotlib.rcParams` can be changed persistently by placing
-:ref:`matplotlibrc <ug_mplrc>` files in the same directory as your python script.
+`matplotlibrc <ug_mplrc_>`_ files in the same directory as your python script.
 But it can be difficult to design and store your own colormaps and color cycles for
 future use. It is also difficult to get matplotlib to use custom ``.ttf`` and
 ``.otf`` font files, which may be desirable when you are working on
