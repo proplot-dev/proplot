@@ -54,7 +54,6 @@
 #   (e.g., ``loc='upper right'`` or the shorthand ``loc='ur'``). Inset
 #   colorbars have optional background "frames" that can be configured
 #   with various `~proplot.axes.Axes.colorbar` keywords.
-# * Outer colorbars and legends can be aligned using the `align` keyword.
 
 # `~proplot.axes.Axes.colorbar` and `~proplot.axes.Axes.legend` also both accept
 # `space` and `pad` keywords. `space` controls the absolute separation of the

@@ -25,9 +25,7 @@ import numpy as np
 import numpy.ma as ma
 
 from .. import colors as pcolors
-from .. import constructor
-from .. import ticker as pticker
-from .. import utils
+from .. import constructor, utils
 from ..config import rc
 from ..internals import ic  # noqa: F401
 from ..internals import (
@@ -1890,7 +1888,7 @@ class PlotAxes(base.Axes):
             title = inputs._meta_title(labels)
             if title:  # safely update legend_kw and colorbar_kw
                 guides._add_guide_kw('legend', kwargs, title=title)
-                guides._add_guide_kw('colorbar', kwargs, label=title)
+                guides._add_guide_kw('colorbar', kwargs, title=title)
 
         # Apply the basic x and y settings
         autox = autox and self._name == 'cartesian'
@@ -2009,7 +2007,7 @@ class PlotAxes(base.Axes):
             title = inputs._meta_title(zs[0])
             if title:  # safely update legend_kw and colorbar_kw
                 guides._add_guide_kw('legend', kwargs, title=title)
-                guides._add_guide_kw('colorbar', kwargs, label=title)
+                guides._add_guide_kw('colorbar', kwargs, title=title)
 
         # Finally strip metadata
         x = inputs._to_numpy_array(x)
@@ -2506,15 +2504,16 @@ class PlotAxes(base.Axes):
         def _sanitize_levels(key, array, minsize):
             if np.iterable(array):
                 array, _ = pcolors._sanitize_levels(array, minsize)
+            elif isinstance(array, Integral):
+                pass
+            else:
+                raise ValueError(f'Invalid {key}={array}. Must be list or integer.')
             if isinstance(norm, (mcolors.BoundaryNorm, pcolors.SegmentedNorm)):
-                if array is not None:
+                if isinstance(array, Integral):
                     warnings._warn_proplot(
                         f'Ignoring {key}={array}. Using norm={norm!r} {key} instead.'
                     )
-                if key == 'levels':
-                    array = _not_none(levels=array, norm_boundaries=norm.boundaries)
-                else:
-                    array = None
+                array = norm.boundaries if key == 'levels' else None
             return array
 
         # Parse input arguments and resolve incompatibilities
@@ -2530,38 +2529,40 @@ class PlotAxes(base.Axes):
                 f'Incompatible args levels={levels!r} and values={values!r}. Using former.'  # noqa: E501
             )
             values = None
-        levels = _sanitize_levels('levels', levels, _not_none(min_levels, 2))
-        levels = _not_none(levels, rc['cmap.levels'])
-        values = _sanitize_levels('values', values, 1)
 
         # Infer level edges from level centers if possible
         # NOTE: The only way for user to manually impose BoundaryNorm is by
         # passing one -- users cannot create one using Norm constructor key.
-        if values is None:
-            pass
-        elif isinstance(values, Integral):
+        if isinstance(values, Integral):
             levels = values + 1
-        elif len(values) == 1:
-            levels = [values[0] - 1, values[0] + 1]  # weird but why not
-        elif norm is not None and norm not in ('segments', 'segmented'):
-            # Generate levels by finding in-between points in the
-            # normalized numeric space, e.g. LogNorm space.
-            norm_kw = norm_kw or {}
-            convert = constructor.Norm(norm, **norm_kw)
-            levels = convert.inverse(utils.edges(convert(values)))
+            values = None
+        if values is None:
+            levels = _sanitize_levels('levels', levels, _not_none(min_levels, 2))
+            levels = _not_none(levels, rc['cmap.levels'])
         else:
-            # Generate levels so that ticks will be centered between edges
-            # Solve: (x1 + x2) / 2 = y --> x2 = 2 * y - x1 with arbitrary starting x1.
-            descending = values[1] < values[0]
-            if descending:  # e.g. [100, 50, 20, 10, 5, 2, 1] successful if reversed
-                values = values[::-1]
-            levels = [1.5 * values[0] - 0.5 * values[1]]  # arbitrary starting point
-            for value in values:
-                levels.append(2 * value - levels[-1])
-            if np.any(np.diff(levels) < 0):  # never happens for evenly spaced levels
-                levels = utils.edges(values)
-            if descending:  # then revert back below
-                levels = levels[::-1]
+            values = _sanitize_levels('values', values, 1)
+            kwargs['discrete_ticks'] = values  # passed to _parse_discrete_norm
+            if len(values) == 1:
+                levels = [values[0] - 1, values[0] + 1]  # weird but why not
+            elif norm is not None and norm not in ('segments', 'segmented'):
+                # Generate levels by finding in-between points in the
+                # normalized numeric space, e.g. LogNorm space.
+                norm_kw = norm_kw or {}
+                convert = constructor.Norm(norm, **norm_kw)
+                levels = convert.inverse(utils.edges(convert(values)))
+            else:
+                # Generate levels so that ticks will be centered between edges
+                # Solve: (x1 + x2) / 2 = y --> x2 = 2 * y - x1 with arbitrary init x1
+                descending = values[1] < values[0]
+                if descending:  # e.g. [100, 50, 20, 10, 5, 2, 1] successful if reversed
+                    values = values[::-1]
+                levels = [1.5 * values[0] - 0.5 * values[1]]  # arbitrary starting point
+                for value in values:
+                    levels.append(2 * value - levels[-1])
+                if np.any(np.diff(levels) < 0):  # never happens for evenly spaced levs
+                    levels = utils.edges(values)
+                if descending:  # then revert back below
+                    levels = levels[::-1]
 
         # Process level edges and infer defaults
         # NOTE: Matplotlib colorbar algorithm *cannot* handle descending levels so
@@ -2585,7 +2586,6 @@ class PlotAxes(base.Axes):
         # NOTE: The level restriction should have no effect if levels were generated
         # automatically. However want to apply these to manual-input levels as well.
         if levels is not None:
-            # Apply default norm
             levels = _restrict_levels(levels)
             if len(levels) == 0:  # skip
                 pass
@@ -2597,15 +2597,6 @@ class PlotAxes(base.Axes):
                     norm = _not_none(norm, 'segmented')
             if norm in ('segments', 'segmented'):
                 norm_kw['levels'] = levels
-            # Apply default locator
-            # WARNING: This must come after default application of segmented norm
-            locator = values if np.iterable(values) else levels
-            locator = _restrict_levels(locator)
-            if norm in ('segments', 'segmented') or isinstance(norm, pcolors.SegmentedNorm):  # noqa: E501
-                locator = mticker.FixedLocator(locator)
-            else:
-                locator = pticker.DiscreteLocator(locator)
-            guides._add_guide_kw('colorbar', kwargs, locator=locator)
 
         return levels, vmin, vmax, norm, norm_kw, kwargs
 
@@ -2689,7 +2680,7 @@ class PlotAxes(base.Axes):
             vmax = max(vmaxs, default=1)
 
         # Apply modifications
-        # NOTE: This used to be applied in _parse_level_list
+        # NOTE: This is also applied to manual input levels lists in _parse_level_list
         if negative:
             if automax:
                 vmax = 0
@@ -2720,6 +2711,107 @@ class PlotAxes(base.Axes):
                 )
 
         return vmin, vmax, kwargs
+
+    @staticmethod
+    def _parse_discrete_norm(
+        levels, norm, cmap, *, extend=None, min_levels=None,
+        discrete_ticks=None, discrete_labels=None, **kwargs
+    ):
+        """
+        Create a `~proplot.colors.DiscreteNorm` or `~proplot.colors.BoundaryNorm`
+        from the input colormap and normalizer.
+
+        Parameters
+        ----------
+        levels : sequence of float
+            The level boundaries.
+        norm : `~matplotlib.colors.Normalize`
+            The continuous normalizer.
+        cmap : `~matplotlib.colors.Colormap`
+            The colormap.
+        extend : str, optional
+            The extend setting.
+        min_levels : int, optional
+            The minimum number of levels.
+        discrete_ticks : array-like, optional
+            The colorbar locations to tick.
+        discrete_labels : array-like, optional
+            The colorbar tick labels.
+
+        Returns
+        -------
+        norm : `~proplot.colors.DiscreteNorm`
+            The discrete normalizer.
+        cmap : `~matplotlib.colors.Colormap`
+            The possibly-modified colormap.
+        kwargs
+            Unused arguments.
+        """
+        # Reverse the colormap if input levels or values were descending
+        # See _parse_level_list for details
+        min_levels = _not_none(min_levels, 2)  # 1 for contour plots
+        unique = extend = _not_none(extend, 'neither')
+        under = cmap._rgba_under
+        over = cmap._rgba_over
+        cyclic = getattr(cmap, '_cyclic', None)
+        qualitative = isinstance(cmap, pcolors.DiscreteColormap)  # see _parse_cmap
+        if len(levels) < min_levels:
+            raise ValueError(
+                f'Invalid levels={levels!r}. Must be at least length {min_levels}.'
+            )
+
+        # Ensure end colors are unique by scaling colors as if extend='both'
+        # NOTE: Inside _parse_cmap should have enforced extend='neither'
+        if cyclic:
+            step = 0.5  # try to allocate space for unique end colors
+            unique = 'both'
+
+        # Ensure color list length matches level list length using rotation
+        # NOTE: No harm if not enough colors, we just end up with the same
+        # color for out-of-bounds extensions. This is a gentle failure
+        elif qualitative:
+            step = 0.5  # try to sample the central index for safety
+            unique = 'both'
+            auto_under = under is None and extend in ('min', 'both')
+            auto_over = over is None and extend in ('max', 'both')
+            ncolors = len(levels) - min_levels + 1 + auto_under + auto_over
+            colors = list(itertools.islice(itertools.cycle(cmap.colors), ncolors))
+            if auto_under and len(colors) > 1:
+                under, *colors = colors
+            if auto_over and len(colors) > 1:
+                *colors, over = colors
+            cmap = cmap.copy(colors, N=len(colors))
+            if under is not None:
+                cmap.set_under(under)
+            if over is not None:
+                cmap.set_over(over)
+
+        # Ensure middle colors sample full range when extreme colors are present
+        # by scaling colors as if extend='neither'
+        else:
+            step = 1.0
+            if over is not None and under is not None:
+                unique = 'neither'
+            elif over is not None:  # turn off over-bounds unique bin
+                if extend == 'both':
+                    unique = 'min'
+                elif extend == 'max':
+                    unique = 'neither'
+            elif under is not None:  # turn off under-bounds unique bin
+                if extend == 'both':
+                    unique = 'min'
+                elif extend == 'max':
+                    unique = 'neither'
+
+        # Generate DiscreteNorm and update "child" norm with vmin and vmax from
+        # levels. This lets the colorbar set tick locations properly!
+        if not isinstance(norm, mcolors.BoundaryNorm) and len(levels) > 1:
+            norm = pcolors.DiscreteNorm(
+                levels, norm=norm, unique=unique, step=step,
+                ticks=discrete_ticks, labels=discrete_labels,
+            )
+
+        return norm, cmap, kwargs
 
     def _apply_plot(self, *pairs, vert=True, **kwargs):
         """
@@ -2933,8 +3025,10 @@ class PlotAxes(base.Axes):
         c, guide_kw = inputs._meta_coords(c, which='')  # convert string labels
         if c.size == 1 and y.size != 1:
             c = np.arange(y.size)  # convert dummy label for single color
-        guides._add_guide_kw('colorbar', kw, **guide_kw)
-        guides._add_guide_kw('colorbar', kw, locator=c)
+        if guide_kw:
+            guides._add_guide_kw('colorbar', kw, **guide_kw)
+        else:
+            guides._add_guide_kw('colorbar', kw, locator=c)
 
         # Interpolate values to allow for smooth gradations between values or just
         # to color siwtchover halfway between points (interp True, False respectively)

@@ -5,7 +5,6 @@ Implements basic shared functionality.
 """
 import copy
 import inspect
-import itertools
 import re
 from numbers import Integral
 
@@ -1053,20 +1052,19 @@ class Axes(maxes.Axes):
         # methods that construct an 'artist list' (i.e. colormap scatter object)
         if np.iterable(mappable) and len(mappable) == 1 and isinstance(mappable[0], mcm.ScalarMappable):  # noqa: E501
             mappable = mappable[0]
-        if isinstance(mappable, mcm.ScalarMappable):
+        if not isinstance(mappable, mcm.ScalarMappable):
+            mappable, kwargs = cax._parse_colorbar_arg(mappable, values, **kwargs)
+        else:
             pop = _pop_params(kwargs, cax._parse_colorbar_arg, ignore_internal=True)
-            locator_default = formatter_default = None
             if pop:
                 warnings._warn_proplot(
                     f'Input is already a ScalarMappable. '
                     f'Ignoring unused keyword arg(s): {pop}'
                 )
-        else:
-            result = cax._parse_colorbar_arg(mappable, values, **kwargs)
-            mappable, locator_default, formatter_default, kwargs = result
 
         # Parse 'extendsize' and 'extendfrac' keywords
         # TODO: Make this auto-adjust to the subplot size
+        vert = kwargs['orientation'] == 'vertical'
         if extendsize is not None and extendfrac is not None:
             warnings._warn_proplot(
                 f'You cannot specify both an absolute extendsize={extendsize!r} '
@@ -1075,32 +1073,33 @@ class Axes(maxes.Axes):
             extendfrac = None
         if extendfrac is None:
             width, height = cax._get_size_inches()
-            scale = height if kwargs.get('orientation') == 'vertical' else width
+            scale = height if vert else width
             extendsize = units(extendsize, 'em', 'in')
             extendfrac = extendsize / max(scale - 2 * extendsize, units(1, 'em', 'in'))
 
         # Parse the tick locators and formatters
-        # NOTE: This auto constructs minor DiscreteLocotors from major DiscreteLocator
-        # instances (but bypasses if labels are categorical).
-        # NOTE: Almost always DiscreteLocator will be associated with DiscreteNorm.
-        # But otherwise disable minor ticks or else get issues (see mpl #22233).
-        name = 'y' if kwargs.get('orientation') == 'vertical' else 'x'
-        axis = cax.yaxis if kwargs.get('orientation') == 'vertical' else cax.xaxis
-        locator = _not_none(locator, locator_default, None)
-        formatter = _not_none(formatter, formatter_default, 'auto')
+        # NOTE: In presence of BoundaryNorm or similar handle ticks with special
+        # DiscreteLocator or else get issues (see mpl #22233).
+        norm = mappable.norm
+        formatter = _not_none(formatter, getattr(norm, '_labels', None), 'auto')
         formatter = constructor.Formatter(formatter, **formatter_kw)
+        categorical = isinstance(formatter, mticker.FixedFormatter)
         if locator is not None:
             locator = constructor.Locator(locator, **locator_kw)
-        if minorlocator is not None:
+        if minorlocator is not None:  # overrides tickminor
             minorlocator = constructor.Locator(minorlocator, **minorlocator_kw)
-        discrete = isinstance(locator, pticker.DiscreteLocator)
-        categorical = isinstance(formatter, mticker.FixedFormatter)
-        tickminor = False if categorical else rc[name + 'tick.minor.visible']
-        if categorical and discrete:
-            locator = mticker.FixedLocator(np.array(locator.locs))  # convert locator
-        if tickminor and isinstance(mappable.norm, mcolors.BoundaryNorm):
-            locs = np.array(locator.locs if discrete else mappable.norm.boundaries)
-            minorlocator = pticker.DiscreteLocator(locs, minor=True)
+        elif tickminor is None:
+            tickminor = False if categorical else rc['xy'[vert] + 'tick.minor.visible']
+        if isinstance(norm, mcolors.BoundaryNorm):  # DiscreteNorm or BoundaryNorm
+            ticks = getattr(norm, '_ticks', norm.boundaries)
+            segmented = isinstance(getattr(norm, '_norm', None), pcolors.SegmentedNorm)
+            if locator is None:
+                if categorical or segmented:
+                    locator = mticker.FixedLocator(ticks)
+                else:
+                    locator = pticker.DiscreteLocator(ticks)
+            if tickminor and minorlocator is None:
+                minorlocator = pticker.DiscreteLocator(ticks, minor=True)
 
         # Special handling for colorbar keyword arguments
         # WARNING: Critical to not pass empty major locators in matplotlib < 3.5
@@ -1118,6 +1117,7 @@ class Axes(maxes.Axes):
         # set the locator and formatter axis... however this messes up colorbar lengths
         # in matplotlib < 3.2. So we only apply this conditionally and in earlier
         # verisons recognize that DiscreteLocator will behave like FixedLocator.
+        axis = cax.yaxis if vert else cax.xaxis
         if not isinstance(mappable, mcontour.ContourSet):
             extend = _not_none(extend, 'neither')
             kwargs['extend'] = extend
@@ -1151,7 +1151,7 @@ class Axes(maxes.Axes):
             obj.minorticks_on()
         else:
             obj.minorticks_off()
-        if getattr(mappable.norm, 'descending', None):
+        if getattr(norm, 'descending', None):
             axis.set_inverted(True)
         if reverse:  # potentially double reverse, although that would be weird...
             axis.set_inverted(True)
@@ -1622,8 +1622,7 @@ class Axes(maxes.Axes):
 
     @staticmethod
     def _parse_colorbar_arg(
-        mappable, values=None, *,
-        norm=None, norm_kw=None, vmin=None, vmax=None, **kwargs
+        mappable, values=None, norm=None, norm_kw=None, vmin=None, vmax=None, **kwargs
     ):
         """
         Generate a mappable from flexible non-mappable input. Useful in bridging
@@ -1688,15 +1687,15 @@ class Axes(maxes.Axes):
             )
 
         # Generate continuous normalizer, and possibly discrete normalizer. Update
-        # outgoing locator and formatter if user does not override.
+        # the outgoing locator and formatter if user does not override.
         norm_kw = norm_kw or {}
         norm = norm or 'linear'
         vmin = _not_none(vmin=vmin, norm_kw_vmin=norm_kw.pop('vmin', None), default=0)
         vmax = _not_none(vmax=vmax, norm_kw_vmax=norm_kw.pop('vmax', None), default=1)
         norm = constructor.Norm(norm, vmin=vmin, vmax=vmax, **norm_kw)
-        locator = formatter = None
         if values is not None:
             ticks = []
+            labels = None
             for i, val in enumerate(values):
                 try:
                     val = float(val)
@@ -1706,21 +1705,21 @@ class Axes(maxes.Axes):
                     val = i
                 ticks.append(val)
             if any(isinstance(_, str) for _ in ticks):
-                formatter = mticker.FixedFormatter(list(map(str, ticks)))
+                labels = list(map(str, ticks))
                 ticks = np.arange(len(ticks))
-                locator = mticker.FixedLocator(ticks)
-            else:
-                locator = pticker.DiscreteLocator(ticks)
             if len(ticks) == 1:
                 levels = [ticks[0] - 1, ticks[0] + 1]
             else:
                 levels = edges(ticks)
-            norm, cmap, _ = Axes._parse_discrete_norm(levels, norm, cmap)
+            from . import PlotAxes
+            norm, cmap, _ = PlotAxes._parse_discrete_norm(
+                levels, norm, cmap, discrete_ticks=ticks, discrete_labels=labels
+            )
 
         # Return ad hoc ScalarMappable and update locator and formatter
         # NOTE: If value list doesn't match this may cycle over colors.
         mappable = mcm.ScalarMappable(norm, cmap)
-        return mappable, locator, formatter, kwargs
+        return mappable, kwargs
 
     def _parse_colorbar_filled(
         self, length=None, align=None, tickloc=None, ticklocation=None,
@@ -1848,99 +1847,6 @@ class Axes(maxes.Axes):
             warnings._warn_proplot('Inset colorbars can only have ticks on the bottom.')
         kwargs.update({'orientation': 'horizontal', 'ticklocation': 'bottom'})
         return ax, kwargs
-
-    @staticmethod
-    def _parse_discrete_norm(
-        levels, norm, cmap, *, extend=None, min_levels=None, **kwargs,
-    ):
-        """
-        Create a `~proplot.colors.DiscreteNorm` or `~proplot.colors.BoundaryNorm`
-        from the input colormap and normalizer.
-
-        Parameters
-        ----------
-        levels : sequence of float
-            The level boundaries.
-        norm : `~matplotlib.colors.Normalize`
-            The continuous normalizer.
-        cmap : `~matplotlib.colors.Colormap`
-            The colormap.
-        extend : str, optional
-            The extend setting.
-        min_levels : int, optional
-            The minimum number of levels.
-
-        Returns
-        -------
-        norm : `~proplot.colors.DiscreteNorm`
-            The discrete normalizer.
-        cmap : `~matplotlib.colors.Colormap`
-            The possibly-modified colormap.
-        kwargs
-            Unused arguments.
-        """
-        # Reverse the colormap if input levels or values were descending
-        # See _parse_level_list for details
-        min_levels = _not_none(min_levels, 2)  # 1 for contour plots
-        unique = extend = _not_none(extend, 'neither')
-        under = cmap._rgba_under
-        over = cmap._rgba_over
-        cyclic = getattr(cmap, '_cyclic', None)
-        qualitative = isinstance(cmap, pcolors.DiscreteColormap)  # see _parse_cmap
-        if len(levels) < min_levels:
-            raise ValueError(
-                f'Invalid levels={levels!r}. Must be at least length {min_levels}.'
-            )
-
-        # Ensure end colors are unique by scaling colors as if extend='both'
-        # NOTE: Inside _parse_cmap should have enforced extend='neither'
-        if cyclic:
-            step = 0.5  # try to allocate space for unique end colors
-            unique = 'both'
-
-        # Ensure color list length matches level list length using rotation
-        # NOTE: No harm if not enough colors, we just end up with the same
-        # color for out-of-bounds extensions. This is a gentle failure
-        elif qualitative:
-            step = 0.5  # try to sample the central index for safety
-            unique = 'both'
-            auto_under = under is None and extend in ('min', 'both')
-            auto_over = over is None and extend in ('max', 'both')
-            ncolors = len(levels) - min_levels + 1 + auto_under + auto_over
-            colors = list(itertools.islice(itertools.cycle(cmap.colors), ncolors))
-            if auto_under and len(colors) > 1:
-                under, *colors = colors
-            if auto_over and len(colors) > 1:
-                *colors, over = colors
-            cmap = cmap.copy(colors, N=len(colors))
-            if under is not None:
-                cmap.set_under(under)
-            if over is not None:
-                cmap.set_over(over)
-
-        # Ensure middle colors sample full range when extreme colors are present
-        # by scaling colors as if extend='neither'
-        else:
-            step = 1.0
-            if over is not None and under is not None:
-                unique = 'neither'
-            elif over is not None:  # turn off over-bounds unique bin
-                if extend == 'both':
-                    unique = 'min'
-                elif extend == 'max':
-                    unique = 'neither'
-            elif under is not None:  # turn off under-bounds unique bin
-                if extend == 'both':
-                    unique = 'min'
-                elif extend == 'max':
-                    unique = 'neither'
-
-        # Generate DiscreteNorm and update "child" norm with vmin and vmax from
-        # levels. This lets the colorbar set tick locations properly!
-        if not isinstance(norm, mcolors.BoundaryNorm) and len(levels) > 1:
-            norm = pcolors.DiscreteNorm(levels, norm=norm, unique=unique, step=step)
-
-        return norm, cmap, kwargs
 
     def _parse_legend_aligned(self, pairs, ncol=None, order=None, **kwargs):
         """

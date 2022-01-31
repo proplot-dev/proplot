@@ -2343,12 +2343,17 @@ class DiscreteNorm(mcolors.BoundaryNorm):
     @warnings._rename_kwargs(
         '0.7.0', extend='unique', descending='DiscreteNorm(descending_levels)'
     )
-    def __init__(self, levels, norm=None, unique=None, step=None, clip=False):
+    def __init__(
+        self, levels,
+        norm=None, unique=None, step=None, clip=False, ticks=None, labels=None
+    ):
         """
         Parameters
         ----------
         levels : sequence of float
             The level boundaries. Must be monotonically increasing or decreasing.
+            If the latter then `~DiscreteNorm.descending` is set to ``True`` and the
+            colorbar axis drawn with this normalizer will be reversed.
         norm : `~matplotlib.colors.Normalize`, optional
             The normalizer used to transform `levels` and data values passed to
             `~DiscreteNorm.__call__` before discretization. The ``vmin`` and ``vmax``
@@ -2367,13 +2372,22 @@ class DiscreteNorm(mcolors.BoundaryNorm):
             ``'both'``, and on upper colors when `unique` is ``'max'`` or ``'both'``.
         clip : bool, optional
             Whether to clip values falling outside of the level bins. This only
-            has an effect on lower colors when unique is ``'min'`` or ``'both'``,
-            and on upper colors when unique is ``'max'`` or ``'both'``.
+            has an effect on lower colors when `unique` is ``'min'`` or ``'both'``,
+            and on upper colors when `unique` is ``'max'`` or ``'both'``.
+
+        Other parameters
+        ----------------
+        ticks : array-like, default: `levels`
+            Default tick values to use for colorbars drawn with this normalizer. This
+            is set to the level centers when `values` is passed to a plotting command.
+        labels : array-like, optional
+            Default tick labels to use for colorbars drawn with this normalizer. This
+            is set to values when drawing on-the-fly colorbars.
 
         Note
         ----
-        This normalizer also makes sure that levels always span the full range
-        of colors in the colormap, whether `extend` is set to ``'min'``, ``'max'``,
+        This normalizer makes sure that levels always span the full range of
+        colors in the colormap, whether `extend` is set to ``'min'``, ``'max'``,
         ``'neither'``, or ``'both'``. In matplotlib, when `extend` is not ``'both'``,
         the most intense colors are cut off (reserved for "out of bounds" data),
         even though they are not being used.
@@ -2451,6 +2465,8 @@ class DiscreteNorm(mcolors.BoundaryNorm):
         dest = norm(mids)
         dest[0] -= eps  # dest guaranteed to be numpy.float64
         dest[-1] += eps
+        self._ticks = _not_none(ticks, levels)
+        self._labels = labels
         self._descending = descending
         self._bmin = np.min(mids)
         self._bmax = np.max(mids)
