@@ -553,7 +553,7 @@ def _meta_coords(*args, which='x', **kwargs):
             raise ValueError('Non-1D string coordinate input is unsupported.')
         ticks = np.arange(len(data))
         labels = list(map(str, data))
-        kwargs.setdefault(which + 'locator', Locator(ticks, index=False))
+        kwargs.setdefault(which + 'locator', Locator(ticks))
         kwargs.setdefault(which + 'formatter', Formatter(labels, index=True))
         kwargs.setdefault(which + 'minorlocator', Locator('null'))
         res.append(ticks)  # use these as data coordinates
