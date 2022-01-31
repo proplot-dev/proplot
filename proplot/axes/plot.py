@@ -1635,7 +1635,24 @@ class PlotAxes(base.Axes):
         kwargs['colors'] = kwargs.pop('edgecolors', 'k')
         return self._plot_native(method, *args, **kwargs)
 
-    def _fix_patch_edges(self, obj, edgefix=None, **kwargs):
+    def _fix_sticky_edges(self, objs, axis, *args, only=None):
+        """
+        Fix sticky edges for the input artists using the minimum and maximum of the
+        input coordinates. This is used to copy `bar` behavior to `area` and `lines`.
+        """
+        for array in args:
+            min_, max_ = inputs._safe_range(array)
+            if min_ is None or max_ is None:
+                continue
+            for obj in guides._iter_iterables(objs):
+                if only and not isinstance(obj, only):
+                    continue  # e.g. ignore error bars
+                convert = getattr(self, 'convert_' + axis + 'units')
+                edges = getattr(obj.sticky_edges, axis)
+                edges.extend(convert((min_, max_)))
+
+    @staticmethod
+    def _fix_patch_edges(obj, edgefix=None, **kwargs):
         """
         Fix white lines between between filled patches and fix issues
         with colormaps that are transparent. If keyword args passed by user
@@ -1684,25 +1701,9 @@ class PlotAxes(base.Axes):
             obj.set_edgecolor(obj.get_facecolor())
         elif np.iterable(obj):  # e.g. silent_list of BarContainer
             for element in obj:
-                self._fix_patch_edges(element, edgefix=edgefix)
+                PlotAxes._fix_patch_edges(element, edgefix=edgefix)
         else:
             warnings._warn_proplot(f'Unexpected obj {obj} passed to _fix_patch_edges.')
-
-    def _fix_sticky_edges(self, objs, axis, *args, only=None):
-        """
-        Fix sticky edges for the input artists using the minimum and maximum of the
-        input coordinates. This is used to copy `bar` behavior to `area` and `lines`.
-        """
-        for array in args:
-            min_, max_ = inputs._safe_range(array)
-            if min_ is None or max_ is None:
-                continue
-            for obj in guides._iter_iterables(objs):
-                if only and not isinstance(obj, only):
-                    continue  # e.g. ignore error bars
-                convert = getattr(self, 'convert_' + axis + 'units')
-                edges = getattr(obj.sticky_edges, axis)
-                edges.extend(convert((min_, max_)))
 
     @contextlib.contextmanager
     def _keep_grid_bools(self):

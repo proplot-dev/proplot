@@ -1175,8 +1175,9 @@ class Axes(maxes.Axes):
         if obj.dividers is not None:
             obj.dividers.update(kw_outline)
         if obj.solids:
+            from . import PlotAxes
             obj.solids.set_rasterized(rasterized)
-            cax._fix_patch_edges(obj.solids, edgefix=edgefix)
+            PlotAxes._fix_patch_edges(obj.solids, edgefix=edgefix)
 
         # Register location and return
         self._register_guide('colorbar', obj, (loc, align))  # possibly replace another
