@@ -907,7 +907,7 @@ def Norm(norm, *args, **kwargs):
     return NORMS[norm](*args, **kwargs)
 
 
-def Locator(locator, *args, index=False, discrete=False, **kwargs):
+def Locator(locator, *args, discrete=False, **kwargs):
     """
     Return a `~matplotlib.ticker.Locator` instance.
 
@@ -923,9 +923,8 @@ def Locator(locator, *args, index=False, discrete=False, **kwargs):
         * If a number, this specifies the *step size* between tick locations.
           Returns a `~matplotlib.ticker.MultipleLocator`.
         * If a sequence of numbers, these points are ticked. Returns
-          a `~matplotlib.ticker.FixedLocator` by default,
-          a `~proplot.ticker.IndexLocator` if `index` is ``True``, or
-          a `~proplot.ticker.DiscreteLocator` if `discrete` is ``True``.
+          a `~matplotlib.ticker.FixedLocator` by default or a
+          `~proplot.ticker.DiscreteLocator` if `discrete` is ``True``.
 
         Otherwise, `locator` should be a string corresponding to one
         of the "registered" locators (see below table). If `locator` is a
@@ -1023,9 +1022,8 @@ def Locator(locator, *args, index=False, discrete=False, **kwargs):
     elif isinstance(locator, Number):  # scalar variable
         locator = mticker.MultipleLocator(locator, *args, **kwargs)
     elif np.iterable(locator):
-        if index:
-            locator = pticker.IndexLocator(locator, *args, **kwargs)
-        elif discrete:
+        locator = np.array(locator)
+        if discrete:
             locator = pticker.DiscreteLocator(locator, *args, **kwargs)
         else:
             locator = mticker.FixedLocator(locator, *args, **kwargs)
