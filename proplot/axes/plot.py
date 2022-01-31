@@ -2506,7 +2506,7 @@ class PlotAxes(base.Axes):
                 array, _ = pcolors._sanitize_levels(array, minsize)
             elif isinstance(array, Integral):
                 pass
-            else:
+            elif array is not None:
                 raise ValueError(f'Invalid {key}={array}. Must be list or integer.')
             if isinstance(norm, (mcolors.BoundaryNorm, pcolors.SegmentedNorm)):
                 if isinstance(array, Integral):
