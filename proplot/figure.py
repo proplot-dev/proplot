@@ -588,8 +588,8 @@ class Figure(mfigure.Figure):
         self._refaspect_default = 1  # updated for imshow and geographic plots
         self._refwidth = units(refwidth, 'in')
         self._refheight = units(refheight, 'in')
-        self._figwidth = units(figwidth, 'in')
-        self._figheight = units(figheight, 'in')
+        self._figwidth = figwidth = units(figwidth, 'in')
+        self._figheight = figheight = units(figheight, 'in')
 
         # Add special consideration for interactive backends
         backend = _not_none(rc.backend, '')
@@ -707,6 +707,8 @@ class Figure(mfigure.Figure):
         self._render_context = {}
         rc_kw, rc_mode = _pop_rc(kwargs)
         kw_format = _pop_params(kwargs, self._format_signature)
+        if figwidth is not None and figheight is not None:
+            kwargs['figsize'] = (figwidth, figheight)
         with self._context_authorized():
             super().__init__(**kwargs)
 
@@ -1065,8 +1067,7 @@ class Figure(mfigure.Figure):
 
     def _add_subplots(
         self, array=None, nrows=1, ncols=1, order='C', proj=None, projection=None,
-        proj_kw=None, projection_kw=None, backend=None, basemap=None,
-        **kwargs
+        proj_kw=None, projection_kw=None, backend=None, basemap=None, **kwargs
     ):
         """
         The driver function for adding multiple subplots.
