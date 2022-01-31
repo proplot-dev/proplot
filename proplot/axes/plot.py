@@ -2152,7 +2152,7 @@ class PlotAxes(base.Axes):
         # WARNING: Previously 'colors' set the edgecolors. To avoid all-black
         # colormap make sure to ignore 'colors' if 'cmap' was also passed.
         # WARNING: Previously tried setting number of levels to len(colors), but this
-        # makes single-level single-color contour plots, and since _parse_level_count is
+        # makes single-level single-color contour plots, and since _parse_level_num is
         # only generates approximate level counts, the idea failed anyway. Users should
         # pass their own levels to avoid truncation/cycling in these very special cases.
         autodiverging = rc['cmap.autodiverging']
@@ -2216,7 +2216,7 @@ class PlotAxes(base.Axes):
                 if abs(np.sign(vmax) - np.sign(vmin)) == 2:
                     isdiverging = True
         if discrete:
-            levels, vmin, vmax, norm, norm_kw, kwargs = self._parse_level_list(
+            levels, vmin, vmax, norm, norm_kw, kwargs = self._parse_level_vals(
                 *args, vmin=vmin, vmax=vmax, norm=norm, norm_kw=norm_kw, extend=extend,
                 min_levels=min_levels, skip_autolev=skip_autolev, **kwargs
             )
@@ -2250,7 +2250,7 @@ class PlotAxes(base.Axes):
         # Create the discrete normalizer
         # Then finally warn and remove unused args
         if levels is not None:
-            norm, cmap, kwargs = self._parse_discrete_norm(
+            norm, cmap, kwargs = self._parse_level_norm(
                 levels, norm, cmap, extend=extend, min_levels=min_levels, **kwargs
             )
         params = _pop_params(kwargs, *self._level_parsers, ignore_internal=True)
@@ -2336,7 +2336,119 @@ class PlotAxes(base.Axes):
         else:
             return kwargs
 
-    def _parse_level_count(
+    def _parse_level_lim(
+        self, *args,
+        vmin=None, vmax=None, robust=None, inbounds=None,
+        negative=None, positive=None, symmetric=None, to_centers=False, **kwargs
+    ):
+        """
+        Return a suitable vmin and vmax based on the input data.
+
+        Parameters
+        ----------
+        *args
+            The sample data.
+        vmin, vmax : float, optional
+            The user input minimum and maximum.
+        robust : bool, optional
+            Whether to limit the default range to exclude outliers.
+        inbounds : bool, optional
+            Whether to filter to in-bounds data.
+        negative, positive, symmetric : bool, optional
+            Whether limits should be negative, positive, or symmetric.
+        to_centers : bool, optional
+            Whether to convert coordinates to 'centers'.
+
+        Returns
+        -------
+        vmin, vmax : float
+            The minimum and maximum.
+        **kwargs
+            Unused arguemnts.
+        """
+        # Parse vmin and vmax
+        automin = vmin is None
+        automax = vmax is None
+        if not automin and not automax:
+            return vmin, vmax, kwargs
+
+        # Parse input args
+        inbounds = _not_none(inbounds, rc['cmap.inbounds'])
+        robust = _not_none(robust, rc['cmap.robust'], False)
+        robust = 96 if robust is True else 100 if robust is False else robust
+        robust = np.atleast_1d(robust)
+        if robust.size == 1:
+            pmin, pmax = 50 + 0.5 * np.array([-robust.item(), robust.item()])
+        elif robust.size == 2:
+            pmin, pmax = robust.flat  # pull out of array
+        else:
+            raise ValueError(f'Unexpected robust={robust!r}. Must be bool, float, or 2-tuple.')  # noqa: E501
+
+        # Get sample data
+        # NOTE: Critical to use _to_numpy_array here because some
+        # commands are unstandardized.
+        # NOTE: Try to get reasonable *count* levels for hexbin/hist2d, but in general
+        # have no way to select nice ones a priori (why we disable discretenorm).
+        # NOTE: Currently we only ever use this function with *single* array input
+        # but in future could make this public as a way for users (me) to get
+        # automatic synced contours for a bunch of arrays in a grid.
+        vmins, vmaxs = [], []
+        if len(args) > 2:
+            x, y, *zs = args
+        else:
+            x, y, *zs = None, None, *args
+        for z in zs:
+            if z is None:  # e.g. empty scatter color
+                continue
+            if z.ndim > 2:  # e.g. imshow data
+                continue
+            z = inputs._to_numpy_array(z)
+            if inbounds and x is not None and y is not None:  # ignore if None coords
+                z = self._inbounds_vlim(x, y, z, to_centers=to_centers)
+            imin, imax = inputs._safe_range(z, pmin, pmax)
+            if automin and imin is not None:
+                vmins.append(imin)
+            if automax and imax is not None:
+                vmaxs.append(imax)
+        if automin:
+            vmin = min(vmins, default=0)
+        if automax:
+            vmax = max(vmaxs, default=1)
+
+        # Apply modifications
+        # NOTE: This is also applied to manual input levels lists in _parse_level_vals
+        if negative:
+            if automax:
+                vmax = 0
+            else:
+                warnings._warn_proplot(
+                    f'Incompatible arguments vmax={vmax!r} and negative=True. '
+                    'Ignoring the latter.'
+                )
+        if positive:
+            if automin:
+                vmin = 0
+            else:
+                warnings._warn_proplot(
+                    f'Incompatible arguments vmin={vmin!r} and positive=True. '
+                    'Ignoring the latter.'
+                )
+        if symmetric:
+            if automin and not automax:
+                vmin = -vmax
+            elif automax and not automin:
+                vmax = -vmin
+            elif automin and automax:
+                vmin, vmax = -np.max(np.abs((vmin, vmax))), np.max(np.abs((vmin, vmax)))
+            else:
+                warnings._warn_proplot(
+                    f'Incompatible arguments vmin={vmin!r}, vmax={vmax!r}, and '
+                    'symmetric=True. Ignoring the latter.'
+                )
+
+        return vmin, vmax, kwargs
+
+    def _parse_level_num(
         self, *args, levels=None, locator=None, locator_kw=None, vmin=None, vmax=None,
         norm=None, norm_kw=None, extend=None, symmetric=None, **kwargs
     ):
@@ -2448,7 +2560,7 @@ class PlotAxes(base.Axes):
 
         return levels, kwargs
 
-    def _parse_level_list(
+    def _parse_level_vals(
         self, *args, N=None, levels=None, values=None, extend=None,
         positive=False, negative=False, nozero=False, norm=None, norm_kw=None,
         skip_autolev=False, min_levels=None, **kwargs,
@@ -2541,7 +2653,7 @@ class PlotAxes(base.Axes):
             levels = _not_none(levels, rc['cmap.levels'])
         else:
             values = _sanitize_levels('values', values, 1)
-            kwargs['discrete_ticks'] = values  # passed to _parse_discrete_norm
+            kwargs['discrete_ticks'] = values  # passed to _parse_level_norm
             if len(values) == 1:
                 levels = [values[0] - 1, values[0] + 1]  # weird but why not
             elif norm is not None and norm not in ('segments', 'segmented'):
@@ -2569,11 +2681,11 @@ class PlotAxes(base.Axes):
         # this function reverses them and adds special attribute to the normalizer.
         # Then colorbar() reads this attr and flips the axis and the colormap direction
         if np.iterable(levels):
-            pop = _pop_params(kwargs, self._parse_level_count, ignore_internal=True)
+            pop = _pop_params(kwargs, self._parse_level_num, ignore_internal=True)
             if pop:
                 warnings._warn_proplot(f'Ignoring unused keyword arg(s): {pop}')
         elif not skip_autolev:
-            levels, kwargs = self._parse_level_count(
+            levels, kwargs = self._parse_level_num(
                 *args, levels=levels, norm=norm, norm_kw=norm_kw, extend=extend,
                 negative=negative, positive=positive, **kwargs
             )
@@ -2600,120 +2712,8 @@ class PlotAxes(base.Axes):
 
         return levels, vmin, vmax, norm, norm_kw, kwargs
 
-    def _parse_level_lim(
-        self, *args,
-        vmin=None, vmax=None, robust=None, inbounds=None,
-        negative=None, positive=None, symmetric=None, to_centers=False, **kwargs
-    ):
-        """
-        Return a suitable vmin and vmax based on the input data.
-
-        Parameters
-        ----------
-        *args
-            The sample data.
-        vmin, vmax : float, optional
-            The user input minimum and maximum.
-        robust : bool, optional
-            Whether to limit the default range to exclude outliers.
-        inbounds : bool, optional
-            Whether to filter to in-bounds data.
-        negative, positive, symmetric : bool, optional
-            Whether limits should be negative, positive, or symmetric.
-        to_centers : bool, optional
-            Whether to convert coordinates to 'centers'.
-
-        Returns
-        -------
-        vmin, vmax : float
-            The minimum and maximum.
-        **kwargs
-            Unused arguemnts.
-        """
-        # Parse vmin and vmax
-        automin = vmin is None
-        automax = vmax is None
-        if not automin and not automax:
-            return vmin, vmax, kwargs
-
-        # Parse input args
-        inbounds = _not_none(inbounds, rc['cmap.inbounds'])
-        robust = _not_none(robust, rc['cmap.robust'], False)
-        robust = 96 if robust is True else 100 if robust is False else robust
-        robust = np.atleast_1d(robust)
-        if robust.size == 1:
-            pmin, pmax = 50 + 0.5 * np.array([-robust.item(), robust.item()])
-        elif robust.size == 2:
-            pmin, pmax = robust.flat  # pull out of array
-        else:
-            raise ValueError(f'Unexpected robust={robust!r}. Must be bool, float, or 2-tuple.')  # noqa: E501
-
-        # Get sample data
-        # NOTE: Critical to use _to_numpy_array here because some
-        # commands are unstandardized.
-        # NOTE: Try to get reasonable *count* levels for hexbin/hist2d, but in general
-        # have no way to select nice ones a priori (why we disable discretenorm).
-        # NOTE: Currently we only ever use this function with *single* array input
-        # but in future could make this public as a way for users (me) to get
-        # automatic synced contours for a bunch of arrays in a grid.
-        vmins, vmaxs = [], []
-        if len(args) > 2:
-            x, y, *zs = args
-        else:
-            x, y, *zs = None, None, *args
-        for z in zs:
-            if z is None:  # e.g. empty scatter color
-                continue
-            if z.ndim > 2:  # e.g. imshow data
-                continue
-            z = inputs._to_numpy_array(z)
-            if inbounds and x is not None and y is not None:  # ignore if None coords
-                z = self._inbounds_vlim(x, y, z, to_centers=to_centers)
-            imin, imax = inputs._safe_range(z, pmin, pmax)
-            if automin and imin is not None:
-                vmins.append(imin)
-            if automax and imax is not None:
-                vmaxs.append(imax)
-        if automin:
-            vmin = min(vmins, default=0)
-        if automax:
-            vmax = max(vmaxs, default=1)
-
-        # Apply modifications
-        # NOTE: This is also applied to manual input levels lists in _parse_level_list
-        if negative:
-            if automax:
-                vmax = 0
-            else:
-                warnings._warn_proplot(
-                    f'Incompatible arguments vmax={vmax!r} and negative=True. '
-                    'Ignoring the latter.'
-                )
-        if positive:
-            if automin:
-                vmin = 0
-            else:
-                warnings._warn_proplot(
-                    f'Incompatible arguments vmin={vmin!r} and positive=True. '
-                    'Ignoring the latter.'
-                )
-        if symmetric:
-            if automin and not automax:
-                vmin = -vmax
-            elif automax and not automin:
-                vmax = -vmin
-            elif automin and automax:
-                vmin, vmax = -np.max(np.abs((vmin, vmax))), np.max(np.abs((vmin, vmax)))
-            else:
-                warnings._warn_proplot(
-                    f'Incompatible arguments vmin={vmin!r}, vmax={vmax!r}, and '
-                    'symmetric=True. Ignoring the latter.'
-                )
-
-        return vmin, vmax, kwargs
-
     @staticmethod
-    def _parse_discrete_norm(
+    def _parse_level_norm(
         levels, norm, cmap, *, extend=None, min_levels=None,
         discrete_ticks=None, discrete_labels=None, **kwargs
     ):
@@ -2748,7 +2748,7 @@ class PlotAxes(base.Axes):
             Unused arguments.
         """
         # Reverse the colormap if input levels or values were descending
-        # See _parse_level_list for details
+        # See _parse_level_vals for details
         min_levels = _not_none(min_levels, 2)  # 1 for contour plots
         unique = extend = _not_none(extend, 'neither')
         under = cmap._rgba_under
@@ -3806,8 +3806,8 @@ class PlotAxes(base.Axes):
         %(plot.hexbin)s
         """
         # WARNING: Cannot use automatic level generation here until counts are
-        # estimated. Inside _parse_level_list if no manual levels were provided then
-        # _parse_level_count is skipped and args like levels=10 or locator=5 are ignored
+        # estimated. Inside _parse_level_vals if no manual levels were provided then
+        # _parse_level_num is skipped and args like levels=10 or locator=5 are ignored
         x, y, kw = self._parse_1d_plot(x, y, autovalues=True, **kwargs)
         kw.update(_pop_props(kw, 'collection'))  # takes LineCollection props
         kw = self._parse_cmap(x, y, y, skip_autolev=True, default_discrete=False, **kw)
@@ -4200,7 +4200,7 @@ class PlotAxes(base.Axes):
             yield (i, n, *a, kw)
 
     # Related parsing functions for warnings
-    _level_parsers = (_parse_level_list, _parse_level_count, _parse_level_lim)
+    _level_parsers = (_parse_level_vals, _parse_level_num, _parse_level_lim)
 
     # Rename the shorthands
     boxes = warnings._rename_objs('0.8.0', boxes=box)

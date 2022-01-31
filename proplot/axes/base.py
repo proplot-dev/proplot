@@ -1712,7 +1712,7 @@ class Axes(maxes.Axes):
             else:
                 levels = edges(ticks)
             from . import PlotAxes
-            norm, cmap, _ = PlotAxes._parse_discrete_norm(
+            norm, cmap, _ = PlotAxes._parse_level_norm(
                 levels, norm, cmap, discrete_ticks=ticks, discrete_labels=labels
             )
 
