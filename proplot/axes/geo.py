@@ -609,6 +609,10 @@ class GeoAxes(plot.PlotAxes):
             rc_kw['grid.labelweight'] = labelweight
         with rc.context(rc_kw, mode=rc_mode):
             # Apply extent mode first
+            # NOTE: We deprecate autoextent on _CartopyAxes with _rename_kwargs which
+            # does not translate boolean flag. So here apply translation.
+            if extent is not None and not isinstance(extent, str):
+                extent = ('globe', 'auto')[int(bool(extent))]
             self._update_boundary(round)
             self._update_extent_mode(extent, boundinglat)
 
