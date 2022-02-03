@@ -225,7 +225,11 @@ Bug fixes
   arrays to plotting methods (:issue:`320`).
 * Fix issue where list-of-string colors passed to `~proplot.axes.Axes.scatter`
   are interpreted as data values (:issue:`316`).
-* Fix issue where settings passed to `~proplot.axes.Axes.colorbar` after e.g.
+* Fix issue where *x* and *y* axis limits are reversed when passing to
+  `~matplotlib.axes.Axes.hexbin` and `~matplotlib.axes.Axes.hist2d` (:issue:`334`).
+* Fix regression where *x* or *y* axis limits are reversed when passing to
+  `~matplotlib.axes.Axes.hist` and `~matplotlib.axes.Axes.histh` (:issue:`334`).
+* Fix issue where settings passed to `~proplot.axes.Axes.colorbar` after calling e.g.
   `~proplot.axes.PlotAxes.pcolor` with `colorbar_kw` are ignored (:issue:`314`).
 * Fix issues where passing the colorbar `orientation` without a `loc`, or using a non-
   standard `orientation` for a given `loc`, triggers tickloc error (:issue:`314`).

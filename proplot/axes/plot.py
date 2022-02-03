@@ -3010,7 +3010,9 @@ class PlotAxes(base.Axes):
         kw.update(_pop_props(kw, 'collection'))
         kw, extents = self._inbounds_extent(**kw)
         label = _not_none(**{key: kw.pop(key, None) for key in ('label', 'value')})
-        x, y, kw = self._parse_1d_args(x, y, autovalues=True, autoreverse=False, values=c, **kw)  # noqa: E501
+        x, y, kw = self._parse_1d_args(
+            x, y, values=c, autovalues=True, autoreverse=False, **kw
+        )
         c = kw.pop('values', None)  # permits auto-inferring values
         c = np.arange(y.size) if c is None else inputs._to_numpy_array(c)
         if (
@@ -3458,14 +3460,18 @@ class PlotAxes(base.Axes):
         """
         kw = kwargs.copy()
         pad = _not_none(labeldistance=labeldistance, labelpad=labelpad, default=1.15)
-        props = _pop_props(kw, 'patch')
+        wedge_kw = kw.pop('wedgeprops', None) or {}
+        wedge_kw.update(_pop_props(kw, 'patch'))
         edgefix_kw = _pop_params(kw, self._fix_patch_edges)
-        _, x, kw = self._parse_1d_args(x, autox=False, autoy=False, **kw)
+        _, x, kw = self._parse_1d_args(
+            x, autox=False, autoy=False, autoreverse=False, **kw
+        )
         kw = self._parse_cycle(x.size, **kw)
-        kw['labeldistance'] = pad
-        objs = self._call_native('pie', x, explode, wedgeprops=props, **kw)
+        objs = self._call_native(
+            'pie', x, explode, labeldistance=pad, wedgeprops=wedge_kw, **kw
+        )
         objs = tuple(cbook.silent_list(type(seq[0]).__name__, seq) for seq in objs)
-        self._fix_patch_edges(objs[0], **edgefix_kw, **props)
+        self._fix_patch_edges(objs[0], **edgefix_kw, **wedge_kw)
         return objs
 
     @staticmethod
@@ -3735,7 +3741,9 @@ class PlotAxes(base.Axes):
         # adds them to the first elements in the container for each column
         # of the input data. Make sure that legend() will read both containers
         # and individual items inside those containers.
-        _, xs, kw = self._parse_1d_args(xs, orientation=orientation, **kwargs)
+        _, xs, kw = self._parse_1d_args(
+            xs, autoreverse=False, orientation=orientation, **kwargs
+        )
         fill = _not_none(fill=fill, filled=filled)
         stack = _not_none(stack=stack, stacked=stacked)
         if fill is not None:
@@ -3793,10 +3801,10 @@ class PlotAxes(base.Axes):
         """
         %(plot.hist2d)s
         """
-        # Rely on pcolormesh() override for this.
+        # Rely on the pcolormesh() override for this.
         if bins is not None:
             kwargs['bins'] = bins
-        return super().hist2d(x, y, default_discrete=False, **kwargs)
+        return super().hist2d(x, y, autoreverse=False, default_discrete=False, **kwargs)
 
     # WARNING: breaking change from native 'C'
     @inputs._preprocess_or_redirect('x', 'y', 'weights')
@@ -3809,7 +3817,10 @@ class PlotAxes(base.Axes):
         # WARNING: Cannot use automatic level generation here until counts are
         # estimated. Inside _parse_level_vals if no manual levels were provided then
         # _parse_level_num is skipped and args like levels=10 or locator=5 are ignored
-        x, y, kw = self._parse_1d_args(x, y, autovalues=True, **kwargs)
+        kw = kwargs.copy()
+        x, y, kw = self._parse_1d_args(
+            x, y, autoreverse=False, autovalues=True, **kw
+        )
         kw.update(_pop_props(kw, 'collection'))  # takes LineCollection props
         kw = self._parse_cmap(x, y, y, skip_autolev=True, default_discrete=False, **kw)
         norm = kw.get('norm', None)
