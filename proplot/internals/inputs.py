@@ -241,7 +241,7 @@ def _from_data(data, *args):
     return args
 
 
-def _redirect_or_preprocess(*keys, keywords=None, allow_extra=True):
+def _preprocess_or_redirect(*keys, keywords=None, allow_extra=True):
     """
     Redirect internal plotting calls to native matplotlib methods. Also convert
     keyword args to positional and pass arguments through 'data' dictionary.
@@ -257,7 +257,7 @@ def _redirect_or_preprocess(*keys, keywords=None, allow_extra=True):
         from . import _kwargs_to_args
 
         @functools.wraps(func)
-        def _redirect_or_preprocess(self, *args, **kwargs):
+        def _preprocess_or_redirect(self, *args, **kwargs):
             if getattr(self, '_internal_call', None):
                 # Redirect internal matplotlib call to native function
                 from ..axes import PlotAxes
@@ -299,7 +299,7 @@ def _redirect_or_preprocess(*keys, keywords=None, allow_extra=True):
                 # Call main function
                 return func(self, *args, **kwargs)  # call unbound method
 
-        return _redirect_or_preprocess
+        return _preprocess_or_redirect
 
     return _decorator
 
@@ -542,7 +542,7 @@ def _meta_coords(*args, which='x', **kwargs):
     # depend on other plotted content.
     # NOTE: Why IndexFormatter and not FixedFormatter? The former ensures labels
     # correspond to indices while the latter can mysteriously truncate labels.
-    from ..constructor import Locator, Formatter
+    from ..constructor import Formatter, Locator
     res = []
     for data in args:
         data = _to_duck_array(data)

@@ -1272,7 +1272,7 @@ class PlotAxes(base.Axes):
         """
         super().__init__(*args, **kwargs)
 
-    def _plot_native(self, name, *args, **kwargs):
+    def _call_native(self, name, *args, **kwargs):
         """
         Call the plotting method and redirect internal calls to native methods.
         """
@@ -1287,7 +1287,7 @@ class PlotAxes(base.Axes):
                 obj = getattr(super(), name)(*args, **kwargs)
         return obj
 
-    def _plot_negpos(
+    def _call_negpos(
         self, name, x, *ys, negcolor=None, poscolor=None, colorkey='facecolor',
         use_where=False, use_zero=False, **kwargs
     ):
@@ -1311,7 +1311,7 @@ class PlotAxes(base.Axes):
         else:
             yneg = inputs._safe_mask(ys[1] < ys[0], *ys)
         kwargs[colorkey] = _not_none(negcolor, rc['negcolor'])
-        negobj = self._plot_native(name, x, *yneg, **kwargs)
+        negobj = self._call_native(name, x, *yneg, **kwargs)
         # Positive component
         ypos = list(ys)  # copy
         if use_zero:  # filter bar heights
@@ -1321,7 +1321,7 @@ class PlotAxes(base.Axes):
         else:
             ypos = inputs._safe_mask(ys[1] >= ys[0], *ys)
         kwargs[colorkey] = _not_none(poscolor, rc['poscolor'])
-        posobj = self._plot_native(name, x, *ypos, **kwargs)
+        posobj = self._call_native(name, x, *ypos, **kwargs)
         return cbook.silent_list(type(negobj).__name__, (negobj, posobj))
 
     def _add_auto_labels(
@@ -1633,7 +1633,7 @@ class PlotAxes(base.Axes):
         kwargs.setdefault('linewidths', EDGEWIDTH)
         kwargs.pop('cmap', None)
         kwargs['colors'] = kwargs.pop('edgecolors', 'k')
-        return self._plot_native(method, *args, **kwargs)
+        return self._call_native(method, *args, **kwargs)
 
     def _fix_sticky_edges(self, objs, axis, *args, only=None):
         """
@@ -1827,6 +1827,35 @@ class PlotAxes(base.Axes):
                 f'data within locked x (y) limits only. Error message: {err}'
             )
 
+    def _parse_1d_args(self, x, *ys, **kwargs):
+        """
+        Interpret positional arguments for all 1D plotting commands.
+        """
+        # Standardize values
+        zerox = not ys
+        if zerox or all(y is None for y in ys):  # pad with remaining Nones
+            x, *ys = None, x, *ys[1:]
+        if len(ys) == 2:  # 'lines' or 'fill_between'
+            if ys[1] is None:
+                ys = (np.array([0.0]), ys[0])  # user input 1 or 2 positional args
+            elif ys[0] is None:
+                ys = (np.array([0.0]), ys[1])  # user input keyword 'y2' but no y1
+        if any(y is None for y in ys):
+            raise ValueError('Missing required data array argument.')
+        ys = tuple(map(inputs._to_duck_array, ys))
+        if x is not None:
+            x = inputs._to_duck_array(x)
+        x, *ys, kwargs = self._parse_1d_format(x, *ys, zerox=zerox, **kwargs)
+
+        # Geographic corrections
+        if self._name == 'cartopy' and isinstance(kwargs.get('transform'), PlateCarree):  # noqa: E501
+            x, *ys = inputs._geo_cartopy_1d(x, *ys)
+        elif self._name == 'basemap' and kwargs.get('latlon', None):
+            xmin, xmax = self._lonaxis.get_view_interval()
+            x, *ys = inputs._geo_basemap_1d(x, *ys, xmin=xmin, xmax=xmax)
+
+        return (x, *ys, kwargs)
+
     def _parse_1d_format(
         self, x, *ys, zerox=False, autox=True, autoy=True, autoformat=None,
         autoreverse=True, autolabels=True, autovalues=False, autoguide=True,
@@ -1931,34 +1960,54 @@ class PlotAxes(base.Axes):
             x = inputs._to_numpy_array(x)
         return (x, *ys, kwargs)
 
-    def _parse_1d_plot(self, x, *ys, **kwargs):
+    def _parse_2d_args(
+        self, x, y, *zs, globe=False, edges=False, allow1d=False,
+        transpose=None, order=None, **kwargs
+    ):
         """
-        Interpret positional arguments for all 1D plotting commands.
+        Interpret positional arguments for all 2D plotting commands.
         """
         # Standardize values
-        zerox = not ys
-        if zerox or all(y is None for y in ys):  # pad with remaining Nones
-            x, *ys = None, x, *ys[1:]
-        if len(ys) == 2:  # 'lines' or 'fill_between'
-            if ys[1] is None:
-                ys = (np.array([0.0]), ys[0])  # user input 1 or 2 positional args
-            elif ys[0] is None:
-                ys = (np.array([0.0]), ys[1])  # user input keyword 'y2' but no y1
-        if any(y is None for y in ys):
-            raise ValueError('Missing required data array argument.')
-        ys = tuple(map(inputs._to_duck_array, ys))
+        # NOTE: Functions pass two 'zs' at most right now
+        if all(z is None for z in zs):
+            x, y, zs = None, None, (x, y)[:len(zs)]
+        if any(z is None for z in zs):
+            raise ValueError('Missing required data array argument(s).')
+        zs = tuple(inputs._to_duck_array(z, strip_units=True) for z in zs)
         if x is not None:
             x = inputs._to_duck_array(x)
-        x, *ys, kwargs = self._parse_1d_format(x, *ys, zerox=zerox, **kwargs)
+        if y is not None:
+            y = inputs._to_duck_array(y)
+        if order is not None:
+            if not isinstance(order, str) or order not in 'CF':
+                raise ValueError(f"Invalid order={order!r}. Options are 'C' or 'F'.")
+            transpose = _not_none(
+                transpose=transpose, transpose_order=bool('CF'.index(order))
+            )
+        if transpose:
+            zs = tuple(z.T for z in zs)
+            if x is not None:
+                x = x.T
+            if y is not None:
+                y = y.T
+        x, y, *zs, kwargs = self._parse_2d_format(x, y, *zs, **kwargs)
+        if edges:
+            # NOTE: These functions quitely pass through 1D inputs, e.g. barb data
+            x, y = inputs._to_edges(x, y, zs[0])
+        else:
+            x, y = inputs._to_centers(x, y, zs[0])
 
         # Geographic corrections
-        if self._name == 'cartopy' and isinstance(kwargs.get('transform'), PlateCarree):  # noqa: E501
-            x, *ys = inputs._geo_cartopy_1d(x, *ys)
+        if allow1d:
+            pass
+        elif self._name == 'cartopy' and isinstance(kwargs.get('transform'), PlateCarree):  # noqa: E501
+            x, y, *zs = inputs._geo_cartopy_2d(x, y, *zs, globe=globe)
         elif self._name == 'basemap' and kwargs.get('latlon', None):
             xmin, xmax = self._lonaxis.get_view_interval()
-            x, *ys = inputs._geo_basemap_1d(x, *ys, xmin=xmin, xmax=xmax)
+            x, y, *zs = inputs._geo_basemap_2d(x, y, *zs, xmin=xmin, xmax=xmax, globe=globe)  # noqa: E501
+            x, y = np.meshgrid(x, y)  # WARNING: required always
 
-        return (x, *ys, kwargs)
+        return (x, y, *zs, kwargs)
 
     def _parse_2d_format(
         self, x, y, *zs, autoformat=None, autoguide=True, autoreverse=True, **kwargs
@@ -2014,55 +2063,6 @@ class PlotAxes(base.Axes):
         x = inputs._to_numpy_array(x)
         y = inputs._to_numpy_array(y)
         zs = tuple(map(inputs._to_numpy_array, zs))
-        return (x, y, *zs, kwargs)
-
-    def _parse_2d_plot(
-        self, x, y, *zs, globe=False, edges=False, allow1d=False,
-        transpose=None, order=None, **kwargs
-    ):
-        """
-        Interpret positional arguments for all 2D plotting commands.
-        """
-        # Standardize values
-        # NOTE: Functions pass two 'zs' at most right now
-        if all(z is None for z in zs):
-            x, y, zs = None, None, (x, y)[:len(zs)]
-        if any(z is None for z in zs):
-            raise ValueError('Missing required data array argument(s).')
-        zs = tuple(inputs._to_duck_array(z, strip_units=True) for z in zs)
-        if x is not None:
-            x = inputs._to_duck_array(x)
-        if y is not None:
-            y = inputs._to_duck_array(y)
-        if order is not None:
-            if not isinstance(order, str) or order not in 'CF':
-                raise ValueError(f"Invalid order={order!r}. Options are 'C' or 'F'.")
-            transpose = _not_none(
-                transpose=transpose, transpose_order=bool('CF'.index(order))
-            )
-        if transpose:
-            zs = tuple(z.T for z in zs)
-            if x is not None:
-                x = x.T
-            if y is not None:
-                y = y.T
-        x, y, *zs, kwargs = self._parse_2d_format(x, y, *zs, **kwargs)
-        if edges:
-            # NOTE: These functions quitely pass through 1D inputs, e.g. barb data
-            x, y = inputs._to_edges(x, y, zs[0])
-        else:
-            x, y = inputs._to_centers(x, y, zs[0])
-
-        # Geographic corrections
-        if allow1d:
-            pass
-        elif self._name == 'cartopy' and isinstance(kwargs.get('transform'), PlateCarree):  # noqa: E501
-            x, y, *zs = inputs._geo_cartopy_2d(x, y, *zs, globe=globe)
-        elif self._name == 'basemap' and kwargs.get('latlon', None):
-            xmin, xmax = self._lonaxis.get_view_interval()
-            x, y, *zs = inputs._geo_basemap_2d(x, y, *zs, xmin=xmin, xmax=xmax, globe=globe)  # noqa: E501
-            x, y = np.meshgrid(x, y)  # WARNING: required always
-
         return (x, y, *zs, kwargs)
 
     def _parse_color(self, x, y, c, *, apply_cycle=True, infer_rgb=False, **kwargs):
@@ -2824,7 +2824,7 @@ class PlotAxes(base.Axes):
         kws.update(_pop_props(kws, 'line'))
         kws, extents = self._inbounds_extent(**kws)
         for xs, ys, fmt in self._iter_arg_pairs(*pairs):
-            xs, ys, kw = self._parse_1d_plot(xs, ys, vert=vert, **kws)
+            xs, ys, kw = self._parse_1d_args(xs, ys, vert=vert, **kws)
             ys, kw = inputs._dist_reduce(ys, **kw)
             guide_kw = _pop_params(kw, self._update_guide)  # after standardize
             for _, n, x, y, kw in self._iter_arg_cols(xs, ys, **kw):
@@ -2837,7 +2837,7 @@ class PlotAxes(base.Axes):
                 a = [x, y]
                 if fmt is not None:  # x1, y1, fmt1, x2, y2, fm2... style input
                     a.append(fmt)
-                obj, = self._plot_native('plot', *a, **kw)
+                obj, = self._call_native('plot', *a, **kw)
                 self._inbounds_xylim(extents, x, y)
                 objs.append((*eb, *es, obj) if eb or es else obj)
 
@@ -2860,7 +2860,7 @@ class PlotAxes(base.Axes):
         """
         return self.plotx(*args, **kwargs)
 
-    @inputs._redirect_or_preprocess('x', 'y', allow_extra=True)
+    @inputs._preprocess_or_redirect('x', 'y', allow_extra=True)
     @docstring._concatenate_inherited
     @docstring._snippet_manager
     def plot(self, *args, **kwargs):
@@ -2870,7 +2870,7 @@ class PlotAxes(base.Axes):
         kwargs = _parse_vert(default_vert=True, **kwargs)
         return self._apply_plot(*args, **kwargs)
 
-    @inputs._redirect_or_preprocess('y', 'x', allow_extra=True)
+    @inputs._preprocess_or_redirect('y', 'x', allow_extra=True)
     @docstring._snippet_manager
     def plotx(self, *args, **kwargs):
         """
@@ -2896,7 +2896,7 @@ class PlotAxes(base.Axes):
         kws, extents = self._inbounds_extent(**kws)
         objs = []
         for xs, ys, fmt in self._iter_arg_pairs(*pairs):
-            xs, ys, kw = self._parse_1d_plot(xs, ys, vert=vert, **kws)
+            xs, ys, kw = self._parse_1d_args(xs, ys, vert=vert, **kws)
             guide_kw = _pop_params(kw, self._update_guide)  # after standardize
             if fmt is not None:
                 kw['fmt'] = fmt
@@ -2904,14 +2904,14 @@ class PlotAxes(base.Axes):
                 kw = self._parse_cycle(n, **kw)
                 if not vert:
                     x, y = y, x
-                obj, = self._plot_native('step', x, y, *a, **kw)
+                obj, = self._call_native('step', x, y, *a, **kw)
                 self._inbounds_xylim(extents, x, y)
                 objs.append(obj)
 
         self._update_guide(objs, **guide_kw)
         return cbook.silent_list('Line2D', objs)  # always return list
 
-    @inputs._redirect_or_preprocess('x', 'y', allow_extra=True)
+    @inputs._preprocess_or_redirect('x', 'y', allow_extra=True)
     @docstring._concatenate_inherited
     @docstring._snippet_manager
     def step(self, *args, **kwargs):
@@ -2921,7 +2921,7 @@ class PlotAxes(base.Axes):
         kwargs = _parse_vert(default_vert=True, **kwargs)
         return self._apply_step(*args, **kwargs)
 
-    @inputs._redirect_or_preprocess('y', 'x', allow_extra=True)
+    @inputs._preprocess_or_redirect('y', 'x', allow_extra=True)
     @docstring._snippet_manager
     def stepx(self, *args, **kwargs):
         """
@@ -2940,7 +2940,7 @@ class PlotAxes(base.Axes):
         # Parse input
         kw = kwargs.copy()
         kw, extents = self._inbounds_extent(**kw)
-        x, y, kw = self._parse_1d_plot(x, y, **kw)
+        x, y, kw = self._parse_1d_args(x, y, **kw)
         guide_kw = _pop_params(kw, self._update_guide)
 
         # Set default colors
@@ -2971,12 +2971,12 @@ class PlotAxes(base.Axes):
         if orientation == 'horizontal':  # may raise error
             kw['orientation'] = orientation
         with rc.context(ctx):
-            obj = self._plot_native('stem', x, y, **kw)
+            obj = self._call_native('stem', x, y, **kw)
         self._inbounds_xylim(extents, x, y, orientation=orientation)
         self._update_guide(obj, **guide_kw)
         return obj
 
-    @inputs._redirect_or_preprocess('x', 'y')
+    @inputs._preprocess_or_redirect('x', 'y')
     @docstring._concatenate_inherited
     @docstring._snippet_manager
     def stem(self, *args, **kwargs):
@@ -2986,7 +2986,7 @@ class PlotAxes(base.Axes):
         kwargs = _parse_vert(default_orientation='vertical', **kwargs)
         return self._apply_stem(*args, **kwargs)
 
-    @inputs._redirect_or_preprocess('x', 'y')
+    @inputs._preprocess_or_redirect('x', 'y')
     @docstring._snippet_manager
     def stemx(self, *args, **kwargs):
         """
@@ -2995,7 +2995,7 @@ class PlotAxes(base.Axes):
         kwargs = _parse_vert(default_orientation='horizontal', **kwargs)
         return self._apply_stem(*args, **kwargs)
 
-    @inputs._redirect_or_preprocess('x', 'y', ('c', 'color', 'colors', 'values'))
+    @inputs._preprocess_or_redirect('x', 'y', ('c', 'color', 'colors', 'values'))
     @docstring._snippet_manager
     def parametric(self, x, y, c, *, interp=0, scalex=True, scaley=True, **kwargs):
         """
@@ -3010,7 +3010,7 @@ class PlotAxes(base.Axes):
         kw.update(_pop_props(kw, 'collection'))
         kw, extents = self._inbounds_extent(**kw)
         label = _not_none(**{key: kw.pop(key, None) for key in ('label', 'value')})
-        x, y, kw = self._parse_1d_plot(x, y, values=c, autovalues=True, autoreverse=False, **kw)  # noqa: E501
+        x, y, kw = self._parse_1d_args(x, y, autovalues=True, autoreverse=False, values=c, **kw)  # noqa: E501
         c = kw.pop('values', None)  # permits auto-inferring values
         c = np.arange(y.size) if c is None else inputs._to_numpy_array(c)
         if (
@@ -3097,7 +3097,7 @@ class PlotAxes(base.Axes):
         kw.update(_pop_props(kw, 'collection'))
         kw, extents = self._inbounds_extent(**kw)
         stack = _not_none(stack=stack, stacked=stacked)
-        xs, ys1, ys2, kw = self._parse_1d_plot(xs, ys1, ys2, vert=vert, **kw)
+        xs, ys1, ys2, kw = self._parse_1d_args(xs, ys1, ys2, vert=vert, **kw)
         guide_kw = _pop_params(kw, self._update_guide)
 
         # Support "negative" and "positive" lines
@@ -3112,9 +3112,9 @@ class PlotAxes(base.Axes):
                 y2 = y2 + y0
                 y0 = y0 + y2 - y1  # irrelevant that we added y0 to both
             if negpos:
-                obj = self._plot_negpos(name, x, y1, y2, colorkey='colors', **kw)
+                obj = self._call_negpos(name, x, y1, y2, colorkey='colors', **kw)
             else:
-                obj = self._plot_native(name, x, y1, y2, **kw)
+                obj = self._call_native(name, x, y1, y2, **kw)
             for y in (y1, y2):
                 self._inbounds_xylim(extents, x, y, vert=vert)
                 if y.size == 1:  # add sticky edges if bounds are scalar
@@ -3130,7 +3130,7 @@ class PlotAxes(base.Axes):
         )
 
     # WARNING: breaking change from native 'ymin' and 'ymax'
-    @inputs._redirect_or_preprocess('x', 'y1', 'y2', ('c', 'color', 'colors'))
+    @inputs._preprocess_or_redirect('x', 'y1', 'y2', ('c', 'color', 'colors'))
     @docstring._snippet_manager
     def vlines(self, *args, **kwargs):
         """
@@ -3140,7 +3140,7 @@ class PlotAxes(base.Axes):
         return self._apply_lines(*args, **kwargs)
 
     # WARNING: breaking change from native 'xmin' and 'xmax'
-    @inputs._redirect_or_preprocess('y', 'x1', 'x2', ('c', 'color', 'colors'))
+    @inputs._preprocess_or_redirect('y', 'x1', 'x2', ('c', 'color', 'colors'))
     @docstring._snippet_manager
     def hlines(self, *args, **kwargs):
         """
@@ -3200,7 +3200,7 @@ class PlotAxes(base.Axes):
         inbounds = kw.pop('inbounds', None)
         kw.update(_pop_props(kw, 'collection'))
         kw, extents = self._inbounds_extent(inbounds=inbounds, **kw)
-        xs, ys, kw = self._parse_1d_plot(xs, ys, vert=vert, autoreverse=False, **kw)
+        xs, ys, kw = self._parse_1d_args(xs, ys, vert=vert, autoreverse=False, **kw)
         ys, kw = inputs._dist_reduce(ys, **kw)
         ss, kw = self._parse_markersize(ss, **kw)  # parse 's'
         infer_rgb = True
@@ -3223,7 +3223,7 @@ class PlotAxes(base.Axes):
             *es, kw = self._add_error_shading(x, y, vert=vert, color_key='c', **kw)
             if not vert:
                 x, y = y, x
-            obj = self._plot_native('scatter', x, y, **kw)
+            obj = self._call_native('scatter', x, y, **kw)
             self._inbounds_xylim(extents, x, y)
             objs.append((*eb, *es, obj) if eb or es else obj)
 
@@ -3236,7 +3236,7 @@ class PlotAxes(base.Axes):
     # NOTE: Matplotlib internally applies scatter 'c' arguments as the
     # 'facecolors' argument to PathCollection. So perfectly reasonable to
     # point both 'color' and 'facecolor' arguments to the 'c' keyword here.
-    @inputs._redirect_or_preprocess(
+    @inputs._preprocess_or_redirect(
         'x',
         'y',
         _get_aliases('collection', 'sizes'),
@@ -3252,7 +3252,7 @@ class PlotAxes(base.Axes):
         kwargs = _parse_vert(default_vert=True, **kwargs)
         return self._apply_scatter(*args, **kwargs)
 
-    @inputs._redirect_or_preprocess(
+    @inputs._preprocess_or_redirect(
         'y',
         'x',
         _get_aliases('collection', 'sizes'),
@@ -3280,7 +3280,7 @@ class PlotAxes(base.Axes):
         kw, extents = self._inbounds_extent(**kw)
         name = 'fill_between' if vert else 'fill_betweenx'
         stack = _not_none(stack=stack, stacked=stacked)
-        xs, ys1, ys2, kw = self._parse_1d_plot(xs, ys1, ys2, vert=vert, **kw)
+        xs, ys1, ys2, kw = self._parse_1d_args(xs, ys1, ys2, vert=vert, **kw)
         edgefix_kw = _pop_params(kw, self._fix_patch_edges)
 
         # Draw patches with default edge width zero
@@ -3294,9 +3294,9 @@ class PlotAxes(base.Axes):
                 y2 = y2 + y0
                 y0 = y0 + y2 - y1  # irrelevant that we added y0 to both
             if negpos:  # NOTE: if user passes 'where' will issue a warning
-                obj = self._plot_negpos(name, x, y1, y2, where=w, use_where=True, **kw)  # noqa: E501
+                obj = self._call_negpos(name, x, y1, y2, where=w, use_where=True, **kw)
             else:
-                obj = self._plot_native(name, x, y1, y2, where=w, **kw)
+                obj = self._call_native(name, x, y1, y2, where=w, **kw)
             self._fix_patch_edges(obj, **edgefix_kw, **kw)
             xsides.append(x)
             for y in (y1, y2):
@@ -3328,7 +3328,7 @@ class PlotAxes(base.Axes):
         """
         return self.fill_betweenx(*args, **kwargs)
 
-    @inputs._redirect_or_preprocess('x', 'y1', 'y2', 'where')
+    @inputs._preprocess_or_redirect('x', 'y1', 'y2', 'where')
     @docstring._concatenate_inherited
     @docstring._snippet_manager
     def fill_between(self, *args, **kwargs):
@@ -3338,7 +3338,7 @@ class PlotAxes(base.Axes):
         kwargs = _parse_vert(default_vert=True, **kwargs)
         return self._apply_fill(*args, **kwargs)
 
-    @inputs._redirect_or_preprocess('y', 'x1', 'x2', 'where')
+    @inputs._preprocess_or_redirect('y', 'x1', 'x2', 'where')
     @docstring._concatenate_inherited
     @docstring._snippet_manager
     def fill_betweenx(self, *args, **kwargs):
@@ -3383,7 +3383,7 @@ class PlotAxes(base.Axes):
         kw, extents = self._inbounds_extent(**kw)
         name = 'barh' if orientation == 'horizontal' else 'bar'
         stack = _not_none(stack=stack, stacked=stacked)
-        xs, hs, kw = self._parse_1d_plot(xs, hs, orientation=orientation, **kw)
+        xs, hs, kw = self._parse_1d_args(xs, hs, orientation=orientation, **kw)
         edgefix_kw = _pop_params(kw, self._fix_patch_edges)
         if absolute_width is None:
             absolute_width = _inside_seaborn_call()
@@ -3411,9 +3411,9 @@ class PlotAxes(base.Axes):
             # Draw simple bars
             *eb, kw = self._add_error_bars(x, b + h, default_barstds=True, orientation=orientation, **kw)  # noqa: E501
             if negpos:
-                obj = self._plot_negpos(name, x, h, w, b, use_zero=True, **kw)
+                obj = self._call_negpos(name, x, h, w, b, use_zero=True, **kw)
             else:
-                obj = self._plot_native(name, x, h, w, b, **kw)
+                obj = self._call_native(name, x, h, w, b, **kw)
             self._fix_patch_edges(obj, **edgefix_kw, **kw)
             for y in (b, b + h):
                 self._inbounds_xylim(extents, x, y, orientation=orientation)
@@ -3425,7 +3425,7 @@ class PlotAxes(base.Axes):
             else cbook.silent_list('BarContainer', objs)
         )
 
-    @inputs._redirect_or_preprocess('x', 'height', 'width', 'bottom')
+    @inputs._preprocess_or_redirect('x', 'height', 'width', 'bottom')
     @docstring._concatenate_inherited
     @docstring._snippet_manager
     def bar(self, *args, **kwargs):
@@ -3437,7 +3437,7 @@ class PlotAxes(base.Axes):
 
     # WARNING: Swap 'height' and 'width' here so that they are always relative
     # to the 'tall' axis. This lets people always pass 'width' as keyword
-    @inputs._redirect_or_preprocess('y', 'height', 'width', 'left')
+    @inputs._preprocess_or_redirect('y', 'height', 'width', 'left')
     @docstring._concatenate_inherited
     @docstring._snippet_manager
     def barh(self, *args, **kwargs):
@@ -3449,7 +3449,7 @@ class PlotAxes(base.Axes):
 
     # WARNING: 'labels' and 'colors' no longer passed through `data` (seems like
     # extremely niche usage... `data` variables should be data-like)
-    @inputs._redirect_or_preprocess('x', 'explode')
+    @inputs._preprocess_or_redirect('x', 'explode')
     @docstring._concatenate_inherited
     @docstring._snippet_manager
     def pie(self, x, explode, *, labelpad=None, labeldistance=None, **kwargs):
@@ -3460,10 +3460,10 @@ class PlotAxes(base.Axes):
         pad = _not_none(labeldistance=labeldistance, labelpad=labelpad, default=1.15)
         props = _pop_props(kw, 'patch')
         edgefix_kw = _pop_params(kw, self._fix_patch_edges)
-        _, x, kw = self._parse_1d_plot(x, autox=False, autoy=False, **kw)
+        _, x, kw = self._parse_1d_args(x, autox=False, autoy=False, **kw)
         kw = self._parse_cycle(x.size, **kw)
         kw['labeldistance'] = pad
-        objs = self._plot_native('pie', x, explode, wedgeprops=props, **kw)
+        objs = self._call_native('pie', x, explode, wedgeprops=props, **kw)
         objs = tuple(cbook.silent_list(type(seq[0]).__name__, seq) for seq in objs)
         self._fix_patch_edges(objs[0], **edgefix_kw, **props)
         return objs
@@ -3528,7 +3528,7 @@ class PlotAxes(base.Axes):
             iprops.setdefault('markeredgecolor', edgecolor)
 
         # Parse color properties
-        x, y, kw = self._parse_1d_plot(
+        x, y, kw = self._parse_1d_args(
             x, y, autoy=False, autoguide=False, vert=vert, **kw
         )
         kw = self._parse_cycle(x.size, **kw)  # possibly apply cycle
@@ -3543,7 +3543,7 @@ class PlotAxes(base.Axes):
         if means:
             kw['showmeans'] = kw['meanline'] = True
         y = inputs._dist_clean(y)
-        artists = self._plot_native('boxplot', y, vert=vert, **kw)
+        artists = self._call_native('boxplot', y, vert=vert, **kw)
         artists = artists or {}  # necessary?
         artists = {
             key: cbook.silent_list(type(objs[0]).__name__, objs) if objs else objs
@@ -3601,7 +3601,7 @@ class PlotAxes(base.Axes):
         """
         return self.boxploth(*args, **kwargs)
 
-    @inputs._redirect_or_preprocess('positions', 'y')
+    @inputs._preprocess_or_redirect('positions', 'y')
     @docstring._concatenate_inherited
     @docstring._snippet_manager
     def boxplot(self, *args, **kwargs):
@@ -3611,7 +3611,7 @@ class PlotAxes(base.Axes):
         kwargs = _parse_vert(default_vert=True, **kwargs)
         return self._apply_boxplot(*args, **kwargs)
 
-    @inputs._redirect_or_preprocess('positions', 'x')
+    @inputs._preprocess_or_redirect('positions', 'x')
     @docstring._snippet_manager
     def boxploth(self, *args, **kwargs):
         """
@@ -3646,7 +3646,7 @@ class PlotAxes(base.Axes):
         )
 
         # Parse color properties
-        x, y, kw = self._parse_1d_plot(
+        x, y, kw = self._parse_1d_args(
             x, y, autoy=False, autoguide=False, vert=vert, **kw
         )
         kw = self._parse_cycle(x.size, **kw)
@@ -3659,11 +3659,11 @@ class PlotAxes(base.Axes):
         # Plot violins
         y, kw = inputs._dist_reduce(y, means=means, medians=medians, **kw)
         *eb, kw = self._add_error_bars(x, y, vert=vert, default_boxstds=True, default_marker=True, **kw)  # noqa: E501
-        kw.pop('labels', None)  # already applied in _parse_1d_plot
+        kw.pop('labels', None)  # already applied in _parse_1d_args
         kw.setdefault('positions', x)  # coordinates passed as keyword
         y = _not_none(kw.pop('distribution'), y)  # i.e. was reduced
         y = inputs._dist_clean(y)
-        artists = self._plot_native(
+        artists = self._call_native(
             'violinplot', y, vert=vert,
             showmeans=False, showmedians=False, showextrema=False, **kw
         )
@@ -3704,7 +3704,7 @@ class PlotAxes(base.Axes):
         """
         return self.violinploth(*args, **kwargs)
 
-    @inputs._redirect_or_preprocess('positions', 'y')
+    @inputs._preprocess_or_redirect('positions', 'y')
     @docstring._concatenate_inherited
     @docstring._snippet_manager
     def violinplot(self, *args, **kwargs):
@@ -3714,7 +3714,7 @@ class PlotAxes(base.Axes):
         kwargs = _parse_vert(default_vert=True, **kwargs)
         return self._apply_violinplot(*args, **kwargs)
 
-    @inputs._redirect_or_preprocess('positions', 'x')
+    @inputs._preprocess_or_redirect('positions', 'x')
     @docstring._snippet_manager
     def violinploth(self, *args, **kwargs):
         """
@@ -3735,7 +3735,7 @@ class PlotAxes(base.Axes):
         # adds them to the first elements in the container for each column
         # of the input data. Make sure that legend() will read both containers
         # and individual items inside those containers.
-        _, xs, kw = self._parse_1d_plot(xs, orientation=orientation, **kwargs)
+        _, xs, kw = self._parse_1d_args(xs, orientation=orientation, **kwargs)
         fill = _not_none(fill=fill, filled=filled)
         stack = _not_none(stack=stack, stacked=stacked)
         if fill is not None:
@@ -3751,7 +3751,7 @@ class PlotAxes(base.Axes):
         guide_kw = _pop_params(kw, self._update_guide)
         n = xs.shape[1] if xs.ndim > 1 else 1
         kw = self._parse_cycle(n, **kw)
-        obj = self._plot_native('hist', xs, orientation=orientation, **kw)
+        obj = self._call_native('hist', xs, orientation=orientation, **kw)
         if histtype.startswith('bar'):
             self._fix_patch_edges(obj[2], **edgefix_kw, **kw)
         # Revert to mpl < 3.3 behavior where silent_list was always returned for
@@ -3767,7 +3767,7 @@ class PlotAxes(base.Axes):
         self._update_guide(res, **guide_kw)
         return obj
 
-    @inputs._redirect_or_preprocess('x', 'bins', keywords='weights')
+    @inputs._preprocess_or_redirect('x', 'bins', keywords='weights')
     @docstring._concatenate_inherited
     @docstring._snippet_manager
     def hist(self, *args, **kwargs):
@@ -3777,7 +3777,7 @@ class PlotAxes(base.Axes):
         kwargs = _parse_vert(default_orientation='vertical', **kwargs)
         return self._apply_hist(*args, **kwargs)
 
-    @inputs._redirect_or_preprocess('y', 'bins', keywords='weights')
+    @inputs._preprocess_or_redirect('y', 'bins', keywords='weights')
     @docstring._snippet_manager
     def histh(self, *args, **kwargs):
         """
@@ -3786,7 +3786,7 @@ class PlotAxes(base.Axes):
         kwargs = _parse_vert(default_orientation='horizontal', **kwargs)
         return self._apply_hist(*args, **kwargs)
 
-    @inputs._redirect_or_preprocess('x', 'y', 'bins', keywords='weights')
+    @inputs._preprocess_or_redirect('x', 'y', 'bins', keywords='weights')
     @docstring._concatenate_inherited
     @docstring._snippet_manager
     def hist2d(self, x, y, bins, **kwargs):
@@ -3799,7 +3799,7 @@ class PlotAxes(base.Axes):
         return super().hist2d(x, y, default_discrete=False, **kwargs)
 
     # WARNING: breaking change from native 'C'
-    @inputs._redirect_or_preprocess('x', 'y', 'weights')
+    @inputs._preprocess_or_redirect('x', 'y', 'weights')
     @docstring._concatenate_inherited
     @docstring._snippet_manager
     def hexbin(self, x, y, weights, **kwargs):
@@ -3809,7 +3809,7 @@ class PlotAxes(base.Axes):
         # WARNING: Cannot use automatic level generation here until counts are
         # estimated. Inside _parse_level_vals if no manual levels were provided then
         # _parse_level_num is skipped and args like levels=10 or locator=5 are ignored
-        x, y, kw = self._parse_1d_plot(x, y, autovalues=True, **kwargs)
+        x, y, kw = self._parse_1d_args(x, y, autovalues=True, **kwargs)
         kw.update(_pop_props(kw, 'collection'))  # takes LineCollection props
         kw = self._parse_cmap(x, y, y, skip_autolev=True, default_discrete=False, **kw)
         norm = kw.get('norm', None)
@@ -3817,19 +3817,19 @@ class PlotAxes(base.Axes):
             norm.vmin = norm.vmax = None  # remove nonsense values
         labels_kw = _pop_params(kw, self._add_auto_labels)
         guide_kw = _pop_params(kw, self._update_guide)
-        m = self._plot_native('hexbin', x, y, weights, **kw)
+        m = self._call_native('hexbin', x, y, weights, **kw)
         self._add_auto_labels(m, **labels_kw)
         self._update_guide(m, queue_colorbar=False, **guide_kw)
         return m
 
-    @inputs._redirect_or_preprocess('x', 'y', 'z')
+    @inputs._preprocess_or_redirect('x', 'y', 'z')
     @docstring._concatenate_inherited
     @docstring._snippet_manager
     def contour(self, x, y, z, **kwargs):
         """
         %(plot.contour)s
         """
-        x, y, z, kw = self._parse_2d_plot(x, y, z, **kwargs)
+        x, y, z, kw = self._parse_2d_args(x, y, z, **kwargs)
         kw.update(_pop_props(kw, 'collection'))
         kw = self._parse_cmap(
             x, y, z, min_levels=1, plot_lines=True, plot_contours=True, **kw
@@ -3837,20 +3837,20 @@ class PlotAxes(base.Axes):
         labels_kw = _pop_params(kw, self._add_auto_labels)
         guide_kw = _pop_params(kw, self._update_guide)
         label = kw.pop('label', None)
-        m = self._plot_native('contour', x, y, z, **kw)
+        m = self._call_native('contour', x, y, z, **kw)
         m._legend_label = label
         self._add_auto_labels(m, **labels_kw)
         self._update_guide(m, queue_colorbar=False, **guide_kw)
         return m
 
-    @inputs._redirect_or_preprocess('x', 'y', 'z')
+    @inputs._preprocess_or_redirect('x', 'y', 'z')
     @docstring._concatenate_inherited
     @docstring._snippet_manager
     def contourf(self, x, y, z, **kwargs):
         """
         %(plot.contourf)s
         """
-        x, y, z, kw = self._parse_2d_plot(x, y, z, **kwargs)
+        x, y, z, kw = self._parse_2d_args(x, y, z, **kwargs)
         kw.update(_pop_props(kw, 'collection'))
         kw = self._parse_cmap(x, y, z, plot_contours=True, **kw)
         contour_kw = _pop_kwargs(kw, 'edgecolors', 'linewidths', 'linestyles')
@@ -3858,7 +3858,7 @@ class PlotAxes(base.Axes):
         labels_kw = _pop_params(kw, self._add_auto_labels)
         guide_kw = _pop_params(kw, self._update_guide)
         label = kw.pop('label', None)
-        m = cm = self._plot_native('contourf', x, y, z, **kw)
+        m = cm = self._call_native('contourf', x, y, z, **kw)
         m._legend_label = label
         self._fix_patch_edges(m, **edgefix_kw, **contour_kw)  # no-op if not contour_kw
         if contour_kw or labels_kw:
@@ -3867,61 +3867,61 @@ class PlotAxes(base.Axes):
         self._update_guide(m, queue_colorbar=False, **guide_kw)
         return m
 
-    @inputs._redirect_or_preprocess('x', 'y', 'z')
+    @inputs._preprocess_or_redirect('x', 'y', 'z')
     @docstring._concatenate_inherited
     @docstring._snippet_manager
     def pcolor(self, x, y, z, **kwargs):
         """
         %(plot.pcolor)s
         """
-        x, y, z, kw = self._parse_2d_plot(x, y, z, edges=True, **kwargs)
+        x, y, z, kw = self._parse_2d_args(x, y, z, edges=True, **kwargs)
         kw.update(_pop_props(kw, 'collection'))
         kw = self._parse_cmap(x, y, z, to_centers=True, **kw)
         edgefix_kw = _pop_params(kw, self._fix_patch_edges)
         labels_kw = _pop_params(kw, self._add_auto_labels)
         guide_kw = _pop_params(kw, self._update_guide)
         with self._keep_grid_bools():
-            m = self._plot_native('pcolor', x, y, z, **kw)
+            m = self._call_native('pcolor', x, y, z, **kw)
         self._fix_patch_edges(m, **edgefix_kw, **kw)
         self._add_auto_labels(m, **labels_kw)
         self._update_guide(m, queue_colorbar=False, **guide_kw)
         return m
 
-    @inputs._redirect_or_preprocess('x', 'y', 'z')
+    @inputs._preprocess_or_redirect('x', 'y', 'z')
     @docstring._concatenate_inherited
     @docstring._snippet_manager
     def pcolormesh(self, x, y, z, **kwargs):
         """
         %(plot.pcolormesh)s
         """
-        x, y, z, kw = self._parse_2d_plot(x, y, z, edges=True, **kwargs)
+        x, y, z, kw = self._parse_2d_args(x, y, z, edges=True, **kwargs)
         kw.update(_pop_props(kw, 'collection'))
         kw = self._parse_cmap(x, y, z, to_centers=True, **kw)
         edgefix_kw = _pop_params(kw, self._fix_patch_edges)
         labels_kw = _pop_params(kw, self._add_auto_labels)
         guide_kw = _pop_params(kw, self._update_guide)
         with self._keep_grid_bools():
-            m = self._plot_native('pcolormesh', x, y, z, **kw)
+            m = self._call_native('pcolormesh', x, y, z, **kw)
         self._fix_patch_edges(m, **edgefix_kw, **kw)
         self._add_auto_labels(m, **labels_kw)
         self._update_guide(m, queue_colorbar=False, **guide_kw)
         return m
 
-    @inputs._redirect_or_preprocess('x', 'y', 'z')
+    @inputs._preprocess_or_redirect('x', 'y', 'z')
     @docstring._concatenate_inherited
     @docstring._snippet_manager
     def pcolorfast(self, x, y, z, **kwargs):
         """
         %(plot.pcolorfast)s
         """
-        x, y, z, kw = self._parse_2d_plot(x, y, z, edges=True, **kwargs)
+        x, y, z, kw = self._parse_2d_args(x, y, z, edges=True, **kwargs)
         kw.update(_pop_props(kw, 'collection'))
         kw = self._parse_cmap(x, y, z, to_centers=True, **kw)
         edgefix_kw = _pop_params(kw, self._fix_patch_edges)
         labels_kw = _pop_params(kw, self._add_auto_labels)
         guide_kw = _pop_params(kw, self._update_guide)
         with self._keep_grid_bools():
-            m = self._plot_native('pcolorfast', x, y, z, **kw)
+            m = self._call_native('pcolorfast', x, y, z, **kw)
         if not isinstance(m, mimage.AxesImage):  # NOTE: PcolorImage is derivative
             self._fix_patch_edges(m, **edgefix_kw, **kw)
             self._add_auto_labels(m, **labels_kw)
@@ -3965,14 +3965,14 @@ class PlotAxes(base.Axes):
         self.format(**kw)
         return obj
 
-    @inputs._redirect_or_preprocess('x', 'y', 'u', 'v', ('c', 'color', 'colors'))
+    @inputs._preprocess_or_redirect('x', 'y', 'u', 'v', ('c', 'color', 'colors'))
     @docstring._concatenate_inherited
     @docstring._snippet_manager
     def barbs(self, x, y, u, v, c, **kwargs):
         """
         %(plot.barbs)s
         """
-        x, y, u, v, kw = self._parse_2d_plot(x, y, u, v, allow1d=True, autoguide=False, **kwargs)  # noqa: E501
+        x, y, u, v, kw = self._parse_2d_args(x, y, u, v, allow1d=True, autoguide=False, **kwargs)  # noqa: E501
         kw.update(_pop_props(kw, 'line'))  # applied to barbs
         c, kw = self._parse_color(x, y, c, **kw)
         if mcolors.is_color_like(c):
@@ -3981,17 +3981,17 @@ class PlotAxes(base.Axes):
         if c is not None:
             a.append(c)
         kw.pop('colorbar_kw', None)  # added by _parse_cmap
-        m = self._plot_native('barbs', *a, **kw)
+        m = self._call_native('barbs', *a, **kw)
         return m
 
-    @inputs._redirect_or_preprocess('x', 'y', 'u', 'v', ('c', 'color', 'colors'))
+    @inputs._preprocess_or_redirect('x', 'y', 'u', 'v', ('c', 'color', 'colors'))
     @docstring._concatenate_inherited
     @docstring._snippet_manager
     def quiver(self, x, y, u, v, c, **kwargs):
         """
         %(plot.quiver)s
         """
-        x, y, u, v, kw = self._parse_2d_plot(x, y, u, v, allow1d=True, autoguide=False, **kwargs)  # noqa: E501
+        x, y, u, v, kw = self._parse_2d_args(x, y, u, v, allow1d=True, autoguide=False, **kwargs)  # noqa: E501
         kw.update(_pop_props(kw, 'line'))  # applied to arrow outline
         c, kw = self._parse_color(x, y, c, **kw)
         color = None
@@ -4003,7 +4003,7 @@ class PlotAxes(base.Axes):
         if c is not None:
             a.append(c)
         kw.pop('colorbar_kw', None)  # added by _parse_cmap
-        m = self._plot_native('quiver', *a, **kw)
+        m = self._call_native('quiver', *a, **kw)
         return m
 
     @docstring._snippet_manager
@@ -4014,7 +4014,7 @@ class PlotAxes(base.Axes):
         return self.streamplot(*args, **kwargs)
 
     # WARNING: breaking change from native streamplot() fifth positional arg 'density'
-    @inputs._redirect_or_preprocess(
+    @inputs._preprocess_or_redirect(
         'x', 'y', 'u', 'v', ('c', 'color', 'colors'), keywords='start_points'
     )
     @docstring._concatenate_inherited
@@ -4023,7 +4023,7 @@ class PlotAxes(base.Axes):
         """
         %(plot.stream)s
         """
-        x, y, u, v, kw = self._parse_2d_plot(x, y, u, v, **kwargs)
+        x, y, u, v, kw = self._parse_2d_args(x, y, u, v, **kwargs)
         kw.update(_pop_props(kw, 'line'))  # applied to lines
         c, kw = self._parse_color(x, y, c, **kw)
         if c is None:  # throws an error if color not provided
@@ -4031,12 +4031,12 @@ class PlotAxes(base.Axes):
         kw['color'] = c  # always pass this
         guide_kw = _pop_params(kw, self._update_guide)
         label = kw.pop('label', None)
-        m = self._plot_native('streamplot', x, y, u, v, **kw)
+        m = self._call_native('streamplot', x, y, u, v, **kw)
         m.lines.set_label(label)  # the collection label
         self._update_guide(m.lines, queue_colorbar=False, **guide_kw)  # use lines
         return m
 
-    @inputs._redirect_or_preprocess('x', 'y', 'z')
+    @inputs._preprocess_or_redirect('x', 'y', 'z')
     @docstring._concatenate_inherited
     @docstring._snippet_manager
     def tricontour(self, x, y, z, **kwargs):
@@ -4053,13 +4053,13 @@ class PlotAxes(base.Axes):
         labels_kw = _pop_params(kw, self._add_auto_labels)
         guide_kw = _pop_params(kw, self._update_guide)
         label = kw.pop('label', None)
-        m = self._plot_native('tricontour', x, y, z, **kw)
+        m = self._call_native('tricontour', x, y, z, **kw)
         m._legend_label = label
         self._add_auto_labels(m, **labels_kw)
         self._update_guide(m, queue_colorbar=False, **guide_kw)
         return m
 
-    @inputs._redirect_or_preprocess('x', 'y', 'z')
+    @inputs._preprocess_or_redirect('x', 'y', 'z')
     @docstring._concatenate_inherited
     @docstring._snippet_manager
     def tricontourf(self, x, y, z, **kwargs):
@@ -4076,7 +4076,7 @@ class PlotAxes(base.Axes):
         labels_kw = _pop_params(kw, self._add_auto_labels)
         guide_kw = _pop_params(kw, self._update_guide)
         label = kw.pop('label', None)
-        m = cm = self._plot_native('tricontourf', x, y, z, **kw)
+        m = cm = self._call_native('tricontourf', x, y, z, **kw)
         m._legend_label = label
         self._fix_patch_edges(m, **edgefix_kw, **contour_kw)  # no-op if not contour_kw
         if contour_kw or labels_kw:
@@ -4085,7 +4085,7 @@ class PlotAxes(base.Axes):
         self._update_guide(m, queue_colorbar=False, **guide_kw)
         return m
 
-    @inputs._redirect_or_preprocess('x', 'y', 'z')
+    @inputs._preprocess_or_redirect('x', 'y', 'z')
     @docstring._concatenate_inherited
     @docstring._snippet_manager
     def tripcolor(self, x, y, z, **kwargs):
@@ -4101,14 +4101,14 @@ class PlotAxes(base.Axes):
         labels_kw = _pop_params(kw, self._add_auto_labels)
         guide_kw = _pop_params(kw, self._update_guide)
         with self._keep_grid_bools():
-            m = self._plot_native('tripcolor', x, y, z, **kw)
+            m = self._call_native('tripcolor', x, y, z, **kw)
         self._fix_patch_edges(m, **edgefix_kw, **kw)
         self._add_auto_labels(m, **labels_kw)
         self._update_guide(m, queue_colorbar=False, **guide_kw)
         return m
 
     # WARNING: breaking change from native 'X'
-    @inputs._redirect_or_preprocess('z')
+    @inputs._preprocess_or_redirect('z')
     @docstring._concatenate_inherited
     @docstring._snippet_manager
     def imshow(self, z, **kwargs):
@@ -4118,12 +4118,12 @@ class PlotAxes(base.Axes):
         kw = kwargs.copy()
         kw = self._parse_cmap(z, default_discrete=False, **kw)
         guide_kw = _pop_params(kw, self._update_guide)
-        m = self._plot_native('imshow', z, **kw)
+        m = self._call_native('imshow', z, **kw)
         self._update_guide(m, queue_colorbar=False, **guide_kw)
         return m
 
     # WARNING: breaking change from native 'Z'
-    @inputs._redirect_or_preprocess('z')
+    @inputs._preprocess_or_redirect('z')
     @docstring._concatenate_inherited
     @docstring._snippet_manager
     def matshow(self, z, **kwargs):
@@ -4134,7 +4134,7 @@ class PlotAxes(base.Axes):
         return super().matshow(z, **kwargs)
 
     # WARNING: breaking change from native 'Z'
-    @inputs._redirect_or_preprocess('z')
+    @inputs._preprocess_or_redirect('z')
     @docstring._concatenate_inherited
     @docstring._snippet_manager
     def spy(self, z, **kwargs):
@@ -4146,7 +4146,7 @@ class PlotAxes(base.Axes):
         default_cmap = pcolors.DiscreteColormap(['w', 'k'], '_no_name')
         kw = self._parse_cmap(z, default_cmap=default_cmap, **kw)
         guide_kw = _pop_params(kw, self._update_guide)
-        m = self._plot_native('spy', z, **kw)
+        m = self._call_native('spy', z, **kw)
         self._update_guide(m, queue_colorbar=False, **guide_kw)
         return m
 
@@ -4172,7 +4172,7 @@ class PlotAxes(base.Axes):
         Iterate over columns of positional arguments.
         """
         # Handle cycle args and label lists
-        # NOTE: Arrays here should have had metadata stripped by _parse_1d_plot
+        # NOTE: Arrays here should have had metadata stripped by _parse_1d_args
         # but could still be pint quantities that get processed by axis converter.
         n = max(
             1 if not inputs._is_array(a) or a.ndim < 2 else a.shape[-1]
