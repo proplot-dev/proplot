@@ -3,7 +3,7 @@
 # WARNING: Make sure to keep flags in sync with ci/run-linter.sh
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v3.1.0
+    rev: v4.1.0
     hooks:
     - id: double-quote-string-fixer
     - id: check-docstring-first
@@ -12,28 +12,28 @@ repos:
     - id: trailing-whitespace
 
   - repo: https://github.com/pre-commit/mirrors-isort
-    rev: v4.3.21
+    rev: v5.10.1
     hooks:
     - id: isort
       args: ['--line-width=88', '--multi-line=3', '--force-grid-wrap=0', '--trailing-comma']
       exclude: '(^docs|__init__)'
 
   - repo: https://github.com/PyCQA/flake8
-    rev: 3.8.3
+    rev: 4.0.1
     hooks:
     - id: flake8
       args: ['--max-line-length=88', '--ignore=W503,E402,E741']
 
   # apply once this handles long tables better
   # - repo: https://github.com/PyCQA/doc8
-  #   rev: 0.8.1
+  #   rev: 0.10.1
   #   hooks:
   #   - id: doc8
   #     args: ['--max-line-length', '88', '--allow-long-titles']
 
   # apply after function keyword args can be ignored
   # - repo: https://github.com/ambv/black
-  #   rev: 19.10
+  #   rev: 22.1.0
   #   hooks:
   #   - id: black
   #     args: ['--line-length', '88', '--skip-string-normalization']

@@ -22,7 +22,7 @@ dependencies:
   - pip:
     - ..
     - flake8
-    - isort==4.3.21
+    - isort
     - black
     - doc8
     - pytest
