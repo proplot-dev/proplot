@@ -8,16 +8,17 @@ from .internals import ic  # noqa: F401
 from .internals import docstring
 
 try:
-    from cartopy.crs import _WarpedRectangularProjection
-    from cartopy.crs import AzimuthalEquidistant, Gnomonic, LambertAzimuthalEqualArea
-    from cartopy.crs import NorthPolarStereo, SouthPolarStereo  # noqa: F401 (geo.py)
+    from cartopy.crs import (  # stereo projections needed in geo.py
+        AzimuthalEquidistant,
+        Gnomonic,
+        LambertAzimuthalEqualArea,
+        NorthPolarStereo,
+        SouthPolarStereo,
+        _WarpedRectangularProjection,
+    )
 except ModuleNotFoundError:
-    _WarpedRectangularProjection = object
-    AzimuthalEquidistant = object
-    Gnomonic = object
-    LambertAzimuthalEqualArea = object
-    NorthPolarStereo = object
-    SouthPolarStereo = object
+    AzimuthalEquidistant = Gnomonic = LambertAzimuthalEqualArea = object
+    _WarpedRectangularProjection = NorthPolarStereo = SouthPolarStereo = object
 
 __all__ = [
     'Aitoff',
@@ -31,6 +32,7 @@ __all__ = [
     'NorthPolarLambertAzimuthalEqualArea',
     'SouthPolarLambertAzimuthalEqualArea',
 ]
+
 
 _reso_docstring = """
 The projection resolution.
@@ -66,7 +68,7 @@ class Aitoff(_WarpedRectangularProjection):
         """
         %(proj.init)s
         """
-        from cartopy.crs import Globe, WGS84_SEMIMAJOR_AXIS
+        from cartopy.crs import WGS84_SEMIMAJOR_AXIS, Globe
         if globe is None:
             globe = Globe(semimajor_axis=WGS84_SEMIMAJOR_AXIS, ellipse=None)
 
@@ -109,7 +111,7 @@ class Hammer(_WarpedRectangularProjection):
         """
         %(proj.init)s
         """
-        from cartopy.crs import Globe, WGS84_SEMIMAJOR_AXIS
+        from cartopy.crs import WGS84_SEMIMAJOR_AXIS, Globe
         if globe is None:
             globe = Globe(semimajor_axis=WGS84_SEMIMAJOR_AXIS, ellipse=None)
 
@@ -153,7 +155,7 @@ class KavrayskiyVII(_WarpedRectangularProjection):
         """
         %(proj.init)s
         """
-        from cartopy.crs import Globe, WGS84_SEMIMAJOR_AXIS
+        from cartopy.crs import WGS84_SEMIMAJOR_AXIS, Globe
         if globe is None:
             globe = Globe(semimajor_axis=WGS84_SEMIMAJOR_AXIS, ellipse=None)
 
@@ -197,7 +199,7 @@ class WinkelTripel(_WarpedRectangularProjection):
         """
         %(proj.init)s
         """
-        from cartopy.crs import Globe, WGS84_SEMIMAJOR_AXIS
+        from cartopy.crs import WGS84_SEMIMAJOR_AXIS, Globe
         if globe is None:
             globe = Globe(semimajor_axis=WGS84_SEMIMAJOR_AXIS, ellipse=None)
 

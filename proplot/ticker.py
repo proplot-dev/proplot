@@ -17,11 +17,13 @@ from .internals import _not_none, context, docstring
 try:
     import cartopy.crs as ccrs
     from cartopy.mpl.ticker import (
-        _PlateCarreeFormatter, LatitudeFormatter, LongitudeFormatter
+        LatitudeFormatter,
+        LongitudeFormatter,
+        _PlateCarreeFormatter,
     )
 except ModuleNotFoundError:
     ccrs = None
-    _PlateCarreeFormatter = LatitudeFormatter = LongitudeFormatter = object
+    LatitudeFormatter = LongitudeFormatter = _PlateCarreeFormatter = object
 
 __all__ = [
     'IndexLocator',
