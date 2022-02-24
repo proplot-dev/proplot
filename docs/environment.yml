@@ -8,6 +8,8 @@
 #   but creating local environment will fail.
 # * jinja >= 3.0 and nbsphinx >= 0.8.2 seem to break default ReST roles when
 #   jupytext notebooks are converted to HTML. Interpreted as italics instead.
+# * markupsafe >= 2.1.0 seems to be broken with jinja < 3.0 so also have to
+#   manually specify that: https://github.com/pallets/markupsafe/issues/284
 # * docutils >= 0.17 breaks bullet points. See the following thread
 #   for more info: https://github.com/readthedocs/sphinx_rtd_theme/issues/1115
 name: proplot-dev
@@ -31,6 +33,7 @@ dependencies:
     - sphinx-copybutton
     - sphinx_rtd_theme==0.4.3
     - jinja2==2.11.3
+    - markupsafe==2.0.1
     - nbsphinx==0.8.1
     - jupytext
     - git+https://github.com/lukelbd/sphinx-automodapi@proplot-mods

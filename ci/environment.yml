@@ -33,6 +33,7 @@ dependencies:
     - sphinx-copybutton
     - sphinx_rtd_theme==0.4.3
     - jinja2==2.11.3
+    - markupsafe==2.0.1
     - nbsphinx==0.8.1
     - jupytext
     - git+https://github.com/lukelbd/sphinx-automodapi@proplot-mods
