@@ -2,17 +2,19 @@
 """
 Custom :rc: and :rcraw: roles for rc settings.
 """
+import os
+
 from docutils import nodes
-from os.path import sep
-from proplot.internals import rcsetup
 from matplotlib import rcParams
+
+from proplot.internals import rcsetup
 
 
 def _node_list(rawtext, text, inliner):
     """
     Return a singleton node list or an empty list if source is unknown.
     """
-    source = inliner.document.attributes['source'].replace(sep, '/')
+    source = inliner.document.attributes['source'].replace(os.path.sep, '/')
     relsource = source.split('/docs/', 1)
     if len(relsource) == 1:
         return []

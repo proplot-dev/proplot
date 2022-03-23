@@ -155,7 +155,8 @@ fig.format(
     suptitle='Simple subplot grid', title='Title',
     xlabel='x axis', ylabel='y axis'
 )
-fig.save('example1.png')
+# fig.save('example1.png')  # save the figure
+# fig.savefig('example1.png')  # alternative
 
 
 # %%
@@ -175,7 +176,8 @@ axs.format(
     xlabel='xlabel', ylabel='ylabel'
 )
 axs[2].plot(data, lw=2)
-fig.save('example2.png')
+# fig.save('example2.png')  # save the figure
+# fig.savefig('example2.png')  # alternative
 
 
 # %%
@@ -196,8 +198,8 @@ axs.format(
     xlabel='xlabel', ylabel='ylabel', abc=True
 )
 axs[0].plot(data, lw=2)
-fig.save('example3.png')
-
+# fig.save('example3.png')  # save the figure
+# fig.savefig('example3.png')  # alternative
 
 # %%
 # Using a GridSpec
@@ -215,7 +217,8 @@ fig.format(
     suptitle='Subplot grid with a GridSpec',
     xlabel='xlabel', ylabel='ylabel', abc=True
 )
-fig.save('example4.png')
+# fig.save('example4.png')  # save the figure
+# fig.savefig('example4.png')  # alternative
 
 # %% [raw] raw_mimetype="text/restructuredtext"
 # .. _ug_subplotgrid:

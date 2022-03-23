@@ -17,11 +17,11 @@ channels:
   - conda-forge
 dependencies:
   - python==3.8
+  - matplotlib==3.2.2
+  - cartopy==0.20.2
   - numpy
   - pandas
   - xarray
-  - matplotlib==3.2.2
-  - cartopy==0.20.2
   - ipykernel
   - pandoc
   - pip

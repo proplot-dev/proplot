@@ -99,11 +99,10 @@ axs[2].format(
 # name <proj_table>`. Alternatively, you can pass a `cartopy.crs.Projection` or
 # `~mpl_toolkits.basemap.Basemap` instance returned by the `~proplot.constructor.Proj`
 # :ref:`constructor function <why_constructor>` to `proj` (see below for details). If
-# you need different projections for different subplots, but you want to
-# create your subplots :ref:`all-at-once <ug_subplot>` using
-# `~proplot.figure.Figure.subplots`, you can pass a list or dictionary
-# to the `proj` keyword (e.g., ``proj=('cartesian', 'pcarree')`` or
-# ``proj={2: 'pcarree'}`` -- see `~proplot.figure.Figure.subplots` for details).
+# you want to create your subplots :ref:`all-at-once <ug_subplot>` with e.g.
+# `~proplot.ui.subplots` but need different projections for each subplot, you can pass
+# a list or dictionary to the `proj` keyword (e.g., ``proj=('cartesian', 'pcarree')``
+# or ``proj={2: 'pcarree'}`` -- see `~proplot.figure.Figure.subplots` for details).
 # Geographic axes are represented with the `~proplot.axes.GeoAxes` subclass, which
 # has its own `~proplot.axes.GeoAxes.format` command. `proplot.axes.GeoAxes.format`
 # facilitates :ref:`geographic-specific modifications <ug_geoformat>` like meridional

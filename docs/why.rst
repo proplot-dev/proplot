@@ -124,10 +124,10 @@ Links
 * For an introduction, see :ref:`this page <ug_format>`.
 * For `~proplot.axes.CartesianAxes` formatting,
   see :ref:`this page <ug_cartesian>`.
-* For `~proplot.axes.GeoAxes` formatting,
-  see :ref:`this page <ug_geoformat>`.
 * For `~proplot.axes.PolarAxes` formatting,
   see :ref:`this page <ug_polar>`.
+* For `~proplot.axes.GeoAxes` formatting,
+  see :ref:`this page <ug_geoformat>`.
 
 .. _why_constructor:
 
@@ -230,12 +230,16 @@ dimensions of the figure, despite the fact that...
    subplots will decrease the average subplot size and increase the "apparent"
    sizes. If the subplot size is fixed instead, this can be avoided.
 
-Matplotlib includes a `tight layout algorithm
+Matplotlib also includes `"tight layout"
 <https://matplotlib.org/stable/tutorials/intermediate/tight_layout_guide.html>`__
-that generally obviates the need to tweak `~matplotlib.gridspec.GridSpec` spacing
-parameters like `left`, `bottom`, and `wspace`. However, this algorithm is disabled
-by default, and it cannot apply different amounts of spacing between different
-subplot row and column boundaries.
+and `"constrained layout"
+<https://matplotlib.org/stable/tutorials/intermediate/constrainedlayout_guide.html>`__
+algorithms that can help users avoid having to tweak
+`~matplotlib.gridspec.GridSpec` spacing parameters like `left`, `bottom`, and `wspace`.
+However, these algorithms are disabled by default and somewhat `cumbersome to configure
+<https://matplotlib.org/stable/tutorials/intermediate/constrainedlayout_guide.html#padding-and-spacing>`__.
+They also cannot apply different amounts of spacing between different subplot row and
+column boundaries.
 
 Changes
 -------

@@ -18,7 +18,7 @@
 # Colorbars and legends
 # =====================
 #
-# Proplot includes some useful improvements to the matplotlib API that make
+# Proplot includes some useful changes to the matplotlib API that make
 # working with colorbars and legends :ref:`easier <why_colorbars_legends>`.
 # Notable features include "inset" colorbars, "outer" legends,
 # on-the-fly colorbars and legends, colorbars built from artists,
@@ -32,8 +32,8 @@
 # -------------------------
 #
 # Matplotlib supports drawing "inset" legends and "outer" colorbars using the `loc`
-# and `location` keyword arguments. However, "outer" legends are only posssible using
-# the somewhat counterintuitive `bbox_to_anchor` keyword (see `here
+# and `location` keyword arguments. However, "outer" legends are only
+# posssible using the somewhat opaque `bbox_to_anchor` keyword (see `here
 # <https://matplotlib.org/stable/tutorials/intermediate/legend_guide.html#legend-location>`__)
 # and "inset" colorbars are not possible without manually creating and positioning
 # the associated axes. Proplot tries to improve this behavior:
@@ -261,12 +261,12 @@ for ax, title in zip(axs, ('2D {} #1', '2D {} #2', 'Line {} #1', 'Line {} #2')):
 # %% [raw] raw_mimetype="text/restructuredtext"
 # .. _ug_colorbars:
 #
-# Colorbar improvements
-# ---------------------
+# Added colorbar features
+# -----------------------
 #
-# The basic usage of `proplot.axes.Axes.colorbar` and `proplot.figure.Figure.colorbar`
-# is somehwat more flexible thatn in matplotlib. The following core feature is useful
-# for labeling discrete plot elements that bear some numeric relationship to each other:
+# The `proplot.axes.Axes.colorbar` and `proplot.figure.Figure.colorbar` commands are
+# somehwat more flexible than their matplotlib counterparts. The following core
+# features are unique to proplot:
 
 # * Calling ``colorbar`` with a list of `~matplotlib.artist.Artist`\ s,
 #   a `~matplotlib.colors.Colormap` name or object, or a list of colors
@@ -277,7 +277,8 @@ for ax, title in zip(axs, ('2D {} #1', '2D {} #2', 'Line {} #1', 'Line {} #2')):
 #   `vmin`, `vmax`, `norm`, and `norm_kw` keywords. The `~proplot.colors.DiscreteNorm`
 #   levels can be specified with `values`, or proplot will infer them from the
 #   `~matplotlib.artist.Artist` labels (non-numeric labels will be applied to
-#   the colorbar as tick labels).
+#   the colorbar as tick labels). This can be useful for labeling discrete plot
+#   elements that bear some numeric relationship to each other.
 #
 # Proplot also includes improvements for adding ticks and tick labels to colorbars.
 # Similar to `proplot.axes.CartesianAxes.format`, you can flexibly specify
@@ -346,12 +347,12 @@ fig.format(
 # %% [raw] raw_mimetype="text/restructuredtext"
 # .. _ug_legends:
 #
-# Legend improvements
-# -------------------
+# Added legend features
+# ---------------------
 #
-# The basic usage of `proplot.axes.Axes.legend` and `proplot.figure.Figure.legend`
-# is somewhat more flexible than in matplotlib. The following core features are
-# the same as matplotlib:
+# The `proplot.axes.Axes.legend` and `proplot.figure.Figure.legend` commands are
+# somewhat more flexible than their matplotlib counterparts. The following core
+# features are the same as matplotlib:
 
 # * Calling ``legend`` without positional arguments will
 #   automatically fill the legend with the labeled artist in the
@@ -364,6 +365,12 @@ fig.format(
 
 # The following core features are unique to proplot:
 
+# * Legend labels can be assigned for each column of a
+#   :ref:`2D array passed to a 1D plotting command <ug_1dstd>`
+#   using the `labels` keyword (e.g., ``labels=['label1', 'label2', ...]``).
+# * Legend labels can be assigned to `~matplotlib.contour.ContourSet`\ s by passing
+#   the `label` keyword to a contouring command (e.g., `~proplot.axes.PlotAxes.contour`
+#   or `~proplot.axes.PlotAxes.contourf`).
 # * A "handle" list can be passed to ``legend`` as the sole
 #   positional argument and the labels will be automatically inferred
 #   using `~matplotlib.artist.Artist.get_label`. Valid "handles" include
@@ -377,15 +384,9 @@ fig.format(
 #   for more on tuple groups). The associated label will be automatically
 #   inferred from the objects in the group. If multiple distinct
 #   labels are found then the group is automatically expanded.
-# * Legend labels can be assigned for each column of a
-#   :ref:`2D array passed to a 1D plotting command <ug_1dstd>`
-#   using the `labels` keyword (e.g., ``labels=['label1', 'label2', ...]``).
-# * Legend labels can be assigned to `~matplotlib.contour.ContourSet`\ s by passing
-#   the `label` keyword to a contouring command (e.g., `~proplot.axes.PlotAxes.contour`
-#   or `~proplot.axes.PlotAxes.contourf`).
 #
-# `proplot.axes.Axes.legend` and `proplot.figure.Figure.legend` also include some
-# additional features. To draw legends with centered rows, pass ``center=True`` or
+# `proplot.axes.Axes.legend` and `proplot.figure.Figure.legend` include a few other
+# useful features. To draw legends with centered rows, pass ``center=True`` or
 # a list of lists of "handles" to ``legend`` (this stacks several single-row,
 # horizontally centered legends and adds an encompassing frame behind them).
 # To switch between row-major and column-major order for legend entries,

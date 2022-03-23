@@ -1,4 +1,4 @@
-.. _contributions:
+.. _contrib:
 
 ==================
 How to contribute?
@@ -12,8 +12,10 @@ The following sections cover some general guidelines
 regarding proplot development for new contributors. Feel
 free to suggest improvements or changes to this workflow.
 
-Feature requests and feedback
-=============================
+.. _contrib_features:
+
+Feature requests
+================
 
 We are eager to hear your requests for new features and
 suggestions regarding the current API. You can submit these as
@@ -23,6 +25,8 @@ narrow as possible. This will make it easier to implement in small pull requests
 
 If you are feeling inspired, feel free to add the feature yourself and
 submit a pull request!
+
+.. _contrib_bugs:
 
 Report bugs
 ===========
@@ -34,6 +38,8 @@ reproduces the issue. This is critical for contributors to fix the bug quickly.
 
 If you can figure out how to fix the bug yourself, feel free to submit
 a pull request.
+
+.. _contrib_tets:
 
 Write tests
 ===========
@@ -49,6 +55,8 @@ and `pytest-mpl` is a *critical* item on our to-do list.
 
 If you can think of a useful test for proplot, feel free to submit a pull request.
 Your test will be used in the future.
+
+.. _contrib_docs:
 
 Write documentation
 ===================
@@ -87,6 +95,8 @@ To build the documentation locally, use the following commands:
    make html
 
 The built documentation should be available in ``docs/_build/html``.
+
+.. _contrib_pr:
 
 Preparing pull requests
 =======================
@@ -196,17 +206,20 @@ Note that you can create the pull request before you're finished with your
 feature addition or bug fix. The PR will update as you add more commits. Proplot
 developers and contributors can then review your code and offer suggestions.
 
+.. _contrib_release:
+
 Release procedure
 =================
 
-Once version 1.0 is released, proplot will follow semantic versioning. Given the
-version number ``X.Y.Z``, the major version ``X`` will be incremented when something
+Once version 1.0 is released, proplot will follow semantic versioning. That is, given
+a version number ``X.Y.Z``, the major version ``X`` will be incremented when something
 is deprecated, the minor version ``Y`` will be incremented when features are added,
 and the patch number ``Z`` will be incremented when bugs are fixed.
 
-Currently, proplot's major version number is ``0``, reflecting the fact that
-the API is new and subject to rapid changes. In general, the minor version number
-is incremented when something is deprecated or the default style is changed.
+Currently, proplot's major version number is ``0``, reflecting the fact that the API
+is new and subject to rapid changes. Similar to semantic versioning, the minor version
+number is incremented when something is deprecated or the style is changed, and the
+patch number is incremented only when features are added or bugs are fixed.
 
 For now, `Luke Davis <https://github.com/lukelbd>`__ is the only one who can
 publish releases on PyPi, but this will change in the future. Releases should

@@ -108,12 +108,12 @@ axs.format(
 # -----------------------
 #
 # Proplot automatically adjusts the figure width and height by default to
-# respect the physical size of the "reference" subplot and the geometry of the
-# `~proplot.figure.Figure.gridspec`. This "reference" subplot has a
-# `~proplot.axes.Axes.number` matching the `~proplot.figure.Figure` keyword `refnum`
-# (the default `refnum` of ``1`` usually corresponds to the subplot in the upper-left
-# corner -- see :ref:`this section <ug_abc>` for more on subplot numbers).
-# Alternatively, you can request a fixed figure width (height), and the
+# respect the physical size of a "reference" subplot and the geometry of the
+# `~proplot.figure.Figure.gridspec`. The "reference" subplot is the subplot whose
+# `~proplot.axes.Axes.number` matches the `refnum` that was passed to
+# `~proplot.figure.Figure` (the default `refnum` of ``1`` usually matches the subplot
+# in the upper-left corner -- see :ref:`this section <ug_abc>` for more on subplot
+# numbers). Alternatively, you can request a fixed figure width (height), and the
 # algorithm will automatically adjusts the figure height (width) to respect
 # the `~proplot.figure.Figure.gridspec` geometry.
 
@@ -126,8 +126,8 @@ axs.format(
 #   subplot (default is :rc:`subplots.refwidth`). If just the width (height) is
 #   specified, then the height (width) is automatically adjusted to satisfy the
 #   subplot spacing and the reference subplot aspect ratio `refaspect` (default
-#   is ``1`` unless the data aspect ratio is fixed -- see the box below). If both
-#   the width and height are specified, then `refaspect` is ignored.
+#   is ``1`` unless the data aspect ratio is fixed -- see below). If both the
+#   width and height are specified, then `refaspect` is ignored.
 # * `figwidth` and `figheight` set the physical width and height of the figure.
 #   As in matplotlib, you can use `figsize` to set both at once. If just the width
 #   (height) is specified, then the height (width) is automatically adjusted, just
@@ -135,10 +135,15 @@ axs.format(
 #   (e.g., using `figsize`), then `refaspect` is ignored and the figure size is fixed.
 #   Note that `figwidth` and `figheight` always override `refwidth` and `refheight`.
 # * `journal` sets the physical dimensions of the figure to meet requirements
-#   for submission to an academic journal. For example, ``journal='nat1'`` creates
-#   a figure whose width is suitable as a single-column *Nature* figurs. See
-#   :ref:`this table <journal_table>` for the currently available journal
-#   specifications (feel free to add to this list with a pull request).
+#   for submission to an academic journal. For example, ``journal='nat1'`` sets
+#   `figwidth` according to the `*Nature* standard for single-column figures
+#   <https://www.nature.com/nature/for-authors/formatting-guide>`__ and
+#   ``journal='aaas2'`` sets `figwidth` according to the
+#   `*Science* standard for dual-column figures
+#   <https://www.sciencemag.org/authors/instructions-preparing-initial-manuscript>`__.
+#   See :ref:`this table <journal_table>` for the currently available journal
+#   specifications (feel free to add to this list with a :ref:`pull request
+#   <contrib_pr>`).
 #
 # The below examples demonstrate how different keyword arguments and
 # subplot arrangements influence the figure size algorithm.
@@ -218,7 +223,7 @@ pplt.rc.reset()
 # Proplot automatically adjusts the spacing between subplots
 # by default to accomadate labels using its own `"tight layout" algorithm
 # <https://matplotlib.org/stable/tutorials/intermediate/tight_layout_guide.html>`__.
-# In contrast with the matplotlib algorithm, this algorithm can :ref:`change the
+# In contrast to matplotlib's algorithm, proplot's algorithm can :ref:`change the
 # figure size <ug_autosize>` and permits variable spacing between each subplot
 # row and column (see `proplot.gridspec.GridSpec` for details).
 # This algorithm can be disabled entirely by passing ``tight=False`` to
@@ -229,8 +234,8 @@ pplt.rc.reset()
 #
 # * ``left=2`` fixes the left margin at 2 em-widths, while the right,
 #   bottom, and top margin widths are determined by the tight layout algorithm.
-# * ``wspace=1`` fixes the spaces between subplot columns at 1 em-width, while the
-#   spaces between subplot rows are determined by the tight layout algorithm.
+# * ``wspace=1`` fixes the space between subplot columns at 1 em-width, while the
+#   space between subplot rows is determined by the tight layout algorithm.
 # * ``wspace=(3, None)`` fixes the space between the first two columns of
 #   a three-column plot at 3 em-widths, while the space between the second two
 #   columns is determined by the tight layout algorithm.
@@ -243,7 +248,7 @@ pplt.rc.reset()
 # keyword when creating :ref:`panel axes <ug_panels>` or :ref:`outer
 # colorbars or legends <ug_guides_loc>` (analogous to `space`).
 #
-# All the spacing arguments described above can be specified with a
+# All the subplot spacing arguments can be specified with a
 # :ref:`unit string <ug_units>` interpreted by `~proplot.utils.units`.
 # The default unit assumed for numeric arguments is an "em-width" (i.e., a
 # :rcraw:`font.size` width -- see the :ref:`units table <units_table>` for details).
@@ -258,7 +263,8 @@ pplt.rc.reset()
 #    disabled). Similarly, using ``wgroup=False``, ``hgroup=False``, or ``group=False``
 #    (or setting :rcraw:`subplots.groupspace` to ``False``) disables the default
 #    behavior of only comparing subplot extent between adjacent subplot "groups"
-#    and instead compares subplot extents across entire columns and rows.
+#    and instead compares subplot extents across entire columns and rows
+#    (note the spacing between the first and second row in the below example).
 
 # %%
 import proplot as pplt
