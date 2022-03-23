@@ -1374,7 +1374,7 @@ _rc_proplot_table = {
     ),
 
     # Backend stuff
-    'inlinefmt': (
+    'inlineformat': (
         'retina',
         _validate_belongs('svg', 'pdf', 'retina', 'png', 'jpeg'),
         'The inline backend figure format. Valid formats include '
@@ -2044,6 +2044,7 @@ _rc_renamed = {  # {old_key: (new_key, version)} dictionary
     'grid.latinline': ('grid.inlinelabels', '0.8.0'),
     'cmap.edgefix': ('edgefix', '0.9.0'),
     'basemap': ('geo.backend', '0.10.0'),
+    'inlinefmt': ('inlineformat', '0.10.0'),
     'cartopy.circular': ('geo.round', '0.10.0'),
     'cartopy.autoextent': ('geo.extent', '0.10.0'),
     'colorbar.rasterize': ('colorbar.rasterized', '0.10.0'),
