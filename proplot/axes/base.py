@@ -282,7 +282,8 @@ share : bool, default: True
 Other parameters
 ----------------
 **kwargs
-    Passed to `proplot.axes.CartesianAxes`.
+    Passed to `proplot.axes.CartesianAxes`. Supports all valid
+    `~proplot.axes.CartesianAxes.format` keywords.
 
 Returns
 -------
@@ -781,8 +782,8 @@ class Axes(maxes.Axes):
         self._panel_align = {}  # store 'align' and 'length' for "filled" cbar/legend
         self._panel_parent = None
         self._panel_share = False
-        self._panel_sharex_group = False
-        self._panel_sharey_group = False
+        self._panel_sharex_group = False  # see _apply_auto_share
+        self._panel_sharey_group = False  # see _apply_auto_share
         self._panel_side = None
         self._tight_bbox = None  # bounding boxes are saved
         self.xaxis.isDefault_minloc = True  # ensure enabled at start (needed for dual)
@@ -1344,8 +1345,8 @@ class Axes(maxes.Axes):
         vertical extent of subplots in the figure gridspec.
         """
         # Panel axes sharing, between main subplot and its panels
-        # NOTE: _panel_share means "include this panel in the axis sharing group"
-        # while _panel_sharex_group indicates the group itself and may include main axes
+        # NOTE: _panel_share means "include this panel in the axis sharing group" while
+        # _panel_sharex_group indicates the group itself and may include main axes
         def shared(paxs):
             return [pax for pax in paxs if not pax._panel_hidden and pax._panel_share]
 

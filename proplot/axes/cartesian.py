@@ -85,22 +85,24 @@ xwraprange, ywraprange : 2-tuple of float, optional
     can be combined with `xtickrange` and `ytickrange` to make "stacked" line plots.
 xloc, yloc : optional
     Shorthands for `xspineloc`, `yspineloc`.
-xspineloc, yspineloc : {'bottom', 'top', 'left', 'right', \
+xspineloc, yspineloc : {'b', 't', 'l', 'r', 'bottom', 'top', 'left', 'right', \
 'both', 'neither', 'none', 'zero', 'center'} or 2-tuple, optional
     The x and y spine locations. Applied with `~matplotlib.spines.Spine.set_position`.
     Propagates to `tickloc` unless specified otherwise.
-xtickloc, ytickloc \
-: {'bottom', 'top', 'left', 'right', 'both', 'neither', 'none'}, optional
+xtickloc, ytickloc : {'b', 't', 'l', 'r', 'bottom', 'top', 'left', 'right', \
+'both', 'neither', 'none'}, optional
     Which x and y axis spines should have major and minor tick marks. Inherits from
     `spineloc` by default and propagates to `ticklabelloc` unless specified otherwise.
-xticklabelloc, yticklabelloc \
-: {'bottom', 'top', 'left', 'right', 'both', 'neither', 'none'}, optional
+xticklabelloc, yticklabelloc : {'b', 't', 'l', 'r', 'bottom', 'top', 'left', 'right', \
+'both', 'neither', 'none'}, optional
     Which x and y axis spines should have major tick labels. Inherits from `tickloc`
     by default and propagates to `labelloc` and `offsetloc` unless specified otherwise.
-xlabelloc, ylabelloc : {'bottom', 'top', 'left', 'right'}, optional
+xlabelloc, ylabelloc : \
+{'b', 't', 'l', 'r', 'bottom', 'top', 'left', 'right'}, optional
     Which x and y axis spines should have axis labels. Inherits from
     `ticklabelloc` by default (if `ticklabelloc` is a single side).
-xoffsetloc, yoffsetloc : {'left', 'right'}, optional
+xoffsetloc, yoffsetloc : \
+{'b', 't', 'l', 'r', 'bottom', 'top', 'left', 'right'}, optional
     Which x and y axis spines should have the axis offset indicator. Inherits from
     `ticklabelloc` by default (if `ticklabelloc` is a single side).
 xtickdir, ytickdir, tickdir : {'out', 'in', 'inout'}, optional
@@ -255,7 +257,7 @@ This enforces the following default settings:
 _alt_descrip = """
 Add an axes locked to the same location with a
 distinct {x} axis.
-This is an alias and possibly more intuitive name for
+This is an alias and arguably more intuitive name for
 `~proplot.axes.CartesianAxes.twin{y}`, which generates
 two {x} axes with a shared ("twin") {y} axes.
 """
@@ -506,9 +508,11 @@ class CartesianAxes(shared._SharedAxes, plot.PlotAxes):
         Get the spine side implied by the input location or position. This
         propagates to tick mark, tick label, and axis label positions.
         """
+        # NOTE: Could defer error to CartesianAxes.format but instead use our
+        # own error message with info on coordinate position options.
         sides = ('bottom', 'top') if s == 'x' else ('left', 'right')
         centers = ('zero', 'center')
-        options = (*sides, 'both', 'neither', 'none')
+        options = (*(s[0] for s in sides), *sides, 'both', 'neither', 'none')
         if np.iterable(loc) and len(loc) == 2 and loc[0] in ('axes', 'data', 'outward'):
             lim = getattr(self, f'get_{s}lim')()
             if loc[0] == 'outward':  # ambiguous so just choose first side
@@ -517,7 +521,7 @@ class CartesianAxes(shared._SharedAxes, plot.PlotAxes):
                 side = sides[int(loc[1] > 0.5)]
             else:
                 side = sides[int(loc[1] > lim[0] + 0.5 * (lim[1] - lim[0]))]
-        elif loc in centers:  # ambiguous so just choose first side
+        elif loc in centers:  # ambiguous so just choose the first side
             side = sides[0]
         elif loc is None or loc in options:
             side = loc
@@ -793,38 +797,32 @@ class CartesianAxes(shared._SharedAxes, plot.PlotAxes):
         """
         Update the spine settings.
         """
-        # Iterate over spines associated with this axis
+        # Change default spine location from 'both' to the first
+        # relevant side if the user passes 'bounds'.
         sides = ('bottom', 'top') if s == 'x' else ('left', 'right')
-        pside = self._get_spine_side(s, loc)  # side for set_position()
+        opts = (*(s[0] for s in sides), *sides)  # see _get_spine_side()
+        side = self._get_spine_side(s, loc)  # side for set_position()
         if bounds is not None and all(self.spines[s].get_visible() for s in sides):
             loc = _not_none(loc, sides[0])
-        for side in sides:
-            # Change default spine location from 'both' to the first relevant
-            # side if the user passes 'bounds'.
-            spine = self.spines[side]
-            # Eliminate sides
+        for key in sides:
+            # Simple spine location that just toggles the side(s). Do not bother
+            # with the _get_spine_side stuff.
+            spine = self.spines[key]
             if loc is None:
                 pass
             elif loc == 'neither' or loc == 'none':
                 spine.set_visible(False)
             elif loc == 'both':
                 spine.set_visible(True)
-            elif loc in sides:  # make relevant spine visible
-                spine.set_visible(side == loc)
+            elif loc in opts:
+                spine.set_visible(key[0] == loc[0])
             # Special spine location, usually 'zero', 'center', or tuple with
             # (units, location) where 'units' can be 'axes', 'data', or 'outward'.
-            # Matplotlib internally represents these with 'bottom' and 'left'.
-            elif pside != side:
-                spine.set_visible(False)
+            elif key != side:
+                spine.set_visible(False)  # special position is for other spine
             else:
-                spine.set_visible(True)
-                try:
-                    spine.set_position(loc)
-                except ValueError:
-                    raise ValueError(
-                        f'Invalid {s} spine location {loc!r}. Options are: '
-                        + ', '.join(map(repr, (*sides, 'both', 'neither'))) + '.'
-                    )
+                spine.set_visible(True)  # special position uses this spine
+                spine.set_position(loc)
             # Apply spine bounds
             if bounds is not None:
                 spine.set_bounds(*bounds)
@@ -835,67 +833,47 @@ class CartesianAxes(shared._SharedAxes, plot.PlotAxes):
         """
         Update the tick, tick label, and axis label locations.
         """
-        # The tick and tick label sides for Cartesian axes
-        kw = {}
+        # Helper function and initial stuff
+        def _validate_loc(loc, opts, descrip):
+            try:
+                return opts[loc]
+            except KeyError:
+                raise ValueError(
+                    f'Invalid {descrip} location {loc!r}. Options are '
+                    + ', '.join(map(repr, sides + tuple(opts))) + '.'
+                )
         sides = ('bottom', 'top') if s == 'x' else ('left', 'right')
-        sides_map = {'both': sides, 'neither': (), 'none': (), None: None}
         sides_active = tuple(side for side in sides if self.spines[side].get_visible())
+        label_opts = {s[:i]: s for s in sides for i in (1, None)}
+        tick_opts = {'both': sides, 'neither': (), 'none': (), None: None}
+        tick_opts.update({k: (v,) for k, v in label_opts.items()})
 
-        # The tick side(s)
-        # NOTE: Silently forbids adding ticks to sides with invisible spines
-        ticklocs = sides_map.get(tickloc, (tickloc,))
-        if ticklocs and any(loc not in sides for loc in ticklocs):
-            raise ValueError(
-                f'Invalid tick mark location {tickloc!r}. Options are '
-                + ', '.join(map(repr, sides + tuple(sides_map))) + '.'
-            )
-        if ticklocs is not None:
-            kw.update({side: side in ticklocs for side in sides})
-        kw.update(
-            {
-                side: False for side in sides if side not in sides_active
-            }
-        )
+        # Apply the tick mark and tick label locations
+        kw = {}
+        kw.update({side: False for side in sides if side not in sides_active})
+        kw.update({'label' + side: False for side in sides if side not in sides_active})
+        if ticklabelloc is not None:
+            ticklabelloc = _validate_loc(ticklabelloc, tick_opts, 'tick label')
+            kw.update({'label' + side: side in ticklabelloc for side in sides})
+        if tickloc is not None:  # possibly overrides ticklabelloc
+            tickloc = _validate_loc(tickloc, tick_opts, 'tick mark')
+            kw.update({side: side in tickloc for side in sides})
+            kw.update({'label' + side: False for side in sides if side not in tickloc})
+        self.tick_params(axis=s, which='both', **kw)
 
-        # The tick label side(s). Make sure these only appear where ticks are
-        # NOTE: Silently forbids adding labels to sides with invisible ticks or spines
-        ticklabellocs = sides_map.get(ticklabelloc, (ticklabelloc,))
-        if ticklabellocs and any(loc not in sides for loc in ticklabellocs):
-            raise ValueError(
-                f'Invalid tick label location {ticklabelloc!r}. Options are '
-                + ', '.join(map(repr, sides + tuple(sides_map))) + '.'
-            )
-        if ticklabellocs is not None:
-            kw.update({'label' + side: (side in ticklabellocs) for side in sides})
-        kw.update(
-            {
-                'label' + side: False for side in sides
-                if side not in sides_active
-                or ticklocs is not None and side not in ticklocs
-            }
-        )
-
-        # The axis label side(s)
-        # NOTE: Silently forbids adding labels and offsets to sides with missing spines
-        if ticklocs is not None:
-            options = tuple(_ for _ in sides if _ in ticklocs and _ in sides_active)
-            if len(options) == 1:
-                labelloc = _not_none(labelloc, options[0])
-                offsetloc = _not_none(offsetloc, options[0])
-        if labelloc is not None and labelloc not in sides:
-            raise ValueError(
-                f'Invalid label location {labelloc!r}. Options are '
-                + ', '.join(map(repr, sides)) + '.'
-            )
-
-        # Apply the tick, tick label, and label locations
+        # Apply the axis label and offset label locations
         # Uses ugly mpl 3.3+ tick_top() tick_bottom() kludge for offset location
         # See: https://matplotlib.org/3.3.1/users/whats_new.html
         axis = getattr(self, f'{s}axis')
-        self.tick_params(axis=s, which='both', **kw)
+        options = tuple(_ for _ in sides if tickloc and _ in tickloc and _ in sides_active)  # noqa: E501
+        if tickloc is not None and len(options) == 1:
+            labelloc = _not_none(labelloc, options[0])
+            offsetloc = _not_none(offsetloc, options[0])
         if labelloc is not None:
+            labelloc = _validate_loc(labelloc, label_opts, 'axis label')
             axis.set_label_position(labelloc)
         if offsetloc is not None:
+            offsetloc = _not_none(offsetloc, options[0])
             if hasattr(axis, 'set_offset_position'):  # y axis (and future x axis?)
                 axis.set_offset_position(offsetloc)
             elif s == 'x' and _version_mpl >= '3.3':  # ugly x axis kludge
