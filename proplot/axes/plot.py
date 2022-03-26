@@ -646,10 +646,16 @@ smin, smax : float, optional
     The minimum and maximum marker size area in units ``points ** 2``. Ignored
     if `absolute_size` is ``True``. Default value for `smin` is ``1`` and for
     `smax` is the square of :rc:`lines.markersize`.
+area_size : bool, default: True
+    Whether the marker sizes `s` are scaled by area or by radius. The default
+    ``True`` is consistent with matplotlib. When `absolute_size` is ``True``,
+    the `s` units are ``points ** 2`` if `area_size` is ``True`` and ``points``
+    if `area_size` is ``False``.
 absolute_size : bool, default: True or False
-    Whether `s` should be taken to represent "absolute" marker size areas in units
-    ``points ** 2`` or "relative" marker size areas scaled by `smin` and `smax`.
-    Default is ``True`` if `s` is scalar and ``False`` if `s` is array-like.
+    Whether `s` should be taken to represent "absolute" marker sizes in units
+    ``points`` or ``points ** 2`` or "relative" marker sizes scaled by `smin`
+    and `smax`. Default is ``True`` if `s` is scalar and ``False`` if `s` is
+    array-like or `smin` or `smax` were passed.
 %(plot.vmin_vmax)s
 %(plot.args_1d_shared)s
 
@@ -1658,10 +1664,10 @@ class PlotAxes(base.Axes):
         with colormaps that are transparent. If keyword args passed by user
         include explicit edge properties then we skip this step.
         """
+        # NOTE: Use default edge width used for pcolor grid box edges. This is thick
+        # enough to hide lines but thin enough to not add 'nubs' to corners of boxes.
         # See: https://github.com/jklymak/contourfIssues
         # See: https://stackoverflow.com/q/15003353/4970632
-        # NOTE: Use default edge width used for pcolor grid box edges. This is thick
-        # enough to hide lines but thin enough to not add 'dots' to corners of boxes.
         edgefix = _not_none(edgefix, rc.edgefix, True)
         linewidth = EDGEWIDTH if edgefix is True else 0 if edgefix is False else edgefix
         if not linewidth:
@@ -3152,32 +3158,22 @@ class PlotAxes(base.Axes):
         return self._apply_lines(*args, **kwargs)
 
     def _parse_markersize(
-        self, s, *, smin=None, smax=None, absolute_size=None, **kwargs
+        self, s, *, smin=None, smax=None, area_size=True, absolute_size=None, **kwargs
     ):
         """
         Scale the marker sizes with optional keyword args.
         """
-        default_size = True
-        if np.iterable(s):
-            s = np.asarray(s)
-            if not inputs._is_categorical(s):
-                default_size = False
-            else:
-                s = s.copy()
-                s.flat[:] = utils.units(s.flat, 'pt')
-                s = s.astype(np.float64) ** 2
-        if absolute_size is None:
-            if _inside_seaborn_call():
-                absolute_size = True
-            else:
-                absolute_size = default_size
-        if not absolute_size or smin is not None or smax is not None:
-            smin = _not_none(smin, 1)
-            smax = _not_none(smax, rc['lines.markersize'] ** 2)
-            smin_true, smax_true = inputs._safe_range(s)
-            smin_true = _not_none(smin_true, smin)  # fallback behavior
-            smax_true = _not_none(smax_true, smax)
-            s = smin + (smax - smin) * (s - smin_true) / (smax_true - smin_true)
+        if s is not None:
+            s = inputs._to_numpy_array(s)
+            if absolute_size is None:
+                absolute_size = s.size == 1 or _inside_seaborn_call()
+            if not absolute_size or smin is not None or smax is not None:
+                smin = _not_none(smin, 1)
+                smax = _not_none(smax, rc['lines.markersize'] ** (1, 2)[area_size])
+                dmin, dmax = inputs._safe_range(s)  # data value range
+                if dmin is not None and dmax is not None and dmin != dmax:
+                    s = smin + (smax - smin) * (s - dmin) / (dmax - dmin)
+            s = s ** (2, 1)[area_size]
         return s, kwargs
 
     def _apply_scatter(self, xs, ys, ss, cc, *, vert=True, **kwargs):
