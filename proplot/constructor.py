@@ -788,6 +788,8 @@ markeredgecolors, markerfacecolors
     # Parse keyword arguments that rotate through other properties
     # besides color cycles.
     props = _pop_props(kwargs, 'line')
+    if 'sizes' in kwargs:  # special case, gets translated back by scatter()
+        props.setdefault('markersize', kwargs.pop('sizes'))
     samples = _not_none(samples=samples, N=N)  # trigger Colormap default
     for key, value in tuple(props.items()):  # permit in-place modification
         if value is None:
