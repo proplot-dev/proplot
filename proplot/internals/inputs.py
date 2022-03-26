@@ -156,6 +156,8 @@ def _to_masked_array(data, *, copy=False):
     units = None
     if ndarray is not Quantity and isinstance(data, Quantity):
         data, units = data.magnitude, data.units
+    else:
+        data = _to_numpy_array(data)
     if data.dtype == 'O':
         data = ma.array(data, mask=False)
     else:
