@@ -77,7 +77,7 @@ _tight_docstring = """
 wequal, hequal, equal :  bool, default: :rc:`subplots.equalspace`
     Whether to make the tight layout algorithm apply equal spacing
     between columns, rows, or both.
-wgroup, hgroup, group :  bool, default: :rc:`subplot.groupspace`
+wgroup, hgroup, group :  bool, default: :rc:`subplots.groupspace`
     Whether to make the tight layout algorithm just consider spaces between
     adjacent subplots instead of entire columns and rows of subplots.
 outerpad : unit-spec, default: :rc:`subplots.outerpad`

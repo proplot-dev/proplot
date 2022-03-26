@@ -10,7 +10,8 @@ try:
 except pkg.DistributionNotFound:
     version = __version__ = 'unknown'
 
-# Import optional dependencies now to isolate import times
+# Import dependencies early to isolate import times
+from . import internals, externals, tests  # noqa: F401
 from .internals.benchmarks import _benchmark
 with _benchmark('pyplot'):
     from matplotlib import pyplot  # noqa: F401

@@ -335,7 +335,7 @@ def _pop_props(input, *categories, prefix=None, ignore=None, skip=None):
             if any(string in key for string in ignore):
                 warnings._warn_proplot(f'Ignoring property {key}={prop!r}.')
                 continue
-            if isinstance(prop, str):
+            if isinstance(prop, str):  # ad-hoc unit conversion
                 if key in ('fontsize',):
                     from ..utils import _fontsize_to_pt
                     prop = _fontsize_to_pt(prop)

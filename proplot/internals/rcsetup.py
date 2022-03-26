@@ -1115,8 +1115,8 @@ _rc_proplot_table = {
         _validate_int,
         'Native `~matplotlib.colors.ListedColormap`\\ s with more colors than '
         'this are converted to `~proplot.colors.ContinuousColormap` rather than '
-        '`~proplot.colors.DiscreteColormap`. This helps translate perceptually '
-        'uniform colormaps from other projects registered as ListedColormap.'
+        '`~proplot.colors.DiscreteColormap`. This helps translate continuous '
+        'colormaps from external projects.'
     ),
     'cmap.lut': (
         256,

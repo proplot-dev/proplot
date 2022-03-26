@@ -367,17 +367,17 @@ def config_inline_backend(fmt=None):
 
     .. code-block:: ipython
 
-        %config InlineBackend.figure_formats = rc['inlinefmt']
+        %config InlineBackend.figure_formats = rc['inlineformat']
         %config InlineBackend.rc = {}  # never override rc settings
         %config InlineBackend.close_figures = True  # cells start with no active figures
         %config InlineBackend.print_figure_kwargs = {'bbox_inches': None}
 
     When the inline backend is inactive or unavailable, this has no effect.
-    This function is called when you modify the :rcraw:`inlinefmt` property.
+    This function is called when you modify the :rcraw:`inlineformat` property.
 
     Parameters
     ----------
-    fmt : str or sequence, default: :rc:`inlinefmt`
+    fmt : str or sequence, default: :rc:`inlineformat`
         The inline backend file format or a list thereof. Valid formats
         include ``'jpg'``, ``'png'``, ``'svg'``, ``'pdf'``, and ``'retina'``.
 
@@ -389,7 +389,7 @@ def config_inline_backend(fmt=None):
     ipython = get_ipython()
     if ipython is None:
         return
-    fmt = _not_none(fmt, rc_proplot['inlinefmt'])
+    fmt = _not_none(fmt, rc_proplot['inlineformat'])
     if isinstance(fmt, str):
         fmt = [fmt]
     elif np.iterable(fmt):
@@ -942,7 +942,7 @@ class Configurator(MutableMapping, dict):
                     raise KeyError(f'Invalid rc setting {key!r}.')
 
         # Special key: configure inline backend
-        if contains('inlinefmt'):
+        if contains('inlineformat'):
             config_inline_backend(value)
 
         # Special key: apply stylesheet
