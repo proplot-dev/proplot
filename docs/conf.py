@@ -43,23 +43,15 @@ release = ''
 # -- Create files --------------------------------------------------------------
 
 # Create RST table and sample proplotrc file
-from proplot.config import rc
-rc._save_rst(os.path.join('_static', 'rctable.rst'))
-rc._save_yaml(os.path.join('_static', 'proplotrc'))
-
-# Create local pygments copies
-# WARNING: Must update these files whenever _static/custom.js changes
-# from pygments.styles import get_all_styles
-from pygments.formatters import HtmlFormatter
-path = os.path.join('_static', 'pygments')
-if not os.path.isdir(path):
-    os.mkdir(path)
-for style in ('pastie', 'monokai'):  # or get_all_styles()
-    path = os.path.join('_static', 'pygments', style + '.css')
-    if os.path.isfile(path):
-        continue
-    with open(path, 'w') as f:
-        f.write(HtmlFormatter(style=style).get_style_defs('.highlight'))
+from proplot.internals import settings
+path = os.path.join('_static', 'rctable.rst')
+table = settings._generate_rst_table()
+with open(path, 'w') as f:
+    f.write(table)
+path = os.path.join('_static', 'proplotrc')
+table = settings._generate_yaml_table()
+with open(path, 'w') as f:
+    f.write(table)
 
 # -- Setup basemap --------------------------------------------------------------
 
@@ -104,9 +96,10 @@ extensions = [
     'sphinx.ext.intersphinx',  # external links
     'sphinx.ext.autosummary',  # autosummary directive
     'sphinxext.custom_roles',  # local extension
-    'sphinx_copybutton',
-    'sphinx_automodapi.automodapi',  # see: https://github.com/lukelbd/sphinx-automodapi/tree/proplot-mods  # noqa: E501
-    'nbsphinx',
+    'sphinx_automodapi.automodapi',  # fork of automodapi
+    'sphinx_rtd_light_dark',  # use custom theme
+    'sphinx_copybutton',  # add copy button to code
+    'nbsphinx',  # parse rst books
 ]
 
 # The master toctree document.
@@ -266,7 +259,7 @@ html_logo = 'logo_square.png'
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 # Use modified RTD theme with overrides in custom.css and custom.js
-html_theme = 'sphinx_rtd_theme'
+html_theme = 'sphinx_rtd_light_dark'
 html_theme_options = {
     'logo_only': True,
     'display_version': False,
