@@ -96,7 +96,7 @@ extensions = [
     'sphinx_automodapi.automodapi',  # fork of automodapi
     'sphinx_rtd_light_dark',  # use custom theme
     'sphinx_copybutton',  # add copy button to code
-    # 'nbsphinx',  # parse rst books
+    'nbsphinx',  # parse rst books
 ]
 
 # The master toctree document.
