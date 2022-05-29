@@ -27,8 +27,7 @@ before_install:
   - conda info -a
 
 install:
-  - conda install -c conda-forge mamba
-  - mamba env create --file ci/environment.yml
+  - conda env create --file ci/environment.yml
   - source activate proplot-dev
   - conda list
   - which conda
