@@ -44,8 +44,11 @@ release = ''
 
 # Create RST table and sample proplotrc file
 from proplot.config import rc
-rc._save_rst(os.path.join('_static', 'rctable.rst'))
-rc._save_yaml(os.path.join('_static', 'proplotrc'))
+folder = os.path.join(os.path.dirname(os.path.abspath(__file__)), '_static')
+if not os.path.isdir(folder):
+    os.mkdir(folder)
+rc._save_rst(os.path.join(folder, 'rctable.rst'))
+rc._save_yaml(os.path.join(folder, 'proplotrc'))
 
 # -- Setup basemap --------------------------------------------------------------
 
@@ -93,7 +96,7 @@ extensions = [
     'sphinx_automodapi.automodapi',  # fork of automodapi
     'sphinx_rtd_light_dark',  # use custom theme
     'sphinx_copybutton',  # add copy button to code
-    'nbsphinx',  # parse rst books
+    # 'nbsphinx',  # parse rst books
 ]
 
 # The master toctree document.
