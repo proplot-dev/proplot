@@ -231,6 +231,21 @@ pygments_style = 'none'
 
 # -- Options for HTML output -------------------------------------------------
 
+# Logo
+html_logo = os.path.join('_static', 'logo_square.png')
+
+# The theme to use for HTML and HTML Help pages.  See the documentation for
+# a list of builtin themes.
+# Use modified RTD theme with overrides in custom.css and custom.js
+html_theme = 'sphinx_rtd_light_dark'
+html_theme_options = {
+    'logo_only': True,
+    'display_version': False,
+    'collapse_navigation': True,
+    'navigation_depth': 4,
+    'prev_next_buttons_location': 'bottom',  # top and bottom
+}
+
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
@@ -248,23 +263,7 @@ html_static_path = ['_static']
 # docs.  This file should be a Windows icon file (.ico) being 16x16 or 32x32
 # pixels large. Static folder is for CSS and image files. Use ImageMagick to
 # convert png to ico on command line with 'convert image.png image.ico'
-html_favicon = 'logo_blank.ico'
-
-# Logo
-html_logo = 'logo_square.png'
-
-# The theme to use for HTML and HTML Help pages.  See the documentation for
-# a list of builtin themes.
-# Use modified RTD theme with overrides in custom.css and custom.js
-html_theme = 'sphinx_rtd_light_dark'
-html_theme_options = {
-    'logo_only': True,
-    'display_version': False,
-    'collapse_navigation': True,
-    'navigation_depth': 4,
-    'prev_next_buttons_location': 'bottom',  # top and bottom
-}
-
+html_favicon = os.path.join('_static', 'logo_blank.ico')
 
 # -- Options for HTMLHelp output ---------------------------------------------
 
