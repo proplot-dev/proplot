@@ -43,15 +43,9 @@ release = ''
 # -- Create files --------------------------------------------------------------
 
 # Create RST table and sample proplotrc file
-from proplot.internals import settings
-path = os.path.join('_static', 'rctable.rst')
-table = settings._generate_rst_table()
-with open(path, 'w') as f:
-    f.write(table)
-path = os.path.join('_static', 'proplotrc')
-table = settings._generate_yaml_table()
-with open(path, 'w') as f:
-    f.write(table)
+from proplot.config import rc
+rc._save_rst(os.path.join('_static', 'rctable.rst'))
+rc._save_yaml(os.path.join('_static', 'proplotrc'))
 
 # -- Setup basemap --------------------------------------------------------------
 
