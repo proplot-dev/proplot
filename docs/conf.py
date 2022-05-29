@@ -94,7 +94,7 @@ extensions = [
     'sphinx.ext.autosummary',  # autosummary directive
     'sphinxext.custom_roles',  # local extension
     'sphinx_automodapi.automodapi',  # fork of automodapi
-    'sphinx-rtd-light-dark',  # use custom theme
+    'sphinx_rtd_light_dark',  # use custom theme
     'sphinx_copybutton',  # add copy button to code
     # 'nbsphinx',  # parse rst books
 ]
