@@ -54,16 +54,6 @@ _load_objects()
 
 
 # Type utilities
-def _is_array(data):
-    """
-    Test whether input is numpy array or pint quantity.
-    """
-    # NOTE: This is used in _iter_columns to identify 2D matrices that
-    # should be iterated over and omit e.g. scalar marker size or marker color.
-    _load_objects()
-    return isinstance(data, ndarray) or ndarray is not Quantity and isinstance(data, Quantity)  # noqa: E501
-
-
 def _is_numeric(data):
     """
     Test whether input is numeric array rather than datetime or strings.

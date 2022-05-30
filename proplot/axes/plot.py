@@ -4181,10 +4181,8 @@ class PlotAxes(base.Axes):
         # Handle cycle args and label lists
         # NOTE: Arrays here should have had metadata stripped by _parse_1d_args
         # but could still be pint quantities that get processed by axis converter.
-        n = max(
-            1 if not inputs._is_array(a) or a.ndim < 2 else a.shape[-1]
-            for a in args
-        )
+        is_array = lambda data: hasattr(data, 'ndim') and hasattr(data, 'shape')  # noqa: E731, E501
+        n = max(1 if not is_array(a) or a.ndim < 2 else a.shape[-1] for a in args)
         labels = _not_none(label=label, values=values, labels=labels)
         if not np.iterable(labels) or isinstance(labels, str):
             labels = n * [labels]
@@ -4202,9 +4200,7 @@ class PlotAxes(base.Axes):
         for i in range(n):
             kw = kwargs.copy()
             kw['label'] = labels[i] or None
-            a = tuple(
-                a if not inputs._is_array(a) or a.ndim < 2 else a[..., i] for a in args
-            )
+            a = tuple(a if not is_array(a) or a.ndim < 2 else a[..., i] for a in args)
             yield (i, n, *a, kw)
 
     # Related parsing functions for warnings
