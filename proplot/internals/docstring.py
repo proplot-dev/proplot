@@ -109,25 +109,27 @@ Matplotlib documentation
 
 class _SnippetManager(dict):
     """
-    A simple database for documentation snippets.
+    A simple database for handling documentation snippets.
     """
-    def __call__(self, obj):
+    def __call__(self, obj, **kwargs):
         """
-        Add snippets to the string or object using ``%(name)s`` substitution.
-        This lets snippet keys have invalid variable names.
+        Add snippets to the string or object using ``%(name)s`` substitution. Use
+        `kwargs` to format the snippets themselves with ``%(name)s`` substitution.
         """
         if isinstance(obj, str):
             obj %= self  # add snippets to a string
+            obj %= kwargs
         else:
             obj.__doc__ = inspect.getdoc(obj)  # also dedents the docstring
             if obj.__doc__:
                 obj.__doc__ %= self  # insert snippets after dedent
+                obj.__doc__ %= kwargs
         return obj
 
     def __setitem__(self, key, value):
         """
-        Populate input strings with other snippets. Developers should take
-        care to import modules in the correct order.
+        Populate input strings with other snippets and strip newlines. Developers
+        should take care to import modules in the correct order.
         """
         value = self(value)
         value = value.strip('\n')
