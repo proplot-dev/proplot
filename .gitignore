@@ -12,7 +12,6 @@ dist
 # Local docs builds
 docs/api
 docs/_build
-docs/_static/pygments
 docs/_static/proplotrc
 docs/_static/rctable.rst
 
