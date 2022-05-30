@@ -111,19 +111,17 @@ class _SnippetManager(dict):
     """
     A simple database for handling documentation snippets.
     """
-    def __call__(self, obj, **kwargs):
+    def __call__(self, obj):
         """
-        Add snippets to the string or object using ``%(name)s`` substitution. Use
-        `kwargs` to format the snippets themselves with ``%(name)s`` substitution.
+        Add snippets to the string or object using ``%(name)s`` substitution. Here
+        ``%(name)s`` is used rather than ``.format`` to support invalid identifiers.
         """
         if isinstance(obj, str):
             obj %= self  # add snippets to a string
-            obj %= kwargs
         else:
             obj.__doc__ = inspect.getdoc(obj)  # also dedents the docstring
             if obj.__doc__:
                 obj.__doc__ %= self  # insert snippets after dedent
-                obj.__doc__ %= kwargs
         return obj
 
     def __setitem__(self, key, value):
