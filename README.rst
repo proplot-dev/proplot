@@ -37,37 +37,37 @@ or clone the repository and run ``pip install -e .``
 inside the ``proplot`` folder.
 
 
-.. |code-style| image:: https://img.shields.io/badge/code%20style-black-000000.svg
-   :alt: black
-   :target: https://github.com/psf/black
-
 .. |build-status| image:: https://travis-ci.com/lukelbd/proplot.svg?branch=master
    :alt: build status
    :target: https://travis-ci.com/lukelbd/proplot
-
-.. |license| image:: https://img.shields.io/github/license/lukelbd/proplot.svg
-   :alt: license
-   :target: LICENSE.txt
-
-.. |doi| image:: https://zenodo.org/badge/DOI/10.5281/zenodo.3873878.svg
-   :alt: doi
-   :target: https://doi.org/10.5281/zenodo.3873878
 
 .. |docs| image:: https://readthedocs.org/projects/proplot/badge/?version=latest
    :alt: docs
    :target: https://proplot.readthedocs.io/en/latest/?badge=latest
 
-.. |pr-welcome| image:: https://img.shields.io/badge/PR-Welcome-green.svg?
-   :alt: PR welcome
-   :target: https://git-scm.com/book/en/v2/GitHub-Contributing-to-a-Project
-
 .. |pypi| image:: https://img.shields.io/pypi/v/proplot?color=83%20197%2052
    :alt: pypi
    :target: https://pypi.org/project/proplot/
 
+.. |code-style| image:: https://img.shields.io/badge/code%20style-black-000000.svg
+   :alt: black
+   :target: https://github.com/psf/black
+
+.. |pr-welcome| image:: https://img.shields.io/badge/PR-Welcome-green.svg?
+   :alt: PR welcome
+   :target: https://git-scm.com/book/en/v2/GitHub-Contributing-to-a-Project
+
+.. |license| image:: https://img.shields.io/github/license/lukelbd/proplot.svg
+   :alt: license
+   :target: LICENSE.txt
+
 .. |gitter| image:: https://badges.gitter.im/gitterHQ/gitter.svg
    :alt: gitter
    :target: https://gitter.im/pro-plot/community
+
+.. |doi| image:: https://zenodo.org/badge/DOI/10.5281/zenodo.3873878.svg
+   :alt: doi
+   :target: https://doi.org/10.5281/zenodo.3873878
 
 
 ..
