@@ -1,8 +1,8 @@
 ..
    ProPlot documentation master file, created by
    sphinx-quickstart on Wed Feb 20 01:31:20 2019.
-   You can adapt this file completely to your liking, but it should at least
-   contain the root `toctree` directive.
+   You can adapt this file completely to your liking, but
+   it should at least contain the root `toctree` directive.
 
 =======
 ProPlot
@@ -47,9 +47,8 @@ be cited using its `Zenodo DOI <https://doi.org/10.5281/zenodo.3873878>`__.
    api
    external-links
    whatsnew
-   contributions
+   contributing
    authors
-
 
 Indices and tables
 ==================
