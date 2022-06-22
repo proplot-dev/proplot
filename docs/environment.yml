@@ -36,4 +36,4 @@ dependencies:
     - markupsafe==2.0.1
     - nbsphinx==0.8.1
     - jupytext
-    - git+https://github.com/lukelbd/sphinx-automodapi@proplot-mods
+    - git+https://github.com/proplot-org/sphinx-automodapi@proplot-mods

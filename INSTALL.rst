@@ -19,7 +19,7 @@ Likewise, an existing installation of proplot can be upgraded to the latest vers
 
 
 To install a development version of proplot, you can use
-``pip install git+https://github.com/lukelbd/proplot.git``
+``pip install git+https://github.com/proplot-org/proplot.git``
 or clone the repository and run ``pip install -e .`` inside
 the ``proplot`` folder.
 
