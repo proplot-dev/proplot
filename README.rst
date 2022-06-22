@@ -39,7 +39,7 @@ inside the ``proplot`` folder.
 
 .. |build-status| image:: https://travis-ci.com/proplot-org/proplot.svg?branch=master
    :alt: build status
-   :target: https://travis-ci.com/proplot-org/proplot
+   :target: https://app.travis-ci.com/proplot-org/proplot
 
 .. |docs| image:: https://readthedocs.org/projects/proplot/badge/?version=latest
    :alt: docs
