@@ -1,4 +1,4 @@
-.. image:: https://github.com/proplot-org/proplot/blob/master/docs/_static/logo_long.png?raw=true
+.. image:: https://github.com/proplot-org/proplot/blob/master/docs/_static/logo_long.svg?raw=true
    :width: 1000px
 
 |build-status| |docs| |pypi| |code-style| |pr-welcome| |license| |gitter| |doi|
