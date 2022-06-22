@@ -28,4 +28,4 @@ import matplotlib.pyplot as plt
 
 ### Proplot version
 
-Paste the results of `import matplotlib; print(matplotlib.__version__); import proplot; print(proplot.version)`here.
+Paste the results of `import matplotlib; print(matplotlib.__version__); import proplot; print(proplot.version)` here.
