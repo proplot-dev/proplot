@@ -1,4 +1,4 @@
-.. image:: https://github.com/proplot-org/proplot/blob/master/docs/_static/logo_long.svg?raw=true
+.. image:: https://github.com/proplot-dev/proplot/blob/master/docs/_static/logo_long.svg?raw=true
    :width: 1000px
 
 |build-status| |docs| |pypi| |code-style| |pr-welcome| |license| |gitter| |doi|
@@ -32,14 +32,14 @@ to the latest version with:
    conda upgrade proplot
 
 To install a development version of proplot, you can use
-``pip install git+https://github.com/proplot-org/proplot.git``
+``pip install git+https://github.com/proplot-dev/proplot.git``
 or clone the repository and run ``pip install -e .``
 inside the ``proplot`` folder.
 
 
-.. |build-status| image:: https://travis-ci.com/proplot-org/proplot.svg?branch=master
+.. |build-status| image:: https://travis-ci.com/proplot-dev/proplot.svg?branch=master
    :alt: build status
-   :target: https://app.travis-ci.com/proplot-org/proplot
+   :target: https://app.travis-ci.com/proplot-dev/proplot
 
 .. |docs| image:: https://readthedocs.org/projects/proplot/badge/?version=latest
    :alt: docs
@@ -57,7 +57,7 @@ inside the ``proplot`` folder.
    :alt: PR welcome
    :target: https://git-scm.com/book/en/v2/GitHub-Contributing-to-a-Project
 
-.. |license| image:: https://img.shields.io/github/license/proplot-org/proplot.svg
+.. |license| image:: https://img.shields.io/github/license/proplot-dev/proplot.svg
    :alt: license
    :target: LICENSE.txt
 
@@ -76,26 +76,26 @@ inside the ``proplot`` folder.
    :target: https://www.python.org/dev/peps/pep-0008/
 
 ..
-   |coverage| image:: https://codecov.io/gh/proplot-org/proplot.org/branch/master/graph/badge.svg
+   |coverage| image:: https://codecov.io/gh/proplot-dev/proplot/branch/master/graph/badge.svg
    :alt: coverage
-   :target: https://codecov.io/gh/proplot-org/proplot.org
+   :target: https://codecov.io/gh/proplot-dev/proplot
 
 ..
    |quality| image:: https://api.codacy.com/project/badge/Grade/931d7467c69c40fbb1e97a11d092f9cd
    :alt: quality
-   :target: https://www.codacy.com/app/proplot-org/proplot?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=proplot-org/proplot&amp;utm_campaign=Badge_Grade
+   :target: https://www.codacy.com/app/proplot-dev/proplot?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=proplot-dev/proplot&amp;utm_campaign=Badge_Grade
 
 ..
-   |hits| image:: http://hits.dwyl.io/proplot-org/proplot-org/proplot.svg
+   |hits| image:: http://hits.dwyl.com/proplot-dev/proplot.svg
    :alt: hits
-   :target: http://hits.dwyl.io/proplot-org/proplot-org/proplot
+   :target: http://hits.dwyl.com/proplot-dev/proplot
 
 ..
    |contributions| image:: https://img.shields.io/badge/contributions-welcome-brightgreen.svg?style=flat
    :alt: contributions
-   :target: https://github.com/proplot-org/issues
+   :target: https://github.com/proplot-dev/issues
 
 ..
-   |issues| image:: https://img.shields.io/github/issues/proplot-org/proplot.svg
+   |issues| image:: https://img.shields.io/github/issues/proplot-dev/proplot.svg
    :alt: issueks
-   :target: https://github.com/proplot-org/issues
+   :target: https://github.com/proplot-dev/issues

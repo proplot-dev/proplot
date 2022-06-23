@@ -31,7 +31,7 @@ plotting code. As an undergraduate, he developed a set of
 When he switched to python in graduate school, he replicated most of these utilities in
 python, learned more about the language, began to rapidly develop them, and decided to
 share them with the rest of the scientific community. Luke is also working on a project
-called `climopy <https://github.com/lukelbd/climopy>`__, a companion to
+called `climopy <https://github.com/climopy-dev/climopy>`__, a companion to
 `metpy <https://github.com/Unidata/MetPy>`__ for carrying out data analysis tasks
 related to climate science, and has authored a number of
 `vim plugins <https://github.com/lukelbd?tab=repositories>`__
@@ -40,7 +40,7 @@ as an avid vim user.
 `Riley Brady`_ is the next-biggest contributor. He helped Luke set up automatic
 testing, deploy this project to PyPi, and improve new user experience. He is
 also proplot's earliest user and helped fix `lots of early bugs
-<https://github.com/lukelbd/proplot/issues?q=is%3Aissue+is%3Aclosed>`__.
+<https://github.com/proplot-dev/proplot/issues?q=is%3Aissue+is%3Aclosed>`__.
 
 .. _Luke Davis: https://github.com/lukelbd
 

@@ -1104,7 +1104,7 @@ class Axes(maxes.Axes):
 
         # Special handling for colorbar keyword arguments
         # WARNING: Critical to not pass empty major locators in matplotlib < 3.5
-        # See this issue: https://github.com/lukelbd/proplot/issues/301
+        # See this issue: https://github.com/proplot-dev/proplot/issues/301
         # WARNING: Proplot 'supports' passing one extend to a mappable function
         # then overwriting by passing another 'extend' to colobar. But contour
         # colorbars break when you try to change its 'extend'. Matplotlib gets

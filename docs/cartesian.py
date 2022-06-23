@@ -513,7 +513,7 @@ ax.format(ymin=0.05, yscale=('power', 0.5), title=title)
 #    <ug_tight>` but means that the drawing order is controlled by the difference
 #    between the zorders of the alternate axes and the content *inside* the original
 #    axes rather than the zorder of the original axes itself (see `this issue page
-#    <https://github.com/lukelbd/proplot/issues/303>`__ for details).
+#    <https://github.com/proplot-dev/proplot/issues/303>`__ for details).
 
 # %%
 import proplot as pplt

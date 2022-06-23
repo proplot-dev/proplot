@@ -153,9 +153,9 @@ copybutton_remove_prompts = True
 
 # Links for What's New github commits, issues, and pull requests
 extlinks = {
-    'issue': ('https://github.com/lukelbd/proplot/issues/%s', 'GH#'),
-    'commit': ('https://github.com/lukelbd/proplot/commit/%s', '@'),
-    'pr': ('https://github.com/lukelbd/proplot/pull/%s', 'GH#'),
+    'issue': ('https://github.com/proplot-dev/proplot/issues/%s', 'GH#'),
+    'commit': ('https://github.com/proplot-dev/proplot/commit/%s', '@'),
+    'pr': ('https://github.com/proplot-dev/proplot/pull/%s', 'GH#'),
 }
 
 # Set up mapping for other projects' docs
