@@ -205,7 +205,8 @@ obj = ax.plot(
 # `Colorgorical <http://vrl.cs.brown.edu/color>`__,
 # `Adobe Color <https://color.adobe.com/explore>`__,
 # `Color Hunt <https://colorhunt.co/>`__,
-# `Coolers <https://coolors.co>`__,
+# `Coolors <https://coolors.co>`__,
+# `Branition Colors <https://branition.com/colors>`__,
 # and `Color Drop <https://colordrop.io/>`__.
 
 # To add color cycles downloaded from any of these sources, save the color data file
