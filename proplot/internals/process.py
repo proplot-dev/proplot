@@ -70,7 +70,7 @@ def _is_numeric(data):
     array = _to_numpy_array(data)
     return len(data) and (
         np.issubdtype(array.dtype, np.number)
-        or np.issubdtype(array.dtype, np.object)
+        or np.issubdtype(array.dtype, object)
         and all(isinstance(_, np.number) for _ in array.flat)
     )
 
@@ -81,9 +81,9 @@ def _is_categorical(data):
     """
     array = _to_numpy_array(data)
     return len(data) and (
-        np.issubdtype(array.dtype, np.str)
-        or np.issubdtype(array.dtype, np.object)
-        and any(isinstance(_, np.str) for _ in array.flat)
+        np.issubdtype(array.dtype, str)
+        or np.issubdtype(array.dtype, object)
+        and any(isinstance(_, str) for _ in array.flat)
     )
 
 
@@ -141,8 +141,8 @@ def _to_masked_array(data, *, copy=False):
     if ndarray is not Quantity and isinstance(data, Quantity):
         data, units = data.magnitude, data.units
     data = ma.masked_invalid(data, copy=copy)
-    if np.issubdtype(data.dtype, np.integer):
-        data = data.astype(np.float)
+    if np.issubdtype(data.dtype, int):
+        data = data.astype(float)
     if np.issubdtype(data.dtype, np.number):
         data.fill_value *= np.nan  # default float fill_value is 1e+20 or 1e+20 + 0j
     else:
@@ -492,16 +492,16 @@ def _safe_range(data, lo=0, hi=100):
     min_ = max_ = None
     if data.size:
         min_ = np.min(data) if lo <= 0 else np.percentile(data, lo)
-        if np.issubdtype(min_.dtype, np.integer):
-            min_ = np.float(min_)
+        if np.issubdtype(min_.dtype, int):
+            min_ = float(min_)
         if not np.isfinite(min_):
             min_ = None
         elif units is not None:
             min_ *= units
     if data.size:
         max_ = np.max(data) if hi >= 100 else np.percentile(data, hi)
-        if np.issubdtype(max_.dtype, np.integer):
-            max_ = np.float(max_)
+        if np.issubdtype(max_.dtype, int):
+            max_ = float(max_)
         if not np.isfinite(max_):
             max_ = None
         elif units is not None:

@@ -1235,8 +1235,8 @@ class ContinuousColormap(mcolors.LinearSegmentedColormap, _Colormap):
         --------
         DiscreteColormap.save
         """
-        # NOTE We sanitize segmentdata before saving to json. Convert np.float to
-        # builtin float, np.array to list of lists, and callable to list of lists.
+        # NOTE: We sanitize segmentdata before saving to json. Convert numpy float
+        # to builtin float, np.array to list of lists, and callable to list of lists.
         # We tried encoding func.__code__ with base64 and marshal instead, but when
         # cmap.append() embeds functions as keyword arguments, this seems to make it
         # *impossible* to load back up the function with FunctionType (error message:

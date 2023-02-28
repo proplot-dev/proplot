@@ -3169,7 +3169,7 @@ class PlotAxes(base.Axes):
             else:
                 s = s.copy()
                 s.flat[:] = utils.units(s.flat, 'pt')
-                s = s.astype(np.float) ** 2
+                s = s.astype(float) ** 2
         if absolute_size is None:
             if _default_absolute():
                 absolute_size = True

@@ -1321,7 +1321,7 @@ class Figure(mfigure.Figure):
             array = array.reshape((nrows, ncols), order=order)
         array = np.atleast_1d(array)
         array[array == None] = 0  # None or 0 both valid placeholders  # noqa: E711
-        array = array.astype(np.int)
+        array = array.astype(int)
         if array.ndim == 1:  # interpret as single row or column
             array = array[None, :] if order == 'C' else array[:, None]
         elif array.ndim != 2:
