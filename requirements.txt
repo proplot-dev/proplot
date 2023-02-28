@@ -1,2 +1,2 @@
 # Just matplotlib :)
-matplotlib
+matplotlib>=3.3.0,<3.5.0
