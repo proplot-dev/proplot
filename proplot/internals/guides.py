@@ -3,9 +3,12 @@
 Utilties related to legends and colorbars.
 """
 import matplotlib.artist as martist
+import matplotlib.axes as maxes
 import matplotlib.colorbar as mcolorbar
-import matplotlib.legend as mlegend  # noqa: F401
+import matplotlib.offsetbox as moffsetbox
+import matplotlib.projections as mprojections  # noqa: F401
 import matplotlib.ticker as mticker
+import matplotlib.transforms as mtransforms
 import numpy as np
 
 from . import ic  # noqa: F401
@@ -143,15 +146,93 @@ def _update_ticks(self, manual_only=False):
             self.minorticks_on()  # at least turn them on
 
 
-class _InsetColorbar(martist.Artist):
+class _AnchoredAxes(moffsetbox.AnchoredOffsetbox):
     """
-    Legend-like class for managing inset colorbars.
+    An anchored child axes whose background patch and offset position is determined
+    by the tight bounding box. Analogous to `~matplotlib.offsetbox.AnchoredText`.
     """
-    # TODO: Write this!
+    def __init__(self, ax, width, height, **kwargs):
+        # Note the default bbox_to_anchor will be
+        # the axes bounding box.
+        bounds = [0, 0, 1, 1]  # arbitrary initial bounds
+        child = maxes.Axes(ax.figure, bounds, zorder=self.zorder)
+        # cls = mprojections.get_projection_class('proplot_cartesian')  # TODO
+        # child = cls(ax.figure, bounds, zorder=self.zorder)
+        super().__init__(child=child, bbox_to_anchor=ax.bbox, **kwargs)
+        ax.add_artist(self)  # sets self.axes to ax and bbox_to_anchor to ax.bbox
+        self._child = child  # ensure private attribute exists
+        self._width = width
+        self._height = height
+
+    def draw(self, renderer):
+        # Just draw the patch (not the axes)
+        if not self.get_visible():
+            return
+        if hasattr(self, '_update_offset_func'):
+            self._update_offset_func(renderer)
+        else:
+            warnings._warn_proplot(
+                'Failed to update _AnchoredAxes offset function due to matplotlib '
+                'private API change. The resulting axes position may be incorrect.'
+            )
+        bbox = self.get_window_extent(renderer)
+        self._update_patch(renderer, bbox=bbox)
+        bbox = self.get_child_extent(renderer, offset=True)
+        self._update_child(bbox)
+        self.patch.draw(renderer)
+        self._child.draw(renderer)
+
+    def _update_child(self, bbox):
+        # Update the child bounding box
+        trans = getattr(self.figure, 'transSubfigure', self.figure.transFigure)
+        bbox = mtransforms.TransformedBbox(bbox, trans.inverted())
+        getattr(self._child, '_set_position', self._child.set_position)(bbox)
+
+    def _update_patch(self, renderer, bbox):
+        # Update the patch position
+        fontsize = renderer.points_to_pixels(self.prop.get_size_in_points())
+        self.patch.set_bounds(bbox.x0, bbox.y0, bbox.width, bbox.height)
+        self.patch.set_mutation_scale(fontsize)
+
+    def get_extent(self, renderer, offset=False):
+        # Return the extent of the child plus padding
+        fontsize = renderer.points_to_pixels(self.prop.get_size_in_points())
+        pad = self.pad * fontsize
+        bbox = self._child._tight_bbox = self._child.get_tightbbox(renderer)
+        # bbox = self._child.get_tightbbox(renderer, use_cache=True)  # TODO
+        width = bbox.width + 2 * pad
+        height = bbox.height + 2 * pad
+        xd = yd = pad
+        if offset:
+            xd += self._child.bbox.x0 - bbox.x0
+            yd += self._child.bbox.y0 - bbox.y0
+        return width, height, xd, yd
+
+    def get_child_extent(self, renderer, offset=False):
+        # Update the child position
+        fontsize = renderer.points_to_pixels(self.prop.get_size_in_points())
+        x0, y0 = self._child.bbox.x0, self._child.bbox.y0
+        if offset:  # find offset position
+            self._update_child(self.get_child_extent(renderer))
+            width, height, xd, yd = self.get_extent(renderer, offset=True)
+            x0, y0 = self.get_offset(width, height, xd, yd, renderer)
+            # bbox = self._child.get_tightbbox(use_cache=True)  # TODO
+            xd += self._child.bbox.x0 - self._child._tight_bbox.x0
+            yd += self._child.bbox.y0 - self._child._tight_bbox.y0
+        width, height = self._width * fontsize, self._height * fontsize
+        return mtransforms.Bbox.from_bounds(x0, y0, width, height)
+
+    def get_window_extent(self, renderer):
+        # Return the window bounding box
+        self._child.get_tightbbox(renderer)  # reset the cache
+        self._update_child(self.get_child_extent(renderer))
+        xi, yi, xd, yd = self.get_extent(renderer, offset=False)
+        ox, oy = self.get_offset(xi, yi, xd, yd, renderer)
+        return mtransforms.Bbox.from_bounds(ox - xd, oy - yd, xi, yi)
 
 
 class _CenteredLegend(martist.Artist):
     """
-    Legend-like class for managing centered-row legends.
+    A legend-like subclass whose handles are grouped into centered rows of
+    `~matplotlib.offsetbox.HPacker` rather than `~matplotlib.offsetbox.VPacker` columns.
     """
-    # TODO: Write this!
