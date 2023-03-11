@@ -1082,6 +1082,8 @@ class Axes(maxes.Axes):
         # NOTE: In presence of BoundaryNorm or similar handle ticks with special
         # DiscreteLocator or else get issues (see mpl #22233).
         norm = mappable.norm
+        source = getattr(norm, '_norm', None)
+        vcenter = {'vcenter': getattr(source, 'vcenter', 0.0)}
         formatter = _not_none(formatter, getattr(norm, '_labels', None), 'auto')
         formatter = constructor.Formatter(formatter, **formatter_kw)
         categorical = isinstance(formatter, mticker.FixedFormatter)
@@ -1093,14 +1095,14 @@ class Axes(maxes.Axes):
             tickminor = False if categorical else rc['xy'[vert] + 'tick.minor.visible']
         if isinstance(norm, mcolors.BoundaryNorm):  # DiscreteNorm or BoundaryNorm
             ticks = getattr(norm, '_ticks', norm.boundaries)
-            segmented = isinstance(getattr(norm, '_norm', None), pcolors.SegmentedNorm)
+            segmented = isinstance(source, pcolors.SegmentedNorm)
             if locator is None:
                 if categorical or segmented:
                     locator = mticker.FixedLocator(ticks)
                 else:
-                    locator = pticker.DiscreteLocator(ticks)
+                    locator = pticker.DiscreteLocator(ticks, **vcenter)
             if tickminor and minorlocator is None:
-                minorlocator = pticker.DiscreteLocator(ticks, minor=True)
+                minorlocator = pticker.DiscreteLocator(ticks, minor=True, **vcenter)
 
         # Special handling for colorbar keyword arguments
         # WARNING: Critical to not pass empty major locators in matplotlib < 3.5

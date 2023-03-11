@@ -148,6 +148,7 @@ class DiscreteLocator(mticker.Locator):
         'nbins': None,
         'minor': False,
         'steps': np.array([1, 2, 3, 4, 5, 6, 8, 10]),
+        'vcenter': 0.0,
         'min_n_ticks': 2
     }
 
@@ -167,6 +168,8 @@ class DiscreteLocator(mticker.Locator):
         steps : array-like of int, default: ``[1 2 3 4 5 6 8]``
             Valid integer index steps when selecting from the tick list. Must fall
             between 1 and 9. Powers of 10 of these step sizes will also be permitted.
+        vcenter : float, optional
+            The optional non-zero center of the original diverging normalizer.
         min_n_ticks : int, default: 1
             The minimum number of ticks to select. See also `nbins`.
         """
@@ -180,7 +183,7 @@ class DiscreteLocator(mticker.Locator):
         """
         return self.tick_values(None, None)
 
-    def set_params(self, steps=None, nbins=None, minor=None, min_n_ticks=None):
+    def set_params(self, nbins=None, minor=None, steps=None, vcenter=None, min_n_ticks=None):  # noqa: E501
         """
         Set the parameters for this locator. See `DiscreteLocator` for details.
         """
@@ -197,6 +200,8 @@ class DiscreteLocator(mticker.Locator):
             self._nbins = nbins
         if minor is not None:
             self._minor = bool(minor)  # needed to scale tick space
+        if vcenter is not None:
+            self._vcenter = vcenter
         if min_n_ticks is not None:
             self._min_n_ticks = int(min_n_ticks)  # compare to MaxNLocator
 
@@ -208,7 +213,7 @@ class DiscreteLocator(mticker.Locator):
         # interval. Otherwise get misaligned major and minor tick steps.
         # NOTE: This tries to select ticks that are integer steps away from zero (like
         # AutoLocator). The list minimum is used if this fails (like FixedLocator)
-        # NOTE: This avoids awkward steps like '7' or '13' that produce awkward
+        # NOTE: This avoids awkward steps like '7' or '13' that produce strange
         # jumps and have no integer divisors (and therefore eliminate minor ticks)
         # NOTE: We virtually always want to subsample the level list rather than
         # using continuous minor locators (e.g. LogLocator or SymLogLocator) because
@@ -238,10 +243,12 @@ class DiscreteLocator(mticker.Locator):
                 if step % i == 0:
                     step = step // i
                     break
+        locs = locs - self._vcenter
         diff = np.abs(np.diff(locs[:step + 1:step]))
         offset, = np.where(np.isclose(locs % diff if diff.size else 0.0, 0.0))
         offset = offset[0] if offset.size else np.argmin(np.abs(locs))
-        return locs[offset % step::step]  # even multiples from zero or zero-close
+        locs = locs[offset % step::step]  # even multiples from zero or zero-close
+        return locs + self._vcenter
 
 
 class DegreeLocator(mticker.MaxNLocator):
