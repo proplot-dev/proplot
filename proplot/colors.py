@@ -2538,22 +2538,22 @@ class SegmentedNorm(mcolors.Normalize):
     Normalizer that scales data linearly with respect to the
     interpolated index in an arbitrary monotonic level sequence.
     """
-    def __init__(self, levels, vmin=None, vmax=None, clip=False):
+    def __init__(self, levels, vcenter=None, vmin=None, vmax=None, clip=None, fair=True):  # noqa: E501
         """
         Parameters
         ----------
         levels : sequence of float
-            The level boundaries. Must be monotonically increasing
-            or decreasing.
+            The level boundaries. Must be monotonically increasing or decreasing.
+        vcenter : float, default: None
+            The central colormap value. Default is to omit this.
         vmin : float, optional
-            Ignored but included for consistency with other normalizers.
-            Set to the minimum of `levels`.
+            Ignored but included for consistency. Set to ``min(levels)``.
         vmax : float, optional
-            Ignored but included for consistency with other normalizers.
-            Set to the minimum of `levels`.
+            Ignored but included for consistency. Set to ``max(levels)``.
         clip : bool, optional
-            Whether to clip values falling outside of the minimum
-            and maximum of `levels`.
+            Whether to clip values falling outside of `vmin` and `vmax`.
+        fair : bool, optional
+            Whether to use fair scaling. See `DivergingNorm`.
 
         See also
         --------
@@ -2587,7 +2587,21 @@ class SegmentedNorm(mcolors.Normalize):
         dest = np.linspace(0, 1, len(levels))
         vmin = np.min(levels)
         vmax = np.max(levels)
+        if vcenter is not None:
+            center = _interpolate_extrapolate_vector(vcenter, levels, dest)
+            idxs, = np.where(np.isclose(vcenter, levels))
+            if fair:
+                delta = center - 0.5
+                delta = max(-(dest[0] - delta), dest[-1] - delta - 1)
+                dest = (dest - center) / (1 + 2 * delta) + 0.5
+            elif idxs.size and idxs[0] > 0 and idxs[0] < len(levels) - 1:
+                dest1 = np.linspace(0, 0.5, idxs[0] + 1)
+                dest2 = np.linspace(0.5, 1, len(levels) - idxs[0])
+                dest = np.append(dest1, dest2[1:])
+            else:
+                raise ValueError(f'Center {vcenter} not in level list {levels}.')
         super().__init__(vmin=vmin, vmax=vmax, clip=clip)
+        self.vcenter = vcenter  # used for DiscreteNorm
         self._x = self.boundaries = levels  # 'boundaries' are used in PlotAxes
         self._y = dest
 
@@ -2636,26 +2650,24 @@ class DivergingNorm(mcolors.Normalize):
     def __str__(self):
         return type(self).__name__ + f'(center={self.vcenter!r})'
 
-    def __init__(
-        self, vcenter=0, vmin=None, vmax=None, fair=True, clip=None
-    ):
+    def __init__(self, vcenter=0, vmin=None, vmax=None, clip=None, fair=True):
         """
         Parameters
         ----------
         vcenter : float, default: 0
-            The data value corresponding to the central colormap position.
+            The central data value.
         vmin : float, optional
             The minimum data value.
         vmax : float, optional
             The maximum data value.
+        clip : bool, optional
+            Whether to clip values falling outside of `vmin` and `vmax`.
         fair : bool, optional
             If ``True`` (default), the speeds of the color gradations on either side
             of the center point are equal, but colormap colors may be omitted. If
             ``False``, all colormap colors are included, but the color gradations on
             one side may be faster than the other side. ``False`` should be used with
             great care, as it may result in a misleading interpretation of your data.
-        clip : bool, optional
-            Whether to clip values falling outside of `vmin` and `vmax`.
 
         See also
         --------

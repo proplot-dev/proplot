@@ -2245,6 +2245,8 @@ class PlotAxes(base.Axes):
         isdiverging = modes['diverging']
         default = 'div' if isdiverging else 'linear'
         norm = _not_none(norm, default)
+        if isdiverging and isinstance(norm, str) and norm in ('segments', 'segmented'):
+            norm_kw.setdefault('vcenter', 0)
         if isinstance(norm, mcolors.Normalize):
             norm.vmin, norm.vmax = vmin, vmax
         else:
