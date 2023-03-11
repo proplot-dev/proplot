@@ -999,6 +999,12 @@ class Axes(maxes.Axes):
         ticklenratio = _not_none(ticklenratio, rc['tick.lenratio'])
         tickwidthratio = _not_none(tickwidthratio, rc['tick.widthratio'])
         rasterized = _not_none(rasterized, rc['colorbar.rasterized'])
+        if extendsize is not None and extendfrac is not None:
+            warnings._warn_proplot(
+                f'You cannot specify both an absolute extendsize={extendsize!r} '
+                f"and a relative extendfrac={extendfrac!r}. Ignoring 'extendfrac'."
+            )
+            extendfrac = None
 
         # Build label and locator keyword argument dicts
         # NOTE: This carefully handles the 'maxn' and 'maxn_minor' deprecations
@@ -1037,16 +1043,25 @@ class Axes(maxes.Axes):
         # Generate and prepare the colorbar axes
         # NOTE: The inset axes function needs 'label' to know how to pad the box
         # TODO: Use seperate keywords for frame properties vs. colorbar edge properties?
-        if loc in ('fill', 'left', 'right', 'top', 'bottom'):
+        # TODO: Have extendsize auto-adjust to the subplot size as it changes
+        fill = loc in ('fill', 'left', 'right', 'top', 'bottom')
+        if not fill:
+            extendsize = _not_none(extendsize, rc['colorbar.insetextend'])
+            kwargs.update({'label': label, 'length': length, 'width': width})
+            cax, kwargs = self._parse_colorbar_inset(loc=loc, pad=pad, **kwargs)  # noqa: E501
+        else:
+            extendsize = _not_none(extendsize, rc['colorbar.extend'])
             length = _not_none(length, rc['colorbar.length'])  # for _add_guide_panel
             kwargs.update({'align': align, 'length': length})
-            extendsize = _not_none(extendsize, rc['colorbar.extend'])
-            ax = self._add_guide_panel(loc, align, length=length, width=width, space=space, pad=pad)  # noqa: E501
+            kw = {'width': width, 'space': space, 'pad': pad}
+            ax = self._add_guide_panel(loc, align, length, **kw)
             cax, kwargs = ax._parse_colorbar_filled(**kwargs)
-        else:
-            kwargs.update({'label': label, 'length': length, 'width': width})
-            extendsize = _not_none(extendsize, rc['colorbar.insetextend'])
-            cax, kwargs = self._parse_colorbar_inset(loc=loc, pad=pad, **kwargs)  # noqa: E501
+        vert = kwargs['orientation'] == 'vertical'
+        if extendfrac is None:  # compute extendsize
+            width, height = cax._get_size_inches()
+            axsize = height if vert else width
+            extendsize = units(extendsize, 'em', 'in')
+            extendfrac = extendsize / max(axsize - 2 * extendsize, units(1, 'em', 'in'))
 
         # Parse the colorbar mappable
         # NOTE: Account for special case where auto colorbar is generated from 1D
