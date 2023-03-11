@@ -1078,21 +1078,6 @@ class Axes(maxes.Axes):
                     f'Ignoring unused keyword arg(s): {pop}'
                 )
 
-        # Parse 'extendsize' and 'extendfrac' keywords
-        # TODO: Make this auto-adjust to the subplot size
-        vert = kwargs['orientation'] == 'vertical'
-        if extendsize is not None and extendfrac is not None:
-            warnings._warn_proplot(
-                f'You cannot specify both an absolute extendsize={extendsize!r} '
-                f"and a relative extendfrac={extendfrac!r}. Ignoring 'extendfrac'."
-            )
-            extendfrac = None
-        if extendfrac is None:
-            width, height = cax._get_size_inches()
-            scale = height if vert else width
-            extendsize = units(extendsize, 'em', 'in')
-            extendfrac = extendsize / max(scale - 2 * extendsize, units(1, 'em', 'in'))
-
         # Parse the tick locators and formatters
         # NOTE: In presence of BoundaryNorm or similar handle ticks with special
         # DiscreteLocator or else get issues (see mpl #22233).
