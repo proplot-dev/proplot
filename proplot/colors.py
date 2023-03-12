@@ -2440,19 +2440,17 @@ class DiscreteNorm(mcolors.BoundaryNorm):
         # minimum 0 maximum 1, would mess up color distribution. However this is still
         # not perfect... get asymmetric color intensity either side of central point.
         # So we add special handling for diverging norms below to improve symmetry.
-        if len(levels) == 2:
-            step = 0.5  # dummy step
-            mids[0] += step * (levels[0] - levels[1])
-            mids[-1] += step * (levels[-1] - levels[-2])
-        else:
-            if unique in ('min', 'both'):
-                offset = mids[1] - mids[2]
-                mids[0] += step * offset
-            if unique in ('max', 'both'):
-                offset = mids[-2] - mids[-3]
-                mids[-1] += step * offset
+        if unique in ('min', 'both'):
+            scale = levels[0] - levels[1] if len(levels) == 2 else mids[1] - mids[2]
+            mids[0] += step * scale
+        if unique in ('max', 'both'):
+            scale = levels[-1] - levels[-2] if len(levels) == 2 else mids[-2] - mids[-3]
+            mids[-1] += step * scale
         mmin = np.min(mids)
         mmax = np.max(mids)
+        if np.isclose(mmin, mmax):
+            mmin = mmin - (mmin or 1) * 1e-10
+            mmax = mmax + (mmax or 1) * 1e-10
         if vcenter is None:  # not diverging norm or centered segmented norm
             mids = _interpolate_scalar(mids, mmin, mmax, vmin, vmax)
         else:

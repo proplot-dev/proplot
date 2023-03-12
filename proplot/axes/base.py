@@ -1083,7 +1083,8 @@ class Axes(maxes.Axes):
         # DiscreteLocator or else get issues (see mpl #22233).
         norm = mappable.norm
         source = getattr(norm, '_norm', None)
-        vcenter = {'vcenter': getattr(source, 'vcenter', 0.0)}
+        vcenter = getattr(source, 'vcenter', None)
+        vcenter = {} if vcenter is None else {'vcenter': vcenter}
         formatter = _not_none(formatter, getattr(norm, '_labels', None), 'auto')
         formatter = constructor.Formatter(formatter, **formatter_kw)
         categorical = isinstance(formatter, mticker.FixedFormatter)

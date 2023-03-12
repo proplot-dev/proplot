@@ -2500,7 +2500,7 @@ class PlotAxes(base.Axes):
             Unused arguments.
         """
         # Input args
-        # NOTE: Some of this is adapted from the hidden contour.ContourSet._autolev
+        # NOTE: Some of this is adapted from contour.ContourSet._autolev
         # NOTE: We use 'symmetric' with MaxNLocator to ensure boundaries
         # include a zero level but may trim many of these levels below.
         norm_kw = norm_kw or {}
@@ -2551,7 +2551,7 @@ class PlotAxes(base.Axes):
             vmin, vmax, levels = vmin + vcenter, vmax + vcenter, levels + vcenter
 
         # Possibly trim levels far outside of 'vmin' and 'vmax'
-        # NOTE: This part is mostly copied from contour.ContourSet._autolev
+        # NOTE: This part is mostly copied from matplotlib _autolev
         if not symmetric:
             i0, i1 = 0, len(levels)  # defaults
             under, = np.where(levels < vmin)
@@ -2832,7 +2832,11 @@ class PlotAxes(base.Axes):
 
         # Generate DiscreteNorm and update "child" norm with vmin and vmax from
         # levels. This lets the colorbar set tick locations properly!
-        if not isinstance(norm, mcolors.BoundaryNorm) and len(levels) > 1:
+        if len(levels) == 1:
+            pass  # e.g. contours
+        elif isinstance(norm, mcolors.BoundaryNorm):
+            pass  # override with native matplotlib normalizer
+        else:
             norm = pcolors.DiscreteNorm(
                 levels, norm=norm, unique=unique, step=step,
                 ticks=discrete_ticks, labels=discrete_labels,
