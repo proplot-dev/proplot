@@ -339,7 +339,7 @@ colors : sequence of color-spec or tuple
 docstring._snippet_manager['colors.from_list'] = _from_list_docstring
 
 
-def _clip_colors(colors, clip=True, gray=0.2, warn=False):
+def _clip_colors(colors, clip=True, gray=0.2, warn_invalid=False):
     """
     Clip impossible colors rendered in an HSL-to-RGB colorspace
     conversion. Used by `PerceptualColormap`.
@@ -349,13 +349,11 @@ def _clip_colors(colors, clip=True, gray=0.2, warn=False):
     colors : sequence of 3-tuple
         The RGB colors.
     clip : bool, optional
-        If `clip` is ``True`` (the default), RGB channel values >1 are
-        clipped to 1. Otherwise, the color is masked out as gray.
+        If `clip` is ``True`` (the default), RGB channel values >1
+        are clipped to 1. Otherwise, the color is masked out as gray.
     gray : float, optional
-        The identical RGB channel values (gray color) to be used if
-        `clip` is ``True``.
-    warn : bool, optional
-        Whether to issue warning when colors are clipped.
+        The identical RGB channel values (gray color) to be used
+        if `clip` is ``True``.
     """
     colors = np.asarray(colors)
     under = colors < 0
@@ -364,7 +362,7 @@ def _clip_colors(colors, clip=True, gray=0.2, warn=False):
         colors[under], colors[over] = 0, 1
     else:
         colors[under | over] = gray
-    if warn:
+    if warn_invalid:
         msg = 'Clipped' if clip else 'Invalid'
         for i, name in enumerate('rgb'):
             if np.any(under[:, i]) or np.any(over[:, i]):
@@ -372,7 +370,7 @@ def _clip_colors(colors, clip=True, gray=0.2, warn=False):
     return colors
 
 
-def _get_channel(color, channel, space='hcl'):
+def _color_channel(color, channel, space='hcl'):
     """
     Get the hue, saturation, or luminance channel value from the input color. The
     color name `color` can optionally be a string with the format ``'color+x'``
@@ -586,7 +584,7 @@ def _load_colors(path, warn_on_failure=True):
         If ``True``, issue a warning when loading fails instead of raising an error.
     """
     # Warn or raise error (matches Colormap._from_file behavior)
-    if not os.path.exists(path):
+    if not os.path.isfile(path):
         message = f'Failed to load color data file {path!r}. File not found.'
         if warn_on_failure:
             warnings._warn_proplot(message)
@@ -782,7 +780,7 @@ class _Colormap(object):
                 warnings._warn_proplot(prefix + ' ' + descrip)
             else:
                 raise error(prefix + ' ' + descrip)
-        if not os.path.exists(path):
+        if not os.path.isfile(path):
             return _warn_or_raise('File not found.', FileNotFoundError)
 
         # Directly read segmentdata json file
@@ -1944,7 +1942,7 @@ class PerceptualColormap(ContinuousColormap):
             for i, xyy in enumerate(array):
                 xyy = list(xyy)  # make copy!
                 for j, y in enumerate(xyy[1:]):  # modify the y values
-                    xyy[j + 1] = _get_channel(y, key, space)
+                    xyy[j + 1] = _color_channel(y, key, space)
                 data[key][i] = xyy
         # Initialize
         super().__init__(name, data, gamma=1.0, N=N, **kwargs)
@@ -2425,10 +2423,10 @@ class DiscreteNorm(mcolors.BoundaryNorm):
         # Instead user-reversed levels will always get passed here just as
         # they are passed to SegmentedNorm inside plot.py
         levels, descending = _sanitize_levels(levels)
+        vcenter = getattr(norm, 'vcenter', None)
         vmin = norm.vmin = np.min(levels)
         vmax = norm.vmax = np.max(levels)
         bins, _ = _sanitize_levels(norm(levels))
-        vcenter = getattr(norm, 'vcenter', None)
         mids = np.zeros((levels.size + 1,))
         mids[1:-1] = 0.5 * (levels[1:] + levels[:-1])
         mids[0], mids[-1] = mids[1], mids[-2]
@@ -2443,11 +2441,17 @@ class DiscreteNorm(mcolors.BoundaryNorm):
         # not perfect... get asymmetric color intensity either side of central point.
         # So we add special handling for diverging norms below to improve symmetry.
         if unique in ('min', 'both'):
-            mids[0] += step * (mids[1] - mids[2])
+            scale = levels[0] - levels[1] if len(levels) == 2 else mids[1] - mids[2]
+            mids[0] += step * scale
         if unique in ('max', 'both'):
-            mids[-1] += step * (mids[-2] - mids[-3])
-        mmin, mmax = np.min(mids), np.max(mids)
-        if vcenter is None:
+            scale = levels[-1] - levels[-2] if len(levels) == 2 else mids[-2] - mids[-3]
+            mids[-1] += step * scale
+        mmin = np.min(mids)
+        mmax = np.max(mids)
+        if np.isclose(mmin, mmax):
+            mmin = mmin - (mmin or 1) * 1e-10
+            mmax = mmax + (mmax or 1) * 1e-10
+        if vcenter is None:  # not diverging norm or centered segmented norm
             mids = _interpolate_scalar(mids, mmin, mmax, vmin, vmax)
         else:
             mask1, mask2 = mids < vcenter, mids >= vcenter
@@ -2538,22 +2542,22 @@ class SegmentedNorm(mcolors.Normalize):
     Normalizer that scales data linearly with respect to the
     interpolated index in an arbitrary monotonic level sequence.
     """
-    def __init__(self, levels, vmin=None, vmax=None, clip=False):
+    def __init__(self, levels, vcenter=None, vmin=None, vmax=None, clip=None, fair=True):  # noqa: E501
         """
         Parameters
         ----------
         levels : sequence of float
-            The level boundaries. Must be monotonically increasing
-            or decreasing.
+            The level boundaries. Must be monotonically increasing or decreasing.
+        vcenter : float, default: None
+            The central colormap value. Default is to omit this.
         vmin : float, optional
-            Ignored but included for consistency with other normalizers.
-            Set to the minimum of `levels`.
+            Ignored but included for consistency. Set to ``min(levels)``.
         vmax : float, optional
-            Ignored but included for consistency with other normalizers.
-            Set to the minimum of `levels`.
+            Ignored but included for consistency. Set to ``max(levels)``.
         clip : bool, optional
-            Whether to clip values falling outside of the minimum
-            and maximum of `levels`.
+            Whether to clip values falling outside of `vmin` and `vmax`.
+        fair : bool, optional
+            Whether to use fair scaling. See `DivergingNorm`.
 
         See also
         --------
@@ -2587,7 +2591,21 @@ class SegmentedNorm(mcolors.Normalize):
         dest = np.linspace(0, 1, len(levels))
         vmin = np.min(levels)
         vmax = np.max(levels)
+        if vcenter is not None:
+            center = _interpolate_extrapolate_vector(vcenter, levels, dest)
+            idxs, = np.where(np.isclose(vcenter, levels))
+            if fair:
+                delta = center - 0.5
+                delta = max(-(dest[0] - delta), dest[-1] - delta - 1)
+                dest = (dest - center) / (1 + 2 * delta) + 0.5
+            elif idxs.size and idxs[0] > 0 and idxs[0] < len(levels) - 1:
+                dest1 = np.linspace(0, 0.5, idxs[0] + 1)
+                dest2 = np.linspace(0.5, 1, len(levels) - idxs[0])
+                dest = np.append(dest1, dest2[1:])
+            else:
+                raise ValueError(f'Center {vcenter} not in level list {levels}.')
         super().__init__(vmin=vmin, vmax=vmax, clip=clip)
+        self.vcenter = vcenter  # used for DiscreteNorm
         self._x = self.boundaries = levels  # 'boundaries' are used in PlotAxes
         self._y = dest
 
@@ -2636,26 +2654,24 @@ class DivergingNorm(mcolors.Normalize):
     def __str__(self):
         return type(self).__name__ + f'(center={self.vcenter!r})'
 
-    def __init__(
-        self, vcenter=0, vmin=None, vmax=None, fair=True, clip=None
-    ):
+    def __init__(self, vcenter=0, vmin=None, vmax=None, clip=None, fair=True):
         """
         Parameters
         ----------
         vcenter : float, default: 0
-            The data value corresponding to the central colormap position.
+            The central data value.
         vmin : float, optional
             The minimum data value.
         vmax : float, optional
             The maximum data value.
+        clip : bool, optional
+            Whether to clip values falling outside of `vmin` and `vmax`.
         fair : bool, optional
             If ``True`` (default), the speeds of the color gradations on either side
             of the center point are equal, but colormap colors may be omitted. If
             ``False``, all colormap colors are included, but the color gradations on
             one side may be faster than the other side. ``False`` should be used with
             great care, as it may result in a misleading interpretation of your data.
-        clip : bool, optional
-            Whether to clip values falling outside of `vmin` and `vmax`.
 
         See also
         --------

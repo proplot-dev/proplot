@@ -2101,10 +2101,9 @@ class PlotAxes(base.Axes):
     def _parse_cmap(
         self, *args,
         cmap=None, cmap_kw=None, c=None, color=None, colors=None,
-        norm=None, norm_kw=None, extend=None, vmin=None, vmax=None, discrete=None,
-        default_cmap=None, default_discrete=True, skip_autolev=False,
-        min_levels=None, plot_lines=False, plot_contours=False,
-        **kwargs
+        norm=None, norm_kw=None, extend=None, vmin=None, vmax=None, vcenter=None,
+        discrete=None, default_discrete=True, default_cmap=None, skip_autolev=False,
+        min_levels=None, plot_lines=False, plot_contours=False, **kwargs
     ):
         """
         Parse colormap and normalizer arguments.
@@ -2119,8 +2118,10 @@ class PlotAxes(base.Axes):
             Normalize specs.
         extend : optional
             The colormap extend setting.
-        vmin, vmax : flaot, optional
+        vmin, vmax : float, optional
             The normalization range.
+        vcenter : float, optional
+            The central value for diverging colormaps.
         sequential, diverging, cyclic, qualitative : bool, optional
             Toggle various colormap types.
         discrete : bool, optional
@@ -2141,16 +2142,22 @@ class PlotAxes(base.Axes):
         norm_kw = norm_kw or {}
         vmin = _not_none(vmin=vmin, norm_kw_vmin=norm_kw.pop('vmin', None))
         vmax = _not_none(vmax=vmax, norm_kw_vmax=norm_kw.pop('vmax', None))
-        extend = _not_none(extend, 'neither')
+        vcenter = _not_none(vcenter=vcenter, norm_kw_vcenter=norm_kw.get('vcenter'))
         colors = _not_none(c=c, color=color, colors=colors)  # in case untranslated
-        modes = {key: kwargs.pop(key, None) for key in ('sequential', 'diverging', 'cyclic', 'qualitative')}  # noqa: E501
-        trues = {key: b for key, b in modes.items() if b}
-        if len(trues) > 1:  # noqa: E501
+        extend = 'both' if extend is True else 'neither' if extend is False else extend
+        extend = _not_none(extend, 'neither')
+        modes = ('sequential', 'diverging', 'cyclic', 'qualitative')
+        modes = {mode: kwargs.pop(mode, None) for mode in modes}
+        if vcenter is not None:  # shorthand to ensure diverging colormap
+            norm = _not_none(norm, 'div')
+            modes['diverging'] = True
+            norm_kw.setdefault('vcenter', vcenter)
+        if sum(map(bool, modes.values())) > 1:  # noqa: E501
             warnings._warn_proplot(
-                f'Conflicting colormap arguments: {trues!r}. Using the first one.'
+                f'Conflicting colormap arguments: {modes!r}. Using the first one.'
             )
-            for key in tuple(trues)[1:]:
-                del trues[key]
+            keys = tuple(key for key, b in modes.items() if b)
+            for key in keys[1:]:
                 modes[key] = None
 
         # Create user-input colormap and potentially disable autodiverging
@@ -2166,7 +2173,7 @@ class PlotAxes(base.Axes):
         if colors is not None:
             if cmap is not None:
                 warnings._warn_proplot(
-                    f'you specified both cmap={cmap!s} and the qualitative-colormap '
+                    f'You specified both cmap={cmap!s} and the qualitative-colormap '
                     f"colors={colors!r}. Ignoring 'colors'. If you meant to specify "
                     f'the edge color please use e.g. edgecolor={colors!r} instead.'
                 )
@@ -2186,13 +2193,13 @@ class PlotAxes(base.Axes):
         # Force default options in special cases
         # NOTE: Delay application of 'sequential', 'diverging', 'cyclic', 'qualitative'
         # until after level generation so 'diverging' can be automatically applied.
-        if 'cyclic' in trues or getattr(cmap, '_cyclic', None):
+        if modes['cyclic'] or getattr(cmap, '_cyclic', None):
             if extend is not None and extend != 'neither':
                 warnings._warn_proplot(
                     f"Cyclic colormaps require extend='neither'. Ignoring extend={extend!r}"  # noqa: E501
                 )
             extend = 'neither'
-        if 'qualitative' in trues or isinstance(cmap, pcolors.DiscreteColormap):
+        if modes['qualitative'] or isinstance(cmap, pcolors.DiscreteColormap):
             if discrete is not None and not discrete:  # noqa: E501
                 warnings._warn_proplot(
                     'Qualitative colormaps require discrete=True. Ignoring discrete=False.'  # noqa: E501
@@ -2231,25 +2238,30 @@ class PlotAxes(base.Axes):
                 _, counts = np.unique(np.sign(levels), return_counts=True)
                 if counts[counts > 1].size > 1:
                     isdiverging = True
-        if not trues and isdiverging and modes['diverging'] is None:
-            trues['diverging'] = modes['diverging'] = True
+        if not any(modes.values()) and isdiverging and modes['diverging'] is None:
+            modes['diverging'] = True
 
         # Create the continuous normalizer.
-        norm = _not_none(norm, 'div' if 'diverging' in trues else 'linear')
+        isdiverging = modes['diverging']
+        default = 'div' if isdiverging else 'linear'
+        norm = _not_none(norm, default)
+        if isdiverging and isinstance(norm, str) and norm in ('segments', 'segmented'):
+            norm_kw.setdefault('vcenter', 0)
         if isinstance(norm, mcolors.Normalize):
             norm.vmin, norm.vmax = vmin, vmax
         else:
             norm = constructor.Norm(norm, vmin=vmin, vmax=vmax, **norm_kw)
-        isdiverging = autodiverging and isinstance(norm, pcolors.DivergingNorm)
-        if not trues and isdiverging and modes['diverging'] is None:
-            trues['diverging'] = modes['diverging'] = True
+        if autodiverging and isinstance(norm, pcolors.DivergingNorm):
+            isdiverging = True
+        if not any(modes.values()) and isdiverging and modes['diverging'] is None:
+            modes['diverging'] = True
 
         # Create the final colormap
         if cmap is None:
             if default_cmap is not None:  # used internally
                 cmap = default_cmap
-            elif trues:
-                cmap = rc['cmap.' + tuple(trues)[0]]
+            elif any(modes.values()):
+                cmap = rc['cmap.' + tuple(key for key, b in modes.items() if b)[0]]
             else:
                 cmap = rc['image.cmap']
             cmap = constructor.Colormap(cmap, **cmap_kw)
@@ -2344,8 +2356,7 @@ class PlotAxes(base.Axes):
             return kwargs
 
     def _parse_level_lim(
-        self, *args,
-        vmin=None, vmax=None, robust=None, inbounds=None,
+        self, *args, vmin=None, vmax=None, vcenter=None, robust=None, inbounds=None,
         negative=None, positive=None, symmetric=None, to_centers=False, **kwargs
     ):
         """
@@ -2355,8 +2366,8 @@ class PlotAxes(base.Axes):
         ----------
         *args
             The sample data.
-        vmin, vmax : float, optional
-            The user input minimum and maximum.
+        vmin, vmax, vcenter : float, optional
+            The user input minimum, maximum, and center.
         robust : bool, optional
             Whether to limit the default range to exclude outliers.
         inbounds : bool, optional
@@ -2376,6 +2387,7 @@ class PlotAxes(base.Axes):
         # Parse vmin and vmax
         automin = vmin is None
         automax = vmax is None
+        vcenter = vcenter or 0.0
         if not automin and not automax:
             return vmin, vmax, kwargs
 
@@ -2392,8 +2404,6 @@ class PlotAxes(base.Axes):
             raise ValueError(f'Unexpected robust={robust!r}. Must be bool, float, or 2-tuple.')  # noqa: E501
 
         # Get sample data
-        # NOTE: Critical to use _to_numpy_array here because some
-        # commands are unstandardized.
         # NOTE: Try to get reasonable *count* levels for hexbin/hist2d, but in general
         # have no way to select nice ones a priori (why we disable discretenorm).
         # NOTE: Currently we only ever use this function with *single* array input
@@ -2409,7 +2419,7 @@ class PlotAxes(base.Axes):
                 continue
             if z.ndim > 2:  # e.g. imshow data
                 continue
-            z = inputs._to_numpy_array(z)
+            z = inputs._to_numpy_array(z)  # critical since not always standardized
             if inbounds and x is not None and y is not None:  # ignore if None coords
                 z = self._inbounds_vlim(x, y, z, to_centers=to_centers)
             imin, imax = inputs._safe_range(z, pmin, pmax)
@@ -2426,7 +2436,7 @@ class PlotAxes(base.Axes):
         # NOTE: This is also applied to manual input levels lists in _parse_level_vals
         if negative:
             if automax:
-                vmax = 0
+                vmax = vcenter
             else:
                 warnings._warn_proplot(
                     f'Incompatible arguments vmax={vmax!r} and negative=True. '
@@ -2434,13 +2444,14 @@ class PlotAxes(base.Axes):
                 )
         if positive:
             if automin:
-                vmin = 0
+                vmin = vcenter
             else:
                 warnings._warn_proplot(
                     f'Incompatible arguments vmin={vmin!r} and positive=True. '
                     'Ignoring the latter.'
                 )
         if symmetric:
+            vmin, vmax = vmin - vcenter, vmax - vcenter
             if automin and not automax:
                 vmin = -vmax
             elif automax and not automin:
@@ -2452,6 +2463,7 @@ class PlotAxes(base.Axes):
                     f'Incompatible arguments vmin={vmin!r}, vmax={vmax!r}, and '
                     'symmetric=True. Ignoring the latter.'
                 )
+            vmin, vmax = vmin + vcenter, vmax + vcenter
 
         return vmin, vmax, kwargs
 
@@ -2488,16 +2500,13 @@ class PlotAxes(base.Axes):
             Unused arguments.
         """
         # Input args
-        # NOTE: Some of this is adapted from the hidden contour.ContourSet._autolev
-        # NOTE: We use 'symmetric' with MaxNLocator to ensure boundaries include a
-        # zero level but may trim many of these below.
+        # NOTE: Some of this is adapted from contour.ContourSet._autolev
+        # NOTE: We use 'symmetric' with MaxNLocator to ensure boundaries
+        # include a zero level but may trim many of these levels below.
         norm_kw = norm_kw or {}
         locator_kw = locator_kw or {}
         extend = _not_none(extend, 'neither')
         levels = _not_none(levels, rc['cmap.levels'])
-        vmin = _not_none(vmin=vmin, norm_kw_vmin=norm_kw.pop('vmin', None))
-        vmax = _not_none(vmax=vmax, norm_kw_vmax=norm_kw.pop('vmax', None))
-        norm = constructor.Norm(norm or 'linear', **norm_kw)
         symmetric = _not_none(
             symmetric=symmetric,
             locator_kw_symmetric=locator_kw.pop('symmetric', None),
@@ -2506,7 +2515,8 @@ class PlotAxes(base.Axes):
 
         # Get default locator from input norm
         # NOTE: This normalizer is only temporary for inferring level locs
-        norm = constructor.Norm(norm or 'linear', **norm_kw)
+        norm = norm or 'linear'
+        norm = constructor.Norm(norm, **norm_kw)
         if locator is not None:
             locator = constructor.Locator(locator, **locator_kw)
         elif isinstance(norm, mcolors.LogNorm):
@@ -2521,18 +2531,24 @@ class PlotAxes(base.Axes):
             locator = mticker.MaxNLocator(levels, min_n_ticks=1, **locator_kw)
 
         # Get default level locations
+        # NOTE: Critical to adjust ticks with vcenter
         nlevs = levels
+        vcenter = getattr(norm, 'vcenter', None)
         automin = vmin is None
         automax = vmax is None
         vmin, vmax, kwargs = self._parse_level_lim(
-            *args, vmin=vmin, vmax=vmax, symmetric=symmetric, **kwargs
+            *args, vmin=vmin, vmax=vmax, vcenter=vcenter, symmetric=symmetric, **kwargs
         )
+        if vcenter is not None:
+            vmin, vmax = vmin - vcenter, vmax - vcenter
         try:
             levels = locator.tick_values(vmin, vmax)
         except TypeError:  # e.g. due to datetime arrays
             return None, kwargs
         except RuntimeError:  # too-many-ticks error
             levels = np.linspace(vmin, vmax, levels)  # TODO: _autolev used N + 1
+        if vcenter is not None:
+            vmin, vmax, levels = vmin + vcenter, vmax + vcenter, levels + vcenter
 
         # Possibly trim levels far outside of 'vmin' and 'vmax'
         # NOTE: This part is mostly copied from matplotlib _autolev
@@ -2578,10 +2594,8 @@ class PlotAxes(base.Axes):
         Parameters
         ----------
         *args
-            The sample data. Passed to `_parse_level_lim`.
-        N
-            Shorthand for `levels`.
-        levels : int or sequence of float, optional
+            The sample data. Passed to `_parse_level_num`.
+        N, levels : int or sequence of float, optional
             The levels list or (approximate) number of levels to create.
         values : int or sequence of float, optional
             The level center list or (approximate) number of level centers to create.
@@ -2589,19 +2603,41 @@ class PlotAxes(base.Axes):
             Whether to remove out non-positive, non-negative, and zero-valued
             levels. The latter is useful for single-color contour plots.
         norm, norm_kw : optional
-            Passed to `Norm`. Used to possbily infer levels or to convert values.
+            Passed to `Norm`. Used to possibly infer levels or to convert values.
         skip_autolev : bool, optional
             Whether to skip automatic level generation.
         min_levels : int, optional
             The minimum number of levels allowed.
+        **kwargs
+            Passed to `_parse_level_num`.
 
         Returns
         -------
         levels : list of float
             The level edges.
+        vmin, vmax : float
+            The minimum and maximum.
+        norm : `matplotlib.colors.Normalize`
+            The normalizer.
         **kwargs
             Unused arguments.
         """
+        # Generate levels so that ticks will be centered between edges
+        # Solve: (x1 + x2) / 2 = y --> x2 = 2 * y - x1 with arbitrary init x1
+        # NOTE: Used for e.g. parametric plots with logarithmic coordinates
+        def _convert_values(values):
+            descending = values[1] < values[0]
+            if descending:  # e.g. [100, 50, 20, 10, 5, 2, 1] successful if reversed
+                values = values[::-1]
+            levels = [1.5 * values[0] - 0.5 * values[1]]  # arbitrary starting point
+            for value in values:
+                levels.append(2 * value - levels[-1])
+            if np.any(np.diff(levels) < 0):  # never happens for evenly spaced levs
+                levels = utils.edges(values)
+            if descending:  # then revert back below
+                levels = levels[::-1]
+            return levels
+
         # Helper function that restricts levels
         # NOTE: This should have no effect if levels were generated automatically.
         # However want to apply these to manual-input levels as well.
@@ -2635,7 +2671,9 @@ class PlotAxes(base.Axes):
                 array = norm.boundaries if key == 'levels' else None
             return array
 
-        # Parse input arguments and resolve incompatibilities
+        # Parse input arguments and infer edges from centers
+        # NOTE: The only way for user to manually impose BoundaryNorm is by
+        # passing one -- users cannot create one using Norm constructor key.
         vmin = vmax = None
         levels = _not_none(N=N, levels=levels, norm_kw_levs=norm_kw.pop('levels', None))
         if positive and negative:
@@ -2648,10 +2686,6 @@ class PlotAxes(base.Axes):
                 f'Incompatible args levels={levels!r} and values={values!r}. Using former.'  # noqa: E501
             )
             values = None
-
-        # Infer level edges from level centers if possible
-        # NOTE: The only way for user to manually impose BoundaryNorm is by
-        # passing one -- users cannot create one using Norm constructor key.
         if isinstance(values, Integral):
             levels = values + 1
             values = None
@@ -2661,27 +2695,13 @@ class PlotAxes(base.Axes):
         else:
             values = _sanitize_levels('values', values, 1)
             kwargs['discrete_ticks'] = values  # passed to _parse_level_norm
-            if len(values) == 1:
-                levels = [values[0] - 1, values[0] + 1]  # weird but why not
+            if len(values) == 1:  # special case (see also DiscreteNorm)
+                levels = [values[0] - 1, values[0] + 1]
             elif norm is not None and norm not in ('segments', 'segmented'):
-                # Generate levels by finding in-between points in the
-                # normalized numeric space, e.g. LogNorm space.
-                norm_kw = norm_kw or {}
-                convert = constructor.Norm(norm, **norm_kw)
+                convert = constructor.Norm(norm, **(norm_kw or {}))
                 levels = convert.inverse(utils.edges(convert(values)))
             else:
-                # Generate levels so that ticks will be centered between edges
-                # Solve: (x1 + x2) / 2 = y --> x2 = 2 * y - x1 with arbitrary init x1
-                descending = values[1] < values[0]
-                if descending:  # e.g. [100, 50, 20, 10, 5, 2, 1] successful if reversed
-                    values = values[::-1]
-                levels = [1.5 * values[0] - 0.5 * values[1]]  # arbitrary starting point
-                for value in values:
-                    levels.append(2 * value - levels[-1])
-                if np.any(np.diff(levels) < 0):  # never happens for evenly spaced levs
-                    levels = utils.edges(values)
-                if descending:  # then revert back below
-                    levels = levels[::-1]
+                levels = _convert_values(values)
 
         # Process level edges and infer defaults
         # NOTE: Matplotlib colorbar algorithm *cannot* handle descending levels so
@@ -2726,7 +2746,7 @@ class PlotAxes(base.Axes):
     ):
         """
         Create a `~proplot.colors.DiscreteNorm` or `~proplot.colors.BoundaryNorm`
-        from the input colormap and normalizer.
+        from the input levels, normalizer, and colormap.
 
         Parameters
         ----------
@@ -2812,7 +2832,11 @@ class PlotAxes(base.Axes):
 
         # Generate DiscreteNorm and update "child" norm with vmin and vmax from
         # levels. This lets the colorbar set tick locations properly!
-        if not isinstance(norm, mcolors.BoundaryNorm) and len(levels) > 1:
+        if len(levels) == 1:
+            pass  # e.g. contours
+        elif isinstance(norm, mcolors.BoundaryNorm):
+            pass  # override with native matplotlib normalizer
+        else:
             norm = pcolors.DiscreteNorm(
                 levels, norm=norm, unique=unique, step=step,
                 ticks=discrete_ticks, labels=discrete_labels,

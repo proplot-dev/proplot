@@ -999,6 +999,12 @@ class Axes(maxes.Axes):
         ticklenratio = _not_none(ticklenratio, rc['tick.lenratio'])
         tickwidthratio = _not_none(tickwidthratio, rc['tick.widthratio'])
         rasterized = _not_none(rasterized, rc['colorbar.rasterized'])
+        if extendsize is not None and extendfrac is not None:
+            warnings._warn_proplot(
+                f'You cannot specify both an absolute extendsize={extendsize!r} '
+                f"and a relative extendfrac={extendfrac!r}. Ignoring 'extendfrac'."
+            )
+            extendfrac = None
 
         # Build label and locator keyword argument dicts
         # NOTE: This carefully handles the 'maxn' and 'maxn_minor' deprecations
@@ -1037,16 +1043,25 @@ class Axes(maxes.Axes):
         # Generate and prepare the colorbar axes
         # NOTE: The inset axes function needs 'label' to know how to pad the box
         # TODO: Use seperate keywords for frame properties vs. colorbar edge properties?
-        if loc in ('fill', 'left', 'right', 'top', 'bottom'):
+        # TODO: Have extendsize auto-adjust to the subplot size as it changes
+        fill = loc in ('fill', 'left', 'right', 'top', 'bottom')
+        if not fill:
+            extendsize = _not_none(extendsize, rc['colorbar.insetextend'])
+            kwargs.update({'label': label, 'length': length, 'width': width})
+            cax, kwargs = self._parse_colorbar_inset(loc=loc, pad=pad, **kwargs)  # noqa: E501
+        else:
+            extendsize = _not_none(extendsize, rc['colorbar.extend'])
             length = _not_none(length, rc['colorbar.length'])  # for _add_guide_panel
             kwargs.update({'align': align, 'length': length})
-            extendsize = _not_none(extendsize, rc['colorbar.extend'])
-            ax = self._add_guide_panel(loc, align, length=length, width=width, space=space, pad=pad)  # noqa: E501
+            kw = {'width': width, 'space': space, 'pad': pad}
+            ax = self._add_guide_panel(loc, align, length, **kw)
             cax, kwargs = ax._parse_colorbar_filled(**kwargs)
-        else:
-            kwargs.update({'label': label, 'length': length, 'width': width})
-            extendsize = _not_none(extendsize, rc['colorbar.insetextend'])
-            cax, kwargs = self._parse_colorbar_inset(loc=loc, pad=pad, **kwargs)  # noqa: E501
+        vert = kwargs['orientation'] == 'vertical'
+        if extendfrac is None:  # compute extendsize
+            width, height = cax._get_size_inches()
+            axsize = height if vert else width
+            extendsize = units(extendsize, 'em', 'in')
+            extendfrac = extendsize / max(axsize - 2 * extendsize, units(1, 'em', 'in'))
 
         # Parse the colorbar mappable
         # NOTE: Account for special case where auto colorbar is generated from 1D
@@ -1063,25 +1078,13 @@ class Axes(maxes.Axes):
                     f'Ignoring unused keyword arg(s): {pop}'
                 )
 
-        # Parse 'extendsize' and 'extendfrac' keywords
-        # TODO: Make this auto-adjust to the subplot size
-        vert = kwargs['orientation'] == 'vertical'
-        if extendsize is not None and extendfrac is not None:
-            warnings._warn_proplot(
-                f'You cannot specify both an absolute extendsize={extendsize!r} '
-                f"and a relative extendfrac={extendfrac!r}. Ignoring 'extendfrac'."
-            )
-            extendfrac = None
-        if extendfrac is None:
-            width, height = cax._get_size_inches()
-            scale = height if vert else width
-            extendsize = units(extendsize, 'em', 'in')
-            extendfrac = extendsize / max(scale - 2 * extendsize, units(1, 'em', 'in'))
-
         # Parse the tick locators and formatters
         # NOTE: In presence of BoundaryNorm or similar handle ticks with special
         # DiscreteLocator or else get issues (see mpl #22233).
         norm = mappable.norm
+        source = getattr(norm, '_norm', None)
+        vcenter = getattr(source, 'vcenter', None)
+        vcenter = {} if vcenter is None else {'vcenter': vcenter}
         formatter = _not_none(formatter, getattr(norm, '_labels', None), 'auto')
         formatter = constructor.Formatter(formatter, **formatter_kw)
         categorical = isinstance(formatter, mticker.FixedFormatter)
@@ -1093,14 +1096,14 @@ class Axes(maxes.Axes):
             tickminor = False if categorical else rc['xy'[vert] + 'tick.minor.visible']
         if isinstance(norm, mcolors.BoundaryNorm):  # DiscreteNorm or BoundaryNorm
             ticks = getattr(norm, '_ticks', norm.boundaries)
-            segmented = isinstance(getattr(norm, '_norm', None), pcolors.SegmentedNorm)
+            segmented = isinstance(source, pcolors.SegmentedNorm)
             if locator is None:
                 if categorical or segmented:
                     locator = mticker.FixedLocator(ticks)
                 else:
-                    locator = pticker.DiscreteLocator(ticks)
+                    locator = pticker.DiscreteLocator(ticks, **vcenter)
             if tickminor and minorlocator is None:
-                minorlocator = pticker.DiscreteLocator(ticks, minor=True)
+                minorlocator = pticker.DiscreteLocator(ticks, minor=True, **vcenter)
 
         # Special handling for colorbar keyword arguments
         # WARNING: Critical to not pass empty major locators in matplotlib < 3.5
