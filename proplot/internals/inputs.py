@@ -130,6 +130,8 @@ def _to_numpy_array(data, strip_units=False):
         data = data.data  # support pint quantities that get unit-stripped later
     elif isinstance(data, (DataFrame, Series, Index)):
         data = data.values
+    if data.dtype == bool:
+        data = data.view(np.uint8)
     if Quantity is not ndarray and isinstance(data, Quantity):
         if strip_units:
             return np.atleast_1d(data.magnitude)
