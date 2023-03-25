@@ -130,15 +130,16 @@ def _to_numpy_array(data, strip_units=False):
         data = data.data  # support pint quantities that get unit-stripped later
     elif isinstance(data, (DataFrame, Series, Index)):
         data = data.values
-    if data.dtype == bool:
-        data = data.view(np.uint8)
     if Quantity is not ndarray and isinstance(data, Quantity):
         if strip_units:
             return np.atleast_1d(data.magnitude)
         else:
             return np.atleast_1d(data.magnitude) * data.units
     else:
-        return np.atleast_1d(data)  # natively preserves masked arrays
+        d = np.atleast_1d(data)  # natively preserves masked arrays
+        if d.dtype == bool:
+            d = d.view(np.uint8)
+        return d
 
 
 def _to_masked_array(data, *, copy=False):
