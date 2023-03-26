@@ -6,7 +6,7 @@ channels:
   - conda-forge
 dependencies:
   - python==3.8
-  - numpy==0.19.5
+  - numpy==1.19.5
   - pandas
   - xarray
   - matplotlib==3.2.2
