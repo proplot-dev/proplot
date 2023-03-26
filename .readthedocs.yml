@@ -6,7 +6,6 @@ version: 2
 # https://docs.readthedocs.io/en/stable/guides/conda.html#making-builds-faster-with-mamba
 build:
   os: "ubuntu-20.04"
-  image: latest
   tools:
     python: "mambaforge-4.10"
 
