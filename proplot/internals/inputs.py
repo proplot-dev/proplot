@@ -132,7 +132,7 @@ def _to_numpy_array(data, strip_units=False):
         data = data.values
     if Quantity is not ndarray and isinstance(data, Quantity):
         units = None if strip_units else data.units
-        data = data.magnitude
+        data = np.atleast_1d(data.magnitude)
     else:
         units = None
         data = np.atleast_1d(data)  # natively preserves masked arrays
