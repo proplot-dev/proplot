@@ -17,9 +17,9 @@ channels:
   - conda-forge
 dependencies:
   - python==3.8
+  - numpy==0.19.5
   - matplotlib==3.2.2
   - cartopy==0.20.2
-  - numpy
   - pandas
   - xarray
   - ipykernel
