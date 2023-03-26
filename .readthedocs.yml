@@ -14,11 +14,6 @@ sphinx:
   builder: html
   configuration: docs/conf.py
 
-# Python config
-python:
-  version: 3.6
-  system_packages: true
-
 # Environment config
 conda:
   environment: docs/environment.yml
