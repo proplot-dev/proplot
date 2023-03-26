@@ -12,6 +12,9 @@ flake8 proplot docs --exclude .ipynb_checkpoints --max-line-length=88 --ignore=W
 echo '[isort]'
 isort --recursive --check-only --line-width=88 --skip __init__.py --multi-line=3 --force-grid-wrap=0 --trailing-comma proplot
 
+echo '[pytest]'
+pytest proplot
+
 # echo '[black]'
 # black --check -S proplot
 
