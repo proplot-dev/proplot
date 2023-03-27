@@ -21,10 +21,10 @@ before_install:
   - curl micro.mamba.pm/install.sh | bash
   - export PATH="$HOME/micromamba/bin:$PATH"
   - hash -r
-  - eval "$(micromamba shell hook --shell=bash)"
   - micromamba config set always_yes true
   - micromamba config set changeps1 false
   - micromamba config set show_channel_urls true
+  - eval "$(micromamba shell hook --shell=bash)"
 
 install:
   - micromamba env create --file ci/environment.yml
