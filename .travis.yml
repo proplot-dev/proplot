@@ -1,9 +1,15 @@
 # Travis Continuous Integration
-# For mamba links see https://mamba.readthedocs.io/en/latest/installation.html
-# For sample travis file see https://conda.pydata.org/docs/travis.html
+# Mamba links:
+# https://mamba.readthedocs.io/en/latest/installation.html
+# Sample travis file:
+# https://conda.pydata.org/docs/travis.html
+# Avoiding duplicate branch-pr triggers:
+# https://github.com/travis-ci/travis-ci/issues/1147#issuecomment-160820262
 dist: xenial
+branches:
+  only:
+    - master
 language: python
-
 notifications:
   email: false
 
