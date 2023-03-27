@@ -6,12 +6,15 @@
 # Avoiding duplicate branch-pr triggers:
 # https://github.com/travis-ci/travis-ci/issues/1147#issuecomment-160820262
 dist: xenial
+sudo: false  # use container based build
+language: python
+
+notifications:
+  email: false
+
 branches:
   only:
     - master
-language: python
-notifications:
-  email: false
 
 python:
   - "3.7"
@@ -26,20 +29,20 @@ before_install:
         fi
   - curl micro.mamba.pm/install.sh | bash
   - export PATH="$HOME/micromamba/bin:$PATH"
-  - hash -r
-  - micromamba shell init -s bash -p ~/micromamba
   - micromamba config set always_yes true
   - micromamba config set changeps1 false
   - micromamba config set show_channel_urls true
+  - micromamba shell init --shell=bash --prefix=~/micromamba
 
 install:
+  - . ~/.bashrc
+  - which python
+  - which micromamba
   - micromamba env create --file ci/environment.yml
   - micromamba activate proplot-dev
-  - micromamba list
-  - which micromamba
-  - which python
   - python setup.py sdist bdist_wheel
   - pip install --user ./dist/*.whl
+  - micromamba list
 
 script:
   - ci/run-linter.sh
