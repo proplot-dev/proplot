@@ -26,6 +26,7 @@ before_install:
   - micromamba config set show_channel_urls true
 
 install:
+  - eval "$(micromamba shell hook --shell=bash)"
   - micromamba env create --file ci/environment.yml
   - micromamba activate proplot-dev
   - micromamba list
