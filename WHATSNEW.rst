@@ -223,6 +223,10 @@ Bug fixes
   on gridspecs without companion `~proplot.figure.Figure`\ s (:commit:`e69fd041`).
 * Fix issues passing pandas datetime coordinates and object-type coordinate
   arrays to plotting methods (:issue:`320`).
+* Fix issue where hatching passed to `~proplot.axes.Axes.bar` does nothing unless
+  `edgecolor` is explicitly passed (:issue:`389`).
+* Fix issue where `boxpctiles` is not recognized by e.g. `~proplot.axes.PlotAxes.bar`
+  but `boxpctile` is due to typo (:issue:`382`).
 * Fix issue where list-of-string colors passed to `~proplot.axes.Axes.scatter`
   are interpreted as data values (:issue:`316`).
 * Fix issue where *x* and *y* axis limits are reversed when passing to

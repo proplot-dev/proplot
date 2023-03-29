@@ -1479,7 +1479,7 @@ class PlotAxes(base.Axes):
         ):  # ugly kludge to check for shading
             if all(_ is None for _ in (bardata, barstds, barpctiles)):
                 barstds, barpctiles = default_barstds, default_barpctiles
-            if all(_ is None for _ in (boxdata, boxstds, boxpctile)):
+            if all(_ is None for _ in (boxdata, boxstds, boxpctiles)):
                 boxstds, boxpctiles = default_boxstds, default_boxpctiles
         showbars = any(
             _ is not None and _ is not False for _ in (barstds, barpctiles, bardata)
