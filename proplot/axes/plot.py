@@ -2909,7 +2909,7 @@ class PlotAxes(base.Axes):
         kwargs = _parse_vert(default_vert=False, **kwargs)
         return self._apply_plot(*args, **kwargs)
 
-    def _apply_step(self, *pairs, vert=True, where='pre', **kwargs):
+    def _apply_step(self, *pairs, vert=True, **kwargs):
         """
         Plot the steps.
         """
@@ -2918,11 +2918,7 @@ class PlotAxes(base.Axes):
         # approach... but instead repeat _apply_plot internals here so we can
         # disable error indications that make no sense for 'step' plots.
         kws = kwargs.copy()
-        opts = ('pre', 'post', 'mid')
-        if where not in opts:
-            raise ValueError(f'Invalid where={where!r}. Options are {opts!r}.')
         kws.update(_pop_props(kws, 'line'))
-        kws.setdefault('drawstyle', 'steps-' + where)
         kws, extents = self._inbounds_extent(**kws)
         objs = []
         for xs, ys, fmt in self._iter_arg_pairs(*pairs):

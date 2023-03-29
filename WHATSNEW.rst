@@ -229,6 +229,8 @@ Bug fixes
   but `boxpctile` is due to typo (:issue:`382`).
 * Fix issue where list-of-string colors passed to `~proplot.axes.Axes.scatter`
   are interpreted as data values (:issue:`316`).
+* Fix issue where `~proplot.axes.PlotAxes.step` `where` parameter is ignored due
+  to `drawstyle` conversion (:issue:`359`).
 * Fix issue where *x* and *y* axis limits are reversed when passing to
   `~proplot.axes.PlotAxes.hexbin` and `~proplot.axes.PlotAxes.hist2d` (:issue:`334`).
 * Fix regression where *x* or *y* axis limits are reversed when passing to
