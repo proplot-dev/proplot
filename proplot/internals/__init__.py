@@ -269,6 +269,7 @@ def _pop_kwargs(kwargs, *keys, **aliases):
     aliases.update({key: () for key in keys})
     for key, aliases in aliases.items():
         aliases = (aliases,) if isinstance(aliases, str) else aliases
+        aliases = tuple(alias for alias in aliases if alias != key)  # prevent dev errs
         opts = {key: kwargs.pop(key, None) for key in (key, *aliases)}
         value = _not_none(**opts)
         if value is not None:

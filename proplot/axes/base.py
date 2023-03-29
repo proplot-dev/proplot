@@ -1605,7 +1605,7 @@ class Axes(maxes.Axes):
         kw_frame = _pop_kwargs(
             kwargs,
             alpha=('a', 'framealpha', 'facealpha'),
-            facecolor=('fc', 'framecolor', 'facecolor'),
+            facecolor=('fc', 'framecolor'),
             edgecolor=('ec',),
             edgewidth=('ew',),
         )

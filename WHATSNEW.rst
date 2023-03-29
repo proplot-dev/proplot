@@ -247,6 +247,8 @@ Bug fixes
   `~proplot.colors.DiscreteColormap` incorrectly samples the color list (:issue:`299`).
 * Fix issue where `~proplot.axes.Axes.legend` ignores the user-input `fontsize`
   (:issue:`331`).
+* Fix issue where `~proplot.axes.Axes.legend` ignores the user-input `facecolor`
+  but not the shorthand `fc` (:issue:`402`).
 * Fix issue where passing invalid rc setting to ``.format`` results in persistent
   invalid `rc` state requiring restarting the session/configurator (:issue:`348`).
 * Fix issue where ``proplotrc`` settings are ignored if a subsequent line contains
