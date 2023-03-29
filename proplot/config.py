@@ -791,7 +791,7 @@ class Configurator(MutableMapping, dict):
         rc_old = context.rc_old  # used to re-apply settings without copying whole dict
         for key, value in kwargs.items():
             try:  # TODO: consider moving setting validation to .context()
-                kw_proplot, kw_matplotlib = self._get_item(key, value)
+                kw_proplot, kw_matplotlib = self._get_item_dicts(key, value)
             except ValueError as error:
                 self.__exit__()
                 raise error
