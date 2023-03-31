@@ -1136,20 +1136,20 @@ class Configurator(MutableMapping, dict):
         based on the context.
         """
         # Get the label settings
-        # NOTE: This permits passing arbitrary additional args to set_[xy]label()
+        # NOTE: This permits passing arbitrary additional args to set_[xy]label().
         context = native or self._context_mode == 2
-        kw = self.fill(
-            {
-                'color': 'axes.labelcolor',
-                'weight': 'axes.labelweight',
-                'size': 'axes.labelsize',
-                'family': 'font.family',
-                'labelpad': 'axes.labelpad',  # read by set_xlabel/set_ylabel
-            },
-            context=context,
-        )
+        props = {
+            'color': 'axes.labelcolor',
+            'weight': 'axes.labelweight',
+            'size': 'axes.labelsize',
+            'family': 'font.family',
+            'labelpad': 'axes.labelpad',  # read by set_xlabel/set_ylabel
+        }
+        kw = self.fill(props, context=context)
         for key, value in kwargs.items():
             if value is not None:  # allow e.g. color=None
+                if key in props:
+                    value = self._validate_value(props[key], value)
                 kw[key] = value
         return kw
 
