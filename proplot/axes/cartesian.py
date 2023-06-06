@@ -1005,9 +1005,9 @@ class CartesianAxes(shared._SharedAxes, plot.PlotAxes):
             yformatter = _not_none(yformatter=yformatter, yticklabels=yticklabels)
             xtickminor_default = ytickminor_default = None
             if isinstance(xformatter, mticker.FixedFormatter) or np.iterable(xformatter) and not isinstance(xformatter, str):  # noqa: E501
-                xtickminor_default = False
+                xtickminor_default = False if xminorlocator is None else None
             if isinstance(yformatter, mticker.FixedFormatter) or np.iterable(yformatter) and not isinstance(yformatter, str):  # noqa: E501
-                ytickminor_default = False
+                ytickminor_default = False if yminorlocator is None else None
             xtickminor = _not_none(xtickminor, xtickminor_default, rc.find('xtick.minor.visible', context=True))  # noqa: E501
             ytickminor = _not_none(ytickminor, ytickminor_default, rc.find('ytick.minor.visible', context=True))  # noqa: E501
             ticklabeldir = kwargs.pop('ticklabeldir', None)
