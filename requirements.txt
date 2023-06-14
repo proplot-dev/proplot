@@ -1,2 +1,3 @@
-# Just matplotlib :)
+# Just matplotlib and numpy :)
 matplotlib>=3.0.0
+numpy
