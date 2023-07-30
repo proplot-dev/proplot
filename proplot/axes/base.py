@@ -1144,7 +1144,7 @@ class Axes(maxes.Axes):
             mappable, cax=cax, ticks=locator, format=formatter,
             drawedges=grid, extendfrac=extendfrac, **kwargs
         )
-        obj.minorlocator = minorlocator  # backwards compatibility
+        # obj.minorlocator = minorlocator  # backwards compatibility NOTE: NOT sure what this does
         obj.update_ticks = guides._update_ticks.__get__(obj)  # backwards compatible
         if minorlocator is not None:
             obj.update_ticks()
