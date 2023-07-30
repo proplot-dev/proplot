@@ -452,6 +452,8 @@ def register_cmaps(*args, user=None, local=None, default=False):
     """
     # Register input colormaps
     from . import colors as pcolors
+
+    import matplotlib as mpl
     user = _not_none(user, not bool(args))  # skip user folder if input args passed
     local = _not_none(local, not bool(args))
     paths = []
@@ -471,6 +473,10 @@ def register_cmaps(*args, user=None, local=None, default=False):
         if i == 0 and cmap.name.lower() in pcolors.CMAPS_CYCLIC:
             cmap.set_cyclic(True)
         pcolors._cmap_database[cmap.name] = cmap
+        # for mpl >= 3.7.2
+        if hasattr(mpl, "colormaps"):
+            mpl.colormaps.register(cmap)
+
 
 
 @docstring._snippet_manager
