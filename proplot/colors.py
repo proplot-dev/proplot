@@ -2889,7 +2889,7 @@ def _init_cmap_database():
             }
             database = ColormapDatabase(database)
             setattr(mcm, attr, database)
-    elif hasattr("mcm", "_gen_cmap_registry"):
+    elif hasattr(mcm, "_gen_cmap_registry"):
         database = ColormapDatabase(mcm._gen_cmap_registry())
     else:
         raise ValueError("ColormapDatabase not initialized")
