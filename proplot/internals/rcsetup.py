@@ -10,11 +10,15 @@ from numbers import Integral, Real
 import matplotlib.rcsetup as msetup
 import numpy as np
 from cycler import Cycler
+import matplotlib
 from matplotlib import RcParams
 from matplotlib import rcParamsDefault as _rc_matplotlib_native
 from matplotlib.colors import Colormap
 from matplotlib.font_manager import font_scalings
-from matplotlib.fontconfig_pattern import parse_fontconfig_pattern
+if(hasattr(matplotlib,'fontconfig_pattern')):
+    from matplotlib.fontconfig_pattern import parse_fontconfig_pattern
+else:
+    from matplotlib._fontconfig_pattern import parse_fontconfig_pattern
 
 from . import ic  # noqa: F401
 from . import warnings
@@ -44,8 +48,8 @@ VALIDATE_REGISTERED_COLORS = False
 BLACK = 'black'
 CYCLE = 'colorblind'
 CMAPCYC = 'twilight'
-CMAPDIV = 'BuRd'
-CMAPSEQ = 'Fire'
+CMAPDIV = 'BuPu'
+CMAPSEQ = 'magma'
 CMAPCAT = 'colorblind10'
 DIVERGING = 'div'
 FRAMEALPHA = 0.8  # legend and colorbar
