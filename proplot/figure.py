@@ -7,6 +7,7 @@ import inspect
 import os
 from numbers import Integral
 
+import matplotlib
 import matplotlib.axes as maxes
 import matplotlib.figure as mfigure
 import matplotlib.gridspec as mgridspec
@@ -888,12 +889,13 @@ class Figure(mfigure.Figure):
         """
         Get a renderer at all costs. See matplotlib's tight_layout.py.
         """
-        if self._cachedRenderer:
-            renderer = self._cachedRenderer
+        canvas = self.canvas
+        if canvas and hasattr(canvas, 'get_renderer'):
+            renderer = canvas.get_renderer()
         else:
-            canvas = self.canvas
-            if canvas and hasattr(canvas, 'get_renderer'):
-                renderer = canvas.get_renderer()
+            if(matplotlib.__version__>='3.6'):
+                from matplotlib import backend_bases
+                renderer = backend_bases._get_renderer(self)
             else:
                 from matplotlib.backends.backend_agg import FigureCanvasAgg
                 canvas = FigureCanvasAgg(self)
