@@ -2758,7 +2758,14 @@ def _init_cmap_database():
     """
     # WARNING: Skip over the matplotlib native duplicate entries
     # with suffixes '_r' and '_shifted'.
-    attr = '_cmap_registry' if hasattr(mcm, '_cmap_registry') else 'cmap_d'
+
+    if hasattr(mcm, '_cmap_registry'):
+        attr = '_cmap_registry'
+    else:
+        if hasattr(mcm, 'cmap_d'):
+            attr='cmap_d'
+        else:
+            attr = '_colormaps'
     database = getattr(mcm, attr)
     if mcm.get_cmap is not _get_cmap:
         mcm.get_cmap = _get_cmap
