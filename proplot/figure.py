@@ -33,28 +33,28 @@ from .internals import (
 from .utils import units
 
 __all__ = [
-    'Figure',
+    "Figure",
 ]
 
 
 # Preset figure widths or sizes based on academic journal recommendations
 # NOTE: Please feel free to add to this!
 JOURNAL_SIZES = {
-    'aaas1': '5.5cm',
-    'aaas2': '12cm',
-    'agu1': ('95mm', '115mm'),
-    'agu2': ('190mm', '115mm'),
-    'agu3': ('95mm', '230mm'),
-    'agu4': ('190mm', '230mm'),
-    'ams1': 3.2,
-    'ams2': 4.5,
-    'ams3': 5.5,
-    'ams4': 6.5,
-    'nat1': '89mm',
-    'nat2': '183mm',
-    'pnas1': '8.7cm',
-    'pnas2': '11.4cm',
-    'pnas3': '17.8cm',
+    "aaas1": "5.5cm",
+    "aaas2": "12cm",
+    "agu1": ("95mm", "115mm"),
+    "agu2": ("190mm", "115mm"),
+    "agu3": ("95mm", "230mm"),
+    "agu4": ("190mm", "230mm"),
+    "ams1": 3.2,
+    "ams2": 4.5,
+    "ams3": 5.5,
+    "ams4": 6.5,
+    "nat1": "89mm",
+    "nat2": "183mm",
+    "pnas1": "8.7cm",
+    "pnas2": "11.4cm",
+    "pnas3": "17.8cm",
 }
 
 
@@ -170,7 +170,7 @@ https://www.nature.com/nature/for-authors/formatting-guide
     .. _pnas: \
 https://www.pnas.org/page/authors/format
 """
-docstring._snippet_manager['figure.figure'] = _figure_docstring
+docstring._snippet_manager["figure.figure"] = _figure_docstring
 
 
 # Multiple subplots
@@ -221,7 +221,7 @@ order : {'C', 'F'}, default: 'C'
 %(gridspec.vector)s
 %(gridspec.tight)s
 """
-docstring._snippet_manager['figure.subplots_params'] = _subplots_params_docstring
+docstring._snippet_manager["figure.subplots_params"] = _subplots_params_docstring
 
 
 # Extra args docstring
@@ -231,7 +231,7 @@ _axes_params_docstring = """
     `proplot.axes.GeoAxes`, or `proplot.axes.ThreeAxes`. This can include keyword
     arguments for projection-specific ``format`` commands.
 """
-docstring._snippet_manager['figure.axes_params'] = _axes_params_docstring
+docstring._snippet_manager["figure.axes_params"] = _axes_params_docstring
 
 
 # Multiple subplots docstring
@@ -261,7 +261,7 @@ proplot.figure.Figure.add_subplot
 proplot.gridspec.SubplotGrid
 proplot.axes.Axes
 """
-docstring._snippet_manager['figure.subplots'] = _subplots_docstring
+docstring._snippet_manager["figure.subplots"] = _subplots_docstring
 
 
 # Single subplot docstring
@@ -314,7 +314,7 @@ proplot.figure.Figure.add_axes
 proplot.figure.Figure.subplots
 proplot.figure.Figure.add_subplots
 """
-docstring._snippet_manager['figure.subplot'] = _subplot_docstring
+docstring._snippet_manager["figure.subplot"] = _subplot_docstring
 
 
 # Single axes
@@ -341,7 +341,7 @@ proplot.figure.Figure.add_subplot
 proplot.figure.Figure.subplots
 proplot.figure.Figure.add_subplots
 """
-docstring._snippet_manager['figure.axes'] = _axes_docstring
+docstring._snippet_manager["figure.axes"] = _axes_docstring
 
 
 # Colorbar or legend panel docstring
@@ -378,8 +378,12 @@ align : {{'center', 'top', 't', 'bottom', 'b', 'left', 'l', 'right', 'r'}}, opti
     right {name}s and ``'left'`` and ``'right'`` are valid for top and bottom
     {name}s. The default is always ``'center'``.
 """
-docstring._snippet_manager['figure.legend_space'] = _space_docstring.format(name='legend')  # noqa: E501
-docstring._snippet_manager['figure.colorbar_space'] = _space_docstring.format(name='colorbar')  # noqa: E501
+docstring._snippet_manager["figure.legend_space"] = _space_docstring.format(
+    name="legend"
+)  # noqa: E501
+docstring._snippet_manager["figure.colorbar_space"] = _space_docstring.format(
+    name="colorbar"
+)  # noqa: E501
 
 
 # Save docstring
@@ -399,7 +403,7 @@ Figure.save
 Figure.savefig
 matplotlib.figure.Figure.savefig
 """
-docstring._snippet_manager['figure.save'] = _save_docstring
+docstring._snippet_manager["figure.save"] = _save_docstring
 
 
 def _get_journal_size(preset):
@@ -409,9 +413,8 @@ def _get_journal_size(preset):
     value = JOURNAL_SIZES.get(preset, None)
     if value is None:
         raise ValueError(
-            f'Unknown preset figure size specifier {preset!r}. '
-            'Current options are: '
-            + ', '.join(map(repr, JOURNAL_SIZES.keys()))
+            f"Unknown preset figure size specifier {preset!r}. "
+            "Current options are: " + ", ".join(map(repr, JOURNAL_SIZES.keys()))
         )
     figwidth = figheight = None
     try:
@@ -428,6 +431,7 @@ def _add_canvas_preprocessor(canvas, method, cache=False):
     and aspect ratio-conserving adjustments and aligns labels. Required
     so canvas methods instantiate renderers with the correct dimensions.
     """
+
     # NOTE: Renderer must be (1) initialized with the correct figure size or
     # (2) changed inplace during draw, but vector graphic renderers *cannot*
     # be changed inplace. So options include (1) monkey patch
@@ -448,7 +452,7 @@ def _add_canvas_preprocessor(canvas, method, cache=False):
         # nothing, and for print_figure is some figure object, but this block
         # has never been invoked when calling print_figure.
         if fig._is_adjusting:
-            if method == '_draw':  # macosx backend
+            if method == "_draw":  # macosx backend
                 return fig._get_renderer()
             else:
                 return
@@ -472,62 +476,95 @@ class Figure(mfigure.Figure):
     """
     The `~matplotlib.figure.Figure` subclass used by proplot.
     """
+
     # Shared error and warning messages
     _share_message = (
-        'Axis sharing level can be 0 or False (share nothing), '
+        "Axis sharing level can be 0 or False (share nothing), "
         "1 or 'labels' or 'labs' (share axis labels), "
         "2 or 'limits' or 'lims' (share axis limits and axis labels), "
-        '3 or True (share axis limits, axis labels, and tick labels), '
+        "3 or True (share axis limits, axis labels, and tick labels), "
         "or 4 or 'all' (share axis labels and tick labels in the same gridspec "
-        'rows and columns and share axis limits across all subplots).'
+        "rows and columns and share axis limits across all subplots)."
     )
     _space_message = (
-        'To set the left, right, bottom, top, wspace, or hspace gridspec values, '
-        'pass them as keyword arguments to pplt.figure() or pplt.subplots(). Please '
-        'note they are now specified in physical units, with strings interpreted by '
-        'pplt.units() and floats interpreted as font size-widths.'
+        "To set the left, right, bottom, top, wspace, or hspace gridspec values, "
+        "pass them as keyword arguments to pplt.figure() or pplt.subplots(). Please "
+        "note they are now specified in physical units, with strings interpreted by "
+        "pplt.units() and floats interpreted as font size-widths."
     )
     _tight_message = (
-        'Proplot uses its own tight layout algorithm that is activated by default. '
+        "Proplot uses its own tight layout algorithm that is activated by default. "
         "To disable it, set pplt.rc['subplots.tight'] to False or pass tight=False "
-        'to pplt.subplots(). For details, see fig.auto_layout().'
+        "to pplt.subplots(). For details, see fig.auto_layout()."
     )
     _warn_interactive = True  # disabled after first warning
 
     def __repr__(self):
         opts = {}
-        for attr in ('refaspect', 'refwidth', 'refheight', 'figwidth', 'figheight'):
-            value = getattr(self, '_' + attr)
+        for attr in ("refaspect", "refwidth", "refheight", "figwidth", "figheight"):
+            value = getattr(self, "_" + attr)
             if value is not None:
                 opts[attr] = np.round(value, 2)
-        geom = ''
+        geom = ""
         if self.gridspec:
             nrows, ncols = self.gridspec.get_geometry()
-            geom = f'nrows={nrows}, ncols={ncols}, '
-        opts = ', '.join(f'{key}={value!r}' for key, value in opts.items())
-        return f'Figure({geom}{opts})'
+            geom = f"nrows={nrows}, ncols={ncols}, "
+        opts = ", ".join(f"{key}={value!r}" for key, value in opts.items())
+        return f"Figure({geom}{opts})"
 
     # NOTE: If _rename_kwargs argument is an invalid identifier, it is
     # simply used in the warning message.
     @docstring._obfuscate_kwargs
     @docstring._snippet_manager
     @warnings._rename_kwargs(
-        '0.7.0', axpad='innerpad', autoformat='pplt.rc.autoformat = {}'
+        "0.7.0", axpad="innerpad", autoformat="pplt.rc.autoformat = {}"
     )
     def __init__(
-        self, *, refnum=None, ref=None, refaspect=None, aspect=None,
-        refwidth=None, refheight=None, axwidth=None, axheight=None,
-        figwidth=None, figheight=None, width=None, height=None, journal=None,
-        sharex=None, sharey=None, share=None,  # used for default spaces
-        spanx=None, spany=None, span=None,
-        alignx=None, aligny=None, align=None,
-        left=None, right=None, top=None, bottom=None,
-        wspace=None, hspace=None, space=None,
-        tight=None, outerpad=None, innerpad=None, panelpad=None,
-        wpad=None, hpad=None, pad=None,
-        wequal=None, hequal=None, equal=None,
-        wgroup=None, hgroup=None, group=None,
-        **kwargs
+        self,
+        *,
+        refnum=None,
+        ref=None,
+        refaspect=None,
+        aspect=None,
+        refwidth=None,
+        refheight=None,
+        axwidth=None,
+        axheight=None,
+        figwidth=None,
+        figheight=None,
+        width=None,
+        height=None,
+        journal=None,
+        sharex=None,
+        sharey=None,
+        share=None,  # used for default spaces
+        spanx=None,
+        spany=None,
+        span=None,
+        alignx=None,
+        aligny=None,
+        align=None,
+        left=None,
+        right=None,
+        top=None,
+        bottom=None,
+        wspace=None,
+        hspace=None,
+        space=None,
+        tight=None,
+        outerpad=None,
+        innerpad=None,
+        panelpad=None,
+        wpad=None,
+        hpad=None,
+        pad=None,
+        wequal=None,
+        hequal=None,
+        equal=None,
+        wgroup=None,
+        hgroup=None,
+        group=None,
+        **kwargs,
     ):
         """
         Parameters
@@ -563,54 +600,59 @@ class Figure(mfigure.Figure):
         if journal is not None:
             jwidth, jheight = _get_journal_size(journal)
             if jwidth is not None and figwidth is not None:
-                messages.append(('journal', journal, 'figwidth', figwidth))
+                messages.append(("journal", journal, "figwidth", figwidth))
             if jheight is not None and figheight is not None:
-                messages.append(('journal', journal, 'figheight', figheight))
+                messages.append(("journal", journal, "figheight", figheight))
             figwidth = _not_none(jwidth, figwidth)
             figheight = _not_none(jheight, figheight)
         if figwidth is not None and refwidth is not None:
-            messages.append(('figwidth', figwidth, 'refwidth', refwidth))
+            messages.append(("figwidth", figwidth, "refwidth", refwidth))
             refwidth = None
         if figheight is not None and refheight is not None:
-            messages.append(('figheight', figheight, 'refheight', refheight))
+            messages.append(("figheight", figheight, "refheight", refheight))
             refheight = None
-        if figwidth is None and figheight is None and refwidth is None and refheight is None:  # noqa: E501
-            refwidth = rc['subplots.refwidth']  # always inches
+        if (
+            figwidth is None
+            and figheight is None
+            and refwidth is None
+            and refheight is None
+        ):  # noqa: E501
+            refwidth = rc["subplots.refwidth"]  # always inches
         if np.iterable(refaspect):
             refaspect = refaspect[0] / refaspect[1]
         for key1, val1, key2, val2 in messages:
             warnings._warn_proplot(
-                f'Got conflicting figure size arguments {key1}={val1!r} and '
-                f'{key2}={val2!r}. Ignoring {key2!r}.'
+                f"Got conflicting figure size arguments {key1}={val1!r} and "
+                f"{key2}={val2!r}. Ignoring {key2!r}."
             )
         self._refnum = refnum
         self._refaspect = refaspect
         self._refaspect_default = 1  # updated for imshow and geographic plots
-        self._refwidth = units(refwidth, 'in')
-        self._refheight = units(refheight, 'in')
-        self._figwidth = figwidth = units(figwidth, 'in')
-        self._figheight = figheight = units(figheight, 'in')
+        self._refwidth = units(refwidth, "in")
+        self._refheight = units(refheight, "in")
+        self._figwidth = figwidth = units(figwidth, "in")
+        self._figheight = figheight = units(figheight, "in")
 
         # Add special consideration for interactive backends
-        backend = _not_none(rc.backend, '')
+        backend = _not_none(rc.backend, "")
         backend = backend.lower()
-        interactive = 'nbagg' in backend or 'ipympl' in backend
+        interactive = "nbagg" in backend or "ipympl" in backend
         if not interactive:
             pass
         elif figwidth is None or figheight is None:
-            figsize = rc['figure.figsize']  # modified by proplot
+            figsize = rc["figure.figsize"]  # modified by proplot
             self._figwidth = figwidth = _not_none(figwidth, figsize[0])
             self._figheight = figheight = _not_none(figheight, figsize[1])
             self._refwidth = self._refheight = None  # critical!
             if self._warn_interactive:
                 Figure._warn_interactive = False  # set class attribute
                 warnings._warn_proplot(
-                    'Auto-sized proplot figures are not compatible with interactive '
+                    "Auto-sized proplot figures are not compatible with interactive "
                     "backends like '%matplotlib widget' and '%matplotlib notebook'. "
-                    f'Reverting to the figure size ({figwidth}, {figheight}). To make '
-                    'auto-sized figures, please consider using the non-interactive '
-                    '(default) backend. This warning message is shown the first time '
-                    'you create a figure without explicitly specifying the size.'
+                    f"Reverting to the figure size ({figwidth}, {figheight}). To make "
+                    "auto-sized figures, please consider using the non-interactive "
+                    "(default) backend. This warning message is shown the first time "
+                    "you create a figure without explicitly specifying the size."
                 )
 
         # Add space settings
@@ -620,85 +662,101 @@ class Figure(mfigure.Figure):
         # 'subplots_adjust' would be confusing since we switch to absolute
         # units and that function is heavily used outside of proplot.
         params = {
-            'left': left, 'right': right, 'top': top, 'bottom': bottom,
-            'wspace': wspace, 'hspace': hspace, 'space': space,
-            'wequal': wequal, 'hequal': hequal, 'equal': equal,
-            'wgroup': wgroup, 'hgroup': hgroup, 'group': group,
-            'wpad': wpad, 'hpad': hpad, 'pad': pad,
-            'outerpad': outerpad, 'innerpad': innerpad, 'panelpad': panelpad,
+            "left": left,
+            "right": right,
+            "top": top,
+            "bottom": bottom,
+            "wspace": wspace,
+            "hspace": hspace,
+            "space": space,
+            "wequal": wequal,
+            "hequal": hequal,
+            "equal": equal,
+            "wgroup": wgroup,
+            "hgroup": hgroup,
+            "group": group,
+            "wpad": wpad,
+            "hpad": hpad,
+            "pad": pad,
+            "outerpad": outerpad,
+            "innerpad": innerpad,
+            "panelpad": panelpad,
         }
         self._gridspec_params = params  # used to initialize the gridspec
         for key, value in tuple(params.items()):
             if not isinstance(value, str) and np.iterable(value) and len(value) > 1:
                 raise ValueError(
-                    f'Invalid gridspec parameter {key}={value!r}. Space parameters '
-                    'passed to Figure() must be scalar. For vector spaces use '
-                    'GridSpec() or pass space parameters to subplots().'
+                    f"Invalid gridspec parameter {key}={value!r}. Space parameters "
+                    "passed to Figure() must be scalar. For vector spaces use "
+                    "GridSpec() or pass space parameters to subplots()."
                 )
 
         # Add tight layout setting and ignore native settings
-        pars = kwargs.pop('subplotpars', None)
+        pars = kwargs.pop("subplotpars", None)
         if pars is not None:
             warnings._warn_proplot(
-                f'Ignoring subplotpars={pars!r}. ' + self._space_message
+                f"Ignoring subplotpars={pars!r}. " + self._space_message
             )
-        if kwargs.pop('tight_layout', None):
+        if kwargs.pop("tight_layout", None):
+            warnings._warn_proplot("Ignoring tight_layout=True. " + self._tight_message)
+        if kwargs.pop("constrained_layout", None):
             warnings._warn_proplot(
-                'Ignoring tight_layout=True. ' + self._tight_message
+                "Ignoring constrained_layout=True. " + self._tight_message
             )
-        if kwargs.pop('constrained_layout', None):
-            warnings._warn_proplot(
-                'Ignoring constrained_layout=True. ' + self._tight_message
-            )
-        if rc_matplotlib.get('figure.autolayout', False):
+        if rc_matplotlib.get("figure.autolayout", False):
             warnings._warn_proplot(
                 "Setting rc['figure.autolayout'] to False. " + self._tight_message
             )
-        if rc_matplotlib.get('figure.constrained_layout.use', False):
+        if rc_matplotlib.get("figure.constrained_layout.use", False):
             warnings._warn_proplot(
-                "Setting rc['figure.constrained_layout.use'] to False. " + self._tight_message  # noqa: E501
+                "Setting rc['figure.constrained_layout.use'] to False. "
+                + self._tight_message  # noqa: E501
             )
         try:
-            rc_matplotlib['figure.autolayout'] = False  # this is rcParams
+            rc_matplotlib["figure.autolayout"] = False  # this is rcParams
         except KeyError:
             pass
         try:
-            rc_matplotlib['figure.constrained_layout.use'] = False  # this is rcParams
+            rc_matplotlib["figure.constrained_layout.use"] = False  # this is rcParams
         except KeyError:
             pass
-        self._tight_active = _not_none(tight, rc['subplots.tight'])
+        self._tight_active = _not_none(tight, rc["subplots.tight"])
 
         # Translate share settings
-        translate = {'labels': 1, 'labs': 1, 'limits': 2, 'lims': 2, 'all': 4}
-        sharex = _not_none(sharex, share, rc['subplots.share'])
-        sharey = _not_none(sharey, share, rc['subplots.share'])
+        translate = {"labels": 1, "labs": 1, "limits": 2, "lims": 2, "all": 4}
+        sharex = _not_none(sharex, share, rc["subplots.share"])
+        sharey = _not_none(sharey, share, rc["subplots.share"])
         sharex = 3 if sharex is True else translate.get(sharex, sharex)
         sharey = 3 if sharey is True else translate.get(sharey, sharey)
         if sharex not in range(5):
-            raise ValueError(f'Invalid sharex={sharex!r}. ' + self._share_message)
+            raise ValueError(f"Invalid sharex={sharex!r}. " + self._share_message)
         if sharey not in range(5):
-            raise ValueError(f'Invalid sharey={sharey!r}. ' + self._share_message)
+            raise ValueError(f"Invalid sharey={sharey!r}. " + self._share_message)
         self._sharex = int(sharex)
         self._sharey = int(sharey)
 
         # Translate span and align settings
-        spanx = _not_none(spanx, span, False if not sharex else None, rc['subplots.span'])  # noqa: E501
-        spany = _not_none(spany, span, False if not sharey else None, rc['subplots.span'])  # noqa: E501
+        spanx = _not_none(
+            spanx, span, False if not sharex else None, rc["subplots.span"]
+        )  # noqa: E501
+        spany = _not_none(
+            spany, span, False if not sharey else None, rc["subplots.span"]
+        )  # noqa: E501
         if spanx and (alignx or align):  # only warn when explicitly requested
             warnings._warn_proplot('"alignx" has no effect when spanx=True.')
         if spany and (aligny or align):
             warnings._warn_proplot('"aligny" has no effect when spany=True.')
         self._spanx = bool(spanx)
         self._spany = bool(spany)
-        alignx = _not_none(alignx, align, rc['subplots.align'])
-        aligny = _not_none(aligny, align, rc['subplots.align'])
+        alignx = _not_none(alignx, align, rc["subplots.align"])
+        aligny = _not_none(aligny, align, rc["subplots.align"])
         self._alignx = bool(alignx)
         self._aligny = bool(aligny)
 
         # Initialize the figure
         # NOTE: Super labels are stored inside {axes: text} dictionaries
         self._gridspec = None
-        self._panel_dict = {'left': [], 'right': [], 'bottom': [], 'top': []}
+        self._panel_dict = {"left": [], "right": [], "bottom": [], "top": []}
         self._subplot_dict = {}  # subplots indexed by number
         self._subplot_counter = 0  # avoid add_subplot() returning an existing subplot
         self._is_adjusting = False
@@ -708,7 +766,7 @@ class Figure(mfigure.Figure):
         rc_kw, rc_mode = _pop_rc(kwargs)
         kw_format = _pop_params(kwargs, self._format_signature)
         if figwidth is not None and figheight is not None:
-            kwargs['figsize'] = (figwidth, figheight)
+            kwargs["figsize"] = (figwidth, figheight)
         with self._context_authorized():
             super().__init__(**kwargs)
 
@@ -716,21 +774,21 @@ class Figure(mfigure.Figure):
         # _align_axis_labels supports arbitrary spanning labels for subplot groups.
         # NOTE: Don't use 'anchor' rotation mode otherwise switching to horizontal
         # left and right super labels causes overlap. Current method is fine.
-        self._suptitle = self.text(0.5, 0.95, '', ha='center', va='bottom')
+        self._suptitle = self.text(0.5, 0.95, "", ha="center", va="bottom")
         self._supxlabel_dict = {}  # an axes: label mapping
         self._supylabel_dict = {}  # an axes: label mapping
-        self._suplabel_dict = {'left': {}, 'right': {}, 'bottom': {}, 'top': {}}
-        self._suptitle_pad = rc['suptitle.pad']
+        self._suplabel_dict = {"left": {}, "right": {}, "bottom": {}, "top": {}}
+        self._suptitle_pad = rc["suptitle.pad"]
         d = self._suplabel_props = {}  # store the super label props
-        d['left'] = {'va': 'center', 'ha': 'right'}
-        d['right'] = {'va': 'center', 'ha': 'left'}
-        d['bottom'] = {'va': 'top', 'ha': 'center'}
-        d['top'] = {'va': 'bottom', 'ha': 'center'}
+        d["left"] = {"va": "center", "ha": "right"}
+        d["right"] = {"va": "center", "ha": "left"}
+        d["bottom"] = {"va": "top", "ha": "center"}
+        d["top"] = {"va": "bottom", "ha": "center"}
         d = self._suplabel_pad = {}  # store the super label padding
-        d['left'] = rc['leftlabel.pad']
-        d['right'] = rc['rightlabel.pad']
-        d['bottom'] = rc['bottomlabel.pad']
-        d['top'] = rc['toplabel.pad']
+        d["left"] = rc["leftlabel.pad"]
+        d["right"] = rc["rightlabel.pad"]
+        d["bottom"] = rc["bottomlabel.pad"]
+        d["top"] = rc["toplabel.pad"]
 
         # Format figure
         # NOTE: This ignores user-input rc_mode.
@@ -741,9 +799,9 @@ class Figure(mfigure.Figure):
         Prevent re-running auto layout steps due to draws triggered by figure
         resizes. Otherwise can get infinite loops.
         """
-        kw = {'_is_adjusting': True}
+        kw = {"_is_adjusting": True}
         if not cache:
-            kw['_cachedRenderer'] = None  # temporarily ignore it
+            kw["_cachedRenderer"] = None  # temporarily ignore it
         return context._state_context(self, **kw)
 
     def _context_authorized(self):
@@ -759,16 +817,22 @@ class Figure(mfigure.Figure):
         Handle deprication of basemap and cartopy package.
         """
         if basemap is not None:
-            backend = ('cartopy', 'basemap')[bool(basemap)]
+            backend = ("cartopy", "basemap")[bool(basemap)]
             warnings._warn_proplot(
                 f"The 'basemap' keyword was deprecated in version 0.10.0 and will be "
-                f'removed in a future release. Please use backend={backend!r} instead.'
+                f"removed in a future release. Please use backend={backend!r} instead."
             )
         return backend
 
     def _parse_proj(
-        self, proj=None, projection=None,
-        proj_kw=None, projection_kw=None, backend=None, basemap=None, **kwargs
+        self,
+        proj=None,
+        projection=None,
+        proj_kw=None,
+        projection_kw=None,
+        backend=None,
+        basemap=None,
+        **kwargs,
     ):
         """
         Translate the user-input projection into a registered matplotlib
@@ -776,7 +840,7 @@ class Figure(mfigure.Figure):
         `cartopy.crs.Projection`, or `mpl_toolkits.basemap.Basemap`.
         """
         # Parse arguments
-        proj = _not_none(proj=proj, projection=projection, default='cartesian')
+        proj = _not_none(proj=proj, projection=projection, default="cartesian")
         proj_kw = _not_none(proj_kw=proj_kw, projection_kw=projection_kw, default={})
         backend = self._parse_backend(backend, basemap)
         if isinstance(proj, str):
@@ -784,13 +848,13 @@ class Figure(mfigure.Figure):
         if isinstance(self, paxes.Axes):
             proj = self._name
         elif isinstance(self, maxes.Axes):
-            raise ValueError('Matplotlib axes cannot be added to proplot figures.')
+            raise ValueError("Matplotlib axes cannot be added to proplot figures.")
 
         # Search axes projections
         name = None
         if isinstance(proj, str):
             try:
-                mproj.get_projection_class('proplot_' + proj)
+                mproj.get_projection_class("proplot_" + proj)
             except (KeyError, ValueError):
                 pass
             else:
@@ -804,32 +868,32 @@ class Figure(mfigure.Figure):
             and constructor.Basemap is object
         ):
             raise ValueError(
-                f'Invalid projection name {proj!r}. If you are trying to generate a '
-                'GeoAxes with a cartopy.crs.Projection or mpl_toolkits.basemap.Basemap '
-                'then cartopy or basemap must be installed. Otherwise the known axes '
-                f'subclasses are:\n{paxes._cls_table}'
+                f"Invalid projection name {proj!r}. If you are trying to generate a "
+                "GeoAxes with a cartopy.crs.Projection or mpl_toolkits.basemap.Basemap "
+                "then cartopy or basemap must be installed. Otherwise the known axes "
+                f"subclasses are:\n{paxes._cls_table}"
             )
         # Search geographic projections
         # NOTE: Also raises errors due to unexpected projection type
         if name is None:
             proj = constructor.Proj(proj, backend=backend, include_axes=True, **proj_kw)
             name = proj._proj_backend
-            kwargs['map_projection'] = proj
+            kwargs["map_projection"] = proj
 
-        kwargs['projection'] = 'proplot_' + name
+        kwargs["projection"] = "proplot_" + name
         return kwargs
 
     def _get_align_axes(self, side):
         """
         Return the main axes along the edge of the figure.
         """
-        x, y = 'xy' if side in ('left', 'right') else 'yx'
+        x, y = "xy" if side in ("left", "right") else "yx"
         axs = self._subplot_dict.values()
         if not axs:
             return []
         ranges = np.array([ax._range_subplotspec(x) for ax in axs])
-        edge = ranges[:, 0].min() if side in ('left', 'top') else ranges[:, 1].max()
-        idx = 0 if side in ('left', 'top') else 1
+        edge = ranges[:, 0].min() if side in ("left", "top") else ranges[:, 1].max()
+        idx = 0 if side in ("left", "top") else 1
         axs = [ax for ax in axs if ax._range_subplotspec(x)[idx] == edge]
         axs = [ax for ax in sorted(axs, key=lambda ax: ax._range_subplotspec(y)[0])]
         axs = [ax for ax in axs if ax.get_visible()]
@@ -841,10 +905,10 @@ class Figure(mfigure.Figure):
         """
         # Get position in figure relative coordinates
         if not all(isinstance(ax, paxes.Axes) for ax in axs):
-            raise RuntimeError('Axes must be proplot axes.')
+            raise RuntimeError("Axes must be proplot axes.")
         if not all(isinstance(ax, maxes.SubplotBase) for ax in axs):
-            raise RuntimeError('Axes must be subplots.')
-        s = 'y' if side in ('left', 'right') else 'x'
+            raise RuntimeError("Axes must be subplots.")
+        s = "y" if side in ("left", "right") else "x"
         axs = [ax._panel_parent or ax for ax in axs]  # deflect to main axes
         if includepanels:  # include panel short axes?
             axs = [_ for ax in axs for _ in ax._iter_axes(panels=True, children=False)]
@@ -854,7 +918,7 @@ class Figure(mfigure.Figure):
         ax_hi = axs[np.where(ranges[:, 1] == max_)[0][0]]
         box_lo = ax_lo.get_subplotspec().get_position(self)
         box_hi = ax_hi.get_subplotspec().get_position(self)
-        if s == 'x':
+        if s == "x":
             pos = 0.5 * (box_lo.x0 + box_hi.x1)
         else:
             pos = 0.5 * (box_lo.y1 + box_hi.y0)  # 'lo' is actually on top of figure
@@ -866,36 +930,41 @@ class Figure(mfigure.Figure):
         """
         Return the figure coordinate for offsetting super labels and super titles.
         """
-        s = 'x' if side in ('left', 'right') else 'y'
+        s = "x" if side in ("left", "right") else "y"
         cs = []
-        objs = tuple(_ for ax in axs for _ in ax._iter_axes(panels=True, children=True, hidden=True))  # noqa: E501
+        objs = tuple(
+            _
+            for ax in axs
+            for _ in ax._iter_axes(panels=True, children=True, hidden=True)
+        )  # noqa: E501
         objs = objs + (extra or ())  # e.g. top super labels
         for obj in objs:
             bbox = obj.get_tightbbox(renderer)  # cannot use cached bbox
-            attr = s + 'max' if side in ('top', 'right') else s + 'min'
+            attr = s + "max" if side in ("top", "right") else s + "min"
             c = getattr(bbox, attr)
-            c = (c, 0) if side in ('left', 'right') else (0, c)
+            c = (c, 0) if side in ("left", "right") else (0, c)
             c = self.transFigure.inverted().transform(c)
-            c = c[0] if side in ('left', 'right') else c[1]
+            c = c[0] if side in ("left", "right") else c[1]
             cs.append(c)
         width, height = self.get_size_inches()
         if pad is None:
             pad = self._suplabel_pad[side] / 72
-            pad = pad / width if side in ('left', 'right') else pad / height
-        return min(cs) - pad if side in ('left', 'bottom') else max(cs) + pad
+            pad = pad / width if side in ("left", "right") else pad / height
+        return min(cs) - pad if side in ("left", "bottom") else max(cs) + pad
 
     def _get_renderer(self):
         """
         Get a renderer at all costs. See matplotlib's tight_layout.py.
         """
-        if self._cachedRenderer:
+        if hasattr(self, "_cached_render"):
             renderer = self._cachedRenderer
         else:
             canvas = self.canvas
-            if canvas and hasattr(canvas, 'get_renderer'):
+            if canvas and hasattr(canvas, "get_renderer"):
                 renderer = canvas.get_renderer()
             else:
                 from matplotlib.backends.backend_agg import FigureCanvasAgg
+
                 canvas = FigureCanvasAgg(self)
                 renderer = canvas.get_renderer()
         return renderer
@@ -911,36 +980,36 @@ class Figure(mfigure.Figure):
         ax = ax._altx_parent or ax
         ax = ax._alty_parent or ax
         if not isinstance(ax, paxes.Axes):
-            raise RuntimeError('Cannot add panels to non-proplot axes.')
+            raise RuntimeError("Cannot add panels to non-proplot axes.")
         if not isinstance(ax, maxes.SubplotBase):
-            raise RuntimeError('Cannot add panels to non-subplot axes.')
+            raise RuntimeError("Cannot add panels to non-subplot axes.")
         orig = ax._panel_side
         if orig is None:
             pass
         elif side is None or side == orig:
             ax, side = ax._panel_parent, orig
         else:
-            raise RuntimeError(f'Cannot add {side!r} panel to existing {orig!r} panel.')
-        side = _translate_loc(side, 'panel', default=_not_none(orig, 'right'))
+            raise RuntimeError(f"Cannot add {side!r} panel to existing {orig!r} panel.")
+        side = _translate_loc(side, "panel", default=_not_none(orig, "right"))
 
         # Add and setup the panel accounting for index changes
         # NOTE: Always put tick labels on the 'outside' and permit arbitrary
         # keyword arguments passed from the user.
         gs = self.gridspec
         if not gs:
-            raise RuntimeError('The gridspec must be active.')
+            raise RuntimeError("The gridspec must be active.")
         kw = _pop_params(kwargs, gs._insert_panel_slot)
         ss, share = gs._insert_panel_slot(side, ax, **kw)
-        kwargs['autoshare'] = False
-        kwargs.setdefault('number', False)  # power users might number panels
+        kwargs["autoshare"] = False
+        kwargs.setdefault("number", False)  # power users might number panels
         pax = self.add_subplot(ss, **kwargs)
         pax._panel_side = side
         pax._panel_share = share
         pax._panel_parent = ax
         ax._panel_dict[side].append(pax)
         ax._apply_auto_share()
-        axis = pax.yaxis if side in ('left', 'right') else pax.xaxis
-        getattr(axis, 'tick_' + side)()  # set tick and tick label position
+        axis = pax.yaxis if side in ("left", "right") else pax.xaxis
+        getattr(axis, "tick_" + side)()  # set tick and tick label position
         axis.set_label_position(side)  # set label position
         return pax
 
@@ -951,16 +1020,16 @@ class Figure(mfigure.Figure):
         Add a figure panel.
         """
         # Interpret args and enforce sensible keyword args
-        side = _translate_loc(side, 'panel', default='right')
-        if side in ('left', 'right'):
-            for key, value in (('col', col), ('cols', cols)):
+        side = _translate_loc(side, "panel", default="right")
+        if side in ("left", "right"):
+            for key, value in (("col", col), ("cols", cols)):
                 if value is not None:
-                    raise ValueError(f'Invalid keyword {key!r} for {side!r} panel.')
+                    raise ValueError(f"Invalid keyword {key!r} for {side!r} panel.")
             span = _not_none(span=span, row=row, rows=rows)
         else:
-            for key, value in (('row', row), ('rows', rows)):
+            for key, value in (("row", row), ("rows", rows)):
                 if value is not None:
-                    raise ValueError(f'Invalid keyword {key!r} for {side!r} panel.')
+                    raise ValueError(f"Invalid keyword {key!r} for {side!r} panel.")
             span = _not_none(span=span, col=col, cols=cols)
 
         # Add and setup panel
@@ -968,7 +1037,7 @@ class Figure(mfigure.Figure):
         # do not need to pass aribtrary axes keyword arguments.
         gs = self.gridspec
         if not gs:
-            raise RuntimeError('The gridspec must be active.')
+            raise RuntimeError("The gridspec must be active.")
         ss, _ = gs._insert_panel_slot(side, span, filled=True, **kwargs)
         pax = self.add_subplot(ss, autoshare=False, number=False)
         plist = self._panel_dict[side]
@@ -990,13 +1059,12 @@ class Figure(mfigure.Figure):
         # Integer arg
         if len(args) == 1 and isinstance(args[0], Integral):
             if not 111 <= args[0] <= 999:
-                raise ValueError(f'Input {args[0]} must fall between 111 and 999.')
+                raise ValueError(f"Input {args[0]} must fall between 111 and 999.")
             args = tuple(map(int, str(args[0])))
 
         # Subplot spec
-        if (
-            len(args) == 1
-            and isinstance(args[0], (maxes.SubplotBase, mgridspec.SubplotSpec))
+        if len(args) == 1 and isinstance(
+            args[0], (maxes.SubplotBase, mgridspec.SubplotSpec)
         ):
             ss = args[0]
             if isinstance(ss, maxes.SubplotBase):
@@ -1005,11 +1073,11 @@ class Figure(mfigure.Figure):
                 gs = ss.get_topmost_subplotspec().get_gridspec()
             if not isinstance(gs, pgridspec.GridSpec):
                 raise ValueError(
-                    'Input subplotspec must be derived from a proplot.GridSpec.'
+                    "Input subplotspec must be derived from a proplot.GridSpec."
                 )
             if ss.get_topmost_subplotspec().get_gridspec() is not gs:
                 raise ValueError(
-                    'Input subplotspec must be derived from the active figure gridspec.'
+                    "Input subplotspec must be derived from the active figure gridspec."
                 )
 
         # Row and column spec
@@ -1027,29 +1095,29 @@ class Figure(mfigure.Figure):
             orows, ocols = gs.get_geometry()
             if orows % nrows:
                 raise ValueError(
-                    f'The input number of rows {nrows} does not divide the '
-                    f'figure gridspec number of rows {orows}.'
+                    f"The input number of rows {nrows} does not divide the "
+                    f"figure gridspec number of rows {orows}."
                 )
             if ocols % ncols:
                 raise ValueError(
-                    f'The input number of columns {ncols} does not divide the '
-                    f'figure gridspec number of columns {ocols}.'
+                    f"The input number of columns {ncols} does not divide the "
+                    f"figure gridspec number of columns {ocols}."
                 )
             if any(_ < 1 or _ > nrows * ncols for _ in (i, j)):
                 raise ValueError(
-                    'The input subplot indices must fall between '
-                    f'1 and {nrows * ncols}. Instead got {i} and {j}.'
+                    "The input subplot indices must fall between "
+                    f"1 and {nrows * ncols}. Instead got {i} and {j}."
                 )
             rowfact, colfact = orows // nrows, ocols // ncols
             irow, icol = divmod(i - 1, ncols)  # convert to zero-based
             jrow, jcol = divmod(j - 1, ncols)
             irow, icol = irow * rowfact, icol * colfact
             jrow, jcol = (jrow + 1) * rowfact - 1, (jcol + 1) * colfact - 1
-            ss = gs[irow:jrow + 1, icol:jcol + 1]
+            ss = gs[irow : jrow + 1, icol : jcol + 1]
 
         # Otherwise
         else:
-            raise ValueError(f'Invalid add_subplot positional arguments {args!r}.')
+            raise ValueError(f"Invalid add_subplot positional arguments {args!r}.")
 
         # Add the subplot
         # NOTE: Pass subplotspec as keyword arg for mpl >= 3.4 workaround
@@ -1058,20 +1126,31 @@ class Figure(mfigure.Figure):
         # wrong location due to gridspec override. Is against OO package design.
         self.gridspec = gs  # trigger layout adjustment
         self._subplot_counter += 1  # unique label for each subplot
-        kwargs.setdefault('label', f'subplot_{self._subplot_counter}')
-        kwargs.setdefault('number', 1 + max(self._subplot_dict, default=0))
+        kwargs.setdefault("label", f"subplot_{self._subplot_counter}")
+        kwargs.setdefault("number", 1 + max(self._subplot_dict, default=0))
         ax = super().add_subplot(ss, _subplot_spec=ss, **kwargs)
         if ax.number:
             self._subplot_dict[ax.number] = ax
         return ax
 
     def _add_subplots(
-        self, array=None, nrows=1, ncols=1, order='C', proj=None, projection=None,
-        proj_kw=None, projection_kw=None, backend=None, basemap=None, **kwargs
+        self,
+        array=None,
+        nrows=1,
+        ncols=1,
+        order="C",
+        proj=None,
+        projection=None,
+        proj_kw=None,
+        projection_kw=None,
+        backend=None,
+        basemap=None,
+        **kwargs,
     ):
         """
         The driver function for adding multiple subplots.
         """
+
         # Clunky helper function
         # TODO: Consider deprecating and asking users to use add_subplot()
         def _axes_dict(naxs, input, kw=False, default=None):
@@ -1086,7 +1165,7 @@ class Figure(mfigure.Figure):
                 if not any(nested):  # any([]) == False
                     input = {range(1, naxs + 1): input.copy()}
                 elif not all(nested):
-                    raise ValueError(f'Invalid input {input!r}.')
+                    raise ValueError(f"Invalid input {input!r}.")
             # Unfurl keys that contain multiple axes numbers
             output = {}
             for nums, item in input.items():
@@ -1099,14 +1178,15 @@ class Figure(mfigure.Figure):
                     output[num] = {} if kw else default
             if output.keys() != set(range(1, naxs + 1)):
                 raise ValueError(
-                    f'Have {naxs} axes, but {input!r} includes props for the axes: '
-                    + ', '.join(map(repr, sorted(output))) + '.'
+                    f"Have {naxs} axes, but {input!r} includes props for the axes: "
+                    + ", ".join(map(repr, sorted(output)))
+                    + "."
                 )
             return output
 
         # Build the subplot array
         # NOTE: Currently this may ignore user-input nrows/ncols without warning
-        if order not in ('C', 'F'):  # better error message
+        if order not in ("C", "F"):  # better error message
             raise ValueError(f"Invalid order={order!r}. Options are 'C' or 'F'.")
         gs = None
         if array is None or isinstance(array, mgridspec.GridSpec):
@@ -1119,33 +1199,33 @@ class Figure(mfigure.Figure):
             array[array == None] = 0  # None or 0 both valid placeholders  # noqa: E711
             array = array.astype(int)
             if array.ndim == 1:  # interpret as single row or column
-                array = array[None, :] if order == 'C' else array[:, None]
+                array = array[None, :] if order == "C" else array[:, None]
             elif array.ndim != 2:
-                raise ValueError(f'Expected 1D or 2D array of integers. Got {array}.')
+                raise ValueError(f"Expected 1D or 2D array of integers. Got {array}.")
 
         # Parse input format, gridspec, and projection arguments
         # NOTE: Permit figure format keywords for e.g. 'collabels' (more intuitive)
         nums = np.unique(array[array != 0])
         naxs = len(nums)
         if any(num < 0 or not isinstance(num, Integral) for num in nums.flat):
-            raise ValueError(f'Expected array of positive integers. Got {array}.')
+            raise ValueError(f"Expected array of positive integers. Got {array}.")
         proj = _not_none(projection=projection, proj=proj)
-        proj = _axes_dict(naxs, proj, kw=False, default='cartesian')
+        proj = _axes_dict(naxs, proj, kw=False, default="cartesian")
         proj_kw = _not_none(projection_kw=projection_kw, proj_kw=proj_kw) or {}
         proj_kw = _axes_dict(naxs, proj_kw, kw=True)
         backend = self._parse_backend(backend, basemap)
         backend = _axes_dict(naxs, backend, kw=False)
         axes_kw = {
-            num: {'proj': proj[num], 'proj_kw': proj_kw[num], 'backend': backend[num]}
+            num: {"proj": proj[num], "proj_kw": proj_kw[num], "backend": backend[num]}
             for num in proj
         }
-        for key in ('gridspec_kw', 'subplot_kw'):
+        for key in ("gridspec_kw", "subplot_kw"):
             kw = kwargs.pop(key, None)
             if not kw:
                 continue
             warnings._warn_proplot(
-                f'{key!r} is not necessary in proplot. Pass the '
-                'parameters as keyword arguments instead.'
+                f"{key!r} is not necessary in proplot. Pass the "
+                "parameters as keyword arguments instead."
             )
             kwargs.update(kw or {})
         figure_kw = _pop_params(kwargs, self._format_signature)
@@ -1165,8 +1245,8 @@ class Figure(mfigure.Figure):
             num = idx + 1
             x0, x1 = axcols[idx, 0], axcols[idx, 1]
             y0, y1 = axrows[idx, 0], axrows[idx, 1]
-            ss = gs[y0:y1 + 1, x0:x1 + 1]
-            kw = {**kwargs, **axes_kw[num], 'number': num}
+            ss = gs[y0 : y1 + 1, x0 : x1 + 1]
+            kw = {**kwargs, **axes_kw[num], "number": num}
             axs[idx] = self.add_subplot(ss, **kw)
 
         self.format(skip_axes=True, **figure_kw)
@@ -1180,25 +1260,25 @@ class Figure(mfigure.Figure):
         # NOTE: Must trigger axis sharing here so that super label alignment
         # with tight=False is valid. Kind of kludgey but oh well.
         seen = set()
-        span = getattr(self, '_span' + x)
-        align = getattr(self, '_align' + x)
+        span = getattr(self, "_span" + x)
+        align = getattr(self, "_align" + x)
         for ax in self._subplot_dict.values():
             if isinstance(ax, paxes.CartesianAxes):
                 ax._apply_axis_sharing()  # always!
             else:
                 continue
-            pos = getattr(ax, x + 'axis').get_label_position()
-            if ax in seen or pos not in ('bottom', 'left'):
+            pos = getattr(ax, x + "axis").get_label_position()
+            if ax in seen or pos not in ("bottom", "left"):
                 continue  # already aligned or cannot align
             axs = ax._get_span_axes(pos, panels=False)  # returns panel or main axes
-            if any(getattr(ax, '_share' + x) for ax in axs):
+            if any(getattr(ax, "_share" + x) for ax in axs):
                 continue  # nothing to align or axes have parents
             seen.update(axs)
             if span or align:
-                if hasattr(self, '_align_label_groups'):
+                if hasattr(self, "_align_label_groups"):
                     group = self._align_label_groups[x]
                 else:
-                    group = getattr(self, '_align_' + x + 'label_grp', None)
+                    group = getattr(self, "_align_" + x + "label_grp", None)
                 if group is not None:  # fail silently to avoid fragile API changes
                     for ax in axs[1:]:
                         group.join(axs[0], ax)  # add to grouper
@@ -1212,15 +1292,15 @@ class Figure(mfigure.Figure):
         # NOTE: Ensure title is offset only here.
         for ax in self._subplot_dict.values():
             ax._apply_title_above()
-        if side not in ('left', 'right', 'bottom', 'top'):
-            raise ValueError(f'Invalid side {side!r}.')
+        if side not in ("left", "right", "bottom", "top"):
+            raise ValueError(f"Invalid side {side!r}.")
         labs = self._suplabel_dict[side]
         axs = tuple(ax for ax, lab in labs.items() if lab.get_text())
         if not axs:
             return
         c = self._get_offset_coord(side, axs, renderer)
         for lab in labs.values():
-            s = 'x' if side in ('left', 'right') else 'y'
+            s = "x" if side in ("left", "right") else "y"
             lab.update({s: c})
 
     def _align_super_title(self, renderer):
@@ -1229,15 +1309,15 @@ class Figure(mfigure.Figure):
         """
         if not self._suptitle.get_text():
             return
-        axs = self._get_align_axes('top')  # returns outermost panels
+        axs = self._get_align_axes("top")  # returns outermost panels
         if not axs:
             return
-        labs = tuple(t for t in self._suplabel_dict['top'].values() if t.get_text())
+        labs = tuple(t for t in self._suplabel_dict["top"].values() if t.get_text())
         pad = (self._suptitle_pad / 72) / self.get_size_inches()[1]
-        x, _ = self._get_align_coord('top', axs, includepanels=self._includepanels)
-        y = self._get_offset_coord('top', axs, renderer, pad=pad, extra=labs)
-        self._suptitle.set_ha('center')
-        self._suptitle.set_va('bottom')
+        x, _ = self._get_align_coord("top", axs, includepanels=self._includepanels)
+        y = self._get_offset_coord("top", axs, renderer, pad=pad, extra=labs)
+        self._suptitle.set_ha("center")
+        self._suptitle.set_va("bottom")
         self._suptitle.set_position((x, y))
 
     def _update_axis_label(self, side, axs):
@@ -1249,28 +1329,28 @@ class Figure(mfigure.Figure):
         # offsetting them between two subplots if necessary. Now we track designated
         # 'super' labels and replace the actual labels with spaces so they still impact
         # the tight bounding box and thus allocate space for the spanning label.
-        x, y = 'xy' if side in ('bottom', 'top') else 'yx'
+        x, y = "xy" if side in ("bottom", "top") else "yx"
         c, ax = self._get_align_coord(side, axs, includepanels=self._includepanels)
-        axlab = getattr(ax, x + 'axis').label  # the central label
-        suplabs = getattr(self, '_sup' + x + 'label_dict')  # dict of spanning labels
+        axlab = getattr(ax, x + "axis").label  # the central label
+        suplabs = getattr(self, "_sup" + x + "label_dict")  # dict of spanning labels
         suplab = suplabs.get(ax, None)
         if suplab is None and not axlab.get_text().strip():
             return  # nothing to transfer from the normal label
         if suplab is not None and not suplab.get_text().strip():
             return  # nothing to update on the super label
         if suplab is None:
-            props = ('ha', 'va', 'rotation', 'rotation_mode')
-            suplab = suplabs[ax] = self.text(0, 0, '')
-            suplab.update({prop: getattr(axlab, 'get_' + prop)() for prop in props})
+            props = ("ha", "va", "rotation", "rotation_mode")
+            suplab = suplabs[ax] = self.text(0, 0, "")
+            suplab.update({prop: getattr(axlab, "get_" + prop)() for prop in props})
 
         # Copy text from the central label to the spanning label
         # NOTE: Must use spaces rather than newlines, otherwise tight layout
         # won't make room. Reason is Text implementation (see Text._get_layout())
         labels._transfer_label(axlab, suplab)  # text, color, and font properties
-        count = 1 + suplab.get_text().count('\n')
-        space = '\n'.join(' ' * count)
+        count = 1 + suplab.get_text().count("\n")
+        space = "\n".join(" " * count)
         for ax in axs:  # includes original 'axis'
-            axis = getattr(ax, x + 'axis')
+            axis = getattr(ax, x + "axis")
             axis.label.set_text(space)
 
         # Update spanning label position then add simple monkey patch
@@ -1278,7 +1358,7 @@ class Figure(mfigure.Figure):
         # called is not sufficient. Fails with e.g. inline backend.
         t = mtransforms.IdentityTransform()  # set in pixels
         cx, cy = axlab.get_position()
-        if x == 'x':
+        if x == "x":
             trans = mtransforms.blended_transform_factory(self.transFigure, t)
             coord = (c, cy)
         else:
@@ -1286,26 +1366,28 @@ class Figure(mfigure.Figure):
             coord = (cx, c)
         suplab.set_transform(trans)
         suplab.set_position(coord)
-        setpos = getattr(mtext.Text, 'set_' + y)
+        setpos = getattr(mtext.Text, "set_" + y)
+
         def _set_coord(self, *args, **kwargs):  # noqa: E306
             setpos(self, *args, **kwargs)
             setpos(suplab, *args, **kwargs)
-        setattr(axlab, 'set_' + y, _set_coord.__get__(axlab))
+
+        setattr(axlab, "set_" + y, _set_coord.__get__(axlab))
 
     def _update_super_labels(self, side, labels, **kwargs):
         """
         Assign the figure super labels and update settings.
         """
         # Update the label parameters
-        if side not in ('left', 'right', 'bottom', 'top'):
-            raise ValueError(f'Invalid side {side!r}.')
+        if side not in ("left", "right", "bottom", "top"):
+            raise ValueError(f"Invalid side {side!r}.")
         kw = rc.fill(
             {
-                'color': side + 'label.color',
-                'rotation': side + 'label.rotation',
-                'size': side + 'label.size',
-                'weight': side + 'label.weight',
-                'family': 'font.family',
+                "color": side + "label.color",
+                "rotation": side + "label.rotation",
+                "size": side + "label.size",
+                "weight": side + "label.weight",
+                "family": "font.family",
             },
             context=True,
         )
@@ -1325,8 +1407,8 @@ class Figure(mfigure.Figure):
             return  # nothing to update
         if len(labels) != len(axs):
             raise ValueError(
-                f'Got {len(labels)} {side} labels but found {len(axs)} axes '
-                f'along the {side} side of the figure.'
+                f"Got {len(labels)} {side} labels but found {len(axs)} axes "
+                f"along the {side} side of the figure."
             )
         src = self._suplabel_dict[side]
         extra = src.keys() - set(axs)
@@ -1334,7 +1416,7 @@ class Figure(mfigure.Figure):
             text = src[ax].get_text()
             if text:
                 warnings._warn_proplot(
-                    f'Removing {side} label with text {text!r} from axes {ax.number}.'
+                    f"Removing {side} label with text {text!r} from axes {ax.number}."
                 )
             src[ax].remove()  # remove from the figure
 
@@ -1343,13 +1425,13 @@ class Figure(mfigure.Figure):
         for ax, label in zip(axs, labels):
             if ax in src:
                 obj = src[ax]
-            elif side in ('left', 'right'):
+            elif side in ("left", "right"):
                 trans = mtransforms.blended_transform_factory(tf, ax.transAxes)
-                obj = src[ax] = self.text(0, 0.5, '', transform=trans)
+                obj = src[ax] = self.text(0, 0.5, "", transform=trans)
                 obj.update(props)
             else:
                 trans = mtransforms.blended_transform_factory(ax.transAxes, tf)
-                obj = src[ax] = self.text(0.5, 0, '', transform=trans)
+                obj = src[ax] = self.text(0.5, 0, "", transform=trans)
                 obj.update(props)
             if kw:
                 obj.update(kw)
@@ -1362,10 +1444,10 @@ class Figure(mfigure.Figure):
         """
         kw = rc.fill(
             {
-                'size': 'suptitle.size',
-                'weight': 'suptitle.weight',
-                'color': 'suptitle.color',
-                'family': 'font.family'
+                "size": "suptitle.size",
+                "weight": "suptitle.weight",
+                "color": "suptitle.color",
+                "family": "font.family",
             },
             context=True,
         )
@@ -1456,10 +1538,11 @@ class Figure(mfigure.Figure):
         def _draw_content():
             for ax in self._iter_axes(hidden=False, children=True):
                 ax._add_queued_guides()  # may trigger resizes if panels are added
+
         def _align_content():  # noqa: E306
-            for axis in 'xy':
+            for axis in "xy":
                 self._align_axis_label(axis)
-            for side in ('left', 'right', 'top', 'bottom'):
+            for side in ("left", "right", "top", "bottom"):
                 self._align_super_labels(side, renderer)
             self._align_super_title(renderer)
 
@@ -1477,18 +1560,32 @@ class Figure(mfigure.Figure):
         _align_content()
 
     @warnings._rename_kwargs(
-        '0.10.0', mathtext_fallback='pplt.rc.mathtext_fallback = {}'
+        "0.10.0", mathtext_fallback="pplt.rc.mathtext_fallback = {}"
     )
     @docstring._snippet_manager
     def format(
-        self, axs=None, *,
-        figtitle=None, suptitle=None, suptitle_kw=None,
-        llabels=None, leftlabels=None, leftlabels_kw=None,
-        rlabels=None, rightlabels=None, rightlabels_kw=None,
-        blabels=None, bottomlabels=None, bottomlabels_kw=None,
-        tlabels=None, toplabels=None, toplabels_kw=None,
-        rowlabels=None, collabels=None,  # aliases
-        includepanels=None, **kwargs,
+        self,
+        axs=None,
+        *,
+        figtitle=None,
+        suptitle=None,
+        suptitle_kw=None,
+        llabels=None,
+        leftlabels=None,
+        leftlabels_kw=None,
+        rlabels=None,
+        rightlabels=None,
+        rightlabels_kw=None,
+        blabels=None,
+        bottomlabels=None,
+        bottomlabels_kw=None,
+        tlabels=None,
+        toplabels=None,
+        toplabels_kw=None,
+        rowlabels=None,
+        collabels=None,  # aliases
+        includepanels=None,
+        **kwargs,
     ):
         """
         Modify figure-wide labels and call ``format`` for the
@@ -1527,19 +1624,19 @@ class Figure(mfigure.Figure):
         """
         # Initiate context block
         axs = axs or self._subplot_dict.values()
-        skip_axes = kwargs.pop('skip_axes', False)  # internal keyword arg
+        skip_axes = kwargs.pop("skip_axes", False)  # internal keyword arg
         rc_kw, rc_mode = _pop_rc(kwargs)
         with rc.context(rc_kw, mode=rc_mode):
             # Update background patch
-            kw = rc.fill({'facecolor': 'figure.facecolor'}, context=True)
+            kw = rc.fill({"facecolor": "figure.facecolor"}, context=True)
             self.patch.update(kw)
 
             # Update super title and label spacing
-            pad = rc.find('suptitle.pad', context=True)  # super title
+            pad = rc.find("suptitle.pad", context=True)  # super title
             if pad is not None:
                 self._suptitle_pad = pad
             for side in tuple(self._suplabel_pad):  # super labels
-                pad = rc.find(side + 'label.pad', context=True)
+                pad = rc.find(side + "label.pad", context=True)
                 if pad is not None:
                     self._suplabel_pad[side] = pad
             if includepanels is not None:
@@ -1556,22 +1653,22 @@ class Figure(mfigure.Figure):
                 **suptitle_kw,
             )
             self._update_super_labels(
-                'left',
+                "left",
                 _not_none(rowlabels=rowlabels, leftlabels=leftlabels, llabels=llabels),
                 **leftlabels_kw,
             )
             self._update_super_labels(
-                'right',
+                "right",
                 _not_none(rightlabels=rightlabels, rlabels=rlabels),
                 **rightlabels_kw,
             )
             self._update_super_labels(
-                'bottom',
+                "bottom",
                 _not_none(bottomlabels=bottomlabels, blabels=blabels),
                 **bottomlabels_kw,
             )
             self._update_super_labels(
-                'top',
+                "top",
                 _not_none(collabels=collabels, toplabels=toplabels, tlabels=tlabels),
                 **toplabels_kw,
             )
@@ -1586,7 +1683,8 @@ class Figure(mfigure.Figure):
         classes = set()  # track used dictionaries
         for ax in axs:
             kw = {
-                key: value for cls, kw in kws.items()
+                key: value
+                for cls, kw in kws.items()
                 for key, value in kw.items()
                 if isinstance(ax, cls) and not classes.add(cls)
             }
@@ -1594,20 +1692,32 @@ class Figure(mfigure.Figure):
 
         # Warn unused keyword argument(s)
         kw = {
-            key: value for name in kws.keys() - classes
+            key: value
+            for name in kws.keys() - classes
             for key, value in kws[name].items()
         }
         if kw:
             warnings._warn_proplot(
-                f'Ignoring unused projection-specific format() keyword argument(s): {kw}'  # noqa: E501
+                f"Ignoring unused projection-specific format() keyword argument(s): {kw}"  # noqa: E501
             )
 
     @docstring._concatenate_inherited
     @docstring._snippet_manager
     def colorbar(
-        self, mappable, values=None, loc=None, location=None,
-        row=None, col=None, rows=None, cols=None, span=None,
-        space=None, pad=None, width=None, **kwargs
+        self,
+        mappable,
+        values=None,
+        loc=None,
+        location=None,
+        row=None,
+        col=None,
+        rows=None,
+        cols=None,
+        span=None,
+        space=None,
+        pad=None,
+        width=None,
+        **kwargs,
     ):
         """
         Add a colorbar along the side of the figure.
@@ -1637,8 +1747,8 @@ class Figure(mfigure.Figure):
         matplotlib.figure.Figure.colorbar
         """
         # Backwards compatibility
-        ax = kwargs.pop('ax', None)
-        cax = kwargs.pop('cax', None)
+        ax = kwargs.pop("ax", None)
+        cax = kwargs.pop("cax", None)
         if isinstance(values, maxes.Axes):
             cax = _not_none(cax_positional=values, cax=cax)
             values = None
@@ -1646,10 +1756,10 @@ class Figure(mfigure.Figure):
             ax = _not_none(ax_positional=loc, ax=ax)
             loc = None
         # Helpful warning
-        if kwargs.pop('use_gridspec', None) is not None:
+        if kwargs.pop("use_gridspec", None) is not None:
             warnings._warn_proplot(
                 "Ignoring the 'use_gridspec' keyword. Proplot always allocates "
-                'additional space for colorbars using the figure gridspec '
+                "additional space for colorbars using the figure gridspec "
                 "rather than 'stealing space' from the parent subplot."
             )
         # Fill this axes
@@ -1663,20 +1773,38 @@ class Figure(mfigure.Figure):
             )
         # Figure panel colorbar
         else:
-            loc = _not_none(loc=loc, location=location, default='r')
+            loc = _not_none(loc=loc, location=location, default="r")
             ax = self._add_figure_panel(
-                loc, row=row, col=col, rows=rows, cols=cols, span=span,
-                width=width, space=space, pad=pad,
+                loc,
+                row=row,
+                col=col,
+                rows=rows,
+                cols=cols,
+                span=span,
+                width=width,
+                space=space,
+                pad=pad,
             )
-            cb = ax.colorbar(mappable, values, loc='fill', **kwargs)
+            cb = ax.colorbar(mappable, values, loc="fill", **kwargs)
         return cb
 
     @docstring._concatenate_inherited
     @docstring._snippet_manager
     def legend(
-        self, handles=None, labels=None, loc=None, location=None,
-        row=None, col=None, rows=None, cols=None, span=None,
-        space=None, pad=None, width=None, **kwargs
+        self,
+        handles=None,
+        labels=None,
+        loc=None,
+        location=None,
+        row=None,
+        col=None,
+        rows=None,
+        cols=None,
+        span=None,
+        space=None,
+        pad=None,
+        width=None,
+        **kwargs,
     ):
         """
         Add a legend along the side of the figure.
@@ -1699,7 +1827,7 @@ class Figure(mfigure.Figure):
         proplot.axes.Axes.legend
         matplotlib.axes.Axes.legend
         """
-        ax = kwargs.pop('ax', None)
+        ax = kwargs.pop("ax", None)
         # Axes panel legend
         if ax is not None:
             leg = ax.legend(
@@ -1707,12 +1835,19 @@ class Figure(mfigure.Figure):
             )
         # Figure panel legend
         else:
-            loc = _not_none(loc=loc, location=location, default='r')
+            loc = _not_none(loc=loc, location=location, default="r")
             ax = self._add_figure_panel(
-                loc, row=row, col=col, rows=rows, cols=cols, span=span,
-                width=width, space=space, pad=pad,
+                loc,
+                row=row,
+                col=col,
+                rows=rows,
+                cols=cols,
+                span=span,
+                width=width,
+                space=space,
+                pad=pad,
             )
-            leg = ax.legend(handles, labels, loc='fill', **kwargs)
+            leg = ax.legend(handles, labels, loc="fill", **kwargs)
         return leg
 
     @docstring._snippet_manager
@@ -1761,8 +1896,11 @@ class Figure(mfigure.Figure):
         # around this by forcing additional draw() call in this function before
         # proceeding with print_figure). Set the canvas and add monkey patches
         # to the instance-level draw and print_figure methods.
-        method = '_draw' if callable(getattr(canvas, '_draw', None)) else 'draw'
-        _add_canvas_preprocessor(canvas, 'print_figure', cache=False)  # saves, inlines
+        method = "draw"
+        # if getattr(canvas, "_draw", None):
+        # method = "_draw"
+        # method = '_draw' if callable(getattr(canvas, '_draw', None)) else 'draw'
+        _add_canvas_preprocessor(canvas, "print_figure", cache=False)  # saves, inlines
         _add_canvas_preprocessor(canvas, method, cache=True)  # renderer displays
         super().set_canvas(canvas)
 
@@ -1803,7 +1941,7 @@ class Figure(mfigure.Figure):
         # Parse input args
         figsize = w if h is None else (w, h)
         if not np.all(np.isfinite(figsize)):
-            raise ValueError(f'Figure size must be finite, not {figsize}.')
+            raise ValueError(f"Figure size must be finite, not {figsize}.")
 
         # Fix the figure size if this is a user action from an interactive backend
         # NOTE: If we fail to detect 'user' resize from the user, not only will
@@ -1813,7 +1951,7 @@ class Figure(mfigure.Figure):
         # int(Figure.bbox.[width|height]) which rounds to whole pixels. When
         # renderer calls set_size_inches, size may be effectively the same, but
         # slightly changed due to roundoff error! Therefore only compare approx size.
-        attrs = ('_is_idle_drawing', '_is_drawing', '_draw_pending')
+        attrs = ("_is_idle_drawing", "_is_drawing", "_draw_pending")
         backend = any(getattr(self.canvas, attr, None) for attr in attrs)
         internal = internal or self._is_adjusting
         samesize = self._is_same_size(figsize, eps)
@@ -1849,11 +1987,11 @@ class Figure(mfigure.Figure):
         if panels is False:
             panels = ()
         elif panels is True or panels is None:
-            panels = ('left', 'right', 'bottom', 'top')
+            panels = ("left", "right", "bottom", "top")
         elif isinstance(panels, str):
             panels = (panels,)
-        if not set(panels) <= {'left', 'right', 'bottom', 'top'}:
-            raise ValueError(f'Invalid sides {panels!r}.')
+        if not set(panels) <= {"left", "right", "bottom", "top"}:
+            raise ValueError(f"Invalid sides {panels!r}.")
         # Iterate
         axs = (
             *self._subplot_dict.values(),
@@ -1881,7 +2019,7 @@ class Figure(mfigure.Figure):
     @gridspec.setter
     def gridspec(self, gs):
         if not isinstance(gs, pgridspec.GridSpec):
-            raise ValueError('Gridspec must be a proplot.GridSpec instance.')
+            raise ValueError("Gridspec must be a proplot.GridSpec instance.")
         self._gridspec = gs
         gs.figure = self  # trigger copying settings from the figure
 
@@ -1924,13 +2062,15 @@ class Figure(mfigure.Figure):
 # Add deprecated properties. There are *lots* of properties we pass to Figure
 # and do not like idea of publicly tracking every single one of them. If we
 # want to improve user introspection consider modifying Figure.__repr__.
-for _attr in ('alignx', 'aligny', 'sharex', 'sharey', 'spanx', 'spany', 'tight', 'ref'):
+for _attr in ("alignx", "aligny", "sharex", "sharey", "spanx", "spany", "tight", "ref"):
+
     def _get_deprecated(self, attr=_attr):
         warnings._warn_proplot(
-            f'The property {attr!r} is no longer public as of v0.8. It will be '
-            'removed in a future release.'
+            f"The property {attr!r} is no longer public as of v0.8. It will be "
+            "removed in a future release."
         )
-        return getattr(self, '_' + attr)
+        return getattr(self, "_" + attr)
+
     _getter = property(_get_deprecated)
     setattr(Figure, _attr, property(_get_deprecated))
 
@@ -1938,22 +2078,24 @@ for _attr in ('alignx', 'aligny', 'sharex', 'sharey', 'spanx', 'spany', 'tight',
 # Disable native matplotlib layout and spacing functions when called
 # manually and emit warning message to help new users.
 for _attr, _msg in (
-    ('set_tight_layout', Figure._tight_message),
-    ('set_constrained_layout', Figure._tight_message),
-    ('tight_layout', Figure._tight_message),
-    ('init_layoutbox', Figure._tight_message),
-    ('execute_constrained_layout', Figure._tight_message),
-    ('subplots_adjust', Figure._space_message),
+    ("set_tight_layout", Figure._tight_message),
+    ("set_constrained_layout", Figure._tight_message),
+    ("tight_layout", Figure._tight_message),
+    ("init_layoutbox", Figure._tight_message),
+    ("execute_constrained_layout", Figure._tight_message),
+    ("subplots_adjust", Figure._space_message),
 ):
     _func = getattr(Figure, _attr, None)
     if _func is None:
         continue
+
     @functools.wraps(_func)  # noqa: E301
     def _disable_method(self, *args, func=_func, message=_msg, **kwargs):
-        message = f'fig.{func.__name__}() has no effect on proplot figures. ' + message
+        message = f"fig.{func.__name__}() has no effect on proplot figures. " + message
         if self._is_authorized:
             return func(self, *args, **kwargs)
         else:
             warnings._warn_proplot(message)  # noqa: E501, U100
+
     _disable_method.__doc__ = None  # remove docs
     setattr(Figure, _attr, _disable_method)

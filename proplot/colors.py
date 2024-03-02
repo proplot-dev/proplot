@@ -41,135 +41,136 @@ from .internals import (
 from .utils import set_alpha, to_hex, to_rgb, to_rgba, to_xyz, to_xyza
 
 __all__ = [
-    'DiscreteColormap',
-    'ContinuousColormap',
-    'PerceptualColormap',
-    'DiscreteNorm',
-    'DivergingNorm',
-    'SegmentedNorm',
-    'ColorDatabase',
-    'ColormapDatabase',
-    'ListedColormap',  # deprecated
-    'LinearSegmentedColormap',  # deprecated
-    'PerceptuallyUniformColormap',  # deprecated
-    'LinearSegmentedNorm',  # deprecated
+    "DiscreteColormap",
+    "ContinuousColormap",
+    "PerceptualColormap",
+    "DiscreteNorm",
+    "DivergingNorm",
+    "SegmentedNorm",
+    "ColorDatabase",
+    "ColormapDatabase",
+    "ListedColormap",  # deprecated
+    "LinearSegmentedColormap",  # deprecated
+    "PerceptuallyUniformColormap",  # deprecated
+    "LinearSegmentedNorm",  # deprecated
 ]
 
 # Default colormap properties
-DEFAULT_NAME = '_no_name'
-DEFAULT_SPACE = 'hsl'
+DEFAULT_NAME = "_no_name"
+DEFAULT_SPACE = "hsl"
 
 # Color regexes
 # NOTE: We do not compile hex regex because config.py needs this surrounded by \A\Z
-_regex_hex = r'#(?:[0-9a-fA-F]{3,4}){2}'  # 6-8 digit hex
+_regex_hex = r"#(?:[0-9a-fA-F]{3,4}){2}"  # 6-8 digit hex
 REGEX_HEX_MULTI = re.compile(_regex_hex)
-REGEX_HEX_SINGLE = re.compile(rf'\A{_regex_hex}\Z')
-REGEX_ADJUST = re.compile(r'\A(light|dark|medium|pale|charcoal)?\s*(gr[ea]y[0-9]?)?\Z')
+REGEX_HEX_SINGLE = re.compile(rf"\A{_regex_hex}\Z")
+REGEX_ADJUST = re.compile(r"\A(light|dark|medium|pale|charcoal)?\s*(gr[ea]y[0-9]?)?\Z")
 
 # Colormap constants
 CMAPS_CYCLIC = tuple(  # cyclic colormaps loaded from rgb files
-    key.lower() for key in (
-        'MonoCycle',
-        'twilight',
-        'Phase',
-        'romaO',
-        'brocO',
-        'corkO',
-        'vikO',
-        'bamO',
+    key.lower()
+    for key in (
+        "MonoCycle",
+        "twilight",
+        "Phase",
+        "romaO",
+        "brocO",
+        "corkO",
+        "vikO",
+        "bamO",
     )
 )
 CMAPS_DIVERGING = {  # mirrored dictionary mapping for reversed names
     key.lower(): value.lower()
     for key1, key2 in (
-        ('BR', 'RB'),
-        ('NegPos', 'PosNeg'),
-        ('CoolWarm', 'WarmCool'),
-        ('ColdHot', 'HotCold'),
-        ('DryWet', 'WetDry'),
-        ('PiYG', 'GYPi'),
-        ('PRGn', 'GnRP'),
-        ('BrBG', 'GBBr'),
-        ('PuOr', 'OrPu'),
-        ('RdGy', 'GyRd'),
-        ('RdBu', 'BuRd'),
-        ('RdYlBu', 'BuYlRd'),
-        ('RdYlGn', 'GnYlRd'),
+        ("BR", "RB"),
+        ("NegPos", "PosNeg"),
+        ("CoolWarm", "WarmCool"),
+        ("ColdHot", "HotCold"),
+        ("DryWet", "WetDry"),
+        ("PiYG", "GYPi"),
+        ("PRGn", "GnRP"),
+        ("BrBG", "GBBr"),
+        ("PuOr", "OrPu"),
+        ("RdGy", "GyRd"),
+        ("RdBu", "BuRd"),
+        ("RdYlBu", "BuYlRd"),
+        ("RdYlGn", "GnYlRd"),
     )
     for key, value in ((key1, key2), (key2, key1))
 }
 for _cmap_diverging in (  # remaining diverging cmaps (see PlotAxes._parse_cmap)
-    'Div',
-    'Vlag',
-    'Spectral',
-    'Balance',
-    'Delta',
-    'Curl',
-    'roma',
-    'broc',
-    'cork',
-    'vik',
-    'bam',
-    'lisbon',
-    'tofino',
-    'berlin',
-    'vanimo',
+    "Div",
+    "Vlag",
+    "Spectral",
+    "Balance",
+    "Delta",
+    "Curl",
+    "roma",
+    "broc",
+    "cork",
+    "vik",
+    "bam",
+    "lisbon",
+    "tofino",
+    "berlin",
+    "vanimo",
 ):
     CMAPS_DIVERGING[_cmap_diverging.lower()] = _cmap_diverging.lower()
 CMAPS_REMOVED = {
-    'Blue0': '0.6.0',
-    'Cool': '0.6.0',
-    'Warm': '0.6.0',
-    'Hot': '0.6.0',
-    'Floral': '0.6.0',
-    'Contrast': '0.6.0',
-    'Sharp': '0.6.0',
-    'Viz': '0.6.0',
+    "Blue0": "0.6.0",
+    "Cool": "0.6.0",
+    "Warm": "0.6.0",
+    "Hot": "0.6.0",
+    "Floral": "0.6.0",
+    "Contrast": "0.6.0",
+    "Sharp": "0.6.0",
+    "Viz": "0.6.0",
 }
 CMAPS_RENAMED = {
-    'GrayCycle': ('MonoCycle', '0.6.0'),
-    'Blue1': ('Blues1', '0.7.0'),
-    'Blue2': ('Blues2', '0.7.0'),
-    'Blue3': ('Blues3', '0.7.0'),
-    'Blue4': ('Blues4', '0.7.0'),
-    'Blue5': ('Blues5', '0.7.0'),
-    'Blue6': ('Blues6', '0.7.0'),
-    'Blue7': ('Blues7', '0.7.0'),
-    'Blue8': ('Blues8', '0.7.0'),
-    'Blue9': ('Blues9', '0.7.0'),
-    'Green1': ('Greens1', '0.7.0'),
-    'Green2': ('Greens2', '0.7.0'),
-    'Green3': ('Greens3', '0.7.0'),
-    'Green4': ('Greens4', '0.7.0'),
-    'Green5': ('Greens5', '0.7.0'),
-    'Green6': ('Greens6', '0.7.0'),
-    'Green7': ('Greens7', '0.7.0'),
-    'Green8': ('Greens8', '0.7.0'),
-    'Orange1': ('Yellows1', '0.7.0'),
-    'Orange2': ('Yellows2', '0.7.0'),
-    'Orange3': ('Yellows3', '0.7.0'),
-    'Orange4': ('Oranges2', '0.7.0'),
-    'Orange5': ('Oranges1', '0.7.0'),
-    'Orange6': ('Oranges3', '0.7.0'),
-    'Orange7': ('Oranges4', '0.7.0'),
-    'Orange8': ('Yellows4', '0.7.0'),
-    'Brown1': ('Browns1', '0.7.0'),
-    'Brown2': ('Browns2', '0.7.0'),
-    'Brown3': ('Browns3', '0.7.0'),
-    'Brown4': ('Browns4', '0.7.0'),
-    'Brown5': ('Browns5', '0.7.0'),
-    'Brown6': ('Browns6', '0.7.0'),
-    'Brown7': ('Browns7', '0.7.0'),
-    'Brown8': ('Browns8', '0.7.0'),
-    'Brown9': ('Browns9', '0.7.0'),
-    'RedPurple1': ('Reds1', '0.7.0'),
-    'RedPurple2': ('Reds2', '0.7.0'),
-    'RedPurple3': ('Reds3', '0.7.0'),
-    'RedPurple4': ('Reds4', '0.7.0'),
-    'RedPurple5': ('Reds5', '0.7.0'),
-    'RedPurple6': ('Purples1', '0.7.0'),
-    'RedPurple7': ('Purples2', '0.7.0'),
-    'RedPurple8': ('Purples3', '0.7.0'),
+    "GrayCycle": ("MonoCycle", "0.6.0"),
+    "Blue1": ("Blues1", "0.7.0"),
+    "Blue2": ("Blues2", "0.7.0"),
+    "Blue3": ("Blues3", "0.7.0"),
+    "Blue4": ("Blues4", "0.7.0"),
+    "Blue5": ("Blues5", "0.7.0"),
+    "Blue6": ("Blues6", "0.7.0"),
+    "Blue7": ("Blues7", "0.7.0"),
+    "Blue8": ("Blues8", "0.7.0"),
+    "Blue9": ("Blues9", "0.7.0"),
+    "Green1": ("Greens1", "0.7.0"),
+    "Green2": ("Greens2", "0.7.0"),
+    "Green3": ("Greens3", "0.7.0"),
+    "Green4": ("Greens4", "0.7.0"),
+    "Green5": ("Greens5", "0.7.0"),
+    "Green6": ("Greens6", "0.7.0"),
+    "Green7": ("Greens7", "0.7.0"),
+    "Green8": ("Greens8", "0.7.0"),
+    "Orange1": ("Yellows1", "0.7.0"),
+    "Orange2": ("Yellows2", "0.7.0"),
+    "Orange3": ("Yellows3", "0.7.0"),
+    "Orange4": ("Oranges2", "0.7.0"),
+    "Orange5": ("Oranges1", "0.7.0"),
+    "Orange6": ("Oranges3", "0.7.0"),
+    "Orange7": ("Oranges4", "0.7.0"),
+    "Orange8": ("Yellows4", "0.7.0"),
+    "Brown1": ("Browns1", "0.7.0"),
+    "Brown2": ("Browns2", "0.7.0"),
+    "Brown3": ("Browns3", "0.7.0"),
+    "Brown4": ("Browns4", "0.7.0"),
+    "Brown5": ("Browns5", "0.7.0"),
+    "Brown6": ("Browns6", "0.7.0"),
+    "Brown7": ("Browns7", "0.7.0"),
+    "Brown8": ("Browns8", "0.7.0"),
+    "Brown9": ("Browns9", "0.7.0"),
+    "RedPurple1": ("Reds1", "0.7.0"),
+    "RedPurple2": ("Reds2", "0.7.0"),
+    "RedPurple3": ("Reds3", "0.7.0"),
+    "RedPurple4": ("Reds4", "0.7.0"),
+    "RedPurple5": ("Reds5", "0.7.0"),
+    "RedPurple6": ("Purples1", "0.7.0"),
+    "RedPurple7": ("Purples2", "0.7.0"),
+    "RedPurple8": ("Purples3", "0.7.0"),
 }
 
 # Color constants
@@ -177,94 +178,169 @@ COLORS_OPEN = {}  # populated during register_colors
 COLORS_XKCD = {}  # populated during register_colors
 COLORS_KEEP = (
     *(  # always load these XKCD colors regardless of settings
-        'charcoal', 'tomato', 'burgundy', 'maroon', 'burgundy', 'lavendar',
-        'taupe', 'sand', 'stone', 'earth', 'sand brown', 'sienna',
-        'terracotta', 'moss', 'crimson', 'mauve', 'rose', 'teal', 'forest',
-        'grass', 'sage', 'pine', 'vermillion', 'russet', 'cerise', 'avocado',
-        'wine', 'brick', 'umber', 'mahogany', 'puce', 'grape', 'blurple',
-        'cranberry', 'sand', 'aqua', 'jade', 'coral', 'olive', 'magenta',
-        'turquoise', 'sea blue', 'royal blue', 'slate blue', 'slate grey',
-        'baby blue', 'salmon', 'beige', 'peach', 'mustard', 'lime', 'indigo',
-        'cornflower', 'marine', 'cloudy blue', 'tangerine', 'scarlet', 'navy',
-        'cool grey', 'warm grey', 'chocolate', 'raspberry', 'denim',
-        'gunmetal', 'midnight', 'chartreuse', 'ivory', 'khaki', 'plum',
-        'silver', 'tan', 'wheat', 'buff', 'bisque', 'cerulean',
+        "charcoal",
+        "tomato",
+        "burgundy",
+        "maroon",
+        "burgundy",
+        "lavendar",
+        "taupe",
+        "sand",
+        "stone",
+        "earth",
+        "sand brown",
+        "sienna",
+        "terracotta",
+        "moss",
+        "crimson",
+        "mauve",
+        "rose",
+        "teal",
+        "forest",
+        "grass",
+        "sage",
+        "pine",
+        "vermillion",
+        "russet",
+        "cerise",
+        "avocado",
+        "wine",
+        "brick",
+        "umber",
+        "mahogany",
+        "puce",
+        "grape",
+        "blurple",
+        "cranberry",
+        "sand",
+        "aqua",
+        "jade",
+        "coral",
+        "olive",
+        "magenta",
+        "turquoise",
+        "sea blue",
+        "royal blue",
+        "slate blue",
+        "slate grey",
+        "baby blue",
+        "salmon",
+        "beige",
+        "peach",
+        "mustard",
+        "lime",
+        "indigo",
+        "cornflower",
+        "marine",
+        "cloudy blue",
+        "tangerine",
+        "scarlet",
+        "navy",
+        "cool grey",
+        "warm grey",
+        "chocolate",
+        "raspberry",
+        "denim",
+        "gunmetal",
+        "midnight",
+        "chartreuse",
+        "ivory",
+        "khaki",
+        "plum",
+        "silver",
+        "tan",
+        "wheat",
+        "buff",
+        "bisque",
+        "cerulean",
     ),
     *(  # common combinations
-        'red orange', 'yellow orange', 'yellow green',
-        'blue green', 'blue violet', 'red violet',
-        'bright red',  # backwards compatibility
+        "red orange",
+        "yellow orange",
+        "yellow green",
+        "blue green",
+        "blue violet",
+        "red violet",
+        "bright red",  # backwards compatibility
     ),
     *(  # common names
         prefix + color
         for color in (
-            'red', 'orange', 'yellow', 'green', 'blue', 'indigo', 'violet',
-            'brown', 'grey', 'gray',
+            "red",
+            "orange",
+            "yellow",
+            "green",
+            "blue",
+            "indigo",
+            "violet",
+            "brown",
+            "grey",
+            "gray",
         )
-        for prefix in ('', 'light ', 'dark ', 'medium ', 'pale ')
-    )
+        for prefix in ("", "light ", "dark ", "medium ", "pale ")
+    ),
 )
 COLORS_REMOVE = (
     # filter these out, let's try to be professional here...
-    'shit',
-    'poop',
-    'poo',
-    'pee',
-    'piss',
-    'puke',
-    'vomit',
-    'snot',
-    'booger',
-    'bile',
-    'diarrhea',
-    'icky',
-    'sickly',
+    "shit",
+    "poop",
+    "poo",
+    "pee",
+    "piss",
+    "puke",
+    "vomit",
+    "snot",
+    "booger",
+    "bile",
+    "diarrhea",
+    "icky",
+    "sickly",
 )
 COLORS_REPLACE = (
     # prevent registering similar-sounding names
     # these can all be combined
-    ('/', ' '),  # convert [color1]/[color2] to compound (e.g. grey/blue to grey blue)
-    ("'s", 's'),  # robin's egg
-    ('egg blue', 'egg'),  # robin's egg blue
-    ('grey', 'gray'),  # 'Murica
-    ('ochre', 'ocher'),  # ...
-    ('forrest', 'forest'),  # ...
-    ('ocre', 'ocher'),  # correct spelling
-    ('kelley', 'kelly'),  # ...
-    ('reddish', 'red'),  # remove [color]ish where it modifies the spelling of color
-    ('purplish', 'purple'),  # ...
-    ('pinkish', 'pink'),
-    ('yellowish', 'yellow'),
-    ('bluish', 'blue'),
-    ('greyish', 'grey'),
-    ('ish', ''),  # these are all [color]ish ('ish' substring appears nowhere else)
-    ('bluey', 'blue'),  # remove [color]y trailing y
-    ('greeny', 'green'),  # ...
-    ('reddy', 'red'),
-    ('pinky', 'pink'),
-    ('purply', 'purple'),
-    ('purpley', 'purple'),
-    ('yellowy', 'yellow'),
-    ('orangey', 'orange'),
-    ('browny', 'brown'),
-    ('minty', 'mint'),  # now remove [object]y trailing y
-    ('grassy', 'grass'),  # ...
-    ('mossy', 'moss'),
-    ('dusky', 'dusk'),
-    ('rusty', 'rust'),
-    ('muddy', 'mud'),
-    ('sandy', 'sand'),
-    ('leafy', 'leaf'),
-    ('dusty', 'dust'),
-    ('dirty', 'dirt'),
-    ('peachy', 'peach'),
-    ('stormy', 'storm'),
-    ('cloudy', 'cloud'),
-    ('grayblue', 'gray blue'),  # separate merge compounds
-    ('bluegray', 'gray blue'),  # ...
-    ('lightblue', 'light blue'),
-    ('yellowgreen', 'yellow green'),
-    ('yelloworange', 'yellow orange'),
+    ("/", " "),  # convert [color1]/[color2] to compound (e.g. grey/blue to grey blue)
+    ("'s", "s"),  # robin's egg
+    ("egg blue", "egg"),  # robin's egg blue
+    ("grey", "gray"),  # 'Murica
+    ("ochre", "ocher"),  # ...
+    ("forrest", "forest"),  # ...
+    ("ocre", "ocher"),  # correct spelling
+    ("kelley", "kelly"),  # ...
+    ("reddish", "red"),  # remove [color]ish where it modifies the spelling of color
+    ("purplish", "purple"),  # ...
+    ("pinkish", "pink"),
+    ("yellowish", "yellow"),
+    ("bluish", "blue"),
+    ("greyish", "grey"),
+    ("ish", ""),  # these are all [color]ish ('ish' substring appears nowhere else)
+    ("bluey", "blue"),  # remove [color]y trailing y
+    ("greeny", "green"),  # ...
+    ("reddy", "red"),
+    ("pinky", "pink"),
+    ("purply", "purple"),
+    ("purpley", "purple"),
+    ("yellowy", "yellow"),
+    ("orangey", "orange"),
+    ("browny", "brown"),
+    ("minty", "mint"),  # now remove [object]y trailing y
+    ("grassy", "grass"),  # ...
+    ("mossy", "moss"),
+    ("dusky", "dusk"),
+    ("rusty", "rust"),
+    ("muddy", "mud"),
+    ("sandy", "sand"),
+    ("leafy", "leaf"),
+    ("dusty", "dust"),
+    ("dirty", "dirt"),
+    ("peachy", "peach"),
+    ("stormy", "storm"),
+    ("cloudy", "cloud"),
+    ("grayblue", "gray blue"),  # separate merge compounds
+    ("bluegray", "gray blue"),  # ...
+    ("lightblue", "light blue"),
+    ("yellowgreen", "yellow green"),
+    ("yelloworange", "yellow orange"),
 )
 
 # Simple snippets
@@ -312,13 +388,13 @@ ratios : sequence of float, optional
     ``len(colors) - 1``. Larger numbers indicate a slower
     transition, smaller numbers indicate a faster transition.
 """
-docstring._snippet_manager['colors.N'] = _N_docstring
-docstring._snippet_manager['colors.alpha'] = _alpha_docstring
-docstring._snippet_manager['colors.cyclic'] = _cyclic_docstring
-docstring._snippet_manager['colors.gamma'] = _gamma_docstring
-docstring._snippet_manager['colors.space'] = _space_docstring
-docstring._snippet_manager['colors.ratios'] = _ratios_docstring
-docstring._snippet_manager['colors.name'] = _name_docstring
+docstring._snippet_manager["colors.N"] = _N_docstring
+docstring._snippet_manager["colors.alpha"] = _alpha_docstring
+docstring._snippet_manager["colors.cyclic"] = _cyclic_docstring
+docstring._snippet_manager["colors.gamma"] = _gamma_docstring
+docstring._snippet_manager["colors.space"] = _space_docstring
+docstring._snippet_manager["colors.ratios"] = _ratios_docstring
+docstring._snippet_manager["colors.name"] = _name_docstring
 
 # List classmethod snippets
 _from_list_docstring = """
@@ -336,7 +412,7 @@ colors : sequence of color-spec or tuple
     creates a colormap with the transition from red to blue taking
     *twice as long* as the transition from blue to green.
 """
-docstring._snippet_manager['colors.from_list'] = _from_list_docstring
+docstring._snippet_manager["colors.from_list"] = _from_list_docstring
 
 
 def _clip_colors(colors, clip=True, gray=0.2, warn=False):
@@ -365,14 +441,14 @@ def _clip_colors(colors, clip=True, gray=0.2, warn=False):
     else:
         colors[under | over] = gray
     if warn:
-        msg = 'Clipped' if clip else 'Invalid'
-        for i, name in enumerate('rgb'):
+        msg = "Clipped" if clip else "Invalid"
+        for i, name in enumerate("rgb"):
             if np.any(under[:, i]) or np.any(over[:, i]):
-                warnings._warn_proplot(f'{msg} {name!r} channel.')
+                warnings._warn_proplot(f"{msg} {name!r} channel.")
     return colors
 
 
-def _get_channel(color, channel, space='hcl'):
+def _get_channel(color, channel, space="hcl"):
     """
     Get the hue, saturation, or luminance channel value from the input color. The
     color name `color` can optionally be a string with the format ``'color+x'``
@@ -395,21 +471,21 @@ def _get_channel(color, channel, space='hcl'):
     # Interpret channel
     if callable(color) or isinstance(color, Number):
         return color
-    if channel == 'hue':
+    if channel == "hue":
         channel = 0
-    elif channel in ('chroma', 'saturation'):
+    elif channel in ("chroma", "saturation"):
         channel = 1
-    elif channel == 'luminance':
+    elif channel == "luminance":
         channel = 2
     else:
-        raise ValueError(f'Unknown channel {channel!r}.')
+        raise ValueError(f"Unknown channel {channel!r}.")
     # Interpret string or RGB tuple
     offset = 0
     if isinstance(color, str):
-        m = re.search('([-+][0-9.]+)$', color)
+        m = re.search("([-+][0-9.]+)$", color)
         if m:
             offset = float(m.group(0))
-            color = color[:m.start()]
+            color = color[: m.start()]
     return offset + to_xyz(color, space)[channel]
 
 
@@ -437,24 +513,21 @@ def _make_segment_data(values, coords=None, ratios=None):
 
     # Get coordinates
     if not np.iterable(values):
-        raise TypeError('Colors must be iterable, got {values!r}.')
+        raise TypeError("Colors must be iterable, got {values!r}.")
     if coords is not None:
         coords = np.atleast_1d(coords)
         if ratios is not None:
             warnings._warn_proplot(
-                f'Segment coordinates were provided, ignoring '
-                f'ratios={ratios!r}.'
+                f"Segment coordinates were provided, ignoring " f"ratios={ratios!r}."
             )
         if len(coords) != len(values) or coords[0] != 0 or coords[-1] != 1:
-            raise ValueError(
-                f'Coordinates must range from 0 to 1, got {coords!r}.'
-            )
+            raise ValueError(f"Coordinates must range from 0 to 1, got {coords!r}.")
     elif ratios is not None:
         coords = np.atleast_1d(ratios)
         if len(coords) != len(values) - 1:
             raise ValueError(
-                f'Need {len(values) - 1} ratios for {len(values)} colors, '
-                f'but got {len(coords)} ratios.'
+                f"Need {len(values) - 1} ratios for {len(values)} colors, "
+                f"but got {len(coords)} ratios."
             )
         coords = np.concatenate(([0], np.cumsum(coords)))
         coords = coords / np.max(coords)  # normalize to 0-1
@@ -512,11 +585,11 @@ def _make_lookup_table(N, data, gamma=1.0, inverse=False):
     # Allow for *callable* instead of linearly interpolating between segments
     gammas = np.atleast_1d(gamma)
     if np.any(gammas < 0.01) or np.any(gammas > 10):
-        raise ValueError('Gamma can only be in range [0.01,10].')
+        raise ValueError("Gamma can only be in range [0.01,10].")
     if callable(data):
         if len(gammas) > 1:
-            raise ValueError('Only one gamma allowed for functional segmentdata.')
-        x = np.linspace(0, 1, N)**gamma
+            raise ValueError("Only one gamma allowed for functional segmentdata.")
+        x = np.linspace(0, 1, N) ** gamma
         lut = np.array(data(x), dtype=float)
         return lut
 
@@ -524,9 +597,11 @@ def _make_lookup_table(N, data, gamma=1.0, inverse=False):
     data = np.array(data)
     shape = data.shape
     if len(shape) != 2 or shape[1] != 3:
-        raise ValueError('Mapping data must have shape N x 3.')
+        raise ValueError("Mapping data must have shape N x 3.")
     if len(gammas) != 1 and len(gammas) != shape[0] - 1:
-        raise ValueError(f'Expected {shape[0] - 1} gammas for {shape[0]} coords. Got {len(gamma)}.')  # noqa: E501
+        raise ValueError(
+            f"Expected {shape[0] - 1} gammas for {shape[0]} coords. Got {len(gamma)}."
+        )  # noqa: E501
     if len(gammas) == 1:
         gammas = np.repeat(gammas, shape[:1])
 
@@ -535,9 +610,9 @@ def _make_lookup_table(N, data, gamma=1.0, inverse=False):
     y0 = data[:, 1]
     y1 = data[:, 2]
     if x[0] != 0.0 or x[-1] != 1.0:
-        raise ValueError('Data mapping points must start with x=0 and end with x=1.')
+        raise ValueError("Data mapping points must start with x=0 and end with x=1.")
     if np.any(np.diff(x) < 0):
-        raise ValueError('Data mapping points must have x in increasing order.')
+        raise ValueError("Data mapping points must have x in increasing order.")
     x = x * (N - 1)
 
     # Get distances from the segmentdata entry to the *left* for each requested
@@ -564,9 +639,9 @@ def _make_lookup_table(N, data, gamma=1.0, inverse=False):
         if inverse:  # reverse if we are transitioning to *higher* channel value
             reverse = not reverse
         if reverse:
-            offsets[ui:ui + ci] = 1 - (1 - offsets[ui:ui + ci]) ** gamma
+            offsets[ui : ui + ci] = 1 - (1 - offsets[ui : ui + ci]) ** gamma
         else:
-            offsets[ui:ui + ci] **= gamma
+            offsets[ui : ui + ci] **= gamma
 
     # Perform successive linear interpolations rolled up into one equation
     lut = np.zeros((N,), float)
@@ -587,7 +662,7 @@ def _load_colors(path, warn_on_failure=True):
     """
     # Warn or raise error (matches Colormap._from_file behavior)
     if not os.path.exists(path):
-        message = f'Failed to load color data file {path!r}. File not found.'
+        message = f"Failed to load color data file {path!r}. File not found."
         if warn_on_failure:
             warnings._warn_proplot(message)
         else:
@@ -595,16 +670,16 @@ def _load_colors(path, warn_on_failure=True):
 
     # Iterate through lines
     loaded = {}
-    with open(path, 'r') as fh:
+    with open(path, "r") as fh:
         for count, line in enumerate(fh):
             stripped = line.strip()
-            if not stripped or stripped[0] == '#':
+            if not stripped or stripped[0] == "#":
                 continue
-            pair = tuple(item.strip().lower() for item in line.split(':'))
+            pair = tuple(item.strip().lower() for item in line.split(":"))
             if len(pair) != 2 or not REGEX_HEX_SINGLE.match(pair[1]):
                 warnings._warn_proplot(
-                    f'Illegal line #{count + 1} in color file {path!r}:\n'
-                    f'{line!r}\n'
+                    f"Illegal line #{count + 1} in color file {path!r}:\n"
+                    f"{line!r}\n"
                     f'Lines must be formatted as "name: hexcolor".'
                 )
                 continue
@@ -637,8 +712,8 @@ def _standardize_colors(input, space, margin):
         color = input.pop(name, None)
         if color is None:
             continue
-        if 'grey' in name:
-            name = name.replace('grey', 'gray')
+        if "grey" in name:
+            name = name.replace("grey", "gray")
         colors.append((name, color))
         channels.append(to_xyz(color, space=space))
         output[name] = color  # required in case "kept" colors are close to each other
@@ -675,6 +750,7 @@ class _Colormap(object):
     """
     Mixin class used to add some helper methods.
     """
+
     def _get_data(self, ext, alpha=True):
         """
         Return a string containing the colormap colors for saving.
@@ -692,15 +768,15 @@ class _Colormap(object):
         colors = self._lut[:-3, :]
 
         # Get data string
-        if ext == 'hex':
-            data = ', '.join(mcolors.to_hex(color) for color in colors)
-        elif ext in ('txt', 'rgb'):
+        if ext == "hex":
+            data = ", ".join(mcolors.to_hex(color) for color in colors)
+        elif ext in ("txt", "rgb"):
             rgb = mcolors.to_rgba if alpha else mcolors.to_rgb
             data = [rgb(color) for color in colors]
-            data = '\n'.join(' '.join(f'{num:0.6f}' for num in line) for line in data)
+            data = "\n".join(" ".join(f"{num:0.6f}" for num in line) for line in data)
         else:
             raise ValueError(
-                f'Invalid extension {ext!r}. Options are: '
+                f"Invalid extension {ext!r}. Options are: "
                 "'hex', 'txt', 'rgb', 'rgba'."
             )
         return data
@@ -711,12 +787,12 @@ class _Colormap(object):
         leading underscore or more than one identical suffix.
         """
         name = self.name
-        name = name or ''
-        if name[:1] != '_':
-            name = '_' + name
-        suffix = suffix or 'copy'
-        suffix = '_' + suffix
-        if name[-len(suffix):] != suffix:
+        name = name or ""
+        if name[:1] != "_":
+            name = "_" + name
+        suffix = suffix or "copy"
+        suffix = "_" + suffix
+        if name[-len(suffix) :] != suffix:
             name = name + suffix
         return name
 
@@ -736,14 +812,14 @@ class _Colormap(object):
         # Get the folder
         folder = rc.user_folder(subfolder=subfolder)
         if path is not None:
-            path = os.path.expanduser(path or '.')  # interpret empty string as '.'
+            path = os.path.expanduser(path or ".")  # interpret empty string as '.'
             if os.path.isdir(path):
                 folder, path = path, None
         # Get the filename
         if path is None:
             path = os.path.join(folder, self.name)
         if not os.path.splitext(path)[1]:
-            path = path + '.' + ext  # default file extension
+            path = path + "." + ext  # default file extension
         return path
 
     @staticmethod
@@ -756,7 +832,7 @@ class _Colormap(object):
         names = names or ()
         if isinstance(names, str):
             names = (names,)
-        names = ('name', *names)
+        names = ("name", *names)
         args, kwargs = _kwargs_to_args(names, *args, **kwargs)
         if args[0] is not None and args[1] is None:
             args[:2] = (None, args[0])
@@ -772,35 +848,36 @@ class _Colormap(object):
         path = os.path.expanduser(path)
         name, ext = os.path.splitext(os.path.basename(path))
         listed = issubclass(cls, mcolors.ListedColormap)
-        reversed = name[-2:] == '_r'
+        reversed = name[-2:] == "_r"
 
         # Warn if loading failed during `register_cmaps` or `register_cycles`
         # but raise error if user tries to load a file.
         def _warn_or_raise(descrip, error=RuntimeError):
-            prefix = f'Failed to load colormap or color cycle file {path!r}.'
+            prefix = f"Failed to load colormap or color cycle file {path!r}."
             if warn_on_failure:
-                warnings._warn_proplot(prefix + ' ' + descrip)
+                warnings._warn_proplot(prefix + " " + descrip)
             else:
-                raise error(prefix + ' ' + descrip)
+                raise error(prefix + " " + descrip)
+
         if not os.path.exists(path):
-            return _warn_or_raise('File not found.', FileNotFoundError)
+            return _warn_or_raise("File not found.", FileNotFoundError)
 
         # Directly read segmentdata json file
         # NOTE: This is special case! Immediately return name and cmap
         ext = ext[1:]
-        if ext == 'json':
+        if ext == "json":
             if listed:
-                return _warn_or_raise('Cannot load cycles from JSON files.')
+                return _warn_or_raise("Cannot load cycles from JSON files.")
             try:
-                with open(path, 'r') as fh:
+                with open(path, "r") as fh:
                     data = json.load(fh)
             except json.JSONDecodeError:
-                return _warn_or_raise('JSON decoding error.', json.JSONDecodeError)
+                return _warn_or_raise("JSON decoding error.", json.JSONDecodeError)
             kw = {}
-            for key in ('cyclic', 'gamma', 'gamma1', 'gamma2', 'space'):
+            for key in ("cyclic", "gamma", "gamma1", "gamma2", "space"):
                 if key in data:
                     kw[key] = data.pop(key, None)
-            if 'red' in data:
+            if "red" in data:
                 cmap = ContinuousColormap(name, data)
             else:
                 cmap = PerceptualColormap(name, data, **kw)
@@ -809,29 +886,29 @@ class _Colormap(object):
             return cmap
 
         # Read .rgb and .rgba files
-        if ext in ('txt', 'rgb'):
+        if ext in ("txt", "rgb"):
             # Load file
             # NOTE: This appears to be biggest import time bottleneck! Increases
             # time from 0.05s to 0.2s, with numpy loadtxt or with this regex thing.
-            delim = re.compile(r'[,\s]+')
+            delim = re.compile(r"[,\s]+")
             data = [
                 delim.split(line.strip())
                 for line in open(path)
-                if line.strip() and line.strip()[0] != '#'
+                if line.strip() and line.strip()[0] != "#"
             ]
             try:
                 data = [[float(num) for num in line] for line in data]
             except ValueError:
                 return _warn_or_raise(
-                    'Expected a table of comma or space-separated floats.'
+                    "Expected a table of comma or space-separated floats."
                 )
             # Build x-coordinates and standardize shape
             data = np.array(data)
             if data.shape[1] not in (3, 4):
                 return _warn_or_raise(
-                    f'Expected 3 or 4 columns of floats. Got {data.shape[1]} columns.'
+                    f"Expected 3 or 4 columns of floats. Got {data.shape[1]} columns."
                 )
-            if ext[0] != 'x':  # i.e. no x-coordinates specified explicitly
+            if ext[0] != "x":  # i.e. no x-coordinates specified explicitly
                 x = np.linspace(0, 1, data.shape[0])
             else:
                 x, data = data[:, 0], data[:, 1:]
@@ -839,43 +916,41 @@ class _Colormap(object):
         # Load XML files created with scivizcolor
         # Adapted from script found here:
         # https://sciviscolor.org/matlab-matplotlib-pv44/
-        elif ext == 'xml':
+        elif ext == "xml":
             try:
                 doc = ElementTree.parse(path)
             except ElementTree.ParseError:
-                return _warn_or_raise('XML parsing error.', ElementTree.ParseError)
+                return _warn_or_raise("XML parsing error.", ElementTree.ParseError)
             x, data = [], []
-            for s in doc.getroot().findall('.//Point'):
+            for s in doc.getroot().findall(".//Point"):
                 # Verify keys
-                if any(key not in s.attrib for key in 'xrgb'):
+                if any(key not in s.attrib for key in "xrgb"):
                     return _warn_or_raise(
-                        'Missing an x, r, g, or b key inside one or more <Point> tags.'
+                        "Missing an x, r, g, or b key inside one or more <Point> tags."
                     )
                 # Get data
                 color = []
-                for key in 'rgbao':  # o for opacity
+                for key in "rgbao":  # o for opacity
                     if key not in s.attrib:
                         continue
                     color.append(float(s.attrib[key]))
-                x.append(float(s.attrib['x']))
+                x.append(float(s.attrib["x"]))
                 data.append(color)
             # Convert to array
             if not all(
                 len(data[0]) == len(color) and len(color) in (3, 4) for color in data
             ):
                 return _warn_or_raise(
-                    'Unexpected channel number or mixed channels across <Point> tags.'
+                    "Unexpected channel number or mixed channels across <Point> tags."
                 )
 
         # Read hex strings
-        elif ext == 'hex':
+        elif ext == "hex":
             # Read arbitrary format
             string = open(path).read()  # into single string
             data = REGEX_HEX_MULTI.findall(string)
             if len(data) < 2:
-                return _warn_or_raise(
-                    'Failed to find 6-digit or 8-digit HEX strings.'
-                )
+                return _warn_or_raise("Failed to find 6-digit or 8-digit HEX strings.")
             # Convert to array
             x = np.linspace(0, 1, len(data))
             data = [to_rgb(color) for color in data]
@@ -883,9 +958,9 @@ class _Colormap(object):
         # Invalid extension
         else:
             return _warn_or_raise(
-                'Unknown colormap file extension {ext!r}. Options are: '
-                + ', '.join(map(repr, ('json', 'txt', 'rgb', 'hex')))
-                + '.'
+                "Unknown colormap file extension {ext!r}. Options are: "
+                + ", ".join(map(repr, ("json", "txt", "rgb", "hex")))
+                + "."
             )
 
         # Standardize and reverse if necessary to cmap
@@ -911,23 +986,24 @@ class ContinuousColormap(mcolors.LinearSegmentedColormap, _Colormap):
     r"""
     Replacement for `~matplotlib.colors.LinearSegmentedColormap`.
     """
+
     def __str__(self):
-        return type(self).__name__ + f'(name={self.name!r})'
+        return type(self).__name__ + f"(name={self.name!r})"
 
     def __repr__(self):
         string = f" 'name': {self.name!r},\n"
-        if hasattr(self, '_space'):
+        if hasattr(self, "_space"):
             string += f" 'space': {self._space!r},\n"
-        if hasattr(self, '_cyclic'):
+        if hasattr(self, "_cyclic"):
             string += f" 'cyclic': {self._cyclic!r},\n"
         for key, data in self._segmentdata.items():
             if callable(data):
-                string += f' {key!r}: <function>,\n'
+                string += f" {key!r}: <function>,\n"
             else:
                 stop = data[-1][1]
                 start = data[0][2]
-                string += f' {key!r}: [{start:.2f}, ..., {stop:.2f}],\n'
-        return type(self).__name__ + '({\n' + string + '})'
+                string += f" {key!r}: [{start:.2f}, ..., {stop:.2f}],\n"
+        return type(self).__name__ + "({\n" + string + "})"
 
     @docstring._snippet_manager
     def __init__(self, *args, gamma=1, alpha=None, cyclic=False, **kwargs):
@@ -961,14 +1037,14 @@ class ContinuousColormap(mcolors.LinearSegmentedColormap, _Colormap):
         """
         # NOTE: Additional keyword args should raise matplotlib error
         name, segmentdata, N, kwargs = self._pop_args(
-            *args, names=('segmentdata', 'N'), **kwargs
+            *args, names=("segmentdata", "N"), **kwargs
         )
         if not isinstance(segmentdata, dict):
-            raise ValueError(f'Invalid segmentdata {segmentdata}. Must be a dict.')
-        N = _not_none(N, rc['image.lut'])
-        data = _pop_props(segmentdata, 'rgba', 'hsla')
+            raise ValueError(f"Invalid segmentdata {segmentdata}. Must be a dict.")
+        N = _not_none(N, rc["image.lut"])
+        data = _pop_props(segmentdata, "rgba", "hsla")
         if segmentdata:
-            raise ValueError(f'Invalid segmentdata keys {tuple(segmentdata)}.')
+            raise ValueError(f"Invalid segmentdata keys {tuple(segmentdata)}.")
         super().__init__(name, data, N=N, gamma=gamma, **kwargs)
         self._cyclic = cyclic
         if alpha is not None:
@@ -1015,11 +1091,11 @@ class ContinuousColormap(mcolors.LinearSegmentedColormap, _Colormap):
         if not args:
             return self
         if not all(isinstance(cmap, mcolors.LinearSegmentedColormap) for cmap in args):
-            raise TypeError(f'Arguments {args!r} must be LinearSegmentedColormaps.')
+            raise TypeError(f"Arguments {args!r} must be LinearSegmentedColormaps.")
 
         # PerceptualColormap --> ContinuousColormap conversions
         cmaps = [self, *args]
-        spaces = {getattr(cmap, '_space', None) for cmap in cmaps}
+        spaces = {getattr(cmap, "_space", None) for cmap in cmaps}
         to_continuous = len(spaces) > 1  # mixed colorspaces *or* mixed types
         if to_continuous:
             for i, cmap in enumerate(cmaps):
@@ -1030,7 +1106,7 @@ class ContinuousColormap(mcolors.LinearSegmentedColormap, _Colormap):
         # we never interpolate between end colors of different colormaps
         segmentdata = {}
         if name is None:
-            name = '_' + '_'.join(cmap.name for cmap in cmaps)
+            name = "_" + "_".join(cmap.name for cmap in cmaps)
         if not np.iterable(ratios):
             ratios = [1] * len(cmaps)
         ratios = np.asarray(ratios) / np.sum(ratios)
@@ -1043,6 +1119,7 @@ class ContinuousColormap(mcolors.LinearSegmentedColormap, _Colormap):
             # embed 'funcs' into the definition using a keyword argument.
             datas = [cmap._segmentdata[key] for cmap in cmaps]
             if all(map(callable, datas)):  # expand range from x-to-w to 0-1
+
                 def xyy(ix, funcs=datas):  # noqa: E306
                     ix = np.atleast_1d(ix)
                     kx = np.empty(ix.shape)
@@ -1068,23 +1145,23 @@ class ContinuousColormap(mcolors.LinearSegmentedColormap, _Colormap):
 
             else:
                 raise TypeError(
-                    'Cannot merge colormaps with mixed callable '
-                    'and non-callable segment data.'
+                    "Cannot merge colormaps with mixed callable "
+                    "and non-callable segment data."
                 )
             segmentdata[key] = xyy
 
             # Handle gamma values
             ikey = None
-            if key == 'saturation':
-                ikey = 'gamma1'
-            elif key == 'luminance':
-                ikey = 'gamma2'
+            if key == "saturation":
+                ikey = "gamma1"
+            elif key == "luminance":
+                ikey = "gamma2"
             if not ikey or ikey in kwargs:
                 continue
             gamma = []
             callable_ = all(map(callable, datas))
             for cmap in cmaps:
-                igamma = getattr(cmap, '_' + ikey)
+                igamma = getattr(cmap, "_" + ikey)
                 if not np.iterable(igamma):
                     if callable_:
                         igamma = (igamma,)
@@ -1094,8 +1171,8 @@ class ContinuousColormap(mcolors.LinearSegmentedColormap, _Colormap):
             if callable_:
                 if any(igamma != gamma[0] for igamma in gamma[1:]):
                     warnings._warn_proplot(
-                        'Cannot use multiple segment gammas when concatenating '
-                        f'callable segments. Using the first gamma of {gamma[0]}.'
+                        "Cannot use multiple segment gammas when concatenating "
+                        f"callable segments. Using the first gamma of {gamma[0]}."
                     )
                 gamma = gamma[0]
             kwargs[ikey] = gamma
@@ -1153,7 +1230,7 @@ class ContinuousColormap(mcolors.LinearSegmentedColormap, _Colormap):
 
         # Decompose cut into two truncations followed by concatenation
         if 0.5 - offset < left or 0.5 + offset > right:
-            raise ValueError(f'Invalid cut={cut} for left={left} and right={right}.')
+            raise ValueError(f"Invalid cut={cut} for left={left} and right={right}.")
         if name is None:
             name = self._make_name()
         cmap_left = self.truncate(left, 0.5 - offset)
@@ -1164,13 +1241,13 @@ class ContinuousColormap(mcolors.LinearSegmentedColormap, _Colormap):
         args = []
         if cut < 0:
             ratio = 0.5 - 0.5 * abs(cut)  # ratio for flanks on either side
-            space = getattr(self, '_space', None) or 'rgb'
+            space = getattr(self, "_space", None) or "rgb"
             xyza = to_xyza(self(0.5), space=space)
             segmentdata = {
-                key: _make_segment_data(x) for key, x in zip(space + 'a', xyza)
+                key: _make_segment_data(x) for key, x in zip(space + "a", xyza)
             }
             args.append(type(self)(DEFAULT_NAME, segmentdata, self.N))
-            kwargs.setdefault('ratios', (ratio, abs(cut), ratio))
+            kwargs.setdefault("ratios", (ratio, abs(cut), ratio))
         args.append(cmap_right)
 
         return cmap_left.append(*args, name=name, **kwargs)
@@ -1198,19 +1275,19 @@ class ContinuousColormap(mcolors.LinearSegmentedColormap, _Colormap):
         segmentdata = {
             key: (
                 (lambda x, func=data: func(x))
-                if callable(data) else
-                [(1.0 - x, y1, y0) for x, y0, y1 in reversed(data)]
+                if callable(data)
+                else [(1.0 - x, y1, y0) for x, y0, y1 in reversed(data)]
             )
             for key, data in self._segmentdata.items()
         }
 
         # Reverse gammas
         if name is None:
-            name = self._make_name(suffix='r')
-        for key in ('gamma1', 'gamma2'):
+            name = self._make_name(suffix="r")
+        for key in ("gamma1", "gamma2"):
             if key in kwargs:
                 continue
-            gamma = getattr(self, '_' + key, None)
+            gamma = getattr(self, "_" + key, None)
             if gamma is not None and np.iterable(gamma):
                 kwargs[key] = gamma[::-1]
 
@@ -1247,32 +1324,32 @@ class ContinuousColormap(mcolors.LinearSegmentedColormap, _Colormap):
         # cmap.append() embeds functions as keyword arguments, this seems to make it
         # *impossible* to load back up the function with FunctionType (error message:
         # arg 5 (closure) must be tuple). Instead use this brute force workaround.
-        filename = self._parse_path(path, ext='json', subfolder='cmaps')
+        filename = self._parse_path(path, ext="json", subfolder="cmaps")
         _, ext = os.path.splitext(filename)
-        if ext[1:] != 'json':
+        if ext[1:] != "json":
             # Save lookup table colors
             data = self._get_data(ext[1:], alpha=alpha)
-            with open(filename, 'w') as fh:
+            with open(filename, "w") as fh:
                 fh.write(data)
         else:
             # Save segment data itself
             data = {}
             for key, value in self._segmentdata.items():
                 if callable(value):
-                    x = np.linspace(0, 1, rc['image.lut'])  # just save the transitions
+                    x = np.linspace(0, 1, rc["image.lut"])  # just save the transitions
                     y = np.array([value(_) for _ in x]).squeeze()
                     value = np.vstack((x, y, y)).T
                 data[key] = np.asarray(value).astype(float).tolist()
             keys = ()
             if isinstance(self, PerceptualColormap):
-                keys = ('cyclic', 'gamma1', 'gamma2', 'space')
+                keys = ("cyclic", "gamma1", "gamma2", "space")
             elif isinstance(self, ContinuousColormap):
-                keys = ('cyclic', 'gamma')
+                keys = ("cyclic", "gamma")
             for key in keys:  # add all attrs to dictionary
-                data[key] = getattr(self, '_' + key)
-            with open(filename, 'w') as fh:
+                data[key] = getattr(self, "_" + key)
+            with open(filename, "w") as fh:
                 json.dump(data, fh, indent=4)
-        print(f'Saved colormap to {filename!r}.')
+        print(f"Saved colormap to {filename!r}.")
 
     def set_alpha(self, alpha, coords=None, ratios=None):
         """
@@ -1298,7 +1375,7 @@ class ContinuousColormap(mcolors.LinearSegmentedColormap, _Colormap):
         DiscreteColormap.set_alpha
         """
         alpha = _make_segment_data(alpha, coords=coords, ratios=ratios)
-        self._segmentdata['alpha'] = alpha
+        self._segmentdata["alpha"] = alpha
         self._isinit = False
 
     def set_cyclic(self, b):
@@ -1335,11 +1412,11 @@ class ContinuousColormap(mcolors.LinearSegmentedColormap, _Colormap):
         if shift == 0:
             return self
         if name is None:
-            name = self._make_name(suffix='s')
+            name = self._make_name(suffix="s")
         if not self._cyclic:
             warnings._warn_proplot(
-                f'Shifting non-cyclic colormap {self.name!r}. To suppress this '
-                'warning use cmap.set_cyclic(True) or Colormap(..., cyclic=True).'
+                f"Shifting non-cyclic colormap {self.name!r}. To suppress this "
+                "warning use cmap.set_cyclic(True) or Colormap(..., cyclic=True)."
             )
             self._cyclic = True
         ratios = (1 - shift, shift)
@@ -1388,6 +1465,7 @@ class ContinuousColormap(mcolors.LinearSegmentedColormap, _Colormap):
             # the lambda function it gets overwritten in the loop! Must embed
             # the old callable in the new one as a default keyword arg.
             if callable(data):
+
                 def xyy(x, func=data):
                     return func(left + x * (right - left))
 
@@ -1399,7 +1477,7 @@ class ContinuousColormap(mcolors.LinearSegmentedColormap, _Colormap):
                 x = xyy[:, 0]
                 l = np.searchsorted(x, left)  # first x value > left  # noqa
                 r = np.searchsorted(x, right) - 1  # last x value < right
-                xc = xyy[l:r + 1, :].copy()
+                xc = xyy[l : r + 1, :].copy()
                 xl = xyy[l - 1, 1:] + (left - x[l - 1]) * (
                     (xyy[l, 1:] - xyy[l - 1, 1:]) / (x[l] - x[l - 1])
                 )
@@ -1411,26 +1489,26 @@ class ContinuousColormap(mcolors.LinearSegmentedColormap, _Colormap):
 
             # Retain the corresponding gamma *segments*
             segmentdata[key] = xyy
-            if key == 'saturation':
-                ikey = 'gamma1'
-            elif key == 'luminance':
-                ikey = 'gamma2'
+            if key == "saturation":
+                ikey = "gamma1"
+            elif key == "luminance":
+                ikey = "gamma2"
             else:
                 continue
             if ikey in kwargs:
                 continue
-            gamma = getattr(self, '_' + ikey)
+            gamma = getattr(self, "_" + ikey)
             if np.iterable(gamma):
                 if callable(xyy):
                     if any(igamma != gamma[0] for igamma in gamma[1:]):
                         warnings._warn_proplot(
-                            'Cannot use multiple segment gammas when '
-                            'truncating colormap. Using the first gamma '
-                            f'of {gamma[0]}.'
+                            "Cannot use multiple segment gammas when "
+                            "truncating colormap. Using the first gamma "
+                            f"of {gamma[0]}."
                         )
                     gamma = gamma[0]
                 else:
-                    igamma = gamma[l - 1:r + 1]
+                    igamma = gamma[l - 1 : r + 1]
                     if len(igamma) == 0:  # TODO: issue warning?
                         gamma = gamma[0]
                     else:
@@ -1440,8 +1518,14 @@ class ContinuousColormap(mcolors.LinearSegmentedColormap, _Colormap):
         return self.copy(name, segmentdata, **kwargs)
 
     def copy(
-        self, name=None, segmentdata=None, N=None, *,
-        alpha=None, gamma=None, cyclic=None
+        self,
+        name=None,
+        segmentdata=None,
+        N=None,
+        *,
+        alpha=None,
+        gamma=None,
+        cyclic=None,
     ):
         """
         Return a new colormap with relevant properties copied from this one
@@ -1471,8 +1555,7 @@ class ContinuousColormap(mcolors.LinearSegmentedColormap, _Colormap):
         if N is None:
             N = self.N
         cmap = ContinuousColormap(
-            name, segmentdata, N,
-            alpha=alpha, gamma=gamma, cyclic=cyclic
+            name, segmentdata, N, alpha=alpha, gamma=gamma, cyclic=cyclic
         )
         cmap._rgba_bad = self._rgba_bad
         cmap._rgba_under = self._rgba_under
@@ -1505,7 +1588,7 @@ class ContinuousColormap(mcolors.LinearSegmentedColormap, _Colormap):
         if isinstance(samples, Integral):
             samples = np.linspace(0, 1, samples)
         elif not np.iterable(samples):
-            raise TypeError('Samples must be integer or iterable.')
+            raise TypeError("Samples must be integer or iterable.")
         samples = np.asarray(samples)
         colors = self(samples)
         if name is None:
@@ -1562,11 +1645,11 @@ class ContinuousColormap(mcolors.LinearSegmentedColormap, _Colormap):
         """
         # Get coordinates
         name, colors, ratios, kwargs = cls._pop_args(
-            *args, names=('colors', 'ratios'), **kwargs
+            *args, names=("colors", "ratios"), **kwargs
         )
         coords = None
         if not np.iterable(colors):
-            raise TypeError('Colors must be iterable.')
+            raise TypeError("Colors must be iterable.")
         if (
             np.iterable(colors[0])
             and len(colors[0]) == 2
@@ -1576,19 +1659,16 @@ class ContinuousColormap(mcolors.LinearSegmentedColormap, _Colormap):
         colors = [to_rgba(color) for color in colors]
 
         # Build segmentdata
-        keys = ('red', 'green', 'blue', 'alpha')
+        keys = ("red", "green", "blue", "alpha")
         cdict = {}
         for key, values in zip(keys, zip(*colors)):
             cdict[key] = _make_segment_data(values, coords, ratios)
         return cls(name, cdict, **kwargs)
 
     # Deprecated
-    to_listed = warnings._rename_objs(
-        '0.8.0',
-        to_listed=to_discrete
-    )
+    to_listed = warnings._rename_objs("0.8.0", to_listed=to_discrete)
     concatenate, punched, truncated, updated = warnings._rename_objs(
-        '0.6.0',
+        "0.6.0",
         concatenate=append,
         punched=cut,
         truncated=truncate,
@@ -1600,15 +1680,16 @@ class DiscreteColormap(mcolors.ListedColormap, _Colormap):
     r"""
     Replacement for `~matplotlib.colors.ListedColormap`.
     """
+
     def __str__(self):
-        return f'DiscreteColormap(name={self.name!r})'
+        return f"DiscreteColormap(name={self.name!r})"
 
     def __repr__(self):
         colors = [c if isinstance(c, str) else to_hex(c) for c in self.colors]
-        string = 'DiscreteColormap({\n'
+        string = "DiscreteColormap({\n"
         string += f" 'name': {self.name!r},\n"
         string += f" 'colors': {colors!r},\n"
-        string += '})'
+        string += "})"
         return string
 
     def __init__(self, colors, name=None, N=None, alpha=None, **kwargs):
@@ -1680,10 +1761,10 @@ class DiscreteColormap(mcolors.ListedColormap, _Colormap):
         if not args:
             return self
         if not all(isinstance(cmap, mcolors.ListedColormap) for cmap in args):
-            raise TypeError(f'Arguments {args!r} must be DiscreteColormap.')
+            raise TypeError(f"Arguments {args!r} must be DiscreteColormap.")
         cmaps = (self, *args)
         if name is None:
-            name = '_' + '_'.join(cmap.name for cmap in cmaps)
+            name = "_" + "_".join(cmap.name for cmap in cmaps)
         colors = [color for cmap in cmaps for color in cmap.colors]
         N = _not_none(N, len(colors))
         return self.copy(colors, name, N, **kwargs)
@@ -1711,12 +1792,12 @@ class DiscreteColormap(mcolors.ListedColormap, _Colormap):
         --------
         ContinuousColormap.save
         """
-        filename = self._parse_path(path, ext='hex', subfolder='cycles')
+        filename = self._parse_path(path, ext="hex", subfolder="cycles")
         _, ext = os.path.splitext(filename)
         data = self._get_data(ext[1:], alpha=alpha)
-        with open(filename, 'w') as fh:
+        with open(filename, "w") as fh:
             fh.write(data)
-        print(f'Saved colormap to {filename!r}.')
+        print(f"Saved colormap to {filename!r}.")
 
     def set_alpha(self, alpha):
         """
@@ -1753,7 +1834,7 @@ class DiscreteColormap(mcolors.ListedColormap, _Colormap):
         matplotlib.colors.ListedColormap.reversed
         """
         if name is None:
-            name = self._make_name(suffix='r')
+            name = self._make_name(suffix="r")
         colors = self.colors[::-1]
         cmap = self.copy(colors, name, **kwargs)
         cmap._rgba_under, cmap._rgba_over = cmap._rgba_over, cmap._rgba_under
@@ -1777,7 +1858,7 @@ class DiscreteColormap(mcolors.ListedColormap, _Colormap):
         if not shift:
             return self
         if name is None:
-            name = self._make_name(suffix='s')
+            name = self._make_name(suffix="s")
         shift = shift % len(self.colors)
         colors = list(self.colors)
         colors = colors[shift:] + colors[:shift]
@@ -1864,7 +1945,7 @@ class DiscreteColormap(mcolors.ListedColormap, _Colormap):
 
     # Rename methods
     concatenate, truncated, updated = warnings._rename_objs(
-        '0.6.0',
+        "0.6.0",
         concatenate=append,
         truncated=truncate,
         updated=copy,
@@ -1876,10 +1957,17 @@ class PerceptualColormap(ContinuousColormap):
     A `ContinuousColormap` with linear transitions across hue, saturation,
     and luminance rather than red, blue, and green.
     """
+
     @docstring._snippet_manager
     def __init__(
-        self, *args, space=None, clip=True, gamma=None, gamma1=None, gamma2=None,
-        **kwargs
+        self,
+        *args,
+        space=None,
+        clip=True,
+        gamma=None,
+        gamma1=None,
+        gamma2=None,
+        **kwargs,
     ):
         """
         Parameters
@@ -1929,14 +2017,14 @@ class PerceptualColormap(ContinuousColormap):
         """
         # Checks
         name, segmentdata, N, kwargs = self._pop_args(
-            *args, names=('segmentdata', 'N'), **kwargs
+            *args, names=("segmentdata", "N"), **kwargs
         )
-        data = _pop_props(segmentdata, 'hsla')
+        data = _pop_props(segmentdata, "hsla")
         if segmentdata:
-            raise ValueError(f'Invalid segmentdata keys {tuple(segmentdata)}.')
+            raise ValueError(f"Invalid segmentdata keys {tuple(segmentdata)}.")
         space = _not_none(space, DEFAULT_SPACE).lower()
-        if space not in ('rgb', 'hsv', 'hpl', 'hsl', 'hcl'):
-            raise ValueError(f'Unknown colorspace {space!r}.')
+        if space not in ("rgb", "hsv", "hpl", "hsl", "hcl"):
+            raise ValueError(f"Unknown colorspace {space!r}.")
         # Convert color strings to channel values
         for key, array in data.items():
             if callable(array):  # permit callable
@@ -1959,7 +2047,7 @@ class PerceptualColormap(ContinuousColormap):
         each value in the lookup table from ``self._space`` to RGB.
         """
         # First generate the lookup table
-        channels = ('hue', 'saturation', 'luminance')
+        channels = ("hue", "saturation", "luminance")
         inverses = (False, False, True)  # weight low chroma, high luminance
         gammas = (1.0, self._gamma1, self._gamma2)
         self._lut_hsl = np.ones((self.N + 3, 4), float)  # fill
@@ -1967,9 +2055,9 @@ class PerceptualColormap(ContinuousColormap):
             self._lut_hsl[:-3, i] = _make_lookup_table(
                 self.N, self._segmentdata[channel], gamma, inverse
             )
-        if 'alpha' in self._segmentdata:
+        if "alpha" in self._segmentdata:
             self._lut_hsl[:-3, 3] = _make_lookup_table(
-                self.N, self._segmentdata['alpha']
+                self.N, self._segmentdata["alpha"]
             )
         self._lut_hsl[:-3, 0] %= 360
 
@@ -2001,9 +2089,18 @@ class PerceptualColormap(ContinuousColormap):
         self._init()
 
     def copy(
-        self, name=None, segmentdata=None, N=None, *,
-        alpha=None, gamma=None, cyclic=None,
-        clip=None, gamma1=None, gamma2=None, space=None
+        self,
+        name=None,
+        segmentdata=None,
+        N=None,
+        *,
+        alpha=None,
+        gamma=None,
+        cyclic=None,
+        clip=None,
+        gamma1=None,
+        gamma2=None,
+        space=None,
     ):
         """
         Return a new colormap with relevant properties copied from this one
@@ -2041,9 +2138,15 @@ class PerceptualColormap(ContinuousColormap):
         if N is None:
             N = self.N
         cmap = PerceptualColormap(
-            name, segmentdata, N,
-            alpha=alpha, clip=clip, cyclic=cyclic,
-            gamma1=gamma1, gamma2=gamma2, space=space
+            name,
+            segmentdata,
+            N,
+            alpha=alpha,
+            clip=clip,
+            cyclic=cyclic,
+            gamma1=gamma1,
+            gamma2=gamma2,
+            space=space,
         )
         cmap._rgba_bad = self._rgba_bad
         cmap._rgba_under = self._rgba_under
@@ -2077,7 +2180,7 @@ class PerceptualColormap(ContinuousColormap):
 
     @classmethod
     @docstring._snippet_manager
-    @warnings._rename_kwargs('0.7.0', fade='saturation', shade='luminance')
+    @warnings._rename_kwargs("0.7.0", fade="saturation", shade="luminance")
     def from_color(cls, *args, **kwargs):
         """
         Return a simple monochromatic "sequential" colormap that blends from white
@@ -2117,22 +2220,24 @@ class PerceptualColormap(ContinuousColormap):
         PerceptualColormap.from_list
         """
         name, color, space, kwargs = cls._pop_args(
-            *args, names=('color', 'space'), **kwargs
+            *args, names=("color", "space"), **kwargs
         )
         space = _not_none(space, DEFAULT_SPACE).lower()
-        props = _pop_props(kwargs, 'hsla')
-        if props.get('hue', None) is not None:
+        props = _pop_props(kwargs, "hsla")
+        if props.get("hue", None) is not None:
             raise TypeError("from_color() got an unexpected keyword argument 'hue'")
         hue, saturation, luminance, alpha = to_xyza(color, space)
-        alpha_fade = props.pop('alpha', 1)
-        luminance_fade = props.pop('luminance', 100)
-        saturation_fade = props.pop('saturation', saturation)
+        alpha_fade = props.pop("alpha", 1)
+        luminance_fade = props.pop("luminance", 100)
+        saturation_fade = props.pop("saturation", saturation)
         return cls.from_hsl(
-            name, hue=hue, space=space,
+            name,
+            hue=hue,
+            space=space,
             alpha=(alpha_fade, alpha),
             saturation=(saturation_fade, saturation),
             luminance=(luminance_fade, luminance),
-            **kwargs
+            **kwargs,
         )
 
     @classmethod
@@ -2185,15 +2290,15 @@ class PerceptualColormap(ContinuousColormap):
         PerceptualColormap.from_list
         """
         name, space, ratios, kwargs = cls._pop_args(
-            *args, names=('space', 'ratios'), **kwargs
+            *args, names=("space", "ratios"), **kwargs
         )
         cdict = {}
-        props = _pop_props(kwargs, 'hsla')
+        props = _pop_props(kwargs, "hsla")
         for key, default in (
-            ('hue', 0),
-            ('saturation', 100),
-            ('luminance', (100, 20)),
-            ('alpha', 1),
+            ("hue", 0),
+            ("saturation", 100),
+            ("luminance", (100, 20)),
+            ("alpha", 1),
         ):
             value = props.pop(key, default)
             cdict[key] = _make_segment_data(value, ratios=ratios)
@@ -2234,20 +2339,21 @@ class PerceptualColormap(ContinuousColormap):
         """
         # Get coordinates
         coords = None
-        space = kwargs.get('space', DEFAULT_SPACE).lower()
+        space = kwargs.get("space", DEFAULT_SPACE).lower()
         name, colors, ratios, kwargs = cls._pop_args(
-            *args, names=('colors', 'ratios'), **kwargs
+            *args, names=("colors", "ratios"), **kwargs
         )
         if not np.iterable(colors):
-            raise ValueError(f'Colors must be iterable, got colors={colors!r}')
+            raise ValueError(f"Colors must be iterable, got colors={colors!r}")
         if (
-            np.iterable(colors[0]) and len(colors[0]) == 2
+            np.iterable(colors[0])
+            and len(colors[0]) == 2
             and not isinstance(colors[0], str)
         ):
             coords, colors = zip(*colors)
 
         # Build segmentdata
-        keys = ('hue', 'saturation', 'luminance', 'alpha')
+        keys = ("hue", "saturation", "luminance", "alpha")
         hslas = [to_xyza(color, space) for color in colors]
         cdict = {}
         for key, values in zip(keys, zip(*hslas)):
@@ -2255,7 +2361,7 @@ class PerceptualColormap(ContinuousColormap):
 
         # Adjust grays
         if adjust_grays:
-            hues = cdict['hue']  # segment data
+            hues = cdict["hue"]  # segment data
             for i, color in enumerate(colors):
                 rgb = to_rgb(color)
                 if isinstance(color, str) and REGEX_ADJUST.match(color):
@@ -2272,8 +2378,7 @@ class PerceptualColormap(ContinuousColormap):
 
     # Deprecated
     to_linear_segmented = warnings._rename_objs(
-        '0.8.0',
-        to_linear_segmented=to_continuous
+        "0.8.0", to_linear_segmented=to_continuous
     )
 
 
@@ -2315,11 +2420,11 @@ def _sanitize_levels(levels, minsize=2):
     # NOTE: Matplotlib does not support datetime colormap levels as of 3.5
     levels = inputs._to_numpy_array(levels)
     if levels.ndim != 1 or levels.size < minsize:
-        raise ValueError(f'Levels {levels} must be a 1D array with size >= {minsize}.')
+        raise ValueError(f"Levels {levels} must be a 1D array with size >= {minsize}.")
     if isinstance(levels, ma.core.MaskedArray):
         levels = levels.filled(np.nan)
     if not inputs._is_numeric(levels) or not np.all(np.isfinite(levels)):
-        raise ValueError(f'Levels {levels} does not support non-numeric cmap levels.')
+        raise ValueError(f"Levels {levels} does not support non-numeric cmap levels.")
     diffs = np.sign(np.diff(levels))
     if np.all(diffs == 1):
         descending = False
@@ -2327,7 +2432,7 @@ def _sanitize_levels(levels, minsize=2):
         descending = True
         levels = levels[::-1]
     else:
-        raise ValueError(f'Levels {levels} must be monotonic.')
+        raise ValueError(f"Levels {levels} must be monotonic.")
     return levels, descending
 
 
@@ -2336,16 +2441,23 @@ class DiscreteNorm(mcolors.BoundaryNorm):
     Meta-normalizer that discretizes the possible color values returned by
     arbitrary continuous normalizers given a sequence of level boundaries.
     """
+
     # See this post: https://stackoverflow.com/a/48614231/4970632
     # WARNING: Must be child of BoundaryNorm. Many methods in ColorBarBase
     # test for class membership, crucially including _process_values(), which
     # if it doesn't detect BoundaryNorm will try to use DiscreteNorm.inverse().
     @warnings._rename_kwargs(
-        '0.7.0', extend='unique', descending='DiscreteNorm(descending_levels)'
+        "0.7.0", extend="unique", descending="DiscreteNorm(descending_levels)"
     )
     def __init__(
-        self, levels,
-        norm=None, unique=None, step=None, clip=False, ticks=None, labels=None
+        self,
+        levels,
+        norm=None,
+        unique=None,
+        step=None,
+        clip=False,
+        ticks=None,
+        labels=None,
     ):
         """
         Parameters
@@ -2404,19 +2516,19 @@ class DiscreteNorm(mcolors.BoundaryNorm):
         if step is None:
             step = 1.0
         if unique is None:
-            unique = 'neither'
+            unique = "neither"
         if not norm:
             norm = mcolors.Normalize()
         elif isinstance(norm, mcolors.BoundaryNorm):
-            raise ValueError('Normalizer cannot be instance of BoundaryNorm.')
+            raise ValueError("Normalizer cannot be instance of BoundaryNorm.")
         elif not isinstance(norm, mcolors.Normalize):
-            raise ValueError('Normalizer must be instance of Normalize.')
-        uniques = ('min', 'max', 'both', 'neither')
+            raise ValueError("Normalizer must be instance of Normalize.")
+        uniques = ("min", "max", "both", "neither")
         if unique not in uniques:
             raise ValueError(
-                f'Unknown unique setting {unique!r}. Options are: '
-                + ', '.join(map(repr, uniques))
-                + '.'
+                f"Unknown unique setting {unique!r}. Options are: "
+                + ", ".join(map(repr, uniques))
+                + "."
             )
 
         # Process level boundaries and centers
@@ -2428,7 +2540,7 @@ class DiscreteNorm(mcolors.BoundaryNorm):
         vmin = norm.vmin = np.min(levels)
         vmax = norm.vmax = np.max(levels)
         bins, _ = _sanitize_levels(norm(levels))
-        vcenter = getattr(norm, 'vcenter', None)
+        vcenter = getattr(norm, "vcenter", None)
         mids = np.zeros((levels.size + 1,))
         mids[1:-1] = 0.5 * (levels[1:] + levels[:-1])
         mids[0], mids[-1] = mids[1], mids[-2]
@@ -2442,9 +2554,9 @@ class DiscreteNorm(mcolors.BoundaryNorm):
         # minimum 0 maximum 1, would mess up color distribution. However this is still
         # not perfect... get asymmetric color intensity either side of central point.
         # So we add special handling for diverging norms below to improve symmetry.
-        if unique in ('min', 'both'):
+        if unique in ("min", "both"):
             mids[0] += step * (mids[1] - mids[2])
-        if unique in ('max', 'both'):
+        if unique in ("max", "both"):
             mids[-1] += step * (mids[-2] - mids[-3])
         mmin, mmax = np.min(mids), np.max(mids)
         if vcenter is None:
@@ -2523,7 +2635,7 @@ class DiscreteNorm(mcolors.BoundaryNorm):
         ValueError
             Inversion after discretization is impossible.
         """
-        raise ValueError('DiscreteNorm is not invertible.')
+        raise ValueError("DiscreteNorm is not invertible.")
 
     @property
     def descending(self):
@@ -2538,6 +2650,7 @@ class SegmentedNorm(mcolors.Normalize):
     Normalizer that scales data linearly with respect to the
     interpolated index in an arbitrary monotonic level sequence.
     """
+
     def __init__(self, levels, vmin=None, vmax=None, clip=False):
         """
         Parameters
@@ -2633,12 +2746,11 @@ class DivergingNorm(mcolors.Normalize):
     Normalizer that ensures some central data value lies at the central
     colormap color. The default central value is ``0``.
     """
-    def __str__(self):
-        return type(self).__name__ + f'(center={self.vcenter!r})'
 
-    def __init__(
-        self, vcenter=0, vmin=None, vmax=None, fair=True, clip=None
-    ):
+    def __str__(self):
+        return type(self).__name__ + f"(center={self.vcenter!r})"
+
+    def __init__(self, vcenter=0, vmin=None, vmax=None, fair=True, clip=None):
         """
         Parameters
         ----------
@@ -2690,7 +2802,7 @@ class DivergingNorm(mcolors.Normalize):
         if clip:  # note that np.clip can handle masked arrays
             value = np.clip(value, self.vmin, self.vmax)
         if self.vmin > self.vmax:
-            raise ValueError('vmin must be less than or equal to vmax.')
+            raise ValueError("vmin must be less than or equal to vmax.")
         elif self.vmin == self.vmax:
             x = [self.vmin, self.vmax]
             y = [0.0, 0.0]
@@ -2730,7 +2842,7 @@ def _init_color_database():
     database = mcolors._colors_full_map
     if not isinstance(database, ColorDatabase):
         database = mcolors._colors_full_map = ColorDatabase(database)
-        if hasattr(mcolors, 'colorConverter'):  # suspect deprecation is coming soon
+        if hasattr(mcolors, "colorConverter"):  # suspect deprecation is coming soon
             mcolors.colorConverter.cache = database.cache
             mcolors.colorConverter.colors = database
     return database
@@ -2742,7 +2854,10 @@ def _init_cmap_database():
     """
     # WARNING: Skip over the matplotlib native duplicate entries
     # with suffixes '_r' and '_shifted'.
-    attr = '_cmap_registry' if hasattr(mcm, '_cmap_registry') else 'cmap_d'
+    for prop in ["_cmap_registry", "cmap_d", "_colormaps"]:
+        if hasattr(mcm, prop):
+            attr = prop
+            break
     database = getattr(mcm, attr)
     if mcm.get_cmap is not _get_cmap:
         mcm.get_cmap = _get_cmap
@@ -2750,8 +2865,9 @@ def _init_cmap_database():
         mcm.register_cmap = _register_cmap
     if not isinstance(database, ColormapDatabase):
         database = {
-            key: value for key, value in database.items()
-            if key[-2:] != '_r' and key[-8:] != '_shifted'
+            key: value
+            for key, value in database.items()
+            if key[-2:] != "_r" and key[-8:] != "_shifted"
         }
         database = ColormapDatabase(database)
         setattr(mcm, attr, database)
@@ -2759,6 +2875,8 @@ def _init_cmap_database():
 
 
 _mpl_register_cmap = mcm.register_cmap
+
+
 @functools.wraps(_mpl_register_cmap)  # noqa: E302
 def _register_cmap(*args, **kwargs):
     """
@@ -2767,7 +2885,7 @@ def _register_cmap(*args, **kwargs):
     and triggers 100 warnings when importing seaborn.
     """
     with warnings.catch_warnings():
-        warnings.simplefilter('ignore', UserWarning)
+        warnings.simplefilter("ignore", UserWarning)
         return _mpl_register_cmap(*args, **kwargs)
 
 
@@ -2779,7 +2897,7 @@ def _get_cmap(name=None, lut=None):
     because matplotlib now uses _check_in_list with cmap dictionary keys.
     """
     if name is None:
-        name = rc['image.cmap']
+        name = rc["image.cmap"]
     if isinstance(name, mcolors.Colormap):
         return name
     cmap = _cmap_database[name]
@@ -2794,21 +2912,21 @@ def _get_cmap_subtype(name, subtype):
     a useful error message that omits colormaps from other classes.
     """
     # NOTE: Right now this is just used in rc validation but could be used elsewhere
-    if subtype == 'discrete':
+    if subtype == "discrete":
         cls = DiscreteColormap
-    elif subtype == 'continuous':
+    elif subtype == "continuous":
         cls = ContinuousColormap
-    elif subtype == 'perceptual':
+    elif subtype == "perceptual":
         cls = PerceptualColormap
     else:
-        raise RuntimeError(f'Invalid subtype {subtype!r}.')
+        raise RuntimeError(f"Invalid subtype {subtype!r}.")
     cmap = _cmap_database.get(name, None)
     if not isinstance(cmap, cls):
         names = sorted(k for k, v in _cmap_database.items() if isinstance(v, cls))
         raise ValueError(
-            f'Invalid {subtype} colormap name {name!r}. Options are: '
-            + ', '.join(map(repr, names))
-            + '.'
+            f"Invalid {subtype} colormap name {name!r}. Options are: "
+            + ", ".join(map(repr, names))
+            + "."
         )
     return cmap
 
@@ -2821,9 +2939,9 @@ def _translate_cmap(cmap, lut=None, cyclic=None, listedthresh=None):
     # Parse args
     # WARNING: Apply default 'cyclic' property to native matplotlib colormaps
     # based on known names. Maybe slightly dangerous but cleanest approach
-    lut = _not_none(lut, rc['image.lut'])
+    lut = _not_none(lut, rc["image.lut"])
     cyclic = _not_none(cyclic, cmap.name and cmap.name.lower() in CMAPS_CYCLIC)
-    listedthresh = _not_none(listedthresh, rc['cmap.listedthresh'])
+    listedthresh = _not_none(listedthresh, rc["cmap.listedthresh"])
 
     # Translate the colormap
     # WARNING: Here we ignore 'N' in order to respect proplotrc lut sizes
@@ -2847,8 +2965,8 @@ def _translate_cmap(cmap, lut=None, cyclic=None, listedthresh=None):
         pass
     else:
         raise ValueError(
-            f'Invalid colormap type {type(cmap).__name__!r}. '
-            'Must be instance of matplotlib.colors.Colormap.'
+            f"Invalid colormap type {type(cmap).__name__!r}. "
+            "Must be instance of matplotlib.colors.Colormap."
         )
 
     # Apply hidden settings
@@ -2863,6 +2981,7 @@ class _ColorCache(dict):
     """
     Replacement for the native color cache.
     """
+
     def __getitem__(self, key):
         """
         Get the standard color, colormap color, or color cycle color.
@@ -2890,15 +3009,15 @@ class _ColorCache(dict):
         if isinstance(cmap, DiscreteColormap):
             if not 0 <= arg[1] < len(cmap.colors):
                 raise ValueError(
-                    f'Color cycle sample for {arg[0]!r} cycle must be '
-                    f'between 0 and {len(cmap.colors) - 1}, got {arg[1]}.'
+                    f"Color cycle sample for {arg[0]!r} cycle must be "
+                    f"between 0 and {len(cmap.colors) - 1}, got {arg[1]}."
                 )
             rgba = cmap.colors[arg[1]]  # draw from list of colors
         else:
             if not 0 <= arg[1] <= 1:
                 raise ValueError(
-                    f'Colormap sample for {arg[0]!r} colormap must be '
-                    f'between 0 and 1, got {arg[1]}.'
+                    f"Colormap sample for {arg[0]!r} colormap must be "
+                    f"between 0 and 1, got {arg[1]}."
                 )
             rgba = cmap(arg[1])  # get color selection
         # Return the colormap value
@@ -2912,10 +3031,11 @@ class ColorDatabase(MutableMapping, dict):
     Dictionary subclass used to replace the builtin matplotlib color database.
     See `~ColorDatabase.__getitem__` for details.
     """
+
     _colors_replace = (
-        ('grey', 'gray'),  # British --> American synonyms
-        ('ochre', 'ocher'),  # ...
-        ('kelley', 'kelly'),  # backwards compatibility to correct spelling
+        ("grey", "gray"),  # British --> American synonyms
+        ("ochre", "ocher"),  # ...
+        ("kelley", "kelly"),  # backwards compatibility to correct spelling
     )
 
     def __iter__(self):
@@ -2974,7 +3094,7 @@ class ColorDatabase(MutableMapping, dict):
         Parse the color key. Currently this just translates grays.
         """
         if not isinstance(key, str):
-            raise ValueError(f'Invalid color name {key!r}. Must be string.')
+            raise ValueError(f"Invalid color name {key!r}. Must be string.")
         if isinstance(key, str) and len(key) > 1:  # ignore base colors
             key = key.lower()
             for sub, rep in self._colors_replace:
@@ -2994,8 +3114,9 @@ class ColormapDatabase(MutableMapping, dict):
     colormap registry. See `~ColormapDatabase.__getitem__` and
     `~ColormapDatabase.__setitem__` for details.
     """
-    _regex_grays = re.compile(r'\A(grays)(_r|_s)*\Z', flags=re.IGNORECASE)
-    _regex_suffix = re.compile(r'(_r|_s)*\Z', flags=re.IGNORECASE)
+
+    _regex_grays = re.compile(r"\A(grays)(_r|_s)*\Z", flags=re.IGNORECASE)
+    _regex_suffix = re.compile(r"(_r|_s)*\Z", flags=re.IGNORECASE)
 
     def __iter__(self):
         yield from dict.__iter__(self)
@@ -3048,20 +3169,20 @@ class ColormapDatabase(MutableMapping, dict):
         # helpfully "redirect" user to SciVisColor cmap when they are trying to
         # generate open-color monochromatic cmaps and would disallow some color names
         if isinstance(key, str):
-            test = self._regex_suffix.sub('', key)
+            test = self._regex_suffix.sub("", key)
         else:
             test = None
         if not self._has_item(test) and test in CMAPS_REMOVED:
             version = CMAPS_REMOVED[test]
             raise ValueError(
-                f'The colormap name {key!r} was removed in version {version}.'
+                f"The colormap name {key!r} was removed in version {version}."
             )
         if not self._has_item(test) and test in CMAPS_RENAMED:
             test_new, version = CMAPS_RENAMED[test]
             warnings._warn_proplot(
-                f'The colormap name {test!r} was deprecated in version {version} '
-                f'and may be removed in {warnings._next_release()}. Please use '
-                f'the colormap name {test_new!r} instead.'
+                f"The colormap name {test!r} was deprecated in version {version} "
+                f"and may be removed in {warnings._next_release()}. Please use "
+                f"the colormap name {test_new!r} instead."
             )
             key = re.sub(test, test_new, key, flags=re.IGNORECASE)
         return key
@@ -3072,11 +3193,11 @@ class ColormapDatabase(MutableMapping, dict):
         """
         # Sanitize key
         if not isinstance(key, str):
-            raise KeyError(f'Invalid key {key!r}. Key must be a string.')
+            raise KeyError(f"Invalid key {key!r}. Key must be a string.")
         key = key.lower()
-        key = self._regex_grays.sub(r'greys\2', key)
+        key = self._regex_grays.sub(r"greys\2", key)
         # Mirror diverging
-        reverse = key[-2:] == '_r'
+        reverse = key[-2:] == "_r"
         if reverse:
             key = key[:-2]
         if mirror and not self._has_item(key):  # avoid recursion here
@@ -3085,7 +3206,7 @@ class ColormapDatabase(MutableMapping, dict):
                 reverse = not reverse
                 key = key_mirror
         if reverse:
-            key = key + '_r'
+            key = key + "_r"
         return key
 
     def _has_item(self, key):
@@ -3101,10 +3222,10 @@ class ColormapDatabase(MutableMapping, dict):
         # Sanitize key
         key = self._translate_deprecated(key)
         key = self._translate_key(key, mirror=True)
-        shift = key[-2:] == '_s' and not self._has_item(key)
+        shift = key[-2:] == "_s" and not self._has_item(key)
         if shift:
             key = key[:-2]
-        reverse = key[-2:] == '_r' and not self._has_item(key)
+        reverse = key[-2:] == "_r" and not self._has_item(key)
         if reverse:
             key = key[:-2]
         # Retrieve colormap
@@ -3112,9 +3233,9 @@ class ColormapDatabase(MutableMapping, dict):
             value = dict.__getitem__(self, key)  # may raise keyerror
         except KeyError:
             raise KeyError(
-                f'Invalid colormap or color cycle name {key!r}. Options are: '
-                + ', '.join(map(repr, self))
-                + '.'
+                f"Invalid colormap or color cycle name {key!r}. Options are: "
+                + ", ".join(map(repr, self))
+                + "."
             )
         # Modify colormap
         if reverse:
@@ -3128,9 +3249,9 @@ class ColormapDatabase(MutableMapping, dict):
         Add the colormap after validating and converting.
         """
         if not isinstance(key, str):
-            raise KeyError(f'Invalid key {key!r}. Must be string.')
+            raise KeyError(f"Invalid key {key!r}. Must be string.")
         if not isinstance(value, mcolors.Colormap):
-            raise ValueError('Object is not a colormap.')
+            raise ValueError("Object is not a colormap.")
         key = self._translate_key(key, mirror=False)
         value = _translate_cmap(value)
         dict.__setitem__(self, key, value)
@@ -3147,7 +3268,7 @@ _color_database = _init_color_database()
     PerceptuallyUniformColormap,
     LinearSegmentedNorm,
 ) = warnings._rename_objs(  # noqa: E501
-    '0.8.0',
+    "0.8.0",
     ListedColormap=DiscreteColormap,
     LinearSegmentedColormap=ContinuousColormap,
     PerceptuallyUniformColormap=PerceptualColormap,
