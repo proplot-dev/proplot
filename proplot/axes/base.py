@@ -1141,10 +1141,15 @@ class Axes(maxes.Axes):
         # NOTE: This also adds the guides._update_ticks() monkey patch that triggers
         # updates to DiscreteLocator when parent axes is drawn.
         obj = cax._colorbar_fill = cax.figure.colorbar(
-            mappable, cax=cax, ticks=locator, format=formatter,
-            drawedges=grid, extendfrac=extendfrac, **kwargs
+            mappable,
+            cax=cax,
+            ticks=locator,
+            format=formatter,
+            drawedges=grid,
+            extendfrac=extendfrac,
+            **kwargs,
         )
-        obj.minorlocator = minorlocator  # backwards compatibility
+        # obj.minorlocator = minorlocator  # backwards compatibility
         obj.update_ticks = guides._update_ticks.__get__(obj)  # backwards compatible
         if minorlocator is not None:
             obj.update_ticks()
