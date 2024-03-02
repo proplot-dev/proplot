@@ -3,7 +3,7 @@
 Utilities for global configuration.
 """
 import functools
-import re
+import re, matplotlib as mpl
 from collections.abc import MutableMapping
 from numbers import Integral, Real
 
@@ -14,7 +14,11 @@ from matplotlib import RcParams
 from matplotlib import rcParamsDefault as _rc_matplotlib_native
 from matplotlib.colors import Colormap
 from matplotlib.font_manager import font_scalings
-from matplotlib.fontconfig_pattern import parse_fontconfig_pattern
+
+if hasattr(mpl, "_fontconfig_pattern"):
+    from matplotlib._fontconfig_pattern import parse_fontconfig_pattern
+else:
+    from matplotlib.fontconfig_pattern import parse_fontconfig_pattern
 
 from . import ic  # noqa: F401
 from . import warnings
