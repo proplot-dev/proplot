@@ -108,14 +108,3 @@ def test_colorbar():
     axs[2].format(title="Imshow plot\ndiscrete=False (default)", yformatter="auto")
     fig.show()
     return fig
-
-
-if __name__ == "__main__":
-    for func in [
-        test_standardized_input,
-        test_inbounds_data,
-        test_colorbar,
-    ]:
-        fig = func()
-        fig.savefig(f"./tests/baseline/{func.__name__}.png")
-    plt.show(block=1)

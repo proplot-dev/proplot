@@ -2,12 +2,6 @@ import proplot as plt, numpy as np, pytest
 from matplotlib.testing import setup
 
 
-@pytest.fixture()
-def setup_mpl():
-    setup()
-    plt.clf()
-
-
 @pytest.mark.mpl_image_compare
 def test_standardized_inputs_1d():
     N = 5
@@ -37,10 +31,3 @@ def test_standardized_inputs_1d():
         ax.scatter(y + 2, marker="s", markersize=5**2)
         fig.format(xlabel="xlabel", ylabel="ylabel")
     return fig
-
-
-if __name__ == "__main__":
-    for func in [
-        test_standardized_inputs_1d,
-    ]:
-        func().savefig(f"./tests/baseline/{func.__name__}.png")
