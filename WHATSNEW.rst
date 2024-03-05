@@ -278,7 +278,8 @@ Version 0.9.7 (2024-03-XX)
 Compatibility
 -------------
 
-* Update references on ``proplot`` import to support ``matplotlib>=3.6.0`` (:commit:`15a4439`).
+* Use more flexible reference to ``_cmap_registry`` to support ``matplotlib>=3.6.0`` (:commit:`15a4439`).
+* Try multiple import routes to reference ``fontconfig_pattern`` to support up to ``matplotlib==3.8.3`` (:commit:`f003419`).
 
 Version 0.9.5 (2021-10-19)
 ==========================
