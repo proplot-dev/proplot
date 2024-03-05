@@ -272,7 +272,7 @@ Documentation
 * Improve colorbar and legend documentation, expound
   added features more carefully (:commit:`43631840`).
 
-Version 0.9.7 (2024-03-XX)
+Version 0.9.8 (2024-03-XX)
 ==========================
 
 Compatibility
