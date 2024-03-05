@@ -272,6 +272,14 @@ Documentation
 * Improve colorbar and legend documentation, expound
   added features more carefully (:commit:`43631840`).
 
+Version 0.9.7 (2024-03-XX)
+==========================
+
+Compatibility
+-------------
+
+* Update references on ``proplot`` import to support ``matplotlib>=3.6.0`` (:commit:`15a4439`).
+
 Version 0.9.5 (2021-10-19)
 ==========================
 
