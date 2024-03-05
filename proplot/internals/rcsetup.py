@@ -14,7 +14,11 @@ from matplotlib import RcParams
 from matplotlib import rcParamsDefault as _rc_matplotlib_native
 from matplotlib.colors import Colormap
 from matplotlib.font_manager import font_scalings
-from matplotlib.fontconfig_pattern import parse_fontconfig_pattern
+
+try:
+    from matplotlib.fontconfig_pattern import parse_fontconfig_pattern
+except ModuleNotFoundError:  # 3.8.0 and higher got rid of the public module.
+    from matplotlib._fontconfig_pattern import parse_fontconfig_pattern
 
 from . import ic  # noqa: F401
 from . import warnings
