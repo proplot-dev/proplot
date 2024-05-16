@@ -1140,6 +1140,12 @@ class Axes(maxes.Axes):
             elif isinstance(ticker, mticker.TickHelper):
                 ticker.set_axis(axis)
 
+        if _version_mpl >= '3.6':
+            print("minorlocator is None, mpl >= 3.6 fix set it to MultipleLocator")
+            if minorlocator is None:
+                from matplotlib.ticker import AutoLocator
+                minorlocator = AutoLocator()
+
         # Create colorbar and update ticks and axis direction
         # NOTE: This also adds the guides._update_ticks() monkey patch that triggers
         # updates to DiscreteLocator when parent axes is drawn.
