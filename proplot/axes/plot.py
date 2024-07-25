@@ -2498,8 +2498,9 @@ class PlotAxes(base.Axes):
         cycle_manually = cycle_manually or {}
         parser = self._get_lines  # the _process_plot_var_args instance
         props = {}  # which keys to apply from property cycler
+        # BREAKING in mpl3.9.1 parse has cycle items and no longer posseses _prop_keys
         for prop, key in cycle_manually.items():
-            if kwargs.get(key, None) is None and prop in parser._prop_keys:
+            if kwargs.get(key, None) is None and any(prop in item for item in parser._cycler_items):
                 props[prop] = key
         if props:
             for dict_ in parser._cycler_items:
