@@ -28,6 +28,7 @@ import matplotlib.colors as mcolors
 import numpy as np
 import numpy.ma as ma
 
+from matplotlib import colormaps as mcolormaps
 from .config import rc
 from .internals import ic  # noqa: F401
 from .internals import (
@@ -2861,8 +2862,11 @@ def _init_cmap_database():
     database = getattr(mcm, attr)
     if mcm.get_cmap is not _get_cmap:
         mcm.get_cmap = _get_cmap
-    if mcm.register_cmap is not _register_cmap:
-        mcm.register_cmap = _register_cmap
+    # enable backward compatibility
+    if hasattr(mcm, "register_cmap"):
+        if mcm.register_cmap is not wrap_register_cmap:
+            mcm.register_cmap = wrap_register_cmap
+
     if not isinstance(database, ColormapDatabase):
         database = {
             key: value
@@ -2874,19 +2878,23 @@ def _init_cmap_database():
     return database
 
 
-_mpl_register_cmap = mcm.register_cmap
+def wrap_register_cmap(*args, **kwargs):
+    # This function is merely to wrap register cmap
+    # to prevent adding unnecessary trigger warnings
+    original_register_cmap = mcm.register_cmap
 
+    @functools.wraps(original_register_cmap)  # noqa: E302
+    def _register_cmap(*args, **kwargs):
+        """
+        Monkey patch for `~matplotlib.cm.register_cmap`. Ignores warning
+        message when re-registering existing colormaps. This is unnecessary
+        and triggers 100 warnings when importing seaborn.
+        """
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", UserWarning)
+            return mcm.register_cmap(*args, **kwargs)
 
-@functools.wraps(_mpl_register_cmap)  # noqa: E302
-def _register_cmap(*args, **kwargs):
-    """
-    Monkey patch for `~matplotlib.cm.register_cmap`. Ignores warning
-    message when re-registering existing colormaps. This is unnecessary
-    and triggers 100 warnings when importing seaborn.
-    """
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore", UserWarning)
-        return _mpl_register_cmap(*args, **kwargs)
+    return wrapped_register_cmap
 
 
 @functools.wraps(mcm.get_cmap)
