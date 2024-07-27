@@ -1803,10 +1803,9 @@ class PlotAxes(base.Axes):
         # NOTE: This also covers TriContourSet returned by tricontour
         if isinstance(obj, mcontour.ContourSet):
             if obj.filled:
-                for contour in obj.collections:
-                    contour.set_linestyle("-")
-                    contour.set_linewidth(linewidth)
-                    contour.set_edgecolor("face")
+                obj.set_linestyle("-")
+                obj.set_linewidth(linewidth)
+                obj.set_edgecolor("face")
         elif isinstance(obj, mcollections.Collection):  # e.g. QuadMesh, PolyCollection
             obj.set_linewidth(linewidth)
             obj.set_edgecolor("face")
