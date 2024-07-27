@@ -2853,12 +2853,27 @@ def _init_cmap_database():
     """
     Initialize the subclassed database.
     """
+
     # WARNING: Skip over the matplotlib native duplicate entries
     # with suffixes '_r' and '_shifted'.
-    for prop in ["_cmap_registry", "cmap_d", "_colormaps"]:
-        if hasattr(mcm, prop):
-            attr = prop
-            break
+    def get_correct_register(
+        props=[
+            "_cmap_registry",
+            "cmap_d",
+            "_colormaps",
+        ]
+    ):
+        # In matplotlib.cm as register is made under
+        # _colormaps (as of 3.9.1). It seems like they are
+        # moving towards using ColormapRegister as a static class
+        # so this may change in the future. This piece of code
+        # is to ensure that the correct object is used
+        # to register proplots colormaps
+        for prop in props:
+            if hasattr(mcm, prop):
+                return prop
+
+    attr = get_correct_register()
     database = getattr(mcm, attr)
     if mcm.get_cmap is not _get_cmap:
         mcm.get_cmap = _get_cmap
