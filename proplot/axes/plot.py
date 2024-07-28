@@ -3801,7 +3801,8 @@ class PlotAxes(base.Axes):
         # Parse non-color properties
         # NOTE: Output dict keys are plural but we use singular for keyword args
         props = {}
-        for key in ("boxes", "whiskers", "caps", "fliers", "medians", "means"):
+        for key in ("boxes", "whiskers", "caps", "fliers",
+            "medians", "means", "hatches"):
             prefix = key.rstrip("es")  # singular form
             props[key] = iprops = _pop_props(kw, "line", prefix=prefix)
             iprops.setdefault("color", edgecolor)
