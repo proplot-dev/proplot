@@ -3967,7 +3967,7 @@ class PlotAxes(base.Axes):
 
         hatches = None
         if "hatch" in kw:
-            hatches = kw.pop("hatches", None)
+            hatches = kw.pop("hatch", None)
         if "hatches" in kw:
             hatches = kw.pop("hatches", None)
 
