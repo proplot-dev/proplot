@@ -1428,7 +1428,7 @@ class PlotAxes(base.Axes):
         for i, (path, value) in enumerate(zip(paths, array)):
             # Round to the number corresponding to the *color* rather than
             # the exact data value. Similar to contour label numbering.
-            if value is ma.masked or not np.isfinite(value):
+            if value is ma.masked or not np.any(np.isfinite(value) == False):
                 edgecolors[i, :] = 0
                 continue
             if isinstance(obj.norm, pcolors.DiscreteNorm):
@@ -1803,10 +1803,9 @@ class PlotAxes(base.Axes):
         # NOTE: This also covers TriContourSet returned by tricontour
         if isinstance(obj, mcontour.ContourSet):
             if obj.filled:
-                for contour in obj.collections:
-                    contour.set_linestyle("-")
-                    contour.set_linewidth(linewidth)
-                    contour.set_edgecolor("face")
+                obj.set_linestyle("-")
+                obj.set_linewidth(linewidth)
+                obj.set_edgecolor("face")
         elif isinstance(obj, mcollections.Collection):  # e.g. QuadMesh, PolyCollection
             obj.set_linewidth(linewidth)
             obj.set_edgecolor("face")
@@ -2500,7 +2499,9 @@ class PlotAxes(base.Axes):
         props = {}  # which keys to apply from property cycler
         # BREAKING in mpl3.9.1 parse has cycle items and no longer posseses _prop_keys
         for prop, key in cycle_manually.items():
-            if kwargs.get(key, None) is None and any(prop in item for item in parser._cycler_items):
+            if kwargs.get(key, None) is None and any(
+                prop in item for item in parser._cycler_items
+            ):
                 props[prop] = key
         if props:
             for dict_ in parser._cycler_items:
