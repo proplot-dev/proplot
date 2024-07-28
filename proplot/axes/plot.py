@@ -9,6 +9,7 @@ import itertools
 import re
 import sys
 from numbers import Integral
+from typing import Any, Iterable
 
 import matplotlib.artist as martist
 import matplotlib.axes as maxes
@@ -3662,6 +3663,13 @@ class PlotAxes(base.Axes):
         kw.update(_pop_props(kw, "patch"))
         hs, kw = inputs._dist_reduce(hs, **kw)
         guide_kw = _pop_params(kw, self._update_guide)
+        alphas = kw.pop("alpha", None)
+        if alphas is None:
+            alphas = xs.size * [None]
+        elif len(alphas) == 1:
+            alphas = xs.size * [alphas]
+        elif len(alphas) != xs.size:
+            raise ValueError(f"Received {len(alphas)} values for alpha but needed {xs.size}")
         for i, n, x, h, w, b, kw in self._iter_arg_cols(xs, hs, ws, bs, **kw):
             kw = self._parse_cycle(n, **kw)
             # Adjust x or y coordinates for grouped and stacked bars
@@ -3687,6 +3695,10 @@ class PlotAxes(base.Axes):
             self._fix_patch_edges(obj, **edgefix_kw, **kw)
             for y in (b, b + h):
                 self._inbounds_xylim(extents, x, y, orientation=orientation)
+
+            if alphas[i] is not None:
+                for child in obj.get_children():
+                    child.set_alpha(alphas[i])
             objs.append((*eb, obj) if eb else obj)
 
         self._update_guide(objs, **guide_kw)
@@ -4504,52 +4516,31 @@ class PlotAxes(base.Axes):
                 fmt = None
             yield x, y, fmt
 
-    def _iter_arg_cols(self, *args, label=None, labels=None, values=None, alpha = None, **kwargs):
+    def _iter_arg_cols(self, *args, label=None, labels=None, values=None, **kwargs):
         """
         Iterate over columns of positional arguments.
         """
-        # Handle cycle args and label lists
-        # NOTE: Arrays here should have had metadata stripped by _parse_1d_args
-        # but could still be pint quantities that get processed by axis converter.
-        is_array = lambda data: hasattr(data, "ndim") and hasattr(
-            data, "shape"
-        )  # noqa: E731, E501
-        n = max(1 if not is_array(a)  else a.shape[-1] for a in args)
+        is_array = lambda data: hasattr(data, 'ndim') and hasattr(data, 'shape')
+
+        # Determine the number of columns
+        n = max(1 if not is_array(a) or a.ndim < 2 else a.shape[-1] for a in args)
+
+        # Handle labels
         labels = _not_none(label=label, values=values, labels=labels)
         if not np.iterable(labels) or isinstance(labels, str):
             labels = n * [labels]
-        elif len(labels) != n or labels is None:
-            labels = n * [labels]
-        elif labels is not None:
-            labels = [
-                str(_not_none(label, "")) for label in inputs._to_numpy_array(labels)
-            ]
+        if len(labels) != n:
+            raise ValueError(f'Array has {n} columns but got {len(labels)} labels.')
+        if labels is not None:
+            labels = [str(_not_none(label, '')) for label in inputs._to_numpy_array(labels)]
         else:
-            raise ValueError(f"Array has {n} columns but got {len(labels)} labels.")
-
-        def filter_args(arg_idx):
-            # when multiplle arguments exist we need to
-            # unravel and delegate
-            idx, arg = arg_idx
-            if is_array(arg):
-                if isinstance(arg, np.ndarray) and arg.ndim < 2:
-                    return arg
-                else:
-                    return arg[..., idx]
-            return arg
+            labels = n * [None]
 
         # Yield successive columns
         for i in range(n):
             kw = kwargs.copy()
-            # IMPORTANT! keyword arguments can contain separate delegates
-            for key in kw:
-                if is_array(kw[key]) and len(kw[key]) == n:
-                    kw[key] = kw[key][i]
             kw["label"] = labels[i] or None
-            # kw["alpha"] = kw.get("alpha", np.ones(len(labels)))[i]
-
-            # a = tuple(a if not is_array(a) or a.ndim < 2 else a[..., i] for a in args)
-            a = tuple(map(filter_args, enumerate(args)))
+            a = tuple(a if not is_array(a) or a.ndim < 2 else a[..., i] for a in args)
             yield (i, n, *a, kw)
 
     # Related parsing functions for warnings
