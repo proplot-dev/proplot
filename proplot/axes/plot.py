@@ -3964,6 +3964,18 @@ class PlotAxes(base.Axes):
         kw.setdefault("positions", x)  # coordinates passed as keyword
         y = _not_none(kw.pop("distribution"), y)  # i.e. was reduced
         y = inputs._dist_clean(y)
+
+        hatches = None
+        if "hatch" in kw:
+            hatches = kw.pop("hatches", None)
+        if "hatches" in kw:
+            hatches = kw.pop("hatches", None)
+
+        if hatches is None:
+            hatches = len(y) * [None]
+        elif len(hatches) != len(y):
+            raise ValueError(f"Retrieved {len(hatches)} hatches but need {len(y)}")
+
         artists = self._call_native(
             "violinplot",
             y,
@@ -3989,6 +4001,8 @@ class PlotAxes(base.Axes):
                 body.set_edgecolor(edgecolor)
             if linewidth is not None:
                 body.set_linewidths(linewidth)
+            if hatches[i] is not None:
+                body.set_hatch(hatches[i])
         return (bodies, *eb) if eb else bodies
 
     @docstring._snippet_manager
