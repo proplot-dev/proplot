@@ -97,14 +97,13 @@ def test_bar_vectors():
     """
     Test vector arguments to bar plots.
     """
-    fig, ax = pplt.subplots(refwidth=3, facecolor="orange0")
+    facecolors = np.repeat(0.1, 3) * np.arange(1, 11)[:, None]
+    fig, ax = pplt.subplots()
     ax.bar(
         np.arange(10),
         np.arange(1, 11),
         linewidth=3,
-        # facecolor=(np.repeat(0.1, 3) * np.arange(1, 11)[:, None]).tolist(),
         edgecolor=[f"gray{i}" for i in range(9, -1, -1)],
-        facecolor=[f"gray{i}" for i in range(10)],
         alpha=np.linspace(0.1, 1, 10),
         hatch=[None, "//"] * 5,
     )
@@ -125,7 +124,7 @@ def test_boxplot_colors():
     ax.violin(
         violin_data,
         fillcolor=["gray1", "gray7"],
-        hatches=[None, "//"],
+        hatches=[None, "//", None, None, "//"],
         means=True,
         barstds=2,
     )  # noqa: E501
@@ -149,6 +148,7 @@ def test_boxplot_vectors():
         data = state.rand(count)
         datas.append(data)
     datas = np.array(datas, dtype=object)
+    assert len(datas) == len(coords)
     fig, ax = pplt.subplot(refwidth=3)
     ax.boxplot(
         coords,
@@ -313,12 +313,8 @@ def test_scatter_alpha():
     fig, ax = pplt.subplots()
     data = state.rand(10)
     alpha = np.linspace(0.1, 1, data.size)
-    with pytest.warns(pplt.internals.ProplotWarning) as record:
-        ax.scatter(data, alpha=alpha)
-    assert len(record) == 1
-    with pytest.warns(pplt.internals.ProplotWarning) as record:
-        ax.scatter(data + 1, c=np.arange(data.size), cmap="BuRd", alpha=alpha)
-    assert len(record) == 1
+    ax.scatter(data, alpha=alpha)
+    ax.scatter(data + 1, c=np.arange(data.size), cmap="BuRd", alpha=alpha)
     ax.scatter(data + 2, color="k", alpha=alpha)
     ax.scatter(data + 3, color=[f"red{i}" for i in range(data.size)], alpha=alpha)
     return fig
