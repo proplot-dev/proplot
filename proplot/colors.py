@@ -28,7 +28,6 @@ import matplotlib.colors as mcolors
 import numpy as np
 import numpy.ma as ma
 
-from matplotlib import colormaps as mcolormaps
 from .config import rc
 from .internals import ic  # noqa: F401
 from .internals import (
