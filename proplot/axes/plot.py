@@ -3824,6 +3824,11 @@ class PlotAxes(base.Axes):
         if means:
             kw["showmeans"] = kw["meanline"] = True
         y = inputs._dist_clean(y)
+        # Add hatch to props as boxplot does not have a hatch but Rectangle does
+        hatch = kw.pop("hatch", None)
+        if hatch is None:
+            hatch = [None for _ in range(x.size)]
+
         artists = self._call_native("boxplot", y, vert=vert, **kw)
         artists = artists or {}  # necessary?
         artists = {
@@ -3832,6 +3837,7 @@ class PlotAxes(base.Axes):
         }
 
         # Modify artist settings
+
         for key, aprops in props.items():
             if key not in artists:  # possible if not rendered
                 continue
@@ -3850,13 +3856,14 @@ class PlotAxes(base.Axes):
                 obj.update(iprops)
                 # "Filled" boxplot by adding patch beneath line path
                 if key == "boxes" and (
-                    fillcolor[i] is not None or fillalpha is not None
+                    fillcolor[i] is not None or fillalpha is not None or hatch[i] is not None
                 ):
                     patch = mpatches.PathPatch(
                         obj.get_path(),
                         linewidth=0.0,
                         facecolor=fillcolor[i],
                         alpha=fillalpha,
+                        hatch = hatch[i],
                     )
                     self.add_artist(patch)
                 # Outlier markers
@@ -4482,7 +4489,7 @@ class PlotAxes(base.Axes):
                 fmt = None
             yield x, y, fmt
 
-    def _iter_arg_cols(self, *args, label=None, labels=None, values=None, **kwargs):
+    def _iter_arg_cols(self, *args, label=None, labels=None, values=None, alpha = None, **kwargs):
         """
         Iterate over columns of positional arguments.
         """
@@ -4492,18 +4499,18 @@ class PlotAxes(base.Axes):
         is_array = lambda data: hasattr(data, "ndim") and hasattr(
             data, "shape"
         )  # noqa: E731, E501
-        n = max(1 if not is_array(a) else a.shape[-1] for a in args)
+        n = max(1 if not is_array(a)  else a.shape[-1] for a in args)
         labels = _not_none(label=label, values=values, labels=labels)
         if not np.iterable(labels) or isinstance(labels, str):
             labels = n * [labels]
-        if len(labels) != n:
-            raise ValueError(f"Array has {n} columns but got {len(labels)} labels.")
-        if labels is not None:
+        elif len(labels) != n or labels is None:
+            labels = n * [labels]
+        elif labels is not None:
             labels = [
                 str(_not_none(label, "")) for label in inputs._to_numpy_array(labels)
             ]
         else:
-            labels = n * [None]
+            raise ValueError(f"Array has {n} columns but got {len(labels)} labels.")
 
         def filter_args(arg_idx):
             # when multiplle arguments exist we need to
@@ -4524,8 +4531,11 @@ class PlotAxes(base.Axes):
                 if is_array(kw[key]) and len(kw[key]) == n:
                     kw[key] = kw[key][i]
             kw["label"] = labels[i] or None
-            tmp_args = tuple(map(filter_args, enumerate(args)))
-            yield (i, n, *tuple(tmp_args), kw)
+            # kw["alpha"] = kw.get("alpha", np.ones(len(labels)))[i]
+
+            # a = tuple(a if not is_array(a) or a.ndim < 2 else a[..., i] for a in args)
+            a = tuple(map(filter_args, enumerate(args)))
+            yield (i, n, *a, kw)
 
     # Related parsing functions for warnings
     _level_parsers = (_parse_level_vals, _parse_level_num, _parse_level_lim)
