@@ -485,12 +485,14 @@ def register_cmaps(*args, user=None, local=None, default=False):
         cmap = pcolors.ContinuousColormap.from_file(path, warn_on_failure=True)
         if not cmap:
             continue
+
         if i == 0 and cmap.name.lower() in pcolors.CMAPS_CYCLIC:
             cmap.set_cyclic(True)
         pcolors._cmap_database[cmap.name] = cmap
+
         # for mpl >= 3.7.2
         if hasattr(mpl, "colormaps"):
-            mpl.colormaps.register(cmap)
+            mpl.colormaps.register(cmap, name=cmap.name)
 
 
 @docstring._snippet_manager
