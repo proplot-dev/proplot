@@ -2885,7 +2885,7 @@ def _init_cmap_database():
         database = {
             key: value
             for key, value in database.items()
-            if key[-2:] != "_r" and key[-8:] != "_shifted"
+            if not key.endswith("_r") and not key.endswith("_shifted")
         }
         database = ColormapDatabase(database)
         setattr(mcm, attr, database)
