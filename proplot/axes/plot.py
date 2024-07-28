@@ -1806,6 +1806,11 @@ class PlotAxes(base.Axes):
                 obj.set_linestyle("-")
                 obj.set_linewidth(linewidth)
                 obj.set_edgecolor("face")
+
+                for contour in obj.collections:
+                    contour.set_linestyle("-")
+                    contour.set_linewidth(linewidth)
+                    contour.set_edgecolor("face")
         elif isinstance(obj, mcollections.Collection):  # e.g. QuadMesh, PolyCollection
             obj.set_linewidth(linewidth)
             obj.set_edgecolor("face")
@@ -4487,7 +4492,7 @@ class PlotAxes(base.Axes):
         is_array = lambda data: hasattr(data, "ndim") and hasattr(
             data, "shape"
         )  # noqa: E731, E501
-        n = max(1 if not is_array(a) or a.ndim < 2 else a.shape[-1] for a in args)
+        n = max(1 if not is_array(a) else a.shape[-1] for a in args)
         labels = _not_none(label=label, values=values, labels=labels)
         if not np.iterable(labels) or isinstance(labels, str):
             labels = n * [labels]
@@ -4500,12 +4505,27 @@ class PlotAxes(base.Axes):
         else:
             labels = n * [None]
 
+        def filter_args(arg_idx):
+            # when multiplle arguments exist we need to
+            # unravel and delegate
+            idx, arg = arg_idx
+            if is_array(arg):
+                if isinstance(arg, np.ndarray) and arg.ndim < 2:
+                    return arg
+                else:
+                    return arg[..., idx]
+            return arg
+
         # Yield successive columns
         for i in range(n):
             kw = kwargs.copy()
+            # IMPORTANT! keyword arguments can contain separate delegates
+            for key in kw:
+                if is_array(kw[key]) and len(kw[key]) == n:
+                    kw[key] = kw[key][i]
             kw["label"] = labels[i] or None
-            a = tuple(a if not is_array(a) or a.ndim < 2 else a[..., i] for a in args)
-            yield (i, n, *a, kw)
+            tmp_args = tuple(map(filter_args, enumerate(args)))
+            yield (i, n, *tuple(tmp_args), kw)
 
     # Related parsing functions for warnings
     _level_parsers = (_parse_level_vals, _parse_level_num, _parse_level_lim)
