@@ -1145,6 +1145,7 @@ class Figure(mfigure.Figure):
         projection_kw=None,
         backend=None,
         basemap=None,
+        refwidth=None,
         **kwargs,
     ):
         """
