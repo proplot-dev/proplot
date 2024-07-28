@@ -86,9 +86,9 @@ def test_panels_suplabels():
     """
     Test label sharing for `includepanels=True`.
     """
-    fig = pplt.figure()
     for b in range(3):
         for ncols in range(1, 3):
+            fig = pplt.figure()
             axs = fig.subplots(ncols=ncols, refwidth=1.5, includepanels=(b == 2))
             if b:
                 for _ in range(3):
