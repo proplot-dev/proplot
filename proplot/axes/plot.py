@@ -3666,7 +3666,7 @@ class PlotAxes(base.Axes):
         alphas = kw.pop("alpha", None)
         if alphas is None:
             alphas = xs.size * [None]
-        elif len(alphas) == 1:
+        elif isinstance(alphas, float):
             alphas = xs.size * [alphas]
         elif len(alphas) != xs.size:
             raise ValueError(f"Received {len(alphas)} values for alpha but needed {xs.size}")
