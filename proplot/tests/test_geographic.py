@@ -48,7 +48,7 @@ def test_gegraphic_multiple_projections():
 
 @pytest.mark.skip(reason="TODO")
 @pytest.mark.mpl_image_compare
-def test_drawing_in_projection_without_global():
+def test_drawing_in_projection_without_globe():
     # Fake data with unusual longitude seam location and without coverage over poles
     offset = -40
     lon = plt.arange(offset, 360 + offset - 1, 60)
@@ -56,7 +56,7 @@ def test_drawing_in_projection_without_global():
     state = np.random.RandomState(51423)
     data = state.rand(len(lat), len(lon))
 
-    global = False
+    globe = False
     string = "with" if globe else "without"
     gs = plt.GridSpec(nrows=2, ncols=2)
     fig = plt.figure(refwidth=2.5)
@@ -85,7 +85,7 @@ def test_drawing_in_projection_without_global():
 
 @pytest.mark.skip(reason="TODO")
 @pytest.mark.mpl_image_compare
-def test_drawing_in_projection_with_global():
+def test_drawing_in_projection_with_globe():
     # Fake data with unusual longitude seam location and without coverage over poles
     offset = -40
     lon = plt.arange(offset, 360 + offset - 1, 60)
@@ -93,7 +93,7 @@ def test_drawing_in_projection_with_global():
     state = np.random.RandomState(51423)
     data = state.rand(len(lat), len(lon))
 
-    global = True
+    globe = True
     string = "with" if globe else "without"
     gs = plt.GridSpec(nrows=2, ncols=2)
     fig = plt.figure(refwidth=2.5)
