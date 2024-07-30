@@ -183,7 +183,7 @@ def test_locale_formatting():
     Ensure locale formatting works. Also zerotrim should account
     for non-period decimal separators.
     """
-    locale.setlocale(locale.LC_ALL, "de_DE")
+    locale.setlocale(locale.LC_ALL, ("en_US", "UTF-8"))
     pplt.rc["formatter.use_locale"] = False
     pplt.rc["formatter.zerotrim"] = True
     with pplt.rc.context({"formatter.use_locale": True}):
