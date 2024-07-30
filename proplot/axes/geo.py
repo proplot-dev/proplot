@@ -293,6 +293,8 @@ class _LonAxis(_GeoAxis):
     """
     Axis with default longitude locator.
     """
+    axis_name = "lon"
+
     # NOTE: Basemap accepts tick formatters with drawmeridians(fmt=Formatter())
     # Try to use cartopy formatter if cartopy installed. Otherwise use
     # default builtin basemap formatting.
@@ -352,6 +354,8 @@ class _LatAxis(_GeoAxis):
     """
     Axis with default latitude locator.
     """
+    axis_name = "lat"
+
     def __init__(self, axes, latmax=90):
         # NOTE: Need to pass projection because lataxis/lonaxis are
         # initialized before geoaxes is initialized, because format() needs
@@ -801,7 +805,12 @@ class _CartopyAxes(GeoAxes, _GeoAxes):
         self._gridlines_minor = None
         self._lonaxis = _LonAxis(self)
         self._lataxis = _LatAxis(self, latmax=latmax)
-        super().__init__(*args, map_projection=self.projection, **kwargs)
+        # 'map_projection' argument is deprecated since cartopy 0.21 and 
+        # replaced by 'projection'.
+        if _version_cartopy >= '0.21':
+            super().__init__(*args, projection=self.projection, **kwargs)
+        else:
+            super().__init__(*args, map_projection=self.projection, **kwargs)
         for axis in (self.xaxis, self.yaxis):
             axis.set_tick_params(which='both', size=0)  # prevent extra label offset
 
@@ -1046,6 +1055,7 @@ class _CartopyAxes(GeoAxes, _GeoAxes):
                     if not drawn:
                         feat = cfeature.NaturalEarthFeature(*args, reso)
                         feat = self.add_feature(feat)  # convert to FeatureArtist
+                        setattr(self, attr, feat)
 
             # Update artist attributes (FeatureArtist._kwargs used back to v0.5).
             # For 'lines', need to specify edgecolor and facecolor
@@ -1053,7 +1063,8 @@ class _CartopyAxes(GeoAxes, _GeoAxes):
             if feat is not None:
                 kw = rc.category(name, context=drawn)
                 if name in ('coast', 'rivers', 'borders', 'innerborders'):
-                    kw.update({'edgecolor': kw.pop('color'), 'facecolor': 'none'})
+                    if 'color' in kw:
+                        kw.update({'edgecolor': kw.pop('color'), 'facecolor': 'none'})
                 else:
                     kw.update({'linewidth': 0})
                 if 'zorder' in kw:
@@ -1063,6 +1074,8 @@ class _CartopyAxes(GeoAxes, _GeoAxes):
                     feat.set_zorder(kw['zorder'])
                 if hasattr(feat, '_kwargs'):
                     feat._kwargs.update(kw)
+                    if _version_cartopy >= '0.23':
+                        feat.set(**feat._kwargs)
 
     def _update_gridlines(
         self, gl, which='major', longrid=None, latgrid=None, nsteps=None,
@@ -1212,7 +1225,12 @@ class _CartopyAxes(GeoAxes, _GeoAxes):
 
         # Apply aspect
         self.apply_aspect()
-        for gl in self._gridliners:
+        if _version_cartopy >= '0.23':
+            gridliners = [a for a in self.artists if isinstance(a, cgridliner.Gridliner)]
+        else:
+            gridliners = self._gridliners
+
+        for gl in gridliners:
             if _version_cartopy >= '0.18':
                 gl._draw_gridliner(renderer=renderer)
             else:
