@@ -10,7 +10,7 @@ state = np.random.RandomState(51423)
 
 
 @pytest.mark.mpl_image_compare
-def test_inset_colors():
+def test_inset_colors_1():
     """
     Test color application for zoom boxes.
     """
@@ -21,7 +21,10 @@ def test_inset_colors():
     )  # zoom_kw={'alpha': 1})
     # ix = ax.inset_axes((40, 40, 20, 20), zoom=True, transform='data')
     ix.format(xlim=(10, 20), ylim=(10, 20), grid=False)
+    return fig
 
+@pytest.mark.mpl_image_compare
+def test_inset_colors_2():
     fig, ax = pplt.subplots()
     ax.format(xlim=(0, 100), ylim=(0, 100))
     ix = ax.inset_axes(
@@ -31,6 +34,7 @@ def test_inset_colors():
     )
     ix.format(xlim=(10, 20), ylim=(10, 20))
     return fig
+
 
 
 @pytest.mark.mpl_image_compare
@@ -43,13 +47,10 @@ def test_inset_zoom_update():
     ax.format(xlim=(0, 100), ylim=(0, 100))
     ix = ax.inset_axes((40, 40, 20, 20), zoom=True, transform="data")
     ix.format(xlim=(10, 20), ylim=(10, 20), grid=False)
-
     ix.format(xlim=(10, 20), ylim=(10, 30))
-    fig.show()
-
     ax.format(ylim=(0, 300))
-    fig.show()
     return fig
+
 
 
 @pytest.mark.mpl_image_compare
@@ -64,7 +65,7 @@ def test_panels_with_sharing():
 
 
 @pytest.mark.mpl_image_compare
-def test_panels_without_sharing():
+def test_panels_without_sharing_1():
     """
     What should happen if `share=False` but figure-wide sharing enabled?
     Strange use case but behavior appears "correct."
@@ -72,7 +73,10 @@ def test_panels_without_sharing():
     fig, axs = pplt.subplots(ncols=2, share=True, refwidth=1.5, includepanels=False)
     axs.panel("left", share=False)
     fig.format(ylabel="ylabel", xlabel="xlabel")
+    return fig
 
+@pytest.mark.mpl_image_compare
+def test_panels_without_sharing_2():
     fig, axs = pplt.subplots(ncols=2, refwidth=1.5, includepanels=True)
     for _ in range(3):
         p = axs[0].panel("l", space=0)
@@ -81,24 +85,44 @@ def test_panels_without_sharing():
     return fig
 
 
+
+
 @pytest.mark.mpl_image_compare
-def test_panels_suplabels():
+def test_panels_suplabels_three_hor_panels():
     """
     Test label sharing for `includepanels=True`.
+    Test for 1 subplot with 3 left panels
+    Include here centers the x label to include the panels
+    The xlabel should be centered along the main plot with the included side panels
     """
-    for b in range(3):
-        for ncols in range(1, 3):
-            fig = pplt.figure()
-            axs = fig.subplots(ncols=ncols, refwidth=1.5, includepanels=(b == 2))
-            if b:
-                for _ in range(3):
-                    axs[0].panel("l")
-            axs.format(xlabel="xlabel\nxlabel\nxlabel", ylabel="ylabel", suptitle="sup")
+    fig = pplt.figure()
+    ax = fig.subplots(refwidth = 1.5, includepanels = True)
+    for _ in range(3):
+        ax[0].panel("l")
+    ax.format(xlabel="xlabel", ylabel="ylabel\nylabel\nylabel", suptitle="sup")
+    pplt.show(block = 1)
     return fig
 
 
+def test_panels_suplabels_three_hor_panels_donotinlcude():
+    """
+    Test label sharing for `includepanels=True`.
+    Test for 1 subplot with 3 left panels
+    The xlabel should be centered on the main plot
+    """
+    fig = pplt.figure()
+    ax = fig.subplots(refwidth = 1.5, includepanels = False)
+    for _ in range(3):
+        ax[0].panel("l")
+    ax.format(xlabel="xlabel",
+              ylabel="ylabel\nylabel\nylabel",
+              suptitle="sup",
+              )
+    pplt.show(block = 1)
+    return fig
+
 @pytest.mark.mpl_image_compare
-def test_twin_axes():
+def test_twin_axes_1():
     """
     Adjust twin axis positions. Should allow easily switching the location.
     """
@@ -116,7 +140,10 @@ def test_twin_axes():
         xlabelloc="b",
     )
     ax.alty(loc="r", color="r", labelcolor="red9", label="other", labelweight="bold")
+    return fig
 
+@pytest.mark.mpl_image_compare
+def test_twin_axes_2():
     # Simple example but doesn't quite work. Figure out how to specify left vs. right
     # spines for 'offset' locations... maybe needs another keyword.
     fig, ax = pplt.subplots()
@@ -124,7 +151,10 @@ def test_twin_axes():
     ax.alty(color="green", label="Green", max=8)
     ax.alty(color="red", label="Red", max=15, loc=("axes", -0.2))
     ax.alty(color="blue", label="Blue", max=5, loc=("axes", 1.2), ticklabeldir="out")
+    return fig
 
+@pytest.mark.mpl_image_compare
+def test_twin_axes_3():
     # A worked example from Riley Brady
     # Uses auto-adjusting limits
     fig, ax = pplt.subplots()

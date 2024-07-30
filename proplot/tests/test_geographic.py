@@ -48,7 +48,7 @@ def test_gegraphic_multiple_projections():
 
 @pytest.mark.skip(reason="TODO")
 @pytest.mark.mpl_image_compare
-def test_drawing_in_projection():
+def test_drawing_in_projection_without_global():
     # Fake data with unusual longitude seam location and without coverage over poles
     offset = -40
     lon = plt.arange(offset, 360 + offset - 1, 60)
@@ -56,29 +56,65 @@ def test_drawing_in_projection():
     state = np.random.RandomState(51423)
     data = state.rand(len(lat), len(lon))
 
-    # Plot data both without and with globe=True
-    for globe in (False, True):
-        string = "with" if globe else "without"
-        gs = plt.GridSpec(nrows=2, ncols=2)
-        fig = plt.figure(refwidth=2.5)
-        for i, ss in enumerate(gs):
-            ax = fig.subplot(ss, proj="kav7", basemap=(i % 2))
-            cmap = ("sunset", "sunrise")[i % 2]
-            if i > 1:
-                ax.pcolor(lon, lat, data, cmap=cmap, globe=globe, extend="both")
-            else:
-                m = ax.contourf(lon, lat, data, cmap=cmap, globe=globe, extend="both")
-                fig.colorbar(m, loc="b", span=i + 1, label="values", extendsize="1.7em")
-        fig.format(
-            suptitle=f"Geophysical data {string} global coverage",
-            toplabels=("Cartopy example", "Basemap example"),
-            leftlabels=("Filled contours", "Grid boxes"),
-            toplabelweight="normal",
-            leftlabelweight="normal",
-            coast=True,
-            lonlines=90,
-            abc="A.",
-            abcloc="ul",
-            abcborder=False,
-        )
-        return fig
+    global = False
+    string = "with" if globe else "without"
+    gs = plt.GridSpec(nrows=2, ncols=2)
+    fig = plt.figure(refwidth=2.5)
+    for i, ss in enumerate(gs):
+        ax = fig.subplot(ss, proj="kav7", basemap=(i % 2))
+        cmap = ("sunset", "sunrise")[i % 2]
+        if i > 1:
+            ax.pcolor(lon, lat, data, cmap=cmap, globe=globe, extend="both")
+        else:
+            m = ax.contourf(lon, lat, data, cmap=cmap, globe=globe, extend="both")
+            fig.colorbar(m, loc="b", span=i + 1, label="values", extendsize="1.7em")
+    fig.format(
+        suptitle=f"Geophysical data {string} global coverage",
+        toplabels=("Cartopy example", "Basemap example"),
+        leftlabels=("Filled contours", "Grid boxes"),
+        toplabelweight="normal",
+        leftlabelweight="normal",
+        coast=True,
+        lonlines=90,
+        abc="A.",
+        abcloc="ul",
+        abcborder=False,
+    )
+    return fig
+
+
+@pytest.mark.skip(reason="TODO")
+@pytest.mark.mpl_image_compare
+def test_drawing_in_projection_with_global():
+    # Fake data with unusual longitude seam location and without coverage over poles
+    offset = -40
+    lon = plt.arange(offset, 360 + offset - 1, 60)
+    lat = plt.arange(-60, 60 + 1, 30)
+    state = np.random.RandomState(51423)
+    data = state.rand(len(lat), len(lon))
+
+    global = True
+    string = "with" if globe else "without"
+    gs = plt.GridSpec(nrows=2, ncols=2)
+    fig = plt.figure(refwidth=2.5)
+    for i, ss in enumerate(gs):
+        ax = fig.subplot(ss, proj="kav7", basemap=(i % 2))
+        cmap = ("sunset", "sunrise")[i % 2]
+        if i > 1:
+            ax.pcolor(lon, lat, data, cmap=cmap, globe=globe, extend="both")
+        else:
+            m = ax.contourf(lon, lat, data, cmap=cmap, globe=globe, extend="both")
+            fig.colorbar(m, loc="b", span=i + 1, label="values", extendsize="1.7em")
+    fig.format(
+        suptitle=f"Geophysical data {string} global coverage",
+        toplabels=("Cartopy example", "Basemap example"),
+        leftlabels=("Filled contours", "Grid boxes"),
+        toplabelweight="normal",
+        leftlabelweight="normal",
+        coast=True,
+        lonlines=90,
+        abc="A.",
+        abcloc="ul",
+        abcborder=False,
+    )
+    return fig

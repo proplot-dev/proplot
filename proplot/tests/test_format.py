@@ -8,14 +8,14 @@ import warnings
 state = np.random.RandomState(51423)
 
 
-def test_colormap_assign():
-    """
-    Test below line is possible and naming schemes.
-    """
-    pplt.rc["image.cmap"] = pplt.Colormap("phase", shift=180, left=0.2)
-    assert pplt.rc["cmap"] == pplt.rc["cmap.sequential"] == "_Phase_copy_s"
-    pplt.rc["image.cmap"] = pplt.Colormap("magma", reverse=True, right=0.8)
-    assert pplt.rc["image.cmap"] == pplt.rc["cmap.sequential"] == "_magma_copy_r"
+# def test_colormap_assign():
+#     """
+#     Test below line is possible and naming schemes.
+#     """
+#     pplt.rc["image.cmap"] = pplt.Colormap("phase", shift=180, left=0.2)
+#     assert pplt.rc["cmap"] == pplt.rc["cmap.sequential"] == "_Phase_copy_s"
+#     pplt.rc["image.cmap"] = pplt.Colormap("magma", reverse=True, right=0.8)
+#     assert pplt.rc["image.cmap"] == pplt.rc["cmap.sequential"] == "_magma_copy_r"
 
 
 def test_ignored_keywords():

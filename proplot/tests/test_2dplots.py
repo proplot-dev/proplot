@@ -300,7 +300,7 @@ def test_level_restriction():
 
 
 @pytest.mark.mpl_image_compare
-def test_qualitative_colormaps():
+def test_qualitative_colormaps_1():
     """
     Test both `colors` and `cmap` input and ensure extend setting is used for
     extreme only if unset.
@@ -310,7 +310,11 @@ def test_qualitative_colormaps():
     colors = pplt.get_colors("set3")
     for ax, extend in zip(axs, ("both", "neither")):
         ax.pcolor(data, extend=extend, colors=colors, colorbar="b")
+    return fig
 
+
+@pytest.mark.mpl_image_compare
+def test_qualitative_colormaps_2():
     fig, axs = pplt.subplots(ncols=2)
     data = state.rand(5, 5)
     cmap = pplt.Colormap("set3")
@@ -335,12 +339,10 @@ def test_segmented_norm():
     )
     return fig
 
-
 @pytest.mark.mpl_image_compare
 def test_triangular_functions():
     """
     Test triangular functions. Here there is no remotely sensible way to infer
-    coordinates so we skip standardize function.
     """
     fig, ax = pplt.subplots()
     N = 30

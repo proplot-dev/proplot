@@ -2,8 +2,10 @@
 """
 Test xarray, pandas, pint, seaborn integration.
 """
-import numpy as np, pandas as pd, seaborn as sns, xarray as xr
+import numpy as np, pandas as pd, seaborn as sns
+import xarray as xr
 import proplot as pplt, pytest
+import pint
 
 state = np.random.RandomState(51423)
 
@@ -25,7 +27,6 @@ def test_pint_quantities():
         "C1",
     )
     return fig
-
 
 @pytest.mark.mpl_image_compare
 def test_data_keyword():
@@ -98,7 +99,7 @@ def test_seaborn_hist():
     """
     fig, axs = pplt.subplots(ncols=2, nrows=2)
     sns.histplot(state.normal(size=100), ax=axs[0])
-    sns.kdeplot(state.rand(100), state.rand(100), ax=axs[1])
+    sns.kdeplot(x = state.rand(100), y = state.rand(100), ax=axs[1])
     penguins = sns.load_dataset("penguins")
     sns.histplot(
         data=penguins, x="flipper_length_mm", hue="species", multiple="stack", ax=axs[2]
