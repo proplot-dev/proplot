@@ -11,20 +11,21 @@ class _version(list):
     Casual parser for ``major.minor`` style version strings. We do not want to
     add a 'packaging' dependency and only care about major and minor tags.
     """
+
     def __str__(self):
         return self._version
 
     def __repr__(self):
-        return f'version({self._version})'
+        return f"version({self._version})"
 
     def __init__(self, version):
         try:
-            major, minor, *_ = version.split('.')
+            major, minor, *_ = version.split(".")
             major, minor = int(major or 0), int(minor or 0)
         except Exception:
-            warnings._warn_proplot(f'Unexpected version {version!r}. Using 0.0.0.')
+            warnings._warn_proplot(f"Unexpected version {version!r}. Using 0.0.0.")
             major = minor = 0
-        self._version = f'{major}.{minor}'
+        self._version = f"{major}.{minor}"
         super().__init__((major, minor))  # then use builtin python list sorting
 
     def __eq__(self, other):
@@ -48,12 +49,13 @@ class _version(list):
 
 # Matplotlib version
 import matplotlib  # isort:skip
+
 _version_mpl = _version(matplotlib.__version__)
 
 # Cartopy version
 try:
     import cartopy
 except ImportError:
-    _version_cartopy = _version('0.0.0')
+    _version_cartopy = _version("0.0.0")
 else:
     _version_cartopy = _version(cartopy.__version__)

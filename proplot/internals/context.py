@@ -9,6 +9,7 @@ class _empty_context(object):
     """
     A dummy context manager.
     """
+
     def __init__(self):
         pass
 
@@ -23,6 +24,7 @@ class _state_context(object):
     """
     Temporarily modify attribute(s) for an arbitrary object.
     """
+
     def __init__(self, obj, **kwargs):
         self._obj = obj
         self._attrs_new = kwargs

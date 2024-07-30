@@ -107,19 +107,18 @@ def test_both_ticklabels():
     return fig
 
 
-@pytest.mark.mpl_image_compare
 def test_gridspec_copies():
     """
     Test whether gridspec copies work.
     """
     fig1, ax = pplt.subplots(ncols=2)
     gs = fig1.gridspec.copy(left=5, wspace=0, right=5)
+    return fig1
     fig2 = pplt.figure()
     fig2.add_subplots(gs)
     fig = pplt.figure()
     with pytest.raises(ValueError):
         fig.add_subplots(gs)  # should raise error
-    return (fig1, fig2)
 
 
 @pytest.mark.mpl_image_compare

@@ -18,41 +18,41 @@ from .internals import ic  # noqa: F401
 from .internals import _not_none, docstring, warnings
 
 __all__ = [
-    'arange',
-    'edges',
-    'edges2d',
-    'get_colors',
-    'set_hue',
-    'set_saturation',
-    'set_luminance',
-    'set_alpha',
-    'shift_hue',
-    'scale_saturation',
-    'scale_luminance',
-    'to_hex',
-    'to_rgb',
-    'to_xyz',
-    'to_rgba',
-    'to_xyza',
-    'units',
-    'shade',  # deprecated
-    'saturate',  # deprecated
+    "arange",
+    "edges",
+    "edges2d",
+    "get_colors",
+    "set_hue",
+    "set_saturation",
+    "set_luminance",
+    "set_alpha",
+    "shift_hue",
+    "scale_saturation",
+    "scale_luminance",
+    "to_hex",
+    "to_rgb",
+    "to_xyz",
+    "to_rgba",
+    "to_xyza",
+    "units",
+    "shade",  # deprecated
+    "saturate",  # deprecated
 ]
 
 UNIT_REGEX = re.compile(
-    r'\A([-+]?[0-9._]+(?:[eE][-+]?[0-9_]+)?)(.*)\Z'  # float with trailing units
+    r"\A([-+]?[0-9._]+(?:[eE][-+]?[0-9_]+)?)(.*)\Z"  # float with trailing units
 )
 UNIT_DICT = {
-    'in': 1.0,
-    'ft': 12.0,
-    'yd': 36.0,
-    'm': 39.37,
-    'dm': 3.937,
-    'cm': 0.3937,
-    'mm': 0.03937,
-    'pc': 1 / 6.0,
-    'pt': 1 / 72.0,
-    'ly': 3.725e17,
+    "in": 1.0,
+    "ft": 12.0,
+    "yd": 36.0,
+    "m": 39.37,
+    "dm": 3.937,
+    "cm": 0.3937,
+    "mm": 0.03937,
+    "pc": 1 / 6.0,
+    "pt": 1 / 72.0,
+    "ly": 3.725e17,
 }
 
 
@@ -91,25 +91,27 @@ color : str
     An 8-digit HEX string indicating the
     red, green, blue, and alpha channel values.
 """
-docstring._snippet_manager['utils.color'] = _docstring_rgba
-docstring._snippet_manager['utils.hex'] = _docstring_hex
-docstring._snippet_manager['utils.space'] = _docstring_space
-docstring._snippet_manager['utils.to'] = _docstring_to_rgb
+docstring._snippet_manager["utils.color"] = _docstring_rgba
+docstring._snippet_manager["utils.hex"] = _docstring_hex
+docstring._snippet_manager["utils.space"] = _docstring_space
+docstring._snippet_manager["utils.to"] = _docstring_to_rgb
 
 
 def _keep_units(func):
     """
     Very simple decorator to strip and re-apply the same units.
     """
+
     # NOTE: Native UnitRegistry.wraps() is not sufficient since it enforces
     # unit types rather than arbitrary units. This wrapper is similar.
     @functools.wraps(func)
     def _with_stripped_units(data, *args, **kwargs):
         units = 1
-        if hasattr(data, 'units') and hasattr(data, 'magnitude'):
+        if hasattr(data, "units") and hasattr(data, "magnitude"):
             data, units = data.magnitude, data.units
         result = func(data, *args, **kwargs)
         return result * units
+
     return _with_stripped_units
 
 
@@ -155,7 +157,7 @@ def arange(min_, *args):
         max_ = args[0]
         step = args[1]
     else:
-        raise ValueError('Function takes from one to three arguments.')
+        raise ValueError("Function takes from one to three arguments.")
     # All input is integer
     if all(isinstance(val, Integral) for val in (min_, max_, step)):
         min_, max_, step = np.int64(min_), np.int64(max_), np.int64(step)
@@ -237,7 +239,7 @@ def edges2d(z):
     """
     z = np.asarray(z)
     if z.ndim != 2:
-        raise ValueError(f'Input must be a 2D array, but got {z.ndim}D.')
+        raise ValueError(f"Input must be a 2D array, but got {z.ndim}D.")
     ny, nx = z.shape
     zb = np.zeros((ny + 1, nx + 1))
 
@@ -275,8 +277,9 @@ def get_colors(*args, **kwargs):
     proplot.constructor.Colormap
     """
     from .constructor import Cycle  # delayed to avoid cyclic imports
+
     cycle = Cycle(*args, **kwargs)
-    colors = [to_hex(dict_['color']) for dict_ in cycle]
+    colors = [to_hex(dict_["color"]) for dict_ in cycle]
     return colors
 
 
@@ -291,7 +294,7 @@ def _transform_color(func, color, space):
 
 
 @docstring._snippet_manager
-def shift_hue(color, shift=0, space='hcl'):
+def shift_hue(color, shift=0, space="hcl"):
     """
     Shift the hue channel of a color.
 
@@ -315,6 +318,7 @@ def shift_hue(color, shift=0, space='hcl'):
     scale_saturation
     scale_luminance
     """
+
     def func(channels):
         channels[0] += shift
         channels[0] %= 360
@@ -324,7 +328,7 @@ def shift_hue(color, shift=0, space='hcl'):
 
 
 @docstring._snippet_manager
-def scale_saturation(color, scale=1, space='hcl'):
+def scale_saturation(color, scale=1, space="hcl"):
     """
     Scale the saturation channel of a color.
 
@@ -348,6 +352,7 @@ def scale_saturation(color, scale=1, space='hcl'):
     shift_hue
     scale_luminance
     """
+
     def func(channels):
         channels[1] *= scale
         return channels
@@ -356,7 +361,7 @@ def scale_saturation(color, scale=1, space='hcl'):
 
 
 @docstring._snippet_manager
-def scale_luminance(color, scale=1, space='hcl'):
+def scale_luminance(color, scale=1, space="hcl"):
     """
     Scale the luminance channel of a color.
 
@@ -380,6 +385,7 @@ def scale_luminance(color, scale=1, space='hcl'):
     shift_hue
     scale_saturation
     """
+
     def func(channels):
         channels[2] *= scale
         return channels
@@ -388,7 +394,7 @@ def scale_luminance(color, scale=1, space='hcl'):
 
 
 @docstring._snippet_manager
-def set_hue(color, hue, space='hcl'):
+def set_hue(color, hue, space="hcl"):
     """
     Return a color with a different hue and the same luminance and saturation
     as the input color.
@@ -413,6 +419,7 @@ def set_hue(color, hue, space='hcl'):
     scale_saturation
     scale_luminance
     """
+
     def func(channels):
         channels[0] = hue
         return channels
@@ -421,7 +428,7 @@ def set_hue(color, hue, space='hcl'):
 
 
 @docstring._snippet_manager
-def set_saturation(color, saturation, space='hcl'):
+def set_saturation(color, saturation, space="hcl"):
     """
     Return a color with a different saturation and the same hue and luminance
     as the input color.
@@ -446,6 +453,7 @@ def set_saturation(color, saturation, space='hcl'):
     scale_saturation
     scale_luminance
     """
+
     def func(channels):
         channels[1] = saturation
         return channels
@@ -454,7 +462,7 @@ def set_saturation(color, saturation, space='hcl'):
 
 
 @docstring._snippet_manager
-def set_luminance(color, luminance, space='hcl'):
+def set_luminance(color, luminance, space="hcl"):
     """
     Return a color with a different luminance and the same hue and saturation
     as the input color.
@@ -479,6 +487,7 @@ def set_luminance(color, luminance, space='hcl'):
     scale_saturation
     scale_luminance
     """
+
     def func(channels):
         channels[2] = luminance
         return channels
@@ -521,6 +530,7 @@ def _translate_cycle_color(color, cycle=None):
     """
     if isinstance(cycle, str):
         from .colors import _cmap_database
+
         try:
             cycle = _cmap_database[cycle].colors
         except (KeyError, AttributeError):
@@ -530,24 +540,24 @@ def _translate_cycle_color(color, cycle=None):
                 if isinstance(cmap, mcolors.ListedColormap)
             )
             raise ValueError(
-                f'Invalid color cycle {cycle!r}. Options are: '
-                + ', '.join(map(repr, cycles))
-                + '.'
+                f"Invalid color cycle {cycle!r}. Options are: "
+                + ", ".join(map(repr, cycles))
+                + "."
             )
     elif cycle is None:
-        cycle = rc_matplotlib['axes.prop_cycle'].by_key()
-        if 'color' not in cycle:
-            cycle = ['k']
+        cycle = rc_matplotlib["axes.prop_cycle"].by_key()
+        if "color" not in cycle:
+            cycle = ["k"]
         else:
-            cycle = cycle['color']
+            cycle = cycle["color"]
     else:
-        raise ValueError(f'Invalid cycle {cycle!r}.')
+        raise ValueError(f"Invalid cycle {cycle!r}.")
 
     return cycle[int(color[-1]) % len(cycle)]
 
 
 @docstring._snippet_manager
-def to_hex(color, space='rgb', cycle=None, keep_alpha=True):
+def to_hex(color, space="rgb", cycle=None, keep_alpha=True):
     """
     Translate the color from an arbitrary colorspace to a HEX string.
     This is a generalization of `matplotlib.colors.to_hex`.
@@ -575,7 +585,7 @@ def to_hex(color, space='rgb', cycle=None, keep_alpha=True):
 
 
 @docstring._snippet_manager
-def to_rgb(color, space='rgb', cycle=None):
+def to_rgb(color, space="rgb", cycle=None):
     """
     Translate the color from an arbitrary colorspace to an RGB tuple. This is
     a generalization of `matplotlib.colors.to_rgb` and the inverse of `to_xyz`.
@@ -600,7 +610,7 @@ def to_rgb(color, space='rgb', cycle=None):
 
 
 @docstring._snippet_manager
-def to_rgba(color, space='rgb', cycle=None, clip=True):
+def to_rgba(color, space="rgb", cycle=None, clip=True):
     """
     Translate the color from an arbitrary colorspace to an RGBA tuple. This is
     a generalization of `matplotlib.colors.to_rgba` and the inverse of `to_xyz`.
@@ -622,42 +632,39 @@ def to_rgba(color, space='rgb', cycle=None, clip=True):
     to_xyza
     """
     # Translate color cycle strings
-    if isinstance(color, str) and re.match(r'\AC[0-9]\Z', color):
+    if isinstance(color, str) and re.match(r"\AC[0-9]\Z", color):
         color = _translate_cycle_color(color, cycle=cycle)
 
     # Translate RGB strings and (colormap, index) tuples
     # NOTE: Cannot use is_color_like because might have HSL channel values
     opacity = 1
-    if (
-        isinstance(color, str)
-        or np.iterable(color) and len(color) == 2
-    ):
+    if isinstance(color, str) or np.iterable(color) and len(color) == 2:
         color = mcolors.to_rgba(color)  # also enforced validity
     if (
         not np.iterable(color)
         or len(color) not in (3, 4)
         or not all(isinstance(c, Real) for c in color)
     ):
-        raise ValueError(f'Invalid color-spec {color!r}.')
+        raise ValueError(f"Invalid color-spec {color!r}.")
     if len(color) == 4:
         *color, opacity = color
 
     # Translate arbitrary colorspaces
-    if space == 'rgb':
+    if space == "rgb":
         if any(c > 2 for c in color):
             color = tuple(c / 255 for c in color)  # scale to within 0-1
         else:
             pass
-    elif space == 'hsv':
+    elif space == "hsv":
         color = hsluv.hsl_to_rgb(*color)
-    elif space == 'hcl':
+    elif space == "hcl":
         color = hsluv.hcl_to_rgb(*color)
-    elif space == 'hsl':
+    elif space == "hsl":
         color = hsluv.hsluv_to_rgb(*color)
-    elif space == 'hpl':
+    elif space == "hpl":
         color = hsluv.hpluv_to_rgb(*color)
     else:
-        raise ValueError(f'Invalid colorspace {space!r}.')
+        raise ValueError(f"Invalid colorspace {space!r}.")
 
     # Clip values. This should only be disabled when testing
     # translation functions.
@@ -669,7 +676,7 @@ def to_rgba(color, space='rgb', cycle=None, clip=True):
 
 
 @docstring._snippet_manager
-def to_xyz(color, space='hcl'):
+def to_xyz(color, space="hcl"):
     """
     Translate color in *any* format to a tuple of channel values in *any*
     colorspace. This is the inverse of `to_rgb`.
@@ -696,7 +703,7 @@ def to_xyz(color, space='hcl'):
 
 
 @docstring._snippet_manager
-def to_xyza(color, space='hcl'):
+def to_xyza(color, space="hcl"):
     """
     Translate color in *any* format to a tuple of channel values in *any*
     colorspace. This is the inverse of `to_rgba`.
@@ -723,18 +730,18 @@ def to_xyza(color, space='hcl'):
     # NOTE: Don't pass color tuple, because we may want to permit
     # out-of-bounds RGB values to invert conversion
     *color, opacity = to_rgba(color)
-    if space == 'rgb':
+    if space == "rgb":
         pass
-    elif space == 'hsv':
+    elif space == "hsv":
         color = hsluv.rgb_to_hsl(*color)  # rgb_to_hsv would also work
-    elif space == 'hcl':
+    elif space == "hcl":
         color = hsluv.rgb_to_hcl(*color)
-    elif space == 'hsl':
+    elif space == "hsl":
         color = hsluv.rgb_to_hsluv(*color)
-    elif space == 'hpl':
+    elif space == "hpl":
         color = hsluv.rgb_to_hpluv(*color)
     else:
-        raise ValueError(f'Invalid colorspace {space}.')
+        raise ValueError(f"Invalid colorspace {space}.")
     return (*color, opacity)
 
 
@@ -746,18 +753,18 @@ def _fontsize_to_pt(size):
     if not isinstance(size, str):
         return size
     if size in mfonts.font_scalings:
-        return rc_matplotlib['font.size'] * scalings[size]
+        return rc_matplotlib["font.size"] * scalings[size]
     try:
-        return units(size, 'pt')
+        return units(size, "pt")
     except ValueError:
         raise KeyError(
-            f'Invalid font size {size!r}. Can be points or one of the preset scalings: '
-            + ', '.join(f'{key!r} ({value})' for key, value in scalings.items())
-            + '.'
+            f"Invalid font size {size!r}. Can be points or one of the preset scalings: "
+            + ", ".join(f"{key!r} ({value})" for key, value in scalings.items())
+            + "."
         )
 
 
-@warnings._rename_kwargs('0.6.0', units='dest')
+@warnings._rename_kwargs("0.6.0", units="dest")
 def units(
     value, numeric=None, dest=None, *, fontsize=None, figure=None, axes=None, width=None
 ):
@@ -822,51 +829,51 @@ def units(
         relative coordinates.
     """
     # Scales for converting physical units to inches
-    fontsize_small = _not_none(fontsize, rc_matplotlib['font.size'])  # always absolute
+    fontsize_small = _not_none(fontsize, rc_matplotlib["font.size"])  # always absolute
     fontsize_small = _fontsize_to_pt(fontsize_small)
-    fontsize_large = _not_none(fontsize, rc_matplotlib['axes.titlesize'])
+    fontsize_large = _not_none(fontsize, rc_matplotlib["axes.titlesize"])
     fontsize_large = _fontsize_to_pt(fontsize_large)
     unit_dict = UNIT_DICT.copy()
     unit_dict.update(
         {
-            'em': fontsize_small / 72.0,
-            'en': 0.5 * fontsize_small / 72.0,
-            'Em': fontsize_large / 72.0,
-            'En': 0.5 * fontsize_large / 72.0,
+            "em": fontsize_small / 72.0,
+            "en": 0.5 * fontsize_small / 72.0,
+            "Em": fontsize_large / 72.0,
+            "En": 0.5 * fontsize_large / 72.0,
         }
     )
 
     # Scales for converting display units to inches
     # WARNING: In ipython shell these take the value 'figure'
-    if not isinstance(rc_matplotlib['figure.dpi'], str):
-        unit_dict['px'] = 1 / rc_matplotlib['figure.dpi']  # once generated by backend
-    if not isinstance(rc_matplotlib['savefig.dpi'], str):
-        unit_dict['pp'] = 1 / rc_matplotlib['savefig.dpi']  # once 'printed' i.e. saved
+    if not isinstance(rc_matplotlib["figure.dpi"], str):
+        unit_dict["px"] = 1 / rc_matplotlib["figure.dpi"]  # once generated by backend
+    if not isinstance(rc_matplotlib["savefig.dpi"], str):
+        unit_dict["pp"] = 1 / rc_matplotlib["savefig.dpi"]  # once 'printed' i.e. saved
 
     # Scales relative to axes and figure objects
-    if axes is not None and hasattr(axes, '_get_size_inches'):  # proplot axes
-        unit_dict['ax'] = axes._get_size_inches()[1 - int(width)]
+    if axes is not None and hasattr(axes, "_get_size_inches"):  # proplot axes
+        unit_dict["ax"] = axes._get_size_inches()[1 - int(width)]
     if figure is None:
-        figure = getattr(axes, 'figure', None)
-    if figure is not None and hasattr(figure, 'get_size_inches'):
-        unit_dict['fig'] = figure.get_size_inches()[1 - int(width)]
+        figure = getattr(axes, "figure", None)
+    if figure is not None and hasattr(figure, "get_size_inches"):
+        unit_dict["fig"] = figure.get_size_inches()[1 - int(width)]
 
     # Scale for converting inches to arbitrary other unit
     if numeric is None and dest is None:
-        numeric = dest = 'in'
+        numeric = dest = "in"
     elif numeric is None:
         numeric = dest
     elif dest is None:
         dest = numeric
-    options = 'Valid units are ' + ', '.join(map(repr, unit_dict)) + '.'
+    options = "Valid units are " + ", ".join(map(repr, unit_dict)) + "."
     try:
         nscale = unit_dict[numeric]
     except KeyError:
-        raise ValueError(f'Invalid numeric units {numeric!r}. ' + options)
+        raise ValueError(f"Invalid numeric units {numeric!r}. " + options)
     try:
         dscale = unit_dict[dest]
     except KeyError:
-        raise ValueError(f'Invalid destination units {dest!r}. ' + options)
+        raise ValueError(f"Invalid destination units {dest!r}. " + options)
 
     # Convert units for each value in list
     result = []
@@ -884,22 +891,22 @@ def units(
             if regex:
                 number, units = regex.groups()  # second group is exponential
             else:
-                raise ValueError(f'Invalid unit size spec {val!r}.')
+                raise ValueError(f"Invalid unit size spec {val!r}.")
         else:
-            raise ValueError(f'Invalid unit size spec {val!r}.')
+            raise ValueError(f"Invalid unit size spec {val!r}.")
         # Convert with units
         if not units:
             result.append(float(number) * nscale / dscale)
         elif units in unit_dict:
             result.append(float(number) * unit_dict[units] / dscale)
         else:
-            raise ValueError(f'Invalid input units {units!r}. ' + options)
+            raise ValueError(f"Invalid input units {units!r}. " + options)
     return result[0] if singleton else result
 
 
 # Deprecations
 shade, saturate = warnings._rename_objs(
-    '0.6.0',
+    "0.6.0",
     shade=scale_luminance,
     saturate=scale_saturation,
 )

@@ -83,19 +83,35 @@ def test_manual_labels():
 
 
 @pytest.mark.mpl_image_compare
-def test_contour_legend():
+def test_contour_legend_with_label():
     """
     Support contour element labels. If has no label should trigger warning.
     """
     figs = []
-    for label in ("label", None):
-        fig, axs = pplt.subplots(ncols=2)
-        ax = axs[0]
-        ax.contour(state.rand(5, 5), color="k", label=label, legend="b")
-        ax = axs[1]
-        ax.pcolor(state.rand(5, 5), label=label, legend="b")
-        figs.append(fig)
-    return figs
+    label = "label"
+
+    fig, axs = pplt.subplots(ncols=2)
+    ax = axs[0]
+    ax.contour(state.rand(5, 5), color="k", label=label, legend="b")
+    ax = axs[1]
+    ax.pcolor(state.rand(5, 5), label=label, legend="b")
+    return fig
+
+
+@pytest.mark.mpl_image_compare
+def test_contour_legend_without_label():
+    """
+    Support contour element labels. If has no label should trigger warning.
+    """
+    figs = []
+    label = None
+
+    fig, axs = pplt.subplots(ncols=2)
+    ax = axs[0]
+    ax.contour(state.rand(5, 5), color="k", label=label, legend="b")
+    ax = axs[1]
+    ax.pcolor(state.rand(5, 5), label=label, legend="b")
+    return fig
 
 
 @pytest.mark.mpl_image_compare

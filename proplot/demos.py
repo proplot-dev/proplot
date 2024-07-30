@@ -18,166 +18,314 @@ from .internals import _not_none, _version_mpl, docstring, warnings
 from .utils import to_rgb, to_xyz
 
 __all__ = [
-    'show_cmaps',
-    'show_channels',
-    'show_colors',
-    'show_colorspaces',
-    'show_cycles',
-    'show_fonts',
+    "show_cmaps",
+    "show_channels",
+    "show_colors",
+    "show_colorspaces",
+    "show_cycles",
+    "show_fonts",
 ]
 
 
 # Tables and constants
 FAMILY_TEXGYRE = (
-    'TeX Gyre Heros',  # sans-serif
-    'TeX Gyre Schola',  # serif
-    'TeX Gyre Bonum',
-    'TeX Gyre Termes',
-    'TeX Gyre Pagella',
-    'TeX Gyre Chorus',  # cursive
-    'TeX Gyre Adventor',  # fantasy
-    'TeX Gyre Cursor',  # monospace
+    "TeX Gyre Heros",  # sans-serif
+    "TeX Gyre Schola",  # serif
+    "TeX Gyre Bonum",
+    "TeX Gyre Termes",
+    "TeX Gyre Pagella",
+    "TeX Gyre Chorus",  # cursive
+    "TeX Gyre Adventor",  # fantasy
+    "TeX Gyre Cursor",  # monospace
 )
 COLOR_TABLE = {
     # NOTE: Just want the names but point to the dictionaries because
     # they don't get filled until after __init__ imports this module.
-    'base': mcolors.BASE_COLORS,
-    'css4': mcolors.CSS4_COLORS,
-    'opencolor': pcolors.COLORS_OPEN,
-    'xkcd': pcolors.COLORS_XKCD,
+    "base": mcolors.BASE_COLORS,
+    "css4": mcolors.CSS4_COLORS,
+    "opencolor": pcolors.COLORS_OPEN,
+    "xkcd": pcolors.COLORS_XKCD,
 }
 CYCLE_TABLE = {
-    'Matplotlib defaults': (
-        'default', 'classic',
+    "Matplotlib defaults": (
+        "default",
+        "classic",
     ),
-    'Matplotlib stylesheets': (
+    "Matplotlib stylesheets": (
         # NOTE: Do not include 'solarized' because colors are terrible for
         # colorblind folks.
-        'colorblind', 'colorblind10', 'tableau', 'ggplot', '538', 'seaborn', 'bmh',
+        "colorblind",
+        "colorblind10",
+        "tableau",
+        "ggplot",
+        "538",
+        "seaborn",
+        "bmh",
     ),
-    'ColorBrewer2.0 qualitative': (
-        'Accent', 'Dark2',
-        'Paired', 'Pastel1', 'Pastel2',
-        'Set1', 'Set2', 'Set3',
-        'tab10', 'tab20', 'tab20b', 'tab20c',
+    "ColorBrewer2.0 qualitative": (
+        "Accent",
+        "Dark2",
+        "Paired",
+        "Pastel1",
+        "Pastel2",
+        "Set1",
+        "Set2",
+        "Set3",
+        "tab10",
+        "tab20",
+        "tab20b",
+        "tab20c",
     ),
-    'Other qualitative': (
-        'FlatUI', 'Qual1', 'Qual2',
+    "Other qualitative": (
+        "FlatUI",
+        "Qual1",
+        "Qual2",
     ),
 }
 CMAP_TABLE = {
     # NOTE: No longer rename colorbrewer greys map, just redirect 'grays'
     # to 'greys' in colormap database.
-    'Grayscale': (  # assorted origin, but they belong together
-        'Greys', 'Mono', 'MonoCycle',
+    "Grayscale": (  # assorted origin, but they belong together
+        "Greys",
+        "Mono",
+        "MonoCycle",
     ),
-    'Matplotlib sequential': (
-        'viridis', 'plasma', 'inferno', 'magma', 'cividis',
+    "Matplotlib sequential": (
+        "viridis",
+        "plasma",
+        "inferno",
+        "magma",
+        "cividis",
     ),
-    'Matplotlib cyclic': (
-        'twilight',
+    "Matplotlib cyclic": ("twilight",),
+    "Seaborn sequential": (
+        "Rocket",
+        "Flare",
+        "Mako",
+        "Crest",
     ),
-    'Seaborn sequential': (
-        'Rocket', 'Flare', 'Mako', 'Crest',
+    "Seaborn diverging": (
+        "IceFire",
+        "Vlag",
     ),
-    'Seaborn diverging': (
-        'IceFire', 'Vlag',
+    "Proplot sequential": (
+        "Fire",
+        "Stellar",
+        "Glacial",
+        "Dusk",
+        "Marine",
+        "Boreal",
+        "Sunrise",
+        "Sunset",
     ),
-    'Proplot sequential': (
-        'Fire',
-        'Stellar',
-        'Glacial',
-        'Dusk',
-        'Marine',
-        'Boreal',
-        'Sunrise',
-        'Sunset',
+    "Proplot diverging": (
+        "Div",
+        "NegPos",
+        "DryWet",
     ),
-    'Proplot diverging': (
-        'Div', 'NegPos', 'DryWet',
+    "Other sequential": ("cubehelix", "turbo"),
+    "Other diverging": (
+        "BR",
+        "ColdHot",
+        "CoolWarm",
     ),
-    'Other sequential': (
-        'cubehelix', 'turbo'
+    "cmOcean sequential": (
+        "Oxy",
+        "Thermal",
+        "Dense",
+        "Ice",
+        "Haline",
+        "Deep",
+        "Algae",
+        "Tempo",
+        "Speed",
+        "Turbid",
+        "Solar",
+        "Matter",
+        "Amp",
     ),
-    'Other diverging': (
-        'BR', 'ColdHot', 'CoolWarm',
+    "cmOcean diverging": (
+        "Balance",
+        "Delta",
+        "Curl",
     ),
-    'cmOcean sequential': (
-        'Oxy', 'Thermal', 'Dense', 'Ice', 'Haline',
-        'Deep', 'Algae', 'Tempo', 'Speed', 'Turbid', 'Solar', 'Matter',
-        'Amp',
+    "cmOcean cyclic": ("Phase",),
+    "Scientific colour maps sequential": (
+        "batlow",
+        "batlowK",
+        "batlowW",
+        "devon",
+        "davos",
+        "oslo",
+        "lapaz",
+        "acton",
+        "lajolla",
+        "bilbao",
+        "tokyo",
+        "turku",
+        "bamako",
+        "nuuk",
+        "hawaii",
+        "buda",
+        "imola",
+        "oleron",
+        "bukavu",
+        "fes",
     ),
-    'cmOcean diverging': (
-        'Balance', 'Delta', 'Curl',
+    "Scientific colour maps diverging": (
+        "roma",
+        "broc",
+        "cork",
+        "vik",
+        "bam",
+        "lisbon",
+        "tofino",
+        "berlin",
+        "vanimo",
     ),
-    'cmOcean cyclic': (
-        'Phase',
+    "Scientific colour maps cyclic": (
+        "romaO",
+        "brocO",
+        "corkO",
+        "vikO",
+        "bamO",
     ),
-    'Scientific colour maps sequential': (
-        'batlow', 'batlowK', 'batlowW',
-        'devon', 'davos', 'oslo', 'lapaz', 'acton',
-        'lajolla', 'bilbao', 'tokyo', 'turku', 'bamako', 'nuuk',
-        'hawaii', 'buda', 'imola',
-        'oleron', 'bukavu', 'fes',
+    "ColorBrewer2.0 sequential": (
+        "Purples",
+        "Blues",
+        "Greens",
+        "Oranges",
+        "Reds",
+        "YlOrBr",
+        "YlOrRd",
+        "OrRd",
+        "PuRd",
+        "RdPu",
+        "BuPu",
+        "PuBu",
+        "PuBuGn",
+        "BuGn",
+        "GnBu",
+        "YlGnBu",
+        "YlGn",
     ),
-    'Scientific colour maps diverging': (
-        'roma', 'broc', 'cork', 'vik', 'bam', 'lisbon', 'tofino', 'berlin', 'vanimo',
+    "ColorBrewer2.0 diverging": (
+        "Spectral",
+        "PiYG",
+        "PRGn",
+        "BrBG",
+        "PuOr",
+        "RdGY",
+        "RdBu",
+        "RdYlBu",
+        "RdYlGn",
     ),
-    'Scientific colour maps cyclic': (
-        'romaO', 'brocO', 'corkO', 'vikO', 'bamO',
+    "SciVisColor blues": (
+        "Blues1",
+        "Blues2",
+        "Blues3",
+        "Blues4",
+        "Blues5",
+        "Blues6",
+        "Blues7",
+        "Blues8",
+        "Blues9",
+        "Blues10",
+        "Blues11",
     ),
-    'ColorBrewer2.0 sequential': (
-        'Purples', 'Blues', 'Greens', 'Oranges', 'Reds',
-        'YlOrBr', 'YlOrRd', 'OrRd', 'PuRd', 'RdPu', 'BuPu',
-        'PuBu', 'PuBuGn', 'BuGn', 'GnBu', 'YlGnBu', 'YlGn'
+    "SciVisColor greens": (
+        "Greens1",
+        "Greens2",
+        "Greens3",
+        "Greens4",
+        "Greens5",
+        "Greens6",
+        "Greens7",
+        "Greens8",
     ),
-    'ColorBrewer2.0 diverging': (
-        'Spectral', 'PiYG', 'PRGn', 'BrBG', 'PuOr', 'RdGY',
-        'RdBu', 'RdYlBu', 'RdYlGn',
+    "SciVisColor yellows": (
+        "Yellows1",
+        "Yellows2",
+        "Yellows3",
+        "Yellows4",
     ),
-    'SciVisColor blues': (
-        'Blues1', 'Blues2', 'Blues3', 'Blues4', 'Blues5',
-        'Blues6', 'Blues7', 'Blues8', 'Blues9', 'Blues10', 'Blues11',
+    "SciVisColor oranges": (
+        "Oranges1",
+        "Oranges2",
+        "Oranges3",
+        "Oranges4",
     ),
-    'SciVisColor greens': (
-        'Greens1', 'Greens2', 'Greens3', 'Greens4', 'Greens5',
-        'Greens6', 'Greens7', 'Greens8',
+    "SciVisColor browns": (
+        "Browns1",
+        "Browns2",
+        "Browns3",
+        "Browns4",
+        "Browns5",
+        "Browns6",
+        "Browns7",
+        "Browns8",
+        "Browns9",
     ),
-    'SciVisColor yellows': (
-        'Yellows1', 'Yellows2', 'Yellows3', 'Yellows4',
+    "SciVisColor reds": (
+        "Reds1",
+        "Reds2",
+        "Reds3",
+        "Reds4",
+        "Reds5",
     ),
-    'SciVisColor oranges': (
-        'Oranges1', 'Oranges2', 'Oranges3', 'Oranges4',
-    ),
-    'SciVisColor browns': (
-        'Browns1', 'Browns2', 'Browns3', 'Browns4', 'Browns5',
-        'Browns6', 'Browns7', 'Browns8', 'Browns9',
-    ),
-    'SciVisColor reds': (
-        'Reds1', 'Reds2', 'Reds3', 'Reds4', 'Reds5',
-    ),
-    'SciVisColor purples': (
-        'Purples1', 'Purples2', 'Purples3',
+    "SciVisColor purples": (
+        "Purples1",
+        "Purples2",
+        "Purples3",
     ),
     # Builtin colormaps that re hidden by default. Some are really bad, some
     # are segmented maps that should be cycles, and some are just uninspiring.
-    'MATLAB': (
-        'bone', 'cool', 'copper', 'autumn', 'flag', 'prism',
-        'jet', 'hsv', 'hot', 'spring', 'summer', 'winter', 'pink', 'gray',
+    "MATLAB": (
+        "bone",
+        "cool",
+        "copper",
+        "autumn",
+        "flag",
+        "prism",
+        "jet",
+        "hsv",
+        "hot",
+        "spring",
+        "summer",
+        "winter",
+        "pink",
+        "gray",
     ),
-    'GNUplot': (
-        'gnuplot', 'gnuplot2', 'ocean', 'afmhot', 'rainbow',
+    "GNUplot": (
+        "gnuplot",
+        "gnuplot2",
+        "ocean",
+        "afmhot",
+        "rainbow",
     ),
-    'GIST': (
-        'gist_earth', 'gist_gray', 'gist_heat', 'gist_ncar',
-        'gist_rainbow', 'gist_stern', 'gist_yarg',
+    "GIST": (
+        "gist_earth",
+        "gist_gray",
+        "gist_heat",
+        "gist_ncar",
+        "gist_rainbow",
+        "gist_stern",
+        "gist_yarg",
     ),
-    'Other': (
-        'binary', 'bwr', 'brg',  # appear to be custom matplotlib
-        'Wistia', 'CMRmap',  # individually released
-        'seismic', 'terrain', 'nipy_spectral',  # origin ambiguous
-        'tab10', 'tab20', 'tab20b', 'tab20c',  # merged colormap cycles
-    )
+    "Other": (
+        "binary",
+        "bwr",
+        "brg",  # appear to be custom matplotlib
+        "Wistia",
+        "CMRmap",  # individually released
+        "seismic",
+        "terrain",
+        "nipy_spectral",  # origin ambiguous
+        "tab10",
+        "tab20",
+        "tab20b",
+        "tab20c",  # merged colormap cycles
+    ),
 }
 
 # Docstring snippets
@@ -192,15 +340,25 @@ rasterized : bool, default: :rc:`colorbar.rasterized`
     Whether to rasterize the colorbar solids. This increases rendering
     time and decreases file sizes for vector graphics.
 """
-docstring._snippet_manager['demos.cmaps'] = ', '.join(f'``{s!r}``' for s in CMAP_TABLE)
-docstring._snippet_manager['demos.cycles'] = ', '.join(f'``{s!r}``' for s in CYCLE_TABLE)  # noqa: E501
-docstring._snippet_manager['demos.colors'] = ', '.join(f'``{s!r}``' for s in COLOR_TABLE)  # noqa: E501
-docstring._snippet_manager['demos.colorbar'] = _colorbar_docstring
+docstring._snippet_manager["demos.cmaps"] = ", ".join(f"``{s!r}``" for s in CMAP_TABLE)
+docstring._snippet_manager["demos.cycles"] = ", ".join(
+    f"``{s!r}``" for s in CYCLE_TABLE
+)  # noqa: E501
+docstring._snippet_manager["demos.colors"] = ", ".join(
+    f"``{s!r}``" for s in COLOR_TABLE
+)  # noqa: E501
+docstring._snippet_manager["demos.colorbar"] = _colorbar_docstring
 
 
 def show_channels(
-    *args, N=100, rgb=False, saturation=True,
-    minhue=0, maxsat=500, width=100, refwidth=1.7
+    *args,
+    N=100,
+    rgb=False,
+    saturation=True,
+    minhue=0,
+    maxsat=500,
+    width=100,
+    refwidth=1.7,
 ):
     """
     Show how arbitrary colormap(s) vary with respect to the hue, chroma,
@@ -241,25 +399,29 @@ def show_channels(
     """
     # Figure and plot
     if not args:
-        raise ValueError('At least one positional argument required.')
+        raise ValueError("At least one positional argument required.")
     array = [[1, 1, 2, 2, 3, 3]]
-    labels = ('Hue', 'Chroma', 'Luminance')
+    labels = ("Hue", "Chroma", "Luminance")
     if saturation:
         array += [[0, 4, 4, 5, 5, 0]]
-        labels += ('HSL saturation', 'HPL saturation')
+        labels += ("HSL saturation", "HPL saturation")
     if rgb:
         array += [np.array([4, 4, 5, 5, 6, 6]) + 2 * int(saturation)]
-        labels += ('Red', 'Green', 'Blue')
+        labels += ("Red", "Green", "Blue")
     fig, axs = ui.subplots(
-        array=array, refwidth=refwidth, wratios=(1.5, 1, 1, 1, 1, 1.5),
-        share='labels', span=False, innerpad=1,
+        array=array,
+        refwidth=refwidth,
+        wratios=(1.5, 1, 1, 1, 1, 1.5),
+        share="labels",
+        span=False,
+        innerpad=1,
     )
     # Iterate through colormaps
     mc = ms = mp = 0
     cmaps = []
     for cmap in args:
         # Get colormap and avoid registering new names
-        name = cmap if isinstance(cmap, str) else getattr(cmap, 'name', None)
+        name = cmap if isinstance(cmap, str) else getattr(cmap, "name", None)
         cmap = constructor.Colormap(cmap, N=N)  # arbitrary cmap argument
         if name is not None:
             cmap.name = name
@@ -270,9 +432,9 @@ def show_channels(
         x = np.linspace(0, 1, N)
         lut = cmap._lut[:-3, :3].copy()
         rgb_data = lut.T  # 3 by N
-        hcl_data = np.array([to_xyz(color, space='hcl') for color in lut]).T  # 3 by N
-        hsl_data = [to_xyz(color, space='hsl')[1] for color in lut]
-        hpl_data = [to_xyz(color, space='hpl')[1] for color in lut]
+        hcl_data = np.array([to_xyz(color, space="hcl") for color in lut]).T  # 3 by N
+        hsl_data = [to_xyz(color, space="hsl")[1] for color in lut]
+        hpl_data = [to_xyz(color, space="hpl")[1] for color in lut]
 
         # Plot channels
         # If rgb is False, the zip will just truncate the other iterables
@@ -283,47 +445,54 @@ def show_channels(
             data += tuple(rgb_data)
         for ax, y, label in zip(axs, data, labels):
             ylim, ylocator = None, None
-            if label in ('Red', 'Green', 'Blue'):
+            if label in ("Red", "Green", "Blue"):
                 ylim = (0, 1)
                 ylocator = 0.2
-            elif label == 'Luminance':
+            elif label == "Luminance":
                 ylim = (0, 100)
                 ylocator = 20
-            elif label == 'Hue':
+            elif label == "Hue":
                 ylim = (minhue, minhue + 360)
                 ylocator = 90
                 y = y - 720
                 for _ in range(3):  # rotate up to 1080 degrees
                     y[y < minhue] += 360
             else:
-                if 'HSL' in label:
+                if "HSL" in label:
                     m = ms = max(min(max(ms, max(y)), maxsat), 100)
-                elif 'HPL' in label:
+                elif "HPL" in label:
                     m = mp = max(min(max(mp, max(y)), maxsat), 100)
                 else:
                     m = mc = max(min(max(mc, max(y)), maxsat), 100)
                 ylim = (0, m)
-                ylocator = ('maxn', 5)
+                ylocator = ("maxn", 5)
             ax.scatter(x, y, c=x, cmap=cmap, s=width, linewidths=0)
             ax.format(title=label, ylim=ylim, ylocator=ylocator)
 
     # Formatting
     suptitle = (
-        ', '.join(repr(cmap.name) for cmap in cmaps[:-1])
-        + (', and ' if len(cmaps) > 2 else ' and ' if len(cmaps) == 2 else ' ')
-        + f'{repr(cmaps[-1].name)} colormap'
-        + ('s' if len(cmaps) > 1 else '')
+        ", ".join(repr(cmap.name) for cmap in cmaps[:-1])
+        + (", and " if len(cmaps) > 2 else " and " if len(cmaps) == 2 else " ")
+        + f"{repr(cmaps[-1].name)} colormap"
+        + ("s" if len(cmaps) > 1 else "")
     )
     axs.format(
-        xlocator=0.25, xformatter='null',
-        suptitle=f'{suptitle} by channel', ylim=None, ytickminor=False,
+        xlocator=0.25,
+        xformatter="null",
+        suptitle=f"{suptitle} by channel",
+        ylim=None,
+        ytickminor=False,
     )
 
     # Colorbar on the bottom
     for cmap in cmaps:
         fig.colorbar(
-            cmap, loc='b', span=(2, 5),
-            locator='null', label=cmap.name, labelweight='bold'
+            cmap,
+            loc="b",
+            span=(2, 5),
+            locator="null",
+            label=cmap.name,
+            labelweight="bold",
         )
     return fig, axs
 
@@ -368,37 +537,46 @@ def show_colorspaces(*, luminance=None, saturation=None, hue=None, refwidth=2):
         luminance = 50
     _not_none(luminance=luminance, saturation=saturation, hue=hue)  # warning
     if luminance is not None:
-        hsl = np.concatenate((
-            np.repeat(hues[:, None], len(sats), axis=1)[..., None],
-            np.repeat(sats[None, :], len(hues), axis=0)[..., None],
-            np.ones((len(hues), len(sats)))[..., None] * luminance,
-        ), axis=2)
-        suptitle = f'Hue-saturation cross-section for luminance {luminance}'
-        xlabel, ylabel = 'hue', 'saturation'
+        hsl = np.concatenate(
+            (
+                np.repeat(hues[:, None], len(sats), axis=1)[..., None],
+                np.repeat(sats[None, :], len(hues), axis=0)[..., None],
+                np.ones((len(hues), len(sats)))[..., None] * luminance,
+            ),
+            axis=2,
+        )
+        suptitle = f"Hue-saturation cross-section for luminance {luminance}"
+        xlabel, ylabel = "hue", "saturation"
         xloc, yloc = 60, 20
     elif saturation is not None:
-        hsl = np.concatenate((
-            np.repeat(hues[:, None], len(lums), axis=1)[..., None],
-            np.ones((len(hues), len(lums)))[..., None] * saturation,
-            np.repeat(lums[None, :], len(hues), axis=0)[..., None],
-        ), axis=2)
-        suptitle = f'Hue-luminance cross-section for saturation {saturation}'
-        xlabel, ylabel = 'hue', 'luminance'
+        hsl = np.concatenate(
+            (
+                np.repeat(hues[:, None], len(lums), axis=1)[..., None],
+                np.ones((len(hues), len(lums)))[..., None] * saturation,
+                np.repeat(lums[None, :], len(hues), axis=0)[..., None],
+            ),
+            axis=2,
+        )
+        suptitle = f"Hue-luminance cross-section for saturation {saturation}"
+        xlabel, ylabel = "hue", "luminance"
         xloc, yloc = 60, 20
     elif hue is not None:
-        hsl = np.concatenate((
-            np.ones((len(lums), len(sats)))[..., None] * hue,
-            np.repeat(sats[None, :], len(lums), axis=0)[..., None],
-            np.repeat(lums[:, None], len(sats), axis=1)[..., None],
-        ), axis=2)
-        suptitle = 'Luminance-saturation cross-section'
-        xlabel, ylabel = 'luminance', 'saturation'
+        hsl = np.concatenate(
+            (
+                np.ones((len(lums), len(sats)))[..., None] * hue,
+                np.repeat(sats[None, :], len(lums), axis=0)[..., None],
+                np.repeat(lums[:, None], len(sats), axis=1)[..., None],
+            ),
+            axis=2,
+        )
+        suptitle = "Luminance-saturation cross-section"
+        xlabel, ylabel = "luminance", "saturation"
         xloc, yloc = 20, 20
 
     # Make figure, with black indicating invalid values
     # Note we invert the x-y ordering for imshow
     fig, axs = ui.subplots(refwidth=refwidth, ncols=3, share=False, innerpad=0.5)
-    for ax, space in zip(axs, ('hcl', 'hsl', 'hpl')):
+    for ax, space in zip(axs, ("hcl", "hsl", "hpl")):
         rgba = np.ones((*hsl.shape[:2][::-1], 4))  # RGBA
         for j in range(hsl.shape[0]):
             for k in range(hsl.shape[1]):
@@ -407,21 +585,35 @@ def show_colorspaces(*, luminance=None, saturation=None, hue=None, refwidth=2):
                     rgba[k, j, 3] = 0  # black cell
                 else:
                     rgba[k, j, :3] = rgb_jk
-        ax.imshow(rgba, origin='lower', aspect='auto')
+        ax.imshow(rgba, origin="lower", aspect="auto")
         ax.format(
-            xlabel=xlabel, ylabel=ylabel, suptitle=suptitle,
-            grid=False, xtickminor=False, ytickminor=False,
-            xlocator=xloc, ylocator=yloc, facecolor='k',
+            xlabel=xlabel,
+            ylabel=ylabel,
+            suptitle=suptitle,
+            grid=False,
+            xtickminor=False,
+            ytickminor=False,
+            xlocator=xloc,
+            ylocator=yloc,
+            facecolor="k",
             title=space.upper(),
         )
     return fig, axs
 
 
-@warnings._rename_kwargs('0.8.0', categories='include')
-@warnings._rename_kwargs('0.10.0', rasterize='rasterized')
+@warnings._rename_kwargs("0.8.0", categories="include")
+@warnings._rename_kwargs("0.10.0", rasterize="rasterized")
 def _draw_bars(
-    cmaps, *, source, unknown='User', include=None, ignore=None,
-    length=4.0, width=0.2, N=None, rasterized=None,
+    cmaps,
+    *,
+    source,
+    unknown="User",
+    include=None,
+    ignore=None,
+    length=4.0,
+    width=0.2,
+    N=None,
+    rasterized=None,
 ):
     """
     Draw colorbars for "colormaps" and "color cycles". This is called by
@@ -432,7 +624,7 @@ def _draw_bars(
     table.update({cat: [None] * len(names) for cat, names in source.items()})
     for cmap in cmaps:
         cat = None
-        name = cmap.name or '_no_name'
+        name = cmap.name or "_no_name"
         name = name.lower()
         for opt, names in source.items():
             names = list(map(str.lower, names))
@@ -446,7 +638,7 @@ def _draw_bars(
     # Filter out certain categories
     options = set(map(str.lower, source))
     if ignore is None:
-        ignore = ('matlab', 'gnuplot', 'gist', 'other')
+        ignore = ("matlab", "gnuplot", "gist", "other")
     if isinstance(include, str):
         include = (include,)
     if isinstance(ignore, str):
@@ -457,8 +649,9 @@ def _draw_bars(
         include = set(map(str.lower, include))
     if any(cat not in options and cat != unknown for cat in include):
         raise ValueError(
-            f'Invalid categories {include!r}. Options are: '
-            + ', '.join(map(repr, source)) + '.'
+            f"Invalid categories {include!r}. Options are: "
+            + ", ".join(map(repr, source))
+            + "."
         )
     for cat in tuple(table):
         table[cat][:] = [cmap for cmap in table[cat] if cmap is not None]
@@ -469,8 +662,12 @@ def _draw_bars(
     # Allocate two colorbar widths for each title of sections
     naxs = 2 * len(table) + sum(map(len, table.values()))
     fig, axs = ui.subplots(
-        refwidth=length, refheight=width,
-        nrows=naxs, share=False, hspace='2pt', top='-1em',
+        refwidth=length,
+        refheight=width,
+        nrows=naxs,
+        share=False,
+        hspace="2pt",
+        top="-1em",
     )
     i = -1
     nheads = nbars = 0  # for deciding which axes to plot in
@@ -482,24 +679,32 @@ def _draw_bars(
                 break
             if j == 0:  # allocate this axes for title
                 i += 2
-                for ax in axs[i - 2:i]:
+                for ax in axs[i - 2 : i]:
                     ax.set_visible(False)
             ax = axs[i]
             if N is not None:
                 cmap = cmap.copy(N=N)
             label = cmap.name
-            label = re.sub(r'\A_*', '', label)
-            label = re.sub(r'(_copy)*\Z', '', label)
+            label = re.sub(r"\A_*", "", label)
+            label = re.sub(r"(_copy)*\Z", "", label)
             ax.colorbar(
-                cmap, loc='fill', orientation='horizontal',
-                locator='null', linewidth=0, rasterized=rasterized,
+                cmap,
+                loc="fill",
+                orientation="horizontal",
+                locator="null",
+                linewidth=0,
+                rasterized=rasterized,
             )
             ax.text(
-                0 - (rc['axes.labelpad'] / 72) / length, 0.45, label,
-                ha='right', va='center', transform='axes',
+                0 - (rc["axes.labelpad"] / 72) / length,
+                0.45,
+                label,
+                ha="right",
+                va="center",
+                transform="axes",
             )
             if j == 0:
-                ax.set_title(cat, weight='bold')
+                ax.set_title(cat, weight="bold")
         nbars += len(cmaps)
 
     return fig, axs
@@ -550,21 +755,26 @@ def show_cmaps(*args, **kwargs):
     if args:
         cmaps = list(map(constructor.Colormap, args))
         cmaps = [
-            cmap if isinstance(cmap, mcolors.LinearSegmentedColormap)
-            else pcolors._get_cmap_subtype(cmap, 'continuous') for cmap in args
+            (
+                cmap
+                if isinstance(cmap, mcolors.LinearSegmentedColormap)
+                else pcolors._get_cmap_subtype(cmap, "continuous")
+            )
+            for cmap in args
         ]
         ignore = ()
     else:
         cmaps = [
-            cmap for cmap in pcolors._cmap_database.values()
+            cmap
+            for cmap in pcolors._cmap_database.values()
             if isinstance(cmap, pcolors.ContinuousColormap)
-            and not (cmap.name or '_')[:1] == '_'
+            and not (cmap.name or "_")[:1] == "_"
         ]
         ignore = None
 
     # Return figure of colorbars
-    kwargs.setdefault('source', CMAP_TABLE)
-    kwargs.setdefault('ignore', ignore)
+    kwargs.setdefault("source", CMAP_TABLE)
+    kwargs.setdefault("ignore", ignore)
     return _draw_bars(cmaps, **kwargs)
 
 
@@ -607,25 +817,32 @@ def show_cycles(*args, **kwargs):
     # Get the list of cycles
     if args:
         cycles = [
-            pcolors.DiscreteColormap(
-                cmap.by_key().get('color', ['k']), name=getattr(cmap, 'name', None)
+            (
+                pcolors.DiscreteColormap(
+                    cmap.by_key().get("color", ["k"]), name=getattr(cmap, "name", None)
+                )
+                if isinstance(cmap, cycler.Cycler)
+                else (
+                    cmap
+                    if isinstance(cmap, mcolors.ListedColormap)
+                    else pcolors._get_cmap_subtype(cmap, "discrete")
+                )
             )
-            if isinstance(cmap, cycler.Cycler)
-            else cmap if isinstance(cmap, mcolors.ListedColormap)
-            else pcolors._get_cmap_subtype(cmap, 'discrete') for cmap in args
+            for cmap in args
         ]
         ignore = ()
     else:
         cycles = [
-            cmap for cmap in pcolors._cmap_database.values()
+            cmap
+            for cmap in pcolors._cmap_database.values()
             if isinstance(cmap, pcolors.DiscreteColormap)
-            and not (cmap.name or '_')[:1] == '_'
+            and not (cmap.name or "_")[:1] == "_"
         ]
         ignore = None
 
     # Return figure of colorbars
-    kwargs.setdefault('source', CYCLE_TABLE)
-    kwargs.setdefault('ignore', ignore)
+    kwargs.setdefault("source", CYCLE_TABLE)
+    kwargs.setdefault("ignore", ignore)
     return _draw_bars(cycles, **kwargs)
 
 
@@ -655,7 +872,7 @@ def _filter_colors(hcl, ihue, nhues, minsat):
 
 
 @docstring._snippet_manager
-def show_colors(*, nhues=17, minsat=10, unknown='User', include=None, ignore=None):
+def show_colors(*, nhues=17, minsat=10, unknown="User", include=None, ignore=None):
     """
     Generate tables of the registered color names. Adapted from
     `this example <https://matplotlib.org/examples/color/named_colors.html>`__.
@@ -689,7 +906,7 @@ def show_colors(*, nhues=17, minsat=10, unknown='User', include=None, ignore=Non
     # Tables of known colors to be plotted
     colordict = {}
     if ignore is None:
-        ignore = 'css4'
+        ignore = "css4"
     if isinstance(include, str):
         include = (include.lower(),)
     if isinstance(ignore, str):
@@ -700,16 +917,19 @@ def show_colors(*, nhues=17, minsat=10, unknown='User', include=None, ignore=Non
     for cat in sorted(include):
         if cat not in COLOR_TABLE:
             raise ValueError(
-                f'Invalid categories {include!r}. Options are: '
-                + ', '.join(map(repr, COLOR_TABLE)) + '.'
+                f"Invalid categories {include!r}. Options are: "
+                + ", ".join(map(repr, COLOR_TABLE))
+                + "."
             )
         colordict[cat] = list(COLOR_TABLE[cat])  # copy the names
 
     # Add "unknown" colors
     if unknown:
         unknown_colors = [
-            color for color in map(repr, pcolors._color_database)
-            if 'xkcd:' not in color and 'tableau:' not in color
+            color
+            for color in map(repr, pcolors._color_database)
+            if "xkcd:" not in color
+            and "tableau:" not in color
             and not any(color in list_ for list_ in COLOR_TABLE)
         ]
         if unknown_colors:
@@ -721,21 +941,22 @@ def show_colors(*, nhues=17, minsat=10, unknown='User', include=None, ignore=Non
     # them by hue in descending order of luminance.
     namess = {}
     for cat in sorted(include):
-        if cat == 'base':
+        if cat == "base":
             names = np.asarray(colordict[cat])
             ncols, nrows = len(names), 1
-        elif cat == 'opencolor':
+        elif cat == "opencolor":
             names = np.asarray(colordict[cat])
             ncols, nrows = 7, 20
         else:
-            hclpairs = [(name, to_xyz(name, 'hcl')) for name in colordict[cat]]
+            hclpairs = [(name, to_xyz(name, "hcl")) for name in colordict[cat]]
             hclpairs = [
                 sorted(
                     [
-                        pair for pair in hclpairs
+                        pair
+                        for pair in hclpairs
                         if _filter_colors(pair[1], ihue, nhues, minsat)
                     ],
-                    key=lambda x: x[1][2]  # sort by luminance
+                    key=lambda x: x[1][2],  # sort by luminance
                 )
                 for ihue in range(nhues)
             ]
@@ -761,19 +982,21 @@ def show_colors(*, nhues=17, minsat=10, unknown='User', include=None, ignore=Non
         hratios=hratios,
     )
     title_dict = {
-        'css4': 'CSS4 colors',
-        'base': 'Base colors',
-        'opencolor': 'Open color',
-        'xkcd': 'XKCD colors',
+        "css4": "CSS4 colors",
+        "base": "Base colors",
+        "opencolor": "Open color",
+        "xkcd": "XKCD colors",
     }
     for ax, (cat, names) in zip(axs, namess.items()):
         # Format axes
         ax.format(
             title=title_dict.get(cat, cat),
-            titleweight='bold',
+            titleweight="bold",
             xlim=(0, maxcols - 1),
             ylim=(0, names.shape[1]),
-            grid=False, yloc='neither', xloc='neither',
+            grid=False,
+            yloc="neither",
+            xloc="neither",
             alpha=0,
         )
 
@@ -790,13 +1013,20 @@ def show_colors(*, nhues=17, minsat=10, unknown='User', include=None, ignore=Non
                 x2 = x1 + swatch  # portion of column
                 xtext = x1 + 1.1 * swatch
                 ax.text(
-                    xtext, y, name, ha='left', va='center',
-                    transform='data', clip_on=False,
+                    xtext,
+                    y,
+                    name,
+                    ha="left",
+                    va="center",
+                    transform="data",
+                    clip_on=False,
                 )
                 ax.plot(
-                    [x1, x2], [y, y],
-                    color=name, lw=lw,
-                    solid_capstyle='butt',  # do not stick out
+                    [x1, x2],
+                    [y, y],
+                    color=name,
+                    lw=lw,
+                    solid_capstyle="butt",  # do not stick out
                     clip_on=False,
                 )
 
@@ -871,35 +1101,38 @@ def show_fonts(
     s = set()
     props = []  # should be string names
     all_fonts = sorted(mfonts.fontManager.ttflist, key=lambda font: font.name)
-    all_fonts = [font for font in all_fonts if font.name not in s and not s.add(font.name)]  # noqa: E501
+    all_fonts = [
+        font for font in all_fonts if font.name not in s and not s.add(font.name)
+    ]  # noqa: E501
     all_names = [font.name for font in all_fonts]
     for arg in args:
         if isinstance(arg, str):
             arg = mfonts.FontProperties(arg, **kwargs)  # possibly a fontspec
         elif not isinstance(arg, mfonts.FontProperties):
-            raise TypeError(f'Expected string or FontProperties but got {type(arg)}.')
+            raise TypeError(f"Expected string or FontProperties but got {type(arg)}.")
         opts = arg.get_family()  # usually a singleton list
         if opts and opts[0] in all_names:
             props.append(arg)
         else:
-            warnings._warn_proplot(f'Input font name {opts[:1]!r} not found. Skipping.')
+            warnings._warn_proplot(f"Input font name {opts[:1]!r} not found. Skipping.")
 
     # Add user and family FontProperties.
     user = _not_none(user, not args and family is None)
-    family = _not_none(family, None if args else 'sans-serif')
+    family = _not_none(family, None if args else "sans-serif")
     if user:
-        paths = _get_data_folders('fonts', default=False)
+        paths = _get_data_folders("fonts", default=False)
         for font in all_fonts:  # fonts sorted by unique name
             if os.path.dirname(font.fname) in paths:
                 props.append(mfonts.FontProperties(font.name, **kwargs))
     if family is not None:
-        options = ('serif', 'sans-serif', 'monospace', 'cursive', 'fantasy', 'tex-gyre')
+        options = ("serif", "sans-serif", "monospace", "cursive", "fantasy", "tex-gyre")
         if family not in options:
             raise ValueError(
-                f'Invalid font family {family!r}. Options are: '
-                + ', '.join(map(repr, options)) + '.'
+                f"Invalid font family {family!r}. Options are: "
+                + ", ".join(map(repr, options))
+                + "."
             )
-        names = FAMILY_TEXGYRE if family == 'tex-gyre' else rc['font.' + family]
+        names = FAMILY_TEXGYRE if family == "tex-gyre" else rc["font." + family]
         for name in names:
             if name in all_names:  # valid font name
                 props.append(mfonts.FontProperties(name, **kwargs))
@@ -909,51 +1142,60 @@ def show_fonts(
     if text is None:
         if not math:
             text = (
-                'the quick brown fox jumps over a lazy dog 01234 ; . , + - * ^ () ||'
-                '\n'
-                'THE QUICK BROWN FOX JUMPS OVER A LAZY DOG 56789 : ! ? & # % $ [] {}'
+                "the quick brown fox jumps over a lazy dog 01234 ; . , + - * ^ () ||"
+                "\n"
+                "THE QUICK BROWN FOX JUMPS OVER A LAZY DOG 56789 : ! ? & # % $ [] {}"
             )
         else:
             text = (
-                '\n'
-                r'$\alpha\beta$ $\Gamma\gamma$ $\Delta\delta$ '
-                r'$\epsilon\zeta\eta$ $\Theta\theta$ $\kappa\mu\nu$ '
-                r'$\Lambda\lambda$ $\Pi\pi$ $\xi\rho\tau\chi$ $\Sigma\sigma$ '
-                r'$\Phi\phi$ $\Psi\psi$ $\Omega\omega$ '
-                r'$\{ \; \}^i$ $[ \; ]_j$ $( \; )^k$ $\left<  \right>_n$'
-                '\n'
-                r'$0^a + 1_b - 2^c \times 3_d = '
-                r'4.0^e \equiv 5.0_f \approx 6.0^g \sim 7_h \leq 8^i \geq 9_j'
-                r'\ll \prod \, P \gg \sum \, Q \, '
-                r'\int \, Y \mathrm{d}y \propto \oint \;\, Z \mathrm{d}z$'
+                "\n"
+                r"$\alpha\beta$ $\Gamma\gamma$ $\Delta\delta$ "
+                r"$\epsilon\zeta\eta$ $\Theta\theta$ $\kappa\mu\nu$ "
+                r"$\Lambda\lambda$ $\Pi\pi$ $\xi\rho\tau\chi$ $\Sigma\sigma$ "
+                r"$\Phi\phi$ $\Psi\psi$ $\Omega\omega$ "
+                r"$\{ \; \}^i$ $[ \; ]_j$ $( \; )^k$ $\left<  \right>_n$"
+                "\n"
+                r"$0^a + 1_b - 2^c \times 3_d = "
+                r"4.0^e \equiv 5.0_f \approx 6.0^g \sim 7_h \leq 8^i \geq 9_j"
+                r"\ll \prod \, P \gg \sum \, Q \, "
+                r"\int \, Y \mathrm{d}y \propto \oint \;\, Z \mathrm{d}z$"
             )
 
     # Settings for rendering math text
-    ctx = {'mathtext.fontset': 'custom'}
+    ctx = {"mathtext.fontset": "custom"}
     if not fallback:
-        if _version_mpl < '3.4':
-            ctx['mathtext.fallback_to_cm'] = False
+        if _version_mpl < "3.4":
+            ctx["mathtext.fallback_to_cm"] = False
         else:
-            ctx['mathtext.fallback'] = None
-    if 'size' not in kwargs:
+            ctx["mathtext.fallback"] = None
+    if "size" not in kwargs:
         for prop in props:
-            if prop.get_size() == rc['font.size']:
+            if prop.get_size() == rc["font.size"]:
                 prop.set_size(12)  # only if fontspec did not change the size
 
     # Create figure
-    refsize = props[0].get_size_in_points() if props else rc['font.size']
-    refheight = 1.2 * (text.count('\n') + 2.5) * refsize / 72
+    refsize = props[0].get_size_in_points() if props else rc["font.size"]
+    refheight = 1.2 * (text.count("\n") + 2.5) * refsize / 72
     fig, axs = ui.subplots(
-        refwidth=4.5, refheight=refheight, nrows=len(props), ncols=1, space=0,
+        refwidth=4.5,
+        refheight=refheight,
+        nrows=len(props),
+        ncols=1,
+        space=0,
     )
     fig._render_context.update(ctx)
     fig.format(
-        xloc='neither', yloc='neither', xlocator='null', ylocator='null', alpha=0
+        xloc="neither", yloc="neither", xlocator="null", ylocator="null", alpha=0
     )
     for ax, prop in zip(axs, props):
         name = prop.get_family()[0]
         ax.text(
-            0, 0.5, f'{name}:\n{text} ', ha='left', va='center',
-            linespacing=linespacing, fontproperties=prop
+            0,
+            0.5,
+            f"{name}:\n{text} ",
+            ha="left",
+            va="center",
+            linespacing=linespacing,
+            fontproperties=prop,
         )
     return fig, axs

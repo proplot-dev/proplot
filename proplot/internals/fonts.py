@@ -31,6 +31,7 @@ class _UnicodeFonts(UnicodeFonts):
     `~matplotlib._mathtext.TrueTypeFont` are taken by replacing ``'regular'``
     in the "math" fontset with the active font name.
     """
+
     def __init__(self, *args, **kwargs):
         # Initialize font
         # NOTE: Could also capture the 'default_font_prop' passed as positional
@@ -38,37 +39,37 @@ class _UnicodeFonts(UnicodeFonts):
         # private and it is easier to do graceful fallback with _fonts dictionary.
         ctx = {}  # rc context
         regular = {}  # styles
-        for texfont in ('cal', 'rm', 'tt', 'it', 'bf', 'sf'):
-            key = 'mathtext.' + texfont
+        for texfont in ("cal", "rm", "tt", "it", "bf", "sf"):
+            key = "mathtext." + texfont
             prop = mpl.rcParams[key]
-            if prop.startswith('regular'):
-                ctx[key] = prop.replace('regular', 'sans', 1)
+            if prop.startswith("regular"):
+                ctx[key] = prop.replace("regular", "sans", 1)
                 regular[texfont] = prop
         with mpl.rc_context(ctx):
             super().__init__(*args, **kwargs)
         # Apply current font replacements
         global WARN_MATHPARSER
         if (
-            hasattr(self, 'fontmap')
-            and hasattr(self, '_fonts')
-            and 'regular' in self._fonts
+            hasattr(self, "fontmap")
+            and hasattr(self, "_fonts")
+            and "regular" in self._fonts
         ):
-            font = self._fonts['regular']  # an ft2font.FT2Font instance
+            font = self._fonts["regular"]  # an ft2font.FT2Font instance
             font = ttfFontProperty(font)
             for texfont, prop in regular.items():
-                prop = prop.replace('regular', font.name)
+                prop = prop.replace("regular", font.name)
                 self.fontmap[texfont] = findfont(prop, fallback_to_default=False)
         elif WARN_MATHPARSER:
             # Suppress duplicate warnings in case API changes
-            warnings._warn_proplot('Failed to update the math text parser.')
+            warnings._warn_proplot("Failed to update the math text parser.")
             WARN_MATHPARSER = False
 
 
 # Replace the parser
 try:
     mapping = MathTextParser._font_type_mapping
-    if mapping['custom'] is UnicodeFonts:
-        mapping['custom'] = _UnicodeFonts
+    if mapping["custom"] is UnicodeFonts:
+        mapping["custom"] = _UnicodeFonts
 except (KeyError, AttributeError):
-    warnings._warn_proplot('Failed to update math text parser.')
+    warnings._warn_proplot("Failed to update math text parser.")
     WARN_MATHPARSER = False

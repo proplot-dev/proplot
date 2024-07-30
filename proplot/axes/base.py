@@ -2191,9 +2191,7 @@ class Axes(maxes.Axes):
         to_list = lambda obj: (  # noqa: E731
             obj.tolist()
             if isinstance(obj, np.ndarray)
-            else obj
-            if obj is None or is_list(obj)
-            else [obj]
+            else obj if obj is None or is_list(obj) else [obj]
         )
         handles, labels = to_list(handles), to_list(labels)
         if handles and not labels and all(isinstance(h, str) for h in handles):

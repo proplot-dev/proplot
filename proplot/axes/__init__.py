@@ -16,12 +16,12 @@ from .three import ThreeAxes  # noqa: F401
 
 # Prevent importing module names and set order of appearance for objects
 __all__ = [
-    'Axes',
-    'PlotAxes',
-    'CartesianAxes',
-    'PolarAxes',
-    'GeoAxes',
-    'ThreeAxes',
+    "Axes",
+    "PlotAxes",
+    "CartesianAxes",
+    "PolarAxes",
+    "GeoAxes",
+    "ThreeAxes",
 ]
 
 # Register projections with package prefix to avoid conflicts
@@ -30,11 +30,13 @@ __all__ = [
 _cls_dict = {}  # track valid names
 for _cls in (CartesianAxes, PolarAxes, _CartopyAxes, _BasemapAxes, ThreeAxes):
     for _name in (_cls._name, *_cls._name_aliases):
-        with context._state_context(_cls, name='proplot_' + _name):
+        with context._state_context(_cls, name="proplot_" + _name):
             mproj.register_projection(_cls)
             _cls_dict[_name] = _cls
-_cls_table = '\n'.join(
-    ' ' + key + ' ' * (max(map(len, _cls_dict)) - len(key) + 7)
-    + ('GeoAxes' if cls.__name__[:1] == '_' else cls.__name__)
+_cls_table = "\n".join(
+    " "
+    + key
+    + " " * (max(map(len, _cls_dict)) - len(key) + 7)
+    + ("GeoAxes" if cls.__name__[:1] == "_" else cls.__name__)
     for key, cls in _cls_dict.items()
 )

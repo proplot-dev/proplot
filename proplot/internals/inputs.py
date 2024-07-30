@@ -19,16 +19,37 @@ except ModuleNotFoundError:
 
 # Constants
 BASEMAP_FUNCS = (  # default latlon=True
-    'barbs', 'contour', 'contourf', 'hexbin',
-    'imshow', 'pcolor', 'pcolormesh', 'plot',
-    'quiver', 'scatter', 'streamplot', 'step',
+    "barbs",
+    "contour",
+    "contourf",
+    "hexbin",
+    "imshow",
+    "pcolor",
+    "pcolormesh",
+    "plot",
+    "quiver",
+    "scatter",
+    "streamplot",
+    "step",
 )
 CARTOPY_FUNCS = (  # default transform=PlateCarree()
-    'barbs', 'contour', 'contourf',
-    'fill', 'fill_between', 'fill_betweenx',  # NOTE: not sure if these work
-    'imshow', 'pcolor', 'pcolormesh', 'plot',
-    'quiver', 'scatter', 'streamplot', 'step',
-    'tricontour', 'tricontourf', 'tripcolor',  # NOTE: not sure why these work
+    "barbs",
+    "contour",
+    "contourf",
+    "fill",
+    "fill_between",
+    "fill_betweenx",  # NOTE: not sure if these work
+    "imshow",
+    "pcolor",
+    "pcolormesh",
+    "plot",
+    "quiver",
+    "scatter",
+    "streamplot",
+    "step",
+    "tricontour",
+    "tricontourf",
+    "tripcolor",  # NOTE: not sure why these work
 )
 
 
@@ -43,11 +64,11 @@ def _load_objects():
     # are careful to check membership to np.ndarray before anything else.
     global ndarray, DataArray, DataFrame, Series, Index, Quantity
     ndarray = np.ndarray
-    DataArray = getattr(sys.modules.get('xarray', None), 'DataArray', ndarray)
-    DataFrame = getattr(sys.modules.get('pandas', None), 'DataFrame', ndarray)
-    Series = getattr(sys.modules.get('pandas', None), 'Series', ndarray)
-    Index = getattr(sys.modules.get('pandas', None), 'Index', ndarray)
-    Quantity = getattr(sys.modules.get('pint', None), 'Quantity', ndarray)
+    DataArray = getattr(sys.modules.get("xarray", None), "DataArray", ndarray)
+    DataFrame = getattr(sys.modules.get("pandas", None), "DataFrame", ndarray)
+    Series = getattr(sys.modules.get("pandas", None), "Series", ndarray)
+    Index = getattr(sys.modules.get("pandas", None), "Index", ndarray)
+    Quantity = getattr(sys.modules.get("pint", None), "Quantity", ndarray)
 
 
 _load_objects()
@@ -99,11 +120,10 @@ def _to_duck_array(data, strip_units=False):
     """
     _load_objects()
     if data is None:
-        raise ValueError('Invalid data None.')
-    if (
-        not isinstance(data, (ndarray, DataArray, DataFrame, Series, Index, Quantity))
-        or not np.iterable(data)
-    ):
+        raise ValueError("Invalid data None.")
+    if not isinstance(
+        data, (ndarray, DataArray, DataFrame, Series, Index, Quantity)
+    ) or not np.iterable(data):
         # WARNING: this strips e.g. scalar DataArray metadata
         data = _to_numpy_array(data)
     if strip_units:  # used for z coordinates that cannot have units
@@ -123,7 +143,7 @@ def _to_numpy_array(data, strip_units=False):
     """
     _load_objects()
     if data is None:
-        raise ValueError('Invalid data None.')
+        raise ValueError("Invalid data None.")
     if isinstance(data, ndarray):
         pass
     elif isinstance(data, DataArray):
@@ -148,7 +168,7 @@ def _to_masked_array(data, *, copy=False):
         data, units = data.magnitude, data.units
     else:
         data = _to_numpy_array(data)
-    if data.dtype == 'O':
+    if data.dtype == "O":
         data = ma.array(data, mask=False)
     else:
         data = ma.masked_invalid(data, copy=copy)
@@ -167,6 +187,7 @@ def _to_edges(x, y, z):
     Enforce that coordinates are edges. Convert from centers if possible.
     """
     from ..utils import edges, edges2d
+
     xlen, ylen = x.shape[-1], y.shape[0]
     if z.ndim == 2 and z.shape[1] == xlen and z.shape[0] == ylen:
         # Get edges given centers
@@ -181,9 +202,9 @@ def _to_edges(x, y, z):
     elif z.shape[-1] != xlen - 1 or z.shape[0] != ylen - 1:
         # Helpful error message
         raise ValueError(
-            f'Input shapes x {x.shape} and y {y.shape} must match '
-            f'array centers {z.shape} or '
-            f'array borders {tuple(i + 1 for i in z.shape)}.'
+            f"Input shapes x {x.shape} and y {y.shape} must match "
+            f"array centers {z.shape} or "
+            f"array borders {tuple(i + 1 for i in z.shape)}."
         )
     return x, y
 
@@ -206,9 +227,9 @@ def _to_centers(x, y, z):
     elif z.shape[-1] != xlen or z.shape[0] != ylen:
         # Helpful error message
         raise ValueError(
-            f'Input shapes x {x.shape} and y {y.shape} '
-            f'must match z centers {z.shape} '
-            f'or z borders {tuple(i+1 for i in z.shape)}.'
+            f"Input shapes x {x.shape} and y {y.shape} "
+            f"must match z centers {z.shape} "
+            f"or z borders {tuple(i+1 for i in z.shape)}."
         )
     return x, y
 
@@ -250,29 +271,31 @@ def _preprocess_or_redirect(*keys, keywords=None, allow_extra=True):
 
         @functools.wraps(func)
         def _preprocess_or_redirect(self, *args, **kwargs):
-            if getattr(self, '_internal_call', None):
+            if getattr(self, "_internal_call", None):
                 # Redirect internal matplotlib call to native function
                 from ..axes import PlotAxes
+
                 func_native = getattr(super(PlotAxes, self), name)
                 return func_native(*args, **kwargs)
             else:
                 # Impose default coordinate system
                 from ..constructor import Proj
-                if self._name == 'basemap' and name in BASEMAP_FUNCS:
-                    if kwargs.get('latlon', None) is None:
-                        kwargs['latlon'] = True
-                if self._name == 'cartopy' and name in CARTOPY_FUNCS:
-                    if kwargs.get('transform', None) is None:
-                        kwargs['transform'] = PlateCarree()
+
+                if self._name == "basemap" and name in BASEMAP_FUNCS:
+                    if kwargs.get("latlon", None) is None:
+                        kwargs["latlon"] = True
+                if self._name == "cartopy" and name in CARTOPY_FUNCS:
+                    if kwargs.get("transform", None) is None:
+                        kwargs["transform"] = PlateCarree()
                     else:
-                        kwargs['transform'] = Proj(kwargs['transform'])
+                        kwargs["transform"] = Proj(kwargs["transform"])
 
                 # Process data args
                 # NOTE: Raises error if there are more args than keys
                 args, kwargs = _kwargs_to_args(
                     keys, *args, allow_extra=allow_extra, **kwargs
                 )
-                data = kwargs.pop('data', None)
+                data = kwargs.pop("data", None)
                 if data is not None:
                     args = _from_data(data, *args)
                     for key in set(keywords) & set(kwargs):
@@ -284,8 +307,8 @@ def _preprocess_or_redirect(*keys, keywords=None, allow_extra=True):
                     if ndarray is not DataArray and isinstance(arg, DataArray):
                         arg = arg.data
                     if ndarray is not Quantity and isinstance(arg, Quantity):
-                        ureg = getattr(arg, '_REGISTRY', None)
-                        if hasattr(ureg, 'setup_matplotlib'):
+                        ureg = getattr(arg, "_REGISTRY", None)
+                        if hasattr(ureg, "setup_matplotlib"):
                             ureg.setup_matplotlib(True)
 
                 # Call main function
@@ -299,18 +322,37 @@ def _preprocess_or_redirect(*keys, keywords=None, allow_extra=True):
 # Stats utiltiies
 def _dist_clean(distribution):
     """
-    Clean the distrubtion data for processing by `boxplot` or `violinplot`.
-    Without this invalid values break the algorithm.
+    Clean the distribution data for processing by `boxplot` or `violinplot`.
+    Handles np.ndarrays where the ndarray is a list of lists of variable sizes.
     """
-    if distribution.ndim == 1:
-        distribution = distribution[:, None]
-    distribution, units = _to_masked_array(distribution)  # no copy needed
-    distribution = tuple(
-        distribution[..., i].compressed() for i in range(distribution.shape[-1])
-    )
-    if units is not None:
-        distribution = tuple(dist * units for dist in distribution)
-    return distribution
+    if isinstance(distribution, np.ndarray):
+        if distribution.dtype == object:
+            # Handle list of lists with variable sizes
+            return tuple(
+                np.array(sublist, dtype=float)
+                for sublist in distribution
+                if len(sublist) > 0
+            )
+        else:
+            # Handle regular numpy arrays
+            if distribution.ndim == 1:
+                distribution = distribution[:, None]
+            distribution, units = _to_masked_array(distribution)  # no copy needed
+            distribution = tuple(
+                distribution[..., i].compressed() for i in range(distribution.shape[-1])
+            )
+            if units is not None:
+                distribution = tuple(dist * units for dist in distribution)
+            return distribution
+    elif isinstance(distribution, list):
+        # Handle list of lists directly
+        return tuple(
+            np.array(sublist, dtype=float)
+            for sublist in distribution
+            if len(sublist) > 0
+        )
+    else:
+        raise ValueError("Input must be a numpy array or a list of lists")
 
 
 def _dist_reduce(data, *, mean=None, means=None, median=None, medians=None, **kwargs):
@@ -323,7 +365,7 @@ def _dist_reduce(data, *, mean=None, means=None, median=None, medians=None, **kw
     medians = _not_none(median=median, medians=medians)
     if means and medians:
         warnings._warn_proplot(
-            'Cannot have both means=True and medians=True. Using former.'
+            "Cannot have both means=True and medians=True. Using former."
         )
         medians = None
     if means or medians:
@@ -331,7 +373,7 @@ def _dist_reduce(data, *, mean=None, means=None, median=None, medians=None, **kw
         distribution = distribution.filled()
         if distribution.ndim != 2:
             raise ValueError(
-                f'Expected 2D array for means=True. Got {distribution.ndim}D.'
+                f"Expected 2D array for means=True. Got {distribution.ndim}D."
             )
         if units is not None:
             distribution = distribution * units
@@ -339,15 +381,23 @@ def _dist_reduce(data, *, mean=None, means=None, median=None, medians=None, **kw
             data = np.nanmean(distribution, axis=0)
         else:
             data = np.nanmedian(distribution, axis=0)
-        kwargs['distribution'] = distribution
+        kwargs["distribution"] = distribution
 
     # Save argument passed to _error_bars
     return (data, kwargs)
 
 
 def _dist_range(
-    data, distribution, *, errdata=None, absolute=False, label=False,
-    stds=None, pctiles=None, stds_default=None, pctiles_default=None,
+    data,
+    distribution,
+    *,
+    errdata=None,
+    absolute=False,
+    label=False,
+    stds=None,
+    pctiles=None,
+    stds_default=None,
+    pctiles_default=None,
 ):
     """
     Return a plottable characteristic range for the statistical distribution
@@ -364,7 +414,7 @@ def _dist_range(
         if stds.size == 1:
             stds = sorted((-stds.item(), stds.item()))
         elif stds.size != 2:
-            raise ValueError('Expected scalar or length-2 stdev specification.')
+            raise ValueError("Expected scalar or length-2 stdev specification.")
 
     # Parse pctiles arguments
     if pctiles is True:
@@ -377,27 +427,27 @@ def _dist_range(
             delta = (100 - pctiles.item()) / 2.0
             pctiles = sorted((delta, 100 - delta))
         elif pctiles.size != 2:
-            raise ValueError('Expected scalar or length-2 pctiles specification.')
+            raise ValueError("Expected scalar or length-2 pctiles specification.")
 
     # Incompatible settings
     if distribution is None and any(_ is not None for _ in (stds, pctiles)):
         raise ValueError(
-            'To automatically compute standard deviations or percentiles on '
-            'columns of data you must pass means=True or medians=True.'
+            "To automatically compute standard deviations or percentiles on "
+            "columns of data you must pass means=True or medians=True."
         )
     if stds is not None and pctiles is not None:
         warnings._warn_proplot(
-            'Got both a standard deviation range and a percentile range for '
-            'auto error indicators. Using the standard deviation range.'
+            "Got both a standard deviation range and a percentile range for "
+            "auto error indicators. Using the standard deviation range."
         )
         pctiles = None
     if distribution is not None and errdata is not None:
         stds = pctiles = None
         warnings._warn_proplot(
-            'You explicitly provided the error bounds but also requested '
-            'automatically calculating means or medians on data columns. '
+            "You explicitly provided the error bounds but also requested "
+            "automatically calculating means or medians on data columns. "
             'It may make more sense to use the "stds" or "pctiles" keyword args '
-            'and have *proplot* calculate the error bounds.'
+            "and have *proplot* calculate the error bounds."
         )
 
     # Compute error data in format that can be passed to maxes.Axes.errorbar()
@@ -408,12 +458,13 @@ def _dist_range(
             raise ValueError(
                 "Passing both 2D data coordinates and 'errdata' is not yet supported."
             )
-        label_default = 'uncertainty'
+        label_default = "uncertainty"
         err = _to_numpy_array(errdata)
         if (
             err.ndim not in (1, 2)
             or err.shape[-1] != data.size
-            or err.ndim == 2 and err.shape[0] != 2
+            or err.ndim == 2
+            and err.shape[0] != 2
         ):
             raise ValueError(
                 f"Input 'errdata' has shape {err.shape}. Expected (2, {data.size})."
@@ -426,18 +477,18 @@ def _dist_range(
     elif stds is not None:
         # Standard deviations
         # NOTE: Invalid values were handled by _dist_reduce
-        label_default = fr'{abs(stds[1])}$\sigma$ range'
+        label_default = rf"{abs(stds[1])}$\sigma$ range"
         stds = _to_numpy_array(stds)[:, None]
         err = data + stds * np.nanstd(distribution, axis=0)
     elif pctiles is not None:
         # Percentiles
         # NOTE: Invalid values were handled by _dist_reduce
-        label_default = f'{pctiles[1] - pctiles[0]}% range'
+        label_default = f"{pctiles[1] - pctiles[0]}% range"
         err = np.nanpercentile(distribution, pctiles, axis=0)
     else:
         warnings._warn_proplot(
-            'Error indications are missing from the dataset reduced by a '
-            'mean or median operation. Consider passing e.g. bars=True.'
+            "Error indications are missing from the dataset reduced by a "
+            "mean or median operation. Consider passing e.g. bars=True."
         )
         err = None
 
@@ -473,7 +524,7 @@ def _safe_mask(mask, *args):
         data = data.filled()
         if data.size > 1 and data.shape != invalid.shape:
             raise ValueError(
-                f'Mask shape {mask.shape} incompatible with array shape {data.shape}.'
+                f"Mask shape {mask.shape} incompatible with array shape {data.shape}."
             )
         if data.size == 1 or invalid.size == 1:  # NOTE: happens with _restrict_inbounds
             pass
@@ -499,7 +550,7 @@ def _safe_range(data, lo=0, hi=100):
     min_ = max_ = None
     if data.size:
         min_ = np.min(data) if lo <= 0 else np.percentile(data, lo)
-        if hasattr(min_, 'dtype') and np.issubdtype(min_.dtype, np.integer):
+        if hasattr(min_, "dtype") and np.issubdtype(min_.dtype, np.integer):
             min_ = np.float64(min_)
         try:
             is_finite = np.isfinite(min_)
@@ -511,7 +562,7 @@ def _safe_range(data, lo=0, hi=100):
             min_ *= units
     if data.size:
         max_ = np.max(data) if hi >= 100 else np.percentile(data, hi)
-        if hasattr(max_, 'dtype') and np.issubdtype(max_.dtype, np.integer):
+        if hasattr(max_, "dtype") and np.issubdtype(max_.dtype, np.integer):
             max_ = np.float64(max_)
         try:
             is_finite = np.isfinite(min_)
@@ -525,7 +576,7 @@ def _safe_range(data, lo=0, hi=100):
 
 
 # Metadata utilities
-def _meta_coords(*args, which='x', **kwargs):
+def _meta_coords(*args, which="x", **kwargs):
     """
     Return the index arrays associated with string coordinates and
     keyword arguments updated with index locators and formatters.
@@ -535,6 +586,7 @@ def _meta_coords(*args, which='x', **kwargs):
     # NOTE: Why IndexFormatter and not FixedFormatter? The former ensures labels
     # correspond to indices while the latter can mysteriously truncate labels.
     from ..constructor import Formatter, Locator
+
     res = []
     for data in args:
         data = _to_duck_array(data)
@@ -542,12 +594,12 @@ def _meta_coords(*args, which='x', **kwargs):
             res.append(data)
             continue
         if data.ndim > 1:
-            raise ValueError('Non-1D string coordinate input is unsupported.')
+            raise ValueError("Non-1D string coordinate input is unsupported.")
         ticks = np.arange(len(data))
         labels = list(map(str, data))
-        kwargs.setdefault(which + 'locator', Locator(ticks))
-        kwargs.setdefault(which + 'formatter', Formatter(labels, index=True))
-        kwargs.setdefault(which + 'minorlocator', Locator('null'))
+        kwargs.setdefault(which + "locator", Locator(ticks))
+        kwargs.setdefault(which + "formatter", Formatter(labels, index=True))
+        kwargs.setdefault(which + "minorlocator", Locator("null"))
         res.append(ticks)  # use these as data coordinates
     return (*res, kwargs)
 
@@ -564,7 +616,7 @@ def _meta_labels(data, axis=0, always=True):
     _load_objects()
     labels = None
     if axis not in (0, 1, 2):
-        raise ValueError(f'Invalid axis {axis}.')
+        raise ValueError(f"Invalid axis {axis}.")
     if isinstance(data, (ndarray, Quantity)):
         if not always:
             pass
@@ -594,7 +646,7 @@ def _meta_labels(data, axis=0, always=True):
     # Everything else
     # NOTE: Ensure data is at least 1D in _to_duck_array so this covers everything
     else:
-        raise ValueError(f'Unrecognized array type {type(data)}.')
+        raise ValueError(f"Unrecognized array type {type(data)}.")
     return labels
 
 
@@ -610,22 +662,22 @@ def _meta_title(data, include_units=True):
     # Xarray object with possible long_name, standard_name, and units attributes.
     # Output depends on if units is True. Prefer long_name (come last in loop).
     elif isinstance(data, DataArray):
-        title = getattr(data, 'name', None)
-        for key in ('standard_name', 'long_name'):
+        title = getattr(data, "name", None)
+        for key in ("standard_name", "long_name"):
             title = data.attrs.get(key, title)
         if include_units:
             units = _meta_units(data)
     # Pandas object. DataFrame has no native name attribute but user can add one
     # See: https://github.com/pandas-dev/pandas/issues/447
     elif isinstance(data, (DataFrame, Series, Index)):
-        title = getattr(data, 'name', None) or None
+        title = getattr(data, "name", None) or None
     # Pint Quantity
     elif isinstance(data, Quantity):
         if include_units:
             units = _meta_units(data)
     # Add units or return units alone
     if title and units:
-        title = f'{title} ({units})'
+        title = f"{title} ({units})"
     else:
         title = title or units
     if title is not None:
@@ -641,23 +693,24 @@ def _meta_units(data):
     _load_objects()
     # Get units from the attributes
     if ndarray is not DataArray and isinstance(data, DataArray):
-        units = data.attrs.get('units', None)
+        units = data.attrs.get("units", None)
         data = data.data
         if units is not None:
             return units
     # Get units from the quantity
     if ndarray is not Quantity and isinstance(data, Quantity):
         from ..config import rc
+
         fmt = rc.unitformat
         try:
             units = format(data.units, fmt)
         except (TypeError, ValueError):
             warnings._warn_proplot(
-                f'Failed to format pint quantity with format string {fmt!r}.'
+                f"Failed to format pint quantity with format string {fmt!r}."
             )
         else:
-            if 'L' in fmt:  # auto-apply LaTeX math indicator
-                units = '$' + units + '$'
+            if "L" in fmt:  # auto-apply LaTeX math indicator
+                units = "$" + units + "$"
             return units
 
 
@@ -747,7 +800,7 @@ def _geo_inbounds(x, y, xmin=-180, xmax=180):
         mask = (x[1:] < xmin) | (x[:-1] > xmax)
         y[..., mask] = nan
     elif x.size == y.shape[-1]:  # test the centers and pad by one for safety
-        where, = np.where((x < xmin) | (x > xmax))
+        (where,) = np.where((x < xmin) | (x > xmax))
         y[..., where[1:-1]] = nan
     return x, y
 
@@ -758,7 +811,7 @@ def _geo_globe(x, y, z, xmin=-180, modulo=False):
     longitude seams. Increases the size of the arrays.
     """
     # Cover gaps over poles by appending polar data
-    with np.errstate(all='ignore'):
+    with np.errstate(all="ignore"):
         p1 = np.mean(z[0, :])  # do not ignore NaN if present
         p2 = np.mean(z[-1, :])
     ps = (-90, 90) if (y[0] < y[-1]) else (90, -90)
@@ -781,7 +834,9 @@ def _geo_globe(x, y, z, xmin=-180, modulo=False):
                 xi = np.array([x[-1], x[0] + 360])  # input coordinates
                 xq = xmin + 360  # query coordinate
                 zq = ma.concatenate((z[:, -1:], z[:, :1]), axis=1)
-                zq = (zq[:, :1] * (xi[1] - xq) + zq[:, 1:] * (xq - xi[0])) / (xi[1] - xi[0])  # noqa: E501
+                zq = (zq[:, :1] * (xi[1] - xq) + zq[:, 1:] * (xq - xi[0])) / (
+                    xi[1] - xi[0]
+                )  # noqa: E501
                 x = ma.concatenate(((xmin,), x, (xmin + 360,)))
                 z = ma.concatenate((zq, z, zq), axis=1)
         # Extend coordinate edges to seam. Size possibly augmented by 1.
@@ -791,5 +846,5 @@ def _geo_globe(x, y, z, xmin=-180, modulo=False):
                 x[-1] = xmin + 360
                 z = ma.concatenate((z[:, -1:], z), axis=1)
         else:
-            raise ValueError('Unexpected shapes of coordinates or data arrays.')
+            raise ValueError("Unexpected shapes of coordinates or data arrays.")
     return x, y, z

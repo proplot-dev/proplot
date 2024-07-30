@@ -1128,6 +1128,7 @@ class Figure(mfigure.Figure):
         self._subplot_counter += 1  # unique label for each subplot
         kwargs.setdefault("label", f"subplot_{self._subplot_counter}")
         kwargs.setdefault("number", 1 + max(self._subplot_dict, default=0))
+        kwargs.pop("refwidth", None)  # TODO: remove this
         ax = super().add_subplot(ss, _subplot_spec=ss, **kwargs)
         if ax.number:
             self._subplot_dict[ax.number] = ax
@@ -1145,7 +1146,6 @@ class Figure(mfigure.Figure):
         projection_kw=None,
         backend=None,
         basemap=None,
-        refwidth=None,
         **kwargs,
     ):
         """

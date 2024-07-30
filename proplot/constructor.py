@@ -45,14 +45,14 @@ except ModuleNotFoundError:
     Projection = object
 
 __all__ = [
-    'Proj',
-    'Locator',
-    'Formatter',
-    'Scale',
-    'Colormap',
-    'Norm',
-    'Cycle',
-    'Colors',  # deprecated
+    "Proj",
+    "Locator",
+    "Formatter",
+    "Scale",
+    "Colormap",
+    "Norm",
+    "Cycle",
+    "Colors",  # deprecated
 ]
 
 # Color cycle constants
@@ -63,58 +63,58 @@ DEFAULT_CYCLE_LUMINANCE = 90
 
 # Normalizer registry
 NORMS = {
-    'none': mcolors.NoNorm,
-    'null': mcolors.NoNorm,
-    'div': pcolors.DivergingNorm,
-    'diverging': pcolors.DivergingNorm,
-    'segmented': pcolors.SegmentedNorm,
-    'segments': pcolors.SegmentedNorm,
-    'log': mcolors.LogNorm,
-    'linear': mcolors.Normalize,
-    'power': mcolors.PowerNorm,
-    'symlog': mcolors.SymLogNorm,
+    "none": mcolors.NoNorm,
+    "null": mcolors.NoNorm,
+    "div": pcolors.DivergingNorm,
+    "diverging": pcolors.DivergingNorm,
+    "segmented": pcolors.SegmentedNorm,
+    "segments": pcolors.SegmentedNorm,
+    "log": mcolors.LogNorm,
+    "linear": mcolors.Normalize,
+    "power": mcolors.PowerNorm,
+    "symlog": mcolors.SymLogNorm,
 }
-if hasattr(mcolors, 'TwoSlopeNorm'):
-    NORMS['twoslope'] = mcolors.TwoSlopeNorm
+if hasattr(mcolors, "TwoSlopeNorm"):
+    NORMS["twoslope"] = mcolors.TwoSlopeNorm
 
 # Locator registry
 # NOTE: Will raise error when you try to use degree-minute-second
 # locators with cartopy < 0.18.
 LOCATORS = {
-    'none': mticker.NullLocator,
-    'null': mticker.NullLocator,
-    'auto': mticker.AutoLocator,
-    'log': mticker.LogLocator,
-    'maxn': mticker.MaxNLocator,
-    'linear': mticker.LinearLocator,
-    'multiple': mticker.MultipleLocator,
-    'fixed': mticker.FixedLocator,
-    'index': pticker.IndexLocator,
-    'discrete': pticker.DiscreteLocator,
-    'discreteminor': partial(pticker.DiscreteLocator, minor=True),
-    'symlog': mticker.SymmetricalLogLocator,
-    'logit': mticker.LogitLocator,
-    'minor': mticker.AutoMinorLocator,
-    'date': mdates.AutoDateLocator,
-    'microsecond': mdates.MicrosecondLocator,
-    'second': mdates.SecondLocator,
-    'minute': mdates.MinuteLocator,
-    'hour': mdates.HourLocator,
-    'day': mdates.DayLocator,
-    'weekday': mdates.WeekdayLocator,
-    'month': mdates.MonthLocator,
-    'year': mdates.YearLocator,
-    'lon': partial(pticker.LongitudeLocator, dms=False),
-    'lat': partial(pticker.LatitudeLocator, dms=False),
-    'deglon': partial(pticker.LongitudeLocator, dms=False),
-    'deglat': partial(pticker.LatitudeLocator, dms=False),
+    "none": mticker.NullLocator,
+    "null": mticker.NullLocator,
+    "auto": mticker.AutoLocator,
+    "log": mticker.LogLocator,
+    "maxn": mticker.MaxNLocator,
+    "linear": mticker.LinearLocator,
+    "multiple": mticker.MultipleLocator,
+    "fixed": mticker.FixedLocator,
+    "index": pticker.IndexLocator,
+    "discrete": pticker.DiscreteLocator,
+    "discreteminor": partial(pticker.DiscreteLocator, minor=True),
+    "symlog": mticker.SymmetricalLogLocator,
+    "logit": mticker.LogitLocator,
+    "minor": mticker.AutoMinorLocator,
+    "date": mdates.AutoDateLocator,
+    "microsecond": mdates.MicrosecondLocator,
+    "second": mdates.SecondLocator,
+    "minute": mdates.MinuteLocator,
+    "hour": mdates.HourLocator,
+    "day": mdates.DayLocator,
+    "weekday": mdates.WeekdayLocator,
+    "month": mdates.MonthLocator,
+    "year": mdates.YearLocator,
+    "lon": partial(pticker.LongitudeLocator, dms=False),
+    "lat": partial(pticker.LatitudeLocator, dms=False),
+    "deglon": partial(pticker.LongitudeLocator, dms=False),
+    "deglat": partial(pticker.LatitudeLocator, dms=False),
 }
-if hasattr(mpolar, 'ThetaLocator'):
-    LOCATORS['theta'] = mpolar.ThetaLocator
-if _version_cartopy >= '0.18':
-    LOCATORS['dms'] = partial(pticker.DegreeLocator, dms=True)
-    LOCATORS['dmslon'] = partial(pticker.LongitudeLocator, dms=True)
-    LOCATORS['dmslat'] = partial(pticker.LatitudeLocator, dms=True)
+if hasattr(mpolar, "ThetaLocator"):
+    LOCATORS["theta"] = mpolar.ThetaLocator
+if _version_cartopy >= "0.18":
+    LOCATORS["dms"] = partial(pticker.DegreeLocator, dms=True)
+    LOCATORS["dmslon"] = partial(pticker.LongitudeLocator, dms=True)
+    LOCATORS["dmslat"] = partial(pticker.LatitudeLocator, dms=True)
 
 # Formatter registry
 # NOTE: Critical to use SimpleFormatter for cardinal formatters rather than
@@ -124,56 +124,70 @@ if _version_cartopy >= '0.18':
 # NOTE: Will raise error when you try to use degree-minute-second
 # formatters with cartopy < 0.18.
 FORMATTERS = {  # note default LogFormatter uses ugly e+00 notation
-    'none': mticker.NullFormatter,
-    'null': mticker.NullFormatter,
-    'auto': pticker.AutoFormatter,
-    'date': mdates.AutoDateFormatter,
-    'scalar': mticker.ScalarFormatter,
-    'simple': pticker.SimpleFormatter,
-    'fixed': mticker.FixedLocator,
-    'index': pticker.IndexFormatter,
-    'sci': pticker.SciFormatter,
-    'sigfig': pticker.SigFigFormatter,
-    'frac': pticker.FracFormatter,
-    'func': mticker.FuncFormatter,
-    'strmethod': mticker.StrMethodFormatter,
-    'formatstr': mticker.FormatStrFormatter,
-    'datestr': mdates.DateFormatter,
-    'log': mticker.LogFormatterSciNotation,  # NOTE: this is subclass of Mathtext class
-    'logit': mticker.LogitFormatter,
-    'eng': mticker.EngFormatter,
-    'percent': mticker.PercentFormatter,
-    'e': partial(pticker.FracFormatter, symbol=r'$e$', number=np.e),
-    'pi': partial(pticker.FracFormatter, symbol=r'$\pi$', number=np.pi),
-    'tau': partial(pticker.FracFormatter, symbol=r'$\tau$', number=2 * np.pi),
-    'lat': partial(pticker.SimpleFormatter, negpos='SN'),
-    'lon': partial(pticker.SimpleFormatter, negpos='WE', wraprange=(-180, 180)),
-    'deg': partial(pticker.SimpleFormatter, suffix='\N{DEGREE SIGN}'),
-    'deglat': partial(pticker.SimpleFormatter, suffix='\N{DEGREE SIGN}', negpos='SN'),
-    'deglon': partial(pticker.SimpleFormatter, suffix='\N{DEGREE SIGN}', negpos='WE', wraprange=(-180, 180)),  # noqa: E501
-    'math': mticker.LogFormatterMathtext,  # deprecated (use SciNotation subclass)
+    "none": mticker.NullFormatter,
+    "null": mticker.NullFormatter,
+    "auto": pticker.AutoFormatter,
+    "date": mdates.AutoDateFormatter,
+    "scalar": mticker.ScalarFormatter,
+    "simple": pticker.SimpleFormatter,
+    "fixed": mticker.FixedLocator,
+    "index": pticker.IndexFormatter,
+    "sci": pticker.SciFormatter,
+    "sigfig": pticker.SigFigFormatter,
+    "frac": pticker.FracFormatter,
+    "func": mticker.FuncFormatter,
+    "strmethod": mticker.StrMethodFormatter,
+    "formatstr": mticker.FormatStrFormatter,
+    "datestr": mdates.DateFormatter,
+    "log": mticker.LogFormatterSciNotation,  # NOTE: this is subclass of Mathtext class
+    "logit": mticker.LogitFormatter,
+    "eng": mticker.EngFormatter,
+    "percent": mticker.PercentFormatter,
+    "e": partial(pticker.FracFormatter, symbol=r"$e$", number=np.e),
+    "pi": partial(pticker.FracFormatter, symbol=r"$\pi$", number=np.pi),
+    "tau": partial(pticker.FracFormatter, symbol=r"$\tau$", number=2 * np.pi),
+    "lat": partial(pticker.SimpleFormatter, negpos="SN"),
+    "lon": partial(pticker.SimpleFormatter, negpos="WE", wraprange=(-180, 180)),
+    "deg": partial(pticker.SimpleFormatter, suffix="\N{DEGREE SIGN}"),
+    "deglat": partial(pticker.SimpleFormatter, suffix="\N{DEGREE SIGN}", negpos="SN"),
+    "deglon": partial(
+        pticker.SimpleFormatter,
+        suffix="\N{DEGREE SIGN}",
+        negpos="WE",
+        wraprange=(-180, 180),
+    ),  # noqa: E501
+    "math": mticker.LogFormatterMathtext,  # deprecated (use SciNotation subclass)
 }
-if hasattr(mpolar, 'ThetaFormatter'):
-    FORMATTERS['theta'] = mpolar.ThetaFormatter
-if hasattr(mdates, 'ConciseDateFormatter'):
-    FORMATTERS['concise'] = mdates.ConciseDateFormatter
-if _version_cartopy >= '0.18':
-    FORMATTERS['dms'] = partial(pticker.DegreeFormatter, dms=True)
-    FORMATTERS['dmslon'] = partial(pticker.LongitudeFormatter, dms=True)
-    FORMATTERS['dmslat'] = partial(pticker.LatitudeFormatter, dms=True)
+if hasattr(mpolar, "ThetaFormatter"):
+    FORMATTERS["theta"] = mpolar.ThetaFormatter
+if hasattr(mdates, "ConciseDateFormatter"):
+    FORMATTERS["concise"] = mdates.ConciseDateFormatter
+if _version_cartopy >= "0.18":
+    FORMATTERS["dms"] = partial(pticker.DegreeFormatter, dms=True)
+    FORMATTERS["dmslon"] = partial(pticker.LongitudeFormatter, dms=True)
+    FORMATTERS["dmslat"] = partial(pticker.LatitudeFormatter, dms=True)
 
 # Scale registry and presets
 SCALES = mscale._scale_mapping
 SCALES_PRESETS = {
-    'quadratic': ('power', 2,),
-    'cubic': ('power', 3,),
-    'quartic': ('power', 4,),
-    'height': ('exp', np.e, -1 / 7, 1013.25, True),
-    'pressure': ('exp', np.e, -1 / 7, 1013.25, False),
-    'db': ('exp', 10, 1, 0.1, True),
-    'idb': ('exp', 10, 1, 0.1, False),
-    'np': ('exp', np.e, 1, 1, True),
-    'inp': ('exp', np.e, 1, 1, False),
+    "quadratic": (
+        "power",
+        2,
+    ),
+    "cubic": (
+        "power",
+        3,
+    ),
+    "quartic": (
+        "power",
+        4,
+    ),
+    "height": ("exp", np.e, -1 / 7, 1013.25, True),
+    "pressure": ("exp", np.e, -1 / 7, 1013.25, False),
+    "db": ("exp", 10, 1, 0.1, True),
+    "idb": ("exp", 10, 1, 0.1, False),
+    "np": ("exp", np.e, 1, 1, True),
+    "inp": ("exp", np.e, 1, 1, False),
 }
 mscale.register_scale(pscale.CutoffScale)
 mscale.register_scale(pscale.ExpScale)
@@ -190,94 +204,100 @@ mscale.register_scale(pscale.SymmetricalLogScale)
 # Cartopy projection registry and basemap default keyword args
 # NOTE: Normally basemap raises error if you omit keyword args
 PROJ_DEFAULTS = {
-    'geos': {'lon_0': 0},
-    'eck4': {'lon_0': 0},
-    'moll': {'lon_0': 0},
-    'hammer': {'lon_0': 0},
-    'kav7': {'lon_0': 0},
-    'sinu': {'lon_0': 0},
-    'vandg': {'lon_0': 0},
-    'mbtfpq': {'lon_0': 0},
-    'robin': {'lon_0': 0},
-    'ortho': {'lon_0': 0, 'lat_0': 0},
-    'nsper': {'lon_0': 0, 'lat_0': 0},
-    'aea': {'lon_0': 0, 'lat_0': 90, 'width': 15000e3, 'height': 15000e3},
-    'eqdc': {'lon_0': 0, 'lat_0': 90, 'width': 15000e3, 'height': 15000e3},
-    'cass': {'lon_0': 0, 'lat_0': 90, 'width': 15000e3, 'height': 15000e3},
-    'gnom': {'lon_0': 0, 'lat_0': 90, 'width': 15000e3, 'height': 15000e3},
-    'poly': {'lon_0': 0, 'lat_0': 0, 'width': 10000e3, 'height': 10000e3},
-    'npaeqd': {'lon_0': 0, 'boundinglat': 10},  # NOTE: everything breaks if you
-    'nplaea': {'lon_0': 0, 'boundinglat': 10},  # try to set boundinglat to zero
-    'npstere': {'lon_0': 0, 'boundinglat': 10},
-    'spaeqd': {'lon_0': 0, 'boundinglat': -10},
-    'splaea': {'lon_0': 0, 'boundinglat': -10},
-    'spstere': {'lon_0': 0, 'boundinglat': -10},
-    'lcc': {
-        'lon_0': 0, 'lat_0': 40, 'lat_1': 35, 'lat_2': 45,  # use cartopy defaults
-        'width': 20000e3, 'height': 15000e3
+    "geos": {"lon_0": 0},
+    "eck4": {"lon_0": 0},
+    "moll": {"lon_0": 0},
+    "hammer": {"lon_0": 0},
+    "kav7": {"lon_0": 0},
+    "sinu": {"lon_0": 0},
+    "vandg": {"lon_0": 0},
+    "mbtfpq": {"lon_0": 0},
+    "robin": {"lon_0": 0},
+    "ortho": {"lon_0": 0, "lat_0": 0},
+    "nsper": {"lon_0": 0, "lat_0": 0},
+    "aea": {"lon_0": 0, "lat_0": 90, "width": 15000e3, "height": 15000e3},
+    "eqdc": {"lon_0": 0, "lat_0": 90, "width": 15000e3, "height": 15000e3},
+    "cass": {"lon_0": 0, "lat_0": 90, "width": 15000e3, "height": 15000e3},
+    "gnom": {"lon_0": 0, "lat_0": 90, "width": 15000e3, "height": 15000e3},
+    "poly": {"lon_0": 0, "lat_0": 0, "width": 10000e3, "height": 10000e3},
+    "npaeqd": {"lon_0": 0, "boundinglat": 10},  # NOTE: everything breaks if you
+    "nplaea": {"lon_0": 0, "boundinglat": 10},  # try to set boundinglat to zero
+    "npstere": {"lon_0": 0, "boundinglat": 10},
+    "spaeqd": {"lon_0": 0, "boundinglat": -10},
+    "splaea": {"lon_0": 0, "boundinglat": -10},
+    "spstere": {"lon_0": 0, "boundinglat": -10},
+    "lcc": {
+        "lon_0": 0,
+        "lat_0": 40,
+        "lat_1": 35,
+        "lat_2": 45,  # use cartopy defaults
+        "width": 20000e3,
+        "height": 15000e3,
     },
-    'tmerc': {
-        'lon_0': 0, 'lat_0': 0, 'width': 10000e3, 'height': 10000e3
-    },
-    'merc': {
-        'llcrnrlat': -80, 'urcrnrlat': 84, 'llcrnrlon': -180, 'urcrnrlon': 180
-    },
-    'omerc': {
-        'lat_0': 0, 'lon_0': 0, 'lat_1': -10, 'lat_2': 10,
-        'lon_1': 0, 'lon_2': 0, 'width': 10000e3, 'height': 10000e3
+    "tmerc": {"lon_0": 0, "lat_0": 0, "width": 10000e3, "height": 10000e3},
+    "merc": {"llcrnrlat": -80, "urcrnrlat": 84, "llcrnrlon": -180, "urcrnrlon": 180},
+    "omerc": {
+        "lat_0": 0,
+        "lon_0": 0,
+        "lat_1": -10,
+        "lat_2": 10,
+        "lon_1": 0,
+        "lon_2": 0,
+        "width": 10000e3,
+        "height": 10000e3,
     },
 }
 if ccrs is None:
     PROJS = {}
 else:
     PROJS = {
-        'aitoff': pproj.Aitoff,
-        'hammer': pproj.Hammer,
-        'kav7': pproj.KavrayskiyVII,
-        'wintri': pproj.WinkelTripel,
-        'npgnom': pproj.NorthPolarGnomonic,
-        'spgnom': pproj.SouthPolarGnomonic,
-        'npaeqd': pproj.NorthPolarAzimuthalEquidistant,
-        'spaeqd': pproj.SouthPolarAzimuthalEquidistant,
-        'nplaea': pproj.NorthPolarLambertAzimuthalEqualArea,
-        'splaea': pproj.SouthPolarLambertAzimuthalEqualArea,
+        "aitoff": pproj.Aitoff,
+        "hammer": pproj.Hammer,
+        "kav7": pproj.KavrayskiyVII,
+        "wintri": pproj.WinkelTripel,
+        "npgnom": pproj.NorthPolarGnomonic,
+        "spgnom": pproj.SouthPolarGnomonic,
+        "npaeqd": pproj.NorthPolarAzimuthalEquidistant,
+        "spaeqd": pproj.SouthPolarAzimuthalEquidistant,
+        "nplaea": pproj.NorthPolarLambertAzimuthalEqualArea,
+        "splaea": pproj.SouthPolarLambertAzimuthalEqualArea,
     }
     PROJS_MISSING = {
-        'aea': 'AlbersEqualArea',
-        'aeqd': 'AzimuthalEquidistant',
-        'cyl': 'PlateCarree',  # only basemap name not matching PROJ
-        'eck1': 'EckertI',
-        'eck2': 'EckertII',
-        'eck3': 'EckertIII',
-        'eck4': 'EckertIV',
-        'eck5': 'EckertV',
-        'eck6': 'EckertVI',
-        'eqc': 'PlateCarree',  # actual PROJ name
-        'eqdc': 'EquidistantConic',
-        'eqearth': 'EqualEarth',  # better looking Robinson; not in basemap
-        'euro': 'EuroPP',  # Europe; not in basemap or PROJ
-        'geos': 'Geostationary',
-        'gnom': 'Gnomonic',
-        'igh': 'InterruptedGoodeHomolosine',  # not in basemap
-        'laea': 'LambertAzimuthalEqualArea',
-        'lcc': 'LambertConformal',
-        'lcyl': 'LambertCylindrical',  # not in basemap or PROJ
-        'merc': 'Mercator',
-        'mill': 'Miller',
-        'moll': 'Mollweide',
-        'npstere': 'NorthPolarStereo',  # np/sp stuff not in PROJ
-        'nsper': 'NearsidePerspective',
-        'ortho': 'Orthographic',
-        'osgb': 'OSGB',  # UK; not in basemap or PROJ
-        'osni': 'OSNI',  # Ireland; not in basemap or PROJ
-        'pcarree': 'PlateCarree',  # common alternate name
-        'robin': 'Robinson',
-        'rotpole': 'RotatedPole',
-        'sinu': 'Sinusoidal',
-        'spstere': 'SouthPolarStereo',
-        'stere': 'Stereographic',
-        'tmerc': 'TransverseMercator',
-        'utm': 'UTM',  # not in basemap
+        "aea": "AlbersEqualArea",
+        "aeqd": "AzimuthalEquidistant",
+        "cyl": "PlateCarree",  # only basemap name not matching PROJ
+        "eck1": "EckertI",
+        "eck2": "EckertII",
+        "eck3": "EckertIII",
+        "eck4": "EckertIV",
+        "eck5": "EckertV",
+        "eck6": "EckertVI",
+        "eqc": "PlateCarree",  # actual PROJ name
+        "eqdc": "EquidistantConic",
+        "eqearth": "EqualEarth",  # better looking Robinson; not in basemap
+        "euro": "EuroPP",  # Europe; not in basemap or PROJ
+        "geos": "Geostationary",
+        "gnom": "Gnomonic",
+        "igh": "InterruptedGoodeHomolosine",  # not in basemap
+        "laea": "LambertAzimuthalEqualArea",
+        "lcc": "LambertConformal",
+        "lcyl": "LambertCylindrical",  # not in basemap or PROJ
+        "merc": "Mercator",
+        "mill": "Miller",
+        "moll": "Mollweide",
+        "npstere": "NorthPolarStereo",  # np/sp stuff not in PROJ
+        "nsper": "NearsidePerspective",
+        "ortho": "Orthographic",
+        "osgb": "OSGB",  # UK; not in basemap or PROJ
+        "osni": "OSNI",  # Ireland; not in basemap or PROJ
+        "pcarree": "PlateCarree",  # common alternate name
+        "robin": "Robinson",
+        "rotpole": "RotatedPole",
+        "sinu": "Sinusoidal",
+        "spstere": "SouthPolarStereo",
+        "stere": "Stereographic",
+        "tmerc": "TransverseMercator",
+        "utm": "UTM",  # not in basemap
     }
     for _key, _cls in tuple(PROJS_MISSING.items()):
         if hasattr(ccrs, _cls):
@@ -285,51 +305,48 @@ else:
             del PROJS_MISSING[_key]
     if PROJS_MISSING:
         warnings._warn_proplot(
-            'The following cartopy projection(s) are unavailable: '
-            + ', '.join(map(repr, PROJS_MISSING))
-            + ' . Please consider updating cartopy.'
+            "The following cartopy projection(s) are unavailable: "
+            + ", ".join(map(repr, PROJS_MISSING))
+            + " . Please consider updating cartopy."
         )
-    PROJS_TABLE = (
-        'The known cartopy projection classes are:\n'
-        + '\n'.join(
-            ' ' + key + ' ' * (max(map(len, PROJS)) - len(key) + 10) + cls.__name__
-            for key, cls in PROJS.items()
-        )
+    PROJS_TABLE = "The known cartopy projection classes are:\n" + "\n".join(
+        " " + key + " " * (max(map(len, PROJS)) - len(key) + 10) + cls.__name__
+        for key, cls in PROJS.items()
     )
 
 # Geographic feature properties
 FEATURES_CARTOPY = {  # positional arguments passed to NaturalEarthFeature
-    'land': ('physical', 'land'),
-    'ocean': ('physical', 'ocean'),
-    'lakes': ('physical', 'lakes'),
-    'coast': ('physical', 'coastline'),
-    'rivers': ('physical', 'rivers_lake_centerlines'),
-    'borders': ('cultural', 'admin_0_boundary_lines_land'),
-    'innerborders': ('cultural', 'admin_1_states_provinces_lakes'),
+    "land": ("physical", "land"),
+    "ocean": ("physical", "ocean"),
+    "lakes": ("physical", "lakes"),
+    "coast": ("physical", "coastline"),
+    "rivers": ("physical", "rivers_lake_centerlines"),
+    "borders": ("cultural", "admin_0_boundary_lines_land"),
+    "innerborders": ("cultural", "admin_1_states_provinces_lakes"),
 }
 FEATURES_BASEMAP = {  # names of relevant basemap methods
-    'land': 'fillcontinents',
-    'coast': 'drawcoastlines',
-    'rivers': 'drawrivers',
-    'borders': 'drawcountries',
-    'innerborders': 'drawstates',
+    "land": "fillcontinents",
+    "coast": "drawcoastlines",
+    "rivers": "drawrivers",
+    "borders": "drawcountries",
+    "innerborders": "drawstates",
 }
 
 # Resolution names
 # NOTE: Maximum basemap resolutions are much finer than cartopy
 RESOS_CARTOPY = {
-    'lo': '110m',
-    'med': '50m',
-    'hi': '10m',
-    'x-hi': '10m',  # extra high
-    'xx-hi': '10m',  # extra extra high
+    "lo": "110m",
+    "med": "50m",
+    "hi": "10m",
+    "x-hi": "10m",  # extra high
+    "xx-hi": "10m",  # extra extra high
 }
 RESOS_BASEMAP = {
-    'lo': 'c',  # coarse
-    'med': 'l',
-    'hi': 'i',  # intermediate
-    'x-hi': 'h',
-    'xx-hi': 'f',  # fine
+    "lo": "c",  # coarse
+    "med": "l",
+    "hi": "i",  # intermediate
+    "x-hi": "h",
+    "xx-hi": "f",  # fine
 }
 
 
@@ -361,11 +378,18 @@ def _modify_colormap(cmap, *, cut, left, right, reverse, shift, alpha, samples):
 
 
 @warnings._rename_kwargs(
-    '0.8.0', fade='saturation', shade='luminance', to_listed='discrete'
+    "0.8.0", fade="saturation", shade="luminance", to_listed="discrete"
 )
 def Colormap(
-    *args, name=None, listmode='perceptual', filemode='continuous', discrete=False,
-    cycle=None, save=False, save_kw=None, **kwargs
+    *args,
+    name=None,
+    listmode="perceptual",
+    filemode="continuous",
+    discrete=False,
+    cycle=None,
+    save=False,
+    save_kw=None,
+    **kwargs,
 ):
     """
     Generate, retrieve, modify, and/or merge instances of
@@ -533,6 +557,7 @@ def Colormap(
     proplot.constructor.Cycle
     proplot.utils.get_colors
     """
+
     # Helper function
     # NOTE: Very careful here! Try to support common use cases. For example
     # adding opacity gradations to colormaps with Colormap('cmap', alpha=(0.5, 1))
@@ -549,27 +574,27 @@ def Colormap(
             values = (None,)
         else:
             raise ValueError(
-                f'Got {len(args)} colormap-specs '
-                f'but {len(value)} values for {key!r}.'
+                f"Got {len(args)} colormap-specs "
+                f"but {len(value)} values for {key!r}."
             )
         return value, values
 
     # Parse keyword args that can apply to the merged colormap or each one
-    hsla = _pop_props(kwargs, 'hsla')
-    if not args and hsla.keys() - {'alpha'}:
+    hsla = _pop_props(kwargs, "hsla")
+    if not args and hsla.keys() - {"alpha"}:
         args = (hsla,)
     else:
         kwargs.update(hsla)
-    default_luminance = kwargs.pop('default_luminance', None)  # used internally
-    cut, cuts = _pop_modification('cut')
-    left, lefts = _pop_modification('left')
-    right, rights = _pop_modification('right')
-    shift, shifts = _pop_modification('shift')
-    reverse, reverses = _pop_modification('reverse')
-    samples, sampless = _pop_modification('samples')
-    alpha, alphas = _pop_modification('alpha')
-    luminance, luminances = _pop_modification('luminance')
-    saturation, saturations = _pop_modification('saturation')
+    default_luminance = kwargs.pop("default_luminance", None)  # used internally
+    cut, cuts = _pop_modification("cut")
+    left, lefts = _pop_modification("left")
+    right, rights = _pop_modification("right")
+    shift, shifts = _pop_modification("shift")
+    reverse, reverses = _pop_modification("reverse")
+    samples, sampless = _pop_modification("samples")
+    alpha, alphas = _pop_modification("alpha")
+    luminance, luminances = _pop_modification("luminance")
+    saturation, saturations = _pop_modification("saturation")
     if luminance is not None:
         luminances = (luminance,) * len(args)
     if saturation is not None:
@@ -578,35 +603,55 @@ def Colormap(
     # Issue warnings and errors
     if not args:
         raise ValueError(
-            'Colormap() requires either positional arguments or '
+            "Colormap() requires either positional arguments or "
             "'hue', 'chroma', 'saturation', and/or 'luminance' keywords."
         )
-    deprecated = {'listed': 'discrete', 'linear': 'continuous'}
+    deprecated = {"listed": "discrete", "linear": "continuous"}
     if listmode in deprecated:
         oldmode, listmode = listmode, deprecated[listmode]
         warnings._warn_proplot(
-            f'Please use listmode={listmode!r} instead of listmode={oldmode!r}.'
-            'Option was renamed in v0.8 and will be removed in a future relase.'
+            f"Please use listmode={listmode!r} instead of listmode={oldmode!r}."
+            "Option was renamed in v0.8 and will be removed in a future relase."
         )
-    options = {'discrete', 'continuous', 'perceptual'}
-    for key, mode in zip(('listmode', 'filemode'), (listmode, filemode)):
+    options = {"discrete", "continuous", "perceptual"}
+    for key, mode in zip(("listmode", "filemode"), (listmode, filemode)):
         if mode not in options:
             raise ValueError(
-                f'Invalid {key}={mode!r}. Options are: '
-                + ', '.join(map(repr, options))
-                + '.'
+                f"Invalid {key}={mode!r}. Options are: "
+                + ", ".join(map(repr, options))
+                + "."
             )
 
     # Loop through colormaps
     cmaps = []
-    for arg, icut, ileft, iright, ireverse, ishift, isamples, iluminance, isaturation, ialpha in zip(  # noqa: E501
-        args, cuts, lefts, rights, reverses, shifts, sampless, luminances, saturations, alphas  # noqa: E501
+    for (
+        arg,
+        icut,
+        ileft,
+        iright,
+        ireverse,
+        ishift,
+        isamples,
+        iluminance,
+        isaturation,
+        ialpha,
+    ) in zip(  # noqa: E501
+        args,
+        cuts,
+        lefts,
+        rights,
+        reverses,
+        shifts,
+        sampless,
+        luminances,
+        saturations,
+        alphas,  # noqa: E501
     ):
         # Load registered colormaps and maps on file
         # TODO: Document how 'listmode' also affects loaded files
         if isinstance(arg, str):
-            if '.' in arg and os.path.isfile(arg):
-                if filemode == 'discrete':
+            if "." in arg and os.path.isfile(arg):
+                if filemode == "discrete":
                     arg = pcolors.DiscreteColormap.from_file(arg)
                 else:
                     arg = pcolors.ContinuousColormap.from_file(arg)
@@ -626,12 +671,13 @@ def Colormap(
 
         # List of color tuples or color strings, i.e. iterable of iterables
         elif (
-            not isinstance(arg, str) and np.iterable(arg)
+            not isinstance(arg, str)
+            and np.iterable(arg)
             and all(np.iterable(color) for color in arg)
         ):
-            if listmode == 'discrete':
+            if listmode == "discrete":
                 cmap = pcolors.DiscreteColormap(arg)
-            elif listmode == 'continuous':
+            elif listmode == "continuous":
                 cmap = pcolors.ContinuousColormap.from_list(arg)
             else:
                 cmap = pcolors.PerceptualColormap.from_list(arg)
@@ -639,18 +685,18 @@ def Colormap(
         # Monochrome colormap from input color
         # NOTE: Do not print color names in error message. Too long to be useful.
         else:
-            jreverse = isinstance(arg, str) and arg[-2:] == '_r'
+            jreverse = isinstance(arg, str) and arg[-2:] == "_r"
             if jreverse:
                 arg = arg[:-2]
             try:
                 color = to_rgba(arg, cycle=cycle)
             except (ValueError, TypeError):
-                message = f'Invalid colormap, color cycle, or color {arg!r}.'
-                if isinstance(arg, str) and arg[:1] != '#':
+                message = f"Invalid colormap, color cycle, or color {arg!r}."
+                if isinstance(arg, str) and arg[:1] != "#":
                     message += (
-                        ' Options include: '
-                        + ', '.join(sorted(map(repr, pcolors._cmap_database)))
-                        + '.'
+                        " Options include: "
+                        + ", ".join(sorted(map(repr, pcolors._cmap_database)))
+                        + "."
                     )
                 raise ValueError(message) from None
             iluminance = _not_none(iluminance, default_luminance)
@@ -662,8 +708,14 @@ def Colormap(
 
         # Modify the colormap
         cmap = _modify_colormap(
-            cmap, cut=icut, left=ileft, right=iright,
-            reverse=ireverse, shift=ishift, alpha=ialpha, samples=isamples,
+            cmap,
+            cut=icut,
+            left=ileft,
+            right=iright,
+            reverse=ireverse,
+            shift=ishift,
+            alpha=ialpha,
+            samples=isamples,
         )
         cmaps.append(cmap)
 
@@ -677,8 +729,14 @@ def Colormap(
     if discrete and isinstance(cmap, pcolors.ContinuousColormap):  # noqa: E501
         samples = _not_none(samples, DEFAULT_CYCLE_SAMPLES)
     cmap = _modify_colormap(
-        cmap, cut=cut, left=left, right=right,
-        reverse=reverse, shift=shift, alpha=alpha, samples=samples
+        cmap,
+        cut=cut,
+        left=left,
+        right=right,
+        reverse=reverse,
+        shift=shift,
+        alpha=alpha,
+        samples=samples,
     )
 
     # Initialize
@@ -691,7 +749,7 @@ def Colormap(
     else:
         cmap.name = name
     if not isinstance(name, str):
-        raise ValueError('The colormap name must be a string.')
+        raise ValueError("The colormap name must be a string.")
     pcolors._cmap_database[name] = cmap
 
     # Save the colormap
@@ -787,9 +845,9 @@ markeredgecolors, markerfacecolors
     """
     # Parse keyword arguments that rotate through other properties
     # besides color cycles.
-    props = _pop_props(kwargs, 'line')
-    if 'sizes' in kwargs:  # special case, gets translated back by scatter()
-        props.setdefault('markersize', kwargs.pop('sizes'))
+    props = _pop_props(kwargs, "line")
+    if "sizes" in kwargs:  # special case, gets translated back by scatter()
+        props.setdefault("markersize", kwargs.pop("sizes"))
     samples = _not_none(samples=samples, N=N)  # trigger Colormap default
     for key, value in tuple(props.items()):  # permit in-place modification
         if value is None:
@@ -800,15 +858,15 @@ markeredgecolors, markerfacecolors
 
     # If args is non-empty, means we want color cycle; otherwise is black
     if not args:
-        props.setdefault('color', ['black'])
+        props.setdefault("color", ["black"])
         if kwargs:
-            warnings._warn_proplot(f'Ignoring Cycle() keyword arg(s) {kwargs}.')
+            warnings._warn_proplot(f"Ignoring Cycle() keyword arg(s) {kwargs}.")
         dicts = ()
 
     # Merge cycler objects and/or update cycler objects with input kwargs
     elif all(isinstance(arg, cycler.Cycler) for arg in args):
         if kwargs:
-            warnings._warn_proplot(f'Ignoring Cycle() keyword arg(s) {kwargs}.')
+            warnings._warn_proplot(f"Ignoring Cycle() keyword arg(s) {kwargs}.")
         if len(args) == 1 and not props:
             return args[0]
         dicts = tuple(arg.by_key() for arg in args)
@@ -818,14 +876,16 @@ markeredgecolors, markerfacecolors
     # someone might be trying to make qualitative colormap for use in 2D plot
     else:
         if isinstance(args[-1], Number):
-            args, samples = args[:-1], _not_none(samples_positional=args[-1], samples=samples)  # noqa: #501
-        kwargs.setdefault('listmode', 'discrete')
-        kwargs.setdefault('filemode', 'discrete')
-        kwargs['discrete'] = True  # triggers application of default 'samples'
-        kwargs['default_luminance'] = DEFAULT_CYCLE_LUMINANCE
+            args, samples = args[:-1], _not_none(
+                samples_positional=args[-1], samples=samples
+            )  # noqa: #501
+        kwargs.setdefault("listmode", "discrete")
+        kwargs.setdefault("filemode", "discrete")
+        kwargs["discrete"] = True  # triggers application of default 'samples'
+        kwargs["default_luminance"] = DEFAULT_CYCLE_LUMINANCE
         cmap = Colormap(*args, name=name, samples=samples, **kwargs)
         name = _not_none(name, cmap.name)
-        dict_ = {'color': [c if isinstance(c, str) else to_hex(c) for c in cmap.colors]}
+        dict_ = {"color": [c if isinstance(c, str) else to_hex(c) for c in cmap.colors]}
         dicts = (dict_,)
 
     # Update the cyler property
@@ -839,7 +899,7 @@ markeredgecolors, markerfacecolors
     maxlen = np.lcm.reduce([len(value) for value in props.values()])
     props = {key: value * (maxlen // len(value)) for key, value in props.items()}
     cycle = cycler.cycler(**props)
-    cycle.name = _not_none(name, '_no_name')
+    cycle.name = _not_none(name, "_no_name")
 
     return cycle
 
@@ -897,15 +957,15 @@ def Norm(norm, *args, **kwargs):
     if isinstance(norm, mcolors.Normalize):
         return copy.copy(norm)
     if not isinstance(norm, str):
-        raise ValueError(f'Invalid norm name {norm!r}. Must be string.')
+        raise ValueError(f"Invalid norm name {norm!r}. Must be string.")
     if norm not in NORMS:
         raise ValueError(
-            f'Unknown normalizer {norm!r}. Options are: '
-            + ', '.join(map(repr, NORMS))
-            + '.'
+            f"Unknown normalizer {norm!r}. Options are: "
+            + ", ".join(map(repr, NORMS))
+            + "."
         )
-    if norm == 'symlog' and not args and 'linthresh' not in kwargs:
-        kwargs['linthresh'] = 1  # special case, needs argument
+    if norm == "symlog" and not args and "linthresh" not in kwargs:
+        kwargs["linthresh"] = 1  # special case, needs argument
     return NORMS[norm](*args, **kwargs)
 
 
@@ -992,30 +1052,32 @@ def Locator(locator, *args, discrete=False, **kwargs):
     proplot.axes.Axes.colorbar
     proplot.constructor.Formatter
     """  # noqa: E501
-    if np.iterable(locator) and not isinstance(locator, str) and not all(
-        isinstance(num, Number) for num in locator
+    if (
+        np.iterable(locator)
+        and not isinstance(locator, str)
+        and not all(isinstance(num, Number) for num in locator)
     ):
         locator, *args = *locator, *args
     if isinstance(locator, mticker.Locator):
         return copy.copy(locator)
     if isinstance(locator, str):
-        if locator == 'index':  # defaults
+        if locator == "index":  # defaults
             args = args or (1,)
             if len(args) == 1:
                 args = (*args, 0)
-        elif locator in ('logminor', 'logitminor', 'symlogminor'):  # presets
-            locator, _ = locator.split('minor')
-            if locator == 'logit':
-                kwargs.setdefault('minor', True)
+        elif locator in ("logminor", "logitminor", "symlogminor"):  # presets
+            locator, _ = locator.split("minor")
+            if locator == "logit":
+                kwargs.setdefault("minor", True)
             else:
-                kwargs.setdefault('subs', np.arange(1, 10))
+                kwargs.setdefault("subs", np.arange(1, 10))
         if locator in LOCATORS:
             locator = LOCATORS[locator](*args, **kwargs)
         else:
             raise ValueError(
-                f'Unknown locator {locator!r}. Options are: '
-                + ', '.join(map(repr, LOCATORS))
-                + '.'
+                f"Unknown locator {locator!r}. Options are: "
+                + ", ".join(map(repr, LOCATORS))
+                + "."
             )
     elif locator is True:
         locator = mticker.AutoLocator(*args, **kwargs)
@@ -1030,7 +1092,7 @@ def Locator(locator, *args, discrete=False, **kwargs):
         else:
             locator = mticker.FixedLocator(locator, *args, **kwargs)
     else:
-        raise ValueError(f'Invalid locator {locator!r}.')
+        raise ValueError(f"Invalid locator {locator!r}.")
     return locator
 
 
@@ -1138,25 +1200,27 @@ def Formatter(formatter, *args, date=False, index=False, **kwargs):
     proplot.axes.Axes.colorbar
     proplot.constructor.Locator
     """  # noqa: E501
-    if np.iterable(formatter) and not isinstance(formatter, str) and not all(
-        isinstance(item, str) for item in formatter
+    if (
+        np.iterable(formatter)
+        and not isinstance(formatter, str)
+        and not all(isinstance(item, str) for item in formatter)
     ):
         formatter, *args = *formatter, *args
     if isinstance(formatter, mticker.Formatter):
         return copy.copy(formatter)
     if isinstance(formatter, str):
-        if re.search(r'{x(:.+)?}', formatter):  # str.format
+        if re.search(r"{x(:.+)?}", formatter):  # str.format
             formatter = mticker.StrMethodFormatter(formatter, *args, **kwargs)
-        elif '%' in formatter:  # str % format
+        elif "%" in formatter:  # str % format
             cls = mdates.DateFormatter if date else mticker.FormatStrFormatter
             formatter = cls(formatter, *args, **kwargs)
         elif formatter in FORMATTERS:
             formatter = FORMATTERS[formatter](*args, **kwargs)
         else:
             raise ValueError(
-                f'Unknown formatter {formatter!r}. Options are: '
-                + ', '.join(map(repr, FORMATTERS))
-                + '.'
+                f"Unknown formatter {formatter!r}. Options are: "
+                + ", ".join(map(repr, FORMATTERS))
+                + "."
             )
     elif formatter is True:
         formatter = pticker.AutoFormatter(*args, **kwargs)
@@ -1167,7 +1231,7 @@ def Formatter(formatter, *args, date=False, index=False, **kwargs):
     elif callable(formatter):
         formatter = mticker.FuncFormatter(formatter, *args, **kwargs)
     else:
-        raise ValueError(f'Invalid formatter {formatter!r}.')
+        raise ValueError(f"Invalid formatter {formatter!r}.")
     return formatter
 
 
@@ -1244,29 +1308,36 @@ def Scale(scale, *args, **kwargs):
     if isinstance(scale, mscale.ScaleBase):
         return copy.copy(scale)
     if not isinstance(scale, str):
-        raise ValueError(f'Invalid scale name {scale!r}. Must be string.')
+        raise ValueError(f"Invalid scale name {scale!r}. Must be string.")
     scale = scale.lower()
     if scale in SCALES_PRESETS:
         if args or kwargs:
             warnings._warn_proplot(
-                f'Scale {scale!r} is a scale *preset*. Ignoring positional '
-                'argument(s): {args} and keyword argument(s): {kwargs}. '
+                f"Scale {scale!r} is a scale *preset*. Ignoring positional "
+                "argument(s): {args} and keyword argument(s): {kwargs}. "
             )
         scale, *args = SCALES_PRESETS[scale]
     if scale in SCALES:
         scale = SCALES[scale]
     else:
         raise ValueError(
-            f'Unknown scale or preset {scale!r}. Options are: '
-            + ', '.join(map(repr, (*SCALES, *SCALES_PRESETS)))
-            + '.'
+            f"Unknown scale or preset {scale!r}. Options are: "
+            + ", ".join(map(repr, (*SCALES, *SCALES_PRESETS)))
+            + "."
         )
     return scale(*args, **kwargs)
 
 
 def Proj(
-    name, backend=None,
-    lon0=None, lon_0=None, lat0=None, lat_0=None, lonlim=None, latlim=None, **kwargs
+    name,
+    backend=None,
+    lon0=None,
+    lon_0=None,
+    lat0=None,
+    lat_0=None,
+    lonlim=None,
+    latlim=None,
+    **kwargs,
 ):
     """
     Return a `cartopy.crs.Projection` or `~mpl_toolkits.basemap.Basemap` instance.
@@ -1431,71 +1502,73 @@ def Proj(
     latlim = _not_none(latlim, default=(None, None))
     is_crs = Projection is not object and isinstance(name, Projection)
     is_basemap = Basemap is not object and isinstance(name, Basemap)
-    include_axes = kwargs.pop('include_axes', False)  # for error message
-    if backend is not None and backend not in ('cartopy', 'basemap'):
+    include_axes = kwargs.pop("include_axes", False)  # for error message
+    if backend is not None and backend not in ("cartopy", "basemap"):
         raise ValueError(
             f"Invalid backend={backend!r}. Options are 'cartopy' or 'basemap'."
         )
     if not is_crs and not is_basemap:
-        backend = _not_none(backend, rc['geo.backend'])
+        backend = _not_none(backend, rc["geo.backend"])
         if not isinstance(name, str):
             raise ValueError(
-                f'Unexpected projection {name!r}. Must be PROJ string name, '
-                'cartopy.crs.Projection, or mpl_toolkits.basemap.Basemap.'
+                f"Unexpected projection {name!r}. Must be PROJ string name, "
+                "cartopy.crs.Projection, or mpl_toolkits.basemap.Basemap."
             )
     for key_proj, key_cartopy, value in (
-        ('lon_0', 'central_longitude', lon0),
-        ('lat_0', 'central_latitude', lat0),
-        ('llcrnrlon', 'min_longitude', lonlim[0]),
-        ('urcrnrlon', 'max_longitude', lonlim[1]),
-        ('llcrnrlat', 'min_latitude', latlim[0]),
-        ('urcrnrlat', 'max_latitude', latlim[1]),
+        ("lon_0", "central_longitude", lon0),
+        ("lat_0", "central_latitude", lat0),
+        ("llcrnrlon", "min_longitude", lonlim[0]),
+        ("urcrnrlon", "max_longitude", lonlim[1]),
+        ("llcrnrlat", "min_latitude", latlim[0]),
+        ("urcrnrlat", "max_latitude", latlim[1]),
     ):
         if value is None:
             continue
-        if backend == 'basemap' and key_proj == 'lon_0' and value > 0:
+        if backend == "basemap" and key_proj == "lon_0" and value > 0:
             value -= 360  # see above comment
-        kwargs[key_proj if backend == 'basemap' else key_cartopy] = value
+        kwargs[key_proj if backend == "basemap" else key_cartopy] = value
 
     # Projection instances
     if is_crs or is_basemap:
         if backend is not None:
-            kwargs['backend'] = backend
+            kwargs["backend"] = backend
         if kwargs:
-            warnings._warn_proplot(f'Ignoring Proj() keyword arg(s): {kwargs!r}.')
+            warnings._warn_proplot(f"Ignoring Proj() keyword arg(s): {kwargs!r}.")
         proj = name
-        backend = 'cartopy' if is_crs else 'basemap'
+        backend = "cartopy" if is_crs else "basemap"
 
     # Cartopy name
     # NOTE: Error message matches basemap invalid projection message
-    elif backend == 'cartopy':
+    elif backend == "cartopy":
         # Parse keywoard arguments
         import cartopy  # ensure present  # noqa: F401
-        for key in ('round', 'boundinglat'):
+
+        for key in ("round", "boundinglat"):
             value = kwargs.pop(key, None)
             if value is not None:
                 raise ValueError(
-                    'Ignoring Proj() keyword {key}={value!r}. Must be passed '
-                    'to GeoAxes.format() when cartopy is the backend.'
+                    "Ignoring Proj() keyword {key}={value!r}. Must be passed "
+                    "to GeoAxes.format() when cartopy is the backend."
                 )
 
         # Retrieve projection and initialize with nice error message
         try:
             crs = PROJS[name]
         except KeyError:
-            message = f'{name!r} is an unknown cartopy projection class.\n'
-            message += 'The known cartopy projection classes are:\n'
-            message += '\n'.join(
-                ' ' + key + ' ' * (max(map(len, PROJS)) - len(key) + 10) + cls.__name__
+            message = f"{name!r} is an unknown cartopy projection class.\n"
+            message += "The known cartopy projection classes are:\n"
+            message += "\n".join(
+                " " + key + " " * (max(map(len, PROJS)) - len(key) + 10) + cls.__name__
                 for key, cls in PROJS.items()
             )
             if include_axes:
                 from . import axes as paxes  # avoid circular imports
-                message = message.replace('class.', 'class or axes subclass.')
-                message += '\nThe known axes subclasses are:\n' + paxes._cls_table
+
+                message = message.replace("class.", "class or axes subclass.")
+                message += "\nThe known axes subclasses are:\n" + paxes._cls_table
             raise ValueError(message) from None
-        if name == 'geos':  # fix common mistake
-            kwargs.pop('central_latitude', None)
+        if name == "geos":  # fix common mistake
+            kwargs.pop("central_latitude", None)
         proj = crs(**kwargs)
 
     # Basemap name
@@ -1510,49 +1583,51 @@ def Proj(
     else:
         # Parse input arguments
         from mpl_toolkits import basemap  # ensure present  # noqa: F401
-        if name in ('eqc', 'pcarree'):
-            name = 'cyl'  # PROJ package aliases
-        defaults = {'fix_aspect': True, **PROJ_DEFAULTS.get(name, {})}
-        if name[:2] in ('np', 'sp'):
-            defaults['round'] = rc['geo.round']
-        if name == 'geos':
-            defaults['rsphere'] = (6378137.00, 6356752.3142)
+
+        if name in ("eqc", "pcarree"):
+            name = "cyl"  # PROJ package aliases
+        defaults = {"fix_aspect": True, **PROJ_DEFAULTS.get(name, {})}
+        if name[:2] in ("np", "sp"):
+            defaults["round"] = rc["geo.round"]
+        if name == "geos":
+            defaults["rsphere"] = (6378137.00, 6356752.3142)
         for key, value in defaults.items():
             if kwargs.get(key, None) is None:  # allow e.g. boundinglat=None
                 kwargs[key] = value
 
         # Initialize
-        if _version_mpl >= '3.3':
+        if _version_mpl >= "3.3":
             raise RuntimeError(
-                'Basemap is no longer maintained and is incompatible with '
-                'matplotlib >= 3.3. Please use cartopy as your geographic '
-                'plotting backend or downgrade to matplotlib < 3.3.'
+                "Basemap is no longer maintained and is incompatible with "
+                "matplotlib >= 3.3. Please use cartopy as your geographic "
+                "plotting backend or downgrade to matplotlib < 3.3."
             )
         reso = _not_none(
-            reso=kwargs.pop('reso', None),
-            resolution=kwargs.pop('resolution', None),
-            default=rc['reso']
+            reso=kwargs.pop("reso", None),
+            resolution=kwargs.pop("resolution", None),
+            default=rc["reso"],
         )
         if reso in RESOS_BASEMAP:
             reso = RESOS_BASEMAP[reso]
         else:
             raise ValueError(
-                f'Invalid resolution {reso!r}. Options are: '
-                + ', '.join(map(repr, RESOS_BASEMAP))
-                + '.'
+                f"Invalid resolution {reso!r}. Options are: "
+                + ", ".join(map(repr, RESOS_BASEMAP))
+                + "."
             )
-        kwargs.update({'resolution': reso, 'projection': name})
+        kwargs.update({"resolution": reso, "projection": name})
         try:
             proj = Basemap(**kwargs)  # will raise helpful warning
         except ValueError as err:
             message = str(err)
             message = message.strip()
-            message = message.replace('projection', 'basemap projection')
-            message = message.replace('supported', 'known')
+            message = message.replace("projection", "basemap projection")
+            message = message.replace("supported", "known")
             if include_axes:
                 from . import axes as paxes  # avoid circular imports
-                message = message.replace('projection.', 'projection or axes subclass.')
-                message += '\nThe known axes subclasses are:\n' + paxes._cls_table
+
+                message = message.replace("projection.", "projection or axes subclass.")
+                message += "\nThe known axes subclasses are:\n" + paxes._cls_table
             raise ValueError(message) from None
 
     proj._proj_backend = backend
@@ -1560,6 +1635,4 @@ def Proj(
 
 
 # Deprecated
-Colors = warnings._rename_objs(
-    '0.8.0', Colors=get_colors
-)
+Colors = warnings._rename_objs("0.8.0", Colors=get_colors)

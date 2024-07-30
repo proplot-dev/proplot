@@ -29,16 +29,8 @@ import math
 from colorsys import hls_to_rgb, rgb_to_hls
 
 # Coefficients or something
-m = [
-    [3.2406, -1.5372, -0.4986],
-    [-0.9689, 1.8758, 0.0415],
-    [0.0557, -0.2040, 1.0570]
-]
-m_inv = [
-    [0.4124, 0.3576, 0.1805],
-    [0.2126, 0.7152, 0.0722],
-    [0.0193, 0.1192, 0.9505]
-]
+m = [[3.2406, -1.5372, -0.4986], [-0.9689, 1.8758, 0.0415], [0.0557, -0.2040, 1.0570]]
+m_inv = [[0.4124, 0.3576, 0.1805], [0.2126, 0.7152, 0.0722], [0.0193, 0.1192, 0.9505]]
 # Hard-coded D65 illuminant (has to do with expected light intensity and
 # white balance that falls upon the generated color)
 # See: https://en.wikipedia.org/wiki/Illuminant_D65
@@ -121,7 +113,7 @@ def rgb_prepare(triple):
     for ch in triple:
         ch = round(ch, 3)
         if ch < -0.0001 or ch > 1.0001:
-            raise Exception(f'Illegal RGB value {ch:f}.')
+            raise Exception(f"Illegal RGB value {ch:f}.")
         if ch < 0:
             ch = 0
         if ch > 1:
@@ -133,11 +125,11 @@ def rgb_prepare(triple):
 
 def rgb_to_hex(triple):
     [r, g, b] = triple
-    return '#%02x%02x%02x' % tuple(rgb_prepare([r, g, b]))
+    return "#%02x%02x%02x" % tuple(rgb_prepare([r, g, b]))
 
 
 def hex_to_rgb(color):
-    if color.startswith('#'):
+    if color.startswith("#"):
         color = color[1:]
     r = int(color[0:2], 16) / 255.0
     g = int(color[2:4], 16) / 255.0
@@ -147,38 +139,38 @@ def hex_to_rgb(color):
 
 def max_chroma(L, H):
     hrad = math.radians(H)
-    sinH = (math.sin(hrad))
-    cosH = (math.cos(hrad))
-    sub1 = (math.pow(L + 16, 3.0) / 1560896.0)
+    sinH = math.sin(hrad)
+    cosH = math.cos(hrad)
+    sub1 = math.pow(L + 16, 3.0) / 1560896.0
     sub2 = sub1 if sub1 > 0.008856 else (L / 903.3)
-    result = float('inf')
+    result = float("inf")
     for row in m:
         m1 = row[0]
         m2 = row[1]
         m3 = row[2]
-        top = ((0.99915 * m1 + 1.05122 * m2 + 1.14460 * m3) * sub2)
-        rbottom = (0.86330 * m3 - 0.17266 * m2)
-        lbottom = (0.12949 * m3 - 0.38848 * m1)
+        top = (0.99915 * m1 + 1.05122 * m2 + 1.14460 * m3) * sub2
+        rbottom = 0.86330 * m3 - 0.17266 * m2
+        lbottom = 0.12949 * m3 - 0.38848 * m1
         bottom = (rbottom * sinH + lbottom * cosH) * sub2
         for t in (0.0, 1.0):
-            C = (L * (top - 1.05122 * t) / (bottom + 0.17266 * sinH * t))
+            C = L * (top - 1.05122 * t) / (bottom + 0.17266 * sinH * t)
             if C > 0.0 and C < result:
                 result = C
     return result
 
 
 def hrad_extremum(L):
-    lhs = (math.pow(L, 3.0) + 48.0 * math.pow(L, 2.0)
-           + 768.0 * L + 4096.0) / 1560896.0
+    lhs = (math.pow(L, 3.0) + 48.0 * math.pow(L, 2.0) + 768.0 * L + 4096.0) / 1560896.0
     rhs = 1107.0 / 125000.0
     sub = lhs if lhs > rhs else 10.0 * L / 9033.0
-    chroma = float('inf')
+    chroma = float("inf")
     result = None
     for row in m:
         for limit in (0.0, 1.0):
             [m1, m2, m3] = row
-            top = -3015466475.0 * m3 * sub + 603093295.0 * m2 * sub \
-                - 603093295.0 * limit
+            top = (
+                -3015466475.0 * m3 * sub + 603093295.0 * m2 * sub - 603093295.0 * limit
+            )
             bottom = 1356959916.0 * m1 * sub - 452319972.0 * m3 * sub
             hrad = math.atan2(top, bottom)
             if limit == 0.0:
@@ -252,15 +244,15 @@ def from_linear(c):
     if c <= 0.0031308:
         return 12.92 * c
     else:
-        return (1.055 * math.pow(c, 1.0 / 2.4) - 0.055)
+        return 1.055 * math.pow(c, 1.0 / 2.4) - 0.055
 
 
 def to_linear(c):
     a = 0.055
     if c > 0.04045:
-        return (math.pow((c + a) / (1.0 + a), 2.4))
+        return math.pow((c + a) / (1.0 + a), 2.4)
     else:
-        return (c / 12.92)
+        return c / 12.92
 
 
 def CIExyz_to_rgb(triple):
@@ -275,8 +267,8 @@ def rgb_to_CIExyz(triple):
 
 def CIEluv_to_lchuv(triple):
     L, U, V = triple
-    C = (math.pow(math.pow(U, 2) + math.pow(V, 2), (1.0 / 2.0)))
-    hrad = (math.atan2(V, U))
+    C = math.pow(math.pow(U, 2) + math.pow(V, 2), (1.0 / 2.0))
+    hrad = math.atan2(V, U)
     H = math.degrees(hrad)
     if H < 0.0:
         H = 360.0 + H
@@ -286,8 +278,8 @@ def CIEluv_to_lchuv(triple):
 def lchuv_to_CIEluv(triple):
     L, C, H = triple
     Hrad = math.radians(H)
-    U = (math.cos(Hrad) * C)
-    V = (math.sin(Hrad) * C)
+    U = math.cos(Hrad) * C
+    V = math.sin(Hrad) * C
     return [L, U, V]
 
 
@@ -298,14 +290,14 @@ gamma = 3.0  # tunable? nah, get weird stuff
 
 def CIEfunc(t):
     if t > lab_e:
-        return (math.pow(t, 1.0 / gamma))
+        return math.pow(t, 1.0 / gamma)
     else:
-        return (7.787 * t + 16.0 / 116.0)
+        return 7.787 * t + 16.0 / 116.0
 
 
 def CIEfunc_inverse(t):
     if math.pow(t, 3.0) > lab_e:
-        return (math.pow(t, gamma))
+        return math.pow(t, gamma)
     else:
         return (116.0 * t - 16.0) / lab_k
 

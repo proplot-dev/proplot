@@ -14,7 +14,7 @@ from ..internals import ic  # noqa: F401
 from ..internals import _not_none, _pop_rc, docstring
 from . import plot, shared
 
-__all__ = ['PolarAxes']
+__all__ = ["PolarAxes"]
 
 
 # Format docstring
@@ -90,7 +90,7 @@ labelsize, gridlabelsize : unit-spec or str, default: :rc:`grid.labelsize`
 labelweight, gridlabelweight : str, default: :rc:`grid.labelweight`
     Font weight for the gridline labels.
 """
-docstring._snippet_manager['polar.format'] = _format_docstring
+docstring._snippet_manager["polar.format"] = _format_docstring
 
 
 class PolarAxes(shared._SharedAxes, plot.PlotAxes, mpolar.PolarAxes):
@@ -104,7 +104,8 @@ class PolarAxes(shared._SharedAxes, plot.PlotAxes, mpolar.PolarAxes):
     to axes-creation commands like `~proplot.figure.Figure.add_axes`,
     `~proplot.figure.Figure.add_subplot`, and `~proplot.figure.Figure.subplots`.
     """
-    _name = 'polar'
+
+    _name = "polar"
 
     @docstring._snippet_manager
     def __init__(self, *args, **kwargs):
@@ -135,14 +136,14 @@ class PolarAxes(shared._SharedAxes, plot.PlotAxes, mpolar.PolarAxes):
         self.yaxis.set_major_formatter(pticker.AutoFormatter())
         self.yaxis.isDefault_majfmt = True
         for axis in (self.xaxis, self.yaxis):
-            axis.set_tick_params(which='both', size=0)
+            axis.set_tick_params(which="both", size=0)
 
     def _update_formatter(self, x, *, formatter=None, formatter_kw=None):
         """
         Update the gridline label formatter.
         """
         # Tick formatter and toggling
-        axis = getattr(self, x + 'axis')
+        axis = getattr(self, x + "axis")
         formatter_kw = formatter_kw or {}
         if formatter is not None:
             formatter = constructor.Formatter(formatter, **formatter_kw)  # noqa: E501
@@ -153,26 +154,31 @@ class PolarAxes(shared._SharedAxes, plot.PlotAxes, mpolar.PolarAxes):
         Update the limits.
         """
         # Try to use public API where possible
-        r = 'theta' if x == 'x' else 'r'
+        r = "theta" if x == "x" else "r"
         min_, max_ = self._min_max_lim(r, min_, max_, lim)
         if min_ is not None:
-            getattr(self, f'set_{r}min')(min_)
+            getattr(self, f"set_{r}min")(min_)
         if max_ is not None:
-            getattr(self, f'set_{r}max')(max_)
+            getattr(self, f"set_{r}max")(max_)
 
     def _update_locators(
-        self, x, *,
-        locator=None, locator_kw=None, minorlocator=None, minorlocator_kw=None,
+        self,
+        x,
+        *,
+        locator=None,
+        locator_kw=None,
+        minorlocator=None,
+        minorlocator_kw=None,
     ):
         """
         Update the gridline locator.
         """
         # TODO: Add minor tick 'toggling' as with cartesian axes?
         # NOTE: Must convert theta locator input to radians, then back to deg.
-        r = 'theta' if x == 'x' else 'r'
-        axis = getattr(self, x + 'axis')
-        min_ = getattr(self, f'get_{r}min')()
-        max_ = getattr(self, f'get_{r}max')()
+        r = "theta" if x == "x" else "r"
+        axis = getattr(self, x + "axis")
+        min_ = getattr(self, f"get_{r}min")()
+        max_ = getattr(self, f"get_{r}max")()
         for i, (loc, loc_kw) in enumerate(
             zip((locator, minorlocator), (locator_kw, minorlocator_kw))
         ):
@@ -184,7 +190,7 @@ class PolarAxes(shared._SharedAxes, plot.PlotAxes, mpolar.PolarAxes):
             # Sanitize values
             array = loc.tick_values(min_, max_)
             array = array[(array >= min_) & (array <= max_)]
-            if x == 'x':
+            if x == "x":
                 array = np.deg2rad(array)
                 if np.isclose(array[-1], min_ + 2 * np.pi):  # exclusive if 360 deg
                     array = array[:-1]
@@ -197,21 +203,49 @@ class PolarAxes(shared._SharedAxes, plot.PlotAxes, mpolar.PolarAxes):
 
     @docstring._snippet_manager
     def format(
-        self, *, r0=None, theta0=None, thetadir=None,
-        thetamin=None, thetamax=None, thetalim=None,
-        rmin=None, rmax=None, rlim=None,
-        thetagrid=None, rgrid=None,
-        thetagridminor=None, rgridminor=None,
-        thetagridcolor=None, rgridcolor=None,
-        rlabelpos=None, rscale=None, rborder=None,
-        thetalocator=None, rlocator=None, thetalines=None, rlines=None,
-        thetalocator_kw=None, rlocator_kw=None,
-        thetaminorlocator=None, rminorlocator=None, thetaminorlines=None, rminorlines=None,  # noqa: E501
-        thetaminorlocator_kw=None, rminorlocator_kw=None,
-        thetaformatter=None, rformatter=None, thetalabels=None, rlabels=None,
-        thetaformatter_kw=None, rformatter_kw=None,
-        labelpad=None, labelsize=None, labelcolor=None, labelweight=None,
-        **kwargs
+        self,
+        *,
+        r0=None,
+        theta0=None,
+        thetadir=None,
+        thetamin=None,
+        thetamax=None,
+        thetalim=None,
+        rmin=None,
+        rmax=None,
+        rlim=None,
+        thetagrid=None,
+        rgrid=None,
+        thetagridminor=None,
+        rgridminor=None,
+        thetagridcolor=None,
+        rgridcolor=None,
+        rlabelpos=None,
+        rscale=None,
+        rborder=None,
+        thetalocator=None,
+        rlocator=None,
+        thetalines=None,
+        rlines=None,
+        thetalocator_kw=None,
+        rlocator_kw=None,
+        thetaminorlocator=None,
+        rminorlocator=None,
+        thetaminorlines=None,
+        rminorlines=None,  # noqa: E501
+        thetaminorlocator_kw=None,
+        rminorlocator_kw=None,
+        thetaformatter=None,
+        rformatter=None,
+        thetalabels=None,
+        rlabels=None,
+        thetaformatter_kw=None,
+        rformatter_kw=None,
+        labelpad=None,
+        labelsize=None,
+        labelcolor=None,
+        labelweight=None,
+        **kwargs,
     ):
         """
         Modify axes limits, radial and azimuthal gridlines, and more. Note that
@@ -235,7 +269,7 @@ class PolarAxes(shared._SharedAxes, plot.PlotAxes, mpolar.PolarAxes):
         # NOTE: Here we capture 'label.pad' rc argument normally used for
         # x and y axis labels as shorthand for 'tick.labelpad'.
         rc_kw, rc_mode = _pop_rc(kwargs)
-        labelcolor = _not_none(labelcolor, kwargs.get('color', None))
+        labelcolor = _not_none(labelcolor, kwargs.get("color", None))
         with rc.context(rc_kw, mode=rc_mode):
             # Not mutable default args
             thetalocator_kw = thetalocator_kw or {}
@@ -247,11 +281,17 @@ class PolarAxes(shared._SharedAxes, plot.PlotAxes, mpolar.PolarAxes):
 
             # Flexible input
             thetalocator = _not_none(thetalines=thetalines, thetalocator=thetalocator)
-            thetaformatter = _not_none(thetalabels=thetalabels, thetaformatter=thetaformatter)  # noqa: E501
-            thetaminorlocator = _not_none(thetaminorlines=thetaminorlines, thetaminorlocator=thetaminorlocator)  # noqa: E501
+            thetaformatter = _not_none(
+                thetalabels=thetalabels, thetaformatter=thetaformatter
+            )  # noqa: E501
+            thetaminorlocator = _not_none(
+                thetaminorlines=thetaminorlines, thetaminorlocator=thetaminorlocator
+            )  # noqa: E501
             rlocator = _not_none(rlines=rlines, rlocator=rlocator)
             rformatter = _not_none(rlabels=rlabels, rformatter=rformatter)
-            rminorlocator = _not_none(rminorlines=rminorlines, rminorlocator=rminorlocator)  # noqa: E501
+            rminorlocator = _not_none(
+                rminorlines=rminorlines, rminorlocator=rminorlocator
+            )  # noqa: E501
 
             # Special radius settings
             if r0 is not None:
@@ -261,7 +301,7 @@ class PolarAxes(shared._SharedAxes, plot.PlotAxes, mpolar.PolarAxes):
             if rscale is not None:
                 self.set_rscale(rscale)
             if rborder is not None:
-                self.spines['polar'].set_visible(bool(rborder))
+                self.spines["polar"].set_visible(bool(rborder))
 
             # Special azimuth settings
             if theta0 is not None:
@@ -285,7 +325,7 @@ class PolarAxes(shared._SharedAxes, plot.PlotAxes, mpolar.PolarAxes):
                 minorlocator,
                 minorlocator_kw,
             ) in zip(
-                ('x', 'y'),
+                ("x", "y"),
                 (thetamin, rmin),
                 (thetamax, rmax),
                 (thetalim, rlim),
@@ -306,15 +346,24 @@ class PolarAxes(shared._SharedAxes, plot.PlotAxes, mpolar.PolarAxes):
                 # NOTE: Here use 'grid.labelpad' instead of 'tick.labelpad'. Default
                 # offset for grid labels is larger than for tick labels.
                 self._update_ticks(
-                    x, grid=grid, gridminor=gridminor, gridcolor=gridcolor,
-                    gridpad=True, labelpad=labelpad, labelcolor=labelcolor,
-                    labelsize=labelsize, labelweight=labelweight,
+                    x,
+                    grid=grid,
+                    gridminor=gridminor,
+                    gridcolor=gridcolor,
+                    gridpad=True,
+                    labelpad=labelpad,
+                    labelcolor=labelcolor,
+                    labelsize=labelsize,
+                    labelweight=labelweight,
                 )
 
                 # Axis locator
                 self._update_locators(
-                    x, locator=locator, locator_kw=locator_kw,
-                    minorlocator=minorlocator, minorlocator_kw=minorlocator_kw
+                    x,
+                    locator=locator,
+                    locator_kw=locator_kw,
+                    minorlocator=minorlocator,
+                    minorlocator_kw=minorlocator_kw,
                 )
 
                 # Axis formatter

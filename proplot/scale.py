@@ -15,17 +15,17 @@ from .internals import ic  # noqa: F401
 from .internals import _not_none, _version_mpl, warnings
 
 __all__ = [
-    'CutoffScale',
-    'ExpScale',
-    'FuncScale',
-    'InverseScale',
-    'LinearScale',
-    'LogitScale',
-    'LogScale',
-    'MercatorLatitudeScale',
-    'PowerScale',
-    'SineLatitudeScale',
-    'SymmetricalLogScale',
+    "CutoffScale",
+    "ExpScale",
+    "FuncScale",
+    "InverseScale",
+    "LinearScale",
+    "LogitScale",
+    "LogScale",
+    "MercatorLatitudeScale",
+    "PowerScale",
+    "SineLatitudeScale",
+    "SymmetricalLogScale",
 ]
 
 
@@ -38,13 +38,13 @@ def _parse_logscale_args(*keys, **kwargs):
     # NOTE: Scale classes ignore unused arguments with warnings, but matplotlib 3.3
     # version changes the keyword args. Since we can't do a try except clause, only
     # way to avoid warnings with 3.3 upgrade is to test version string.
-    kwsuffix = '' if _version_mpl >= '3.3' else 'x'
+    kwsuffix = "" if _version_mpl >= "3.3" else "x"
     for key in keys:
         # Remove duplicates
         opts = {
             key: kwargs.pop(key, None),
-            key + 'x': kwargs.pop(key + 'x', None),
-            key + 'y': kwargs.pop(key + 'y', None),
+            key + "x": kwargs.pop(key + "x", None),
+            key + "y": kwargs.pop(key + "y", None),
         }
         value = _not_none(**opts)  # issues warning if multiple values passed
 
@@ -53,10 +53,10 @@ def _parse_logscale_args(*keys, **kwargs):
         # up with additional log-locator step inside the threshold, e.g. major
         # ticks on -10, -1, -0.1, 0.1, 1, 10 for linthresh of 1. Adding slight
         # offset to *desired* linthresh prevents this.
-        if key == 'subs':
+        if key == "subs":
             if value is None:
                 value = np.arange(1, 10)
-        if key == 'linthresh':
+        if key == "linthresh":
             if value is None:
                 value = 1
             power = np.log10(value)
@@ -76,9 +76,10 @@ class _Scale(object):
     `__init__` so you no longer have to instantiate scales with an
     `~matplotlib.axis.Axis` instance.
     """
+
     def __init__(self, *args, **kwargs):
         # Pass a dummy axis to the superclass
-        axis = type('Axis', (object,), {'axis_name': 'x'})()
+        axis = type("Axis", (object,), {"axis_name": "x"})()
         super().__init__(axis, *args, **kwargs)
         self._default_major_locator = mticker.AutoLocator()
         self._default_minor_locator = mticker.AutoMinorLocator()
@@ -103,13 +104,14 @@ class _Scale(object):
         # NOTE: We set isDefault_minloc to True when simply toggling minor ticks
         # on and off with CartesianAxes format command.
         from .config import rc
+
         if not only_if_default or axis.isDefault_majloc:
             locator = copy.copy(self._default_major_locator)
             axis.set_major_locator(locator)
             axis.isDefault_majloc = True
         if not only_if_default or axis.isDefault_minloc:
-            x = axis.axis_name if axis.axis_name in 'xy' else 'x'
-            if rc[x + 'tick.minor.visible']:
+            x = axis.axis_name if axis.axis_name in "xy" else "x"
+            if rc[x + "tick.minor.visible"]:
                 locator = copy.copy(self._default_minor_locator)
             else:
                 locator = mticker.NullLocator()
@@ -136,8 +138,9 @@ class LinearScale(_Scale, mscale.LinearScale):
     As with `~matplotlib.scale.LinearScale` but with
     `~proplot.ticker.AutoFormatter` as the default major formatter.
     """
+
     #: The registered scale name
-    name = 'linear'
+    name = "linear"
 
     def __init__(self, **kwargs):
         """
@@ -154,8 +157,9 @@ class LogitScale(_Scale, mscale.LogitScale):
     As with `~matplotlib.scale.LogitScale` but with `~proplot.ticker.AutoFormatter`
     as the default major formatter.
     """
+
     #: The registered scale name
-    name = 'logit'
+    name = "logit"
 
     def __init__(self, **kwargs):
         """
@@ -181,8 +185,9 @@ class LogScale(_Scale, mscale.LogScale):
     as the default major formatter. ``x`` and ``y`` versions of each keyword
     argument are no longer required.
     """
+
     #: The registered scale name
-    name = 'log'
+    name = "log"
 
     def __init__(self, **kwargs):
         """
@@ -205,7 +210,7 @@ class LogScale(_Scale, mscale.LogScale):
         --------
         proplot.constructor.Scale
         """
-        keys = ('base', 'nonpos', 'subs')
+        keys = ("base", "nonpos", "subs")
         super().__init__(**_parse_logscale_args(*keys, **kwargs))
         self._default_major_locator = mticker.LogLocator(self.base)
         self._default_minor_locator = mticker.LogLocator(self.base, self.subs)
@@ -218,8 +223,9 @@ class SymmetricalLogScale(_Scale, mscale.SymmetricalLogScale):
     ``x`` and ``y`` versions of each keyword argument are no longer
     required.
     """
+
     #: The registered scale name
-    name = 'symlog'
+    name = "symlog"
 
     def __init__(self, **kwargs):
         """
@@ -249,19 +255,22 @@ class SymmetricalLogScale(_Scale, mscale.SymmetricalLogScale):
         --------
         proplot.constructor.Scale
         """
-        keys = ('base', 'linthresh', 'linscale', 'subs')
+        keys = ("base", "linthresh", "linscale", "subs")
         super().__init__(**_parse_logscale_args(*keys, **kwargs))
         transform = self.get_transform()
         self._default_major_locator = mticker.SymmetricalLogLocator(transform)
-        self._default_minor_locator = mticker.SymmetricalLogLocator(transform, self.subs)  # noqa: E501
+        self._default_minor_locator = mticker.SymmetricalLogLocator(
+            transform, self.subs
+        )  # noqa: E501
 
 
 class FuncScale(_Scale, mscale.ScaleBase):
     """
     Axis scale composed of arbitrary forward and inverse transformations.
     """
+
     #: The registered scale name
-    name = 'function'
+    name = "function"
 
     def __init__(self, transform=None, invert=False, parent_scale=None, **kwargs):
         """
@@ -314,25 +323,30 @@ class FuncScale(_Scale, mscale.ScaleBase):
         # NOTE: Permit *arbitrary* parent axis scales and infer default locators and
         # formatters from the input scale (if it was passed) or the parent scale. Use
         # case for latter is e.g. logarithmic scale with linear transformation.
-        if 'functions' in kwargs:  # matplotlib compatibility (critical for >= 3.5)
-            functions = kwargs.pop('functions', None)
+        if "functions" in kwargs:  # matplotlib compatibility (critical for >= 3.5)
+            functions = kwargs.pop("functions", None)
             if transform is None:
                 transform = functions
             else:
                 warnings._warn_proplot("Ignoring keyword argument 'functions'.")
         from .constructor import Formatter, Locator, Scale
+
         super().__init__()
         if callable(transform):
             forward, inverse, inherit_scale = transform, transform, None
-        elif np.iterable(transform) and len(transform) == 2 and all(map(callable, transform)):  # noqa: E501
+        elif (
+            np.iterable(transform)
+            and len(transform) == 2
+            and all(map(callable, transform))
+        ):  # noqa: E501
             forward, inverse, inherit_scale = *transform, None
         else:
             try:
                 inherit_scale = Scale(transform)
             except ValueError:
                 raise ValueError(
-                    'Expected a function, 2-tuple of forward and inverse functions, '
-                    f'or an axis scale specification. Got {transform!r}.'
+                    "Expected a function, 2-tuple of forward and inverse functions, "
+                    f"or an axis scale specification. Got {transform!r}."
                 )
             transform = inherit_scale.get_transform()
             forward, inverse = transform.transform, transform.inverted().transform
@@ -345,15 +359,15 @@ class FuncScale(_Scale, mscale.ScaleBase):
             forward, inverse = inverse, forward
         parent_scale = _not_none(parent_scale, LinearScale())
         if not isinstance(parent_scale, mscale.ScaleBase):
-            raise ValueError(f'Parent scale must be ScaleBase. Got {parent_scale!r}.')
+            raise ValueError(f"Parent scale must be ScaleBase. Got {parent_scale!r}.")
         if isinstance(parent_scale, CutoffScale):
             args = list(parent_scale.args)  # mutable copy
             args[::2] = (inverse(arg) for arg in args[::2])  # transform cutoffs
             parent_scale = CutoffScale(*args)
         if isinstance(parent_scale, mscale.SymmetricalLogScale):
-            keys = ('base', 'linthresh', 'linscale', 'subs')
+            keys = ("base", "linthresh", "linscale", "subs")
             kwsym = {key: getattr(parent_scale, key) for key in keys}
-            kwsym['linthresh'] = inverse(kwsym['linthresh'])
+            kwsym["linthresh"] = inverse(kwsym["linthresh"])
             parent_scale = SymmetricalLogScale(**kwsym)
         self.functions = (forward, inverse)
         self._transform = parent_scale.get_transform() + FuncTransform(forward, inverse)
@@ -361,10 +375,10 @@ class FuncScale(_Scale, mscale.ScaleBase):
         # Apply default locators and formatters
         # NOTE: We pass these through contructor functions
         scale = inherit_scale or parent_scale
-        for which in ('major', 'minor'):
-            for type_, parser in (('locator', Locator), ('formatter', Formatter)):
-                key = which + '_' + type_
-                attr = '_default_' + key
+        for which in ("major", "minor"):
+            for type_, parser in (("locator", Locator), ("formatter", Formatter)):
+                key = which + "_" + type_
+                attr = "_default_" + key
                 ticker = kwargs.pop(key, None)
                 if ticker is None:
                     ticker = getattr(scale, attr, None)
@@ -373,7 +387,7 @@ class FuncScale(_Scale, mscale.ScaleBase):
                 ticker = parser(ticker)
                 setattr(self, attr, copy.copy(ticker))
         if kwargs:
-            raise TypeError(f'FuncScale got unexpected arguments: {kwargs}')
+            raise TypeError(f"FuncScale got unexpected arguments: {kwargs}")
 
 
 class FuncTransform(mtransforms.Transform):
@@ -388,13 +402,13 @@ class FuncTransform(mtransforms.Transform):
             self._forward = forward
             self._inverse = inverse
         else:
-            raise ValueError('arguments to FuncTransform must be functions')
+            raise ValueError("arguments to FuncTransform must be functions")
 
     def inverted(self):
         return FuncTransform(self._inverse, self._forward)
 
     def transform_non_affine(self, values):
-        with np.errstate(divide='ignore', invalid='ignore'):
+        with np.errstate(divide="ignore", invalid="ignore"):
             return self._forward(values)
 
 
@@ -407,8 +421,9 @@ class PowerScale(_Scale, mscale.ScaleBase):
         x^{c}
 
     """
+
     #: The registered scale name
-    name = 'power'
+    name = "power"
 
     def __init__(self, power=1, inverse=False):
         """
@@ -451,7 +466,7 @@ class PowerTransform(mtransforms.Transform):
         return InvertedPowerTransform(self._power)
 
     def transform_non_affine(self, a):
-        with np.errstate(divide='ignore', invalid='ignore'):
+        with np.errstate(divide="ignore", invalid="ignore"):
             return np.power(a, self._power)
 
 
@@ -469,7 +484,7 @@ class InvertedPowerTransform(mtransforms.Transform):
         return PowerTransform(self._power)
 
     def transform_non_affine(self, a):
-        with np.errstate(divide='ignore', invalid='ignore'):
+        with np.errstate(divide="ignore", invalid="ignore"):
             return np.power(a, 1 / self._power)
 
 
@@ -493,8 +508,9 @@ class ExpScale(_Scale, mscale.ScaleBase):
     which in appearance is equivalent to `LogScale` since it is just a linear
     transformation of the logarithm.
     """
+
     #: The registered scale name
-    name = 'exp'
+    name = "exp"
 
     def __init__(self, a=np.e, b=1, c=1, inverse=False):
         """
@@ -547,7 +563,7 @@ class ExpTransform(mtransforms.Transform):
         return InvertedExpTransform(self._a, self._b, self._c)
 
     def transform_non_affine(self, a):
-        with np.errstate(divide='ignore', invalid='ignore'):
+        with np.errstate(divide="ignore", invalid="ignore"):
             return self._c * np.power(self._a, self._b * np.array(a))
 
 
@@ -567,7 +583,7 @@ class InvertedExpTransform(mtransforms.Transform):
         return ExpTransform(self._a, self._b, self._c)
 
     def transform_non_affine(self, a):
-        with np.errstate(divide='ignore', invalid='ignore'):
+        with np.errstate(divide="ignore", invalid="ignore"):
             return np.log(a / self._c) / (self._b * np.log(self._a))
 
 
@@ -589,8 +605,9 @@ class MercatorLatitudeScale(_Scale, mscale.ScaleBase):
         x = 180\\,\\arctan(\\sinh(y)) \\,/\\, \\pi
 
     """
+
     #: The registered scale name
-    name = 'mercator'
+    name = "mercator"
 
     def __init__(self, thresh=85.0):
         """
@@ -609,7 +626,7 @@ class MercatorLatitudeScale(_Scale, mscale.ScaleBase):
             raise ValueError("Mercator scale 'thresh' must be <= 90.")
         self._thresh = thresh
         self._transform = MercatorLatitudeTransform(thresh)
-        self._default_major_formatter = pticker.AutoFormatter(suffix='\N{DEGREE SIGN}')
+        self._default_major_formatter = pticker.AutoFormatter(suffix="\N{DEGREE SIGN}")
 
     def limit_range_for_scale(self, vmin, vmax, minpos):  # noqa: U100
         """
@@ -637,7 +654,7 @@ class MercatorLatitudeTransform(mtransforms.Transform):
         # in limit_range_for_scale or get weird duplicate tick labels. This
         # is not necessary for positive-only scales because it is harder to
         # run up right against the scale boundaries.
-        with np.errstate(divide='ignore', invalid='ignore'):
+        with np.errstate(divide="ignore", invalid="ignore"):
             m = ma.masked_where((a <= -90) | (a >= 90), a)
             if m.mask.any():
                 m = np.deg2rad(m)
@@ -661,7 +678,7 @@ class InvertedMercatorLatitudeTransform(mtransforms.Transform):
         return MercatorLatitudeTransform(self._thresh)
 
     def transform_non_affine(self, a):
-        with np.errstate(divide='ignore', invalid='ignore'):
+        with np.errstate(divide="ignore", invalid="ignore"):
             return np.rad2deg(np.arctan2(1, np.sinh(a)))
 
 
@@ -681,8 +698,9 @@ class SineLatitudeScale(_Scale, mscale.ScaleBase):
 
         x = 180\arcsin(y)/\pi
     """
+
     #: The registered scale name
-    name = 'sine'
+    name = "sine"
 
     def __init__(self):
         """
@@ -692,7 +710,7 @@ class SineLatitudeScale(_Scale, mscale.ScaleBase):
         """
         super().__init__()
         self._transform = SineLatitudeTransform()
-        self._default_major_formatter = pticker.AutoFormatter(suffix='\N{DEGREE SIGN}')
+        self._default_major_formatter = pticker.AutoFormatter(suffix="\N{DEGREE SIGN}")
 
     def limit_range_for_scale(self, vmin, vmax, minpos):  # noqa: U100
         """
@@ -719,7 +737,7 @@ class SineLatitudeTransform(mtransforms.Transform):
         # in limit_range_for_scale or get weird duplicate tick labels. This
         # is not necessary for positive-only scales because it is harder to
         # run up right against the scale boundaries.
-        with np.errstate(divide='ignore', invalid='ignore'):
+        with np.errstate(divide="ignore", invalid="ignore"):
             m = ma.masked_where((a < -90) | (a > 90), a)
             if m.mask.any():
                 return ma.sin(np.deg2rad(m))
@@ -740,7 +758,7 @@ class InvertedSineLatitudeTransform(mtransforms.Transform):
         return SineLatitudeTransform()
 
     def transform_non_affine(self, a):
-        with np.errstate(divide='ignore', invalid='ignore'):
+        with np.errstate(divide="ignore", invalid="ignore"):
             return np.rad2deg(np.arcsin(a))
 
 
@@ -750,8 +768,9 @@ class CutoffScale(_Scale, mscale.ScaleBase):
     The axis can undergo discrete jumps, "accelerations", or "decelerations"
     between successive thresholds.
     """
+
     #: The registered scale name
-    name = 'cutoff'
+    name = "cutoff"
 
     def __init__(self, *args):
         """
@@ -810,21 +829,21 @@ class CutoffTransform(mtransforms.Transform):
         scales = np.asarray(scales)
         threshs = np.asarray(threshs)
         if len(scales) != len(threshs):
-            raise ValueError(f'Got {len(threshs)} but {len(scales)} scales.')
+            raise ValueError(f"Got {len(threshs)} but {len(scales)} scales.")
         if any(scales < 0):
-            raise ValueError('Scales must be non negative.')
+            raise ValueError("Scales must be non negative.")
         if scales[-1] in (0, np.inf):
-            raise ValueError('Final scale must be finite.')
+            raise ValueError("Final scale must be finite.")
         if any(dists < 0):
-            raise ValueError('Thresholds must be monotonically increasing.')
+            raise ValueError("Thresholds must be monotonically increasing.")
         if any((dists == 0) | (scales == 0)):
             if zero_dists is None:
-                raise ValueError('Keyword zero_dists is required for discrete steps.')
+                raise ValueError("Keyword zero_dists is required for discrete steps.")
             if any((dists == 0) != (scales == 0)):
-                raise ValueError('Input scales disagree with discrete step locations.')
+                raise ValueError("Input scales disagree with discrete step locations.")
         self._scales = scales
         self._threshs = threshs
-        with np.errstate(divide='ignore', invalid='ignore'):
+        with np.errstate(divide="ignore", invalid="ignore"):
             dists = np.concatenate((threshs[:1], dists / scales[:-1]))
             if zero_dists is not None:
                 dists[scales[:-1] == 0] = zero_dists
@@ -833,7 +852,7 @@ class CutoffTransform(mtransforms.Transform):
     def inverted(self):
         # Use same algorithm for inversion!
         threshs = np.cumsum(self._dists)  # thresholds in transformed space
-        with np.errstate(divide='ignore', invalid='ignore'):
+        with np.errstate(divide="ignore", invalid="ignore"):
             scales = 1.0 / self._scales  # new scales are inverse
         zero_dists = np.diff(self._threshs)[scales[:-1] == 0]
         return CutoffTransform(threshs, scales, zero_dists=zero_dists)
@@ -845,7 +864,7 @@ class CutoffTransform(mtransforms.Transform):
         scales = self._scales
         threshs = self._threshs
         aa = np.array(a)  # copy
-        with np.errstate(divide='ignore', invalid='ignore'):
+        with np.errstate(divide="ignore", invalid="ignore"):
             for i, ai in np.ndenumerate(a):
                 j = np.searchsorted(threshs, ai)
                 if j > 0:
@@ -863,8 +882,9 @@ class InverseScale(_Scale, mscale.ScaleBase):
         y = x^{-1}
 
     """
+
     #: The registered scale name
-    name = 'inverse'
+    name = "inverse"
 
     def __init__(self):
         """
@@ -906,7 +926,7 @@ class InverseTransform(mtransforms.Transform):
         return InverseTransform()
 
     def transform_non_affine(self, a):
-        with np.errstate(divide='ignore', invalid='ignore'):
+        with np.errstate(divide="ignore", invalid="ignore"):
             return 1.0 / a
 
 
@@ -926,14 +946,15 @@ def _scale_factory(scale, axis, *args, **kwargs):  # noqa: U100
     mapping = mscale._scale_mapping
     if isinstance(scale, mscale.ScaleBase):
         if args or kwargs:
-            warnings._warn_proplot(f'Ignoring args {args} and keyword args {kwargs}.')
+            warnings._warn_proplot(f"Ignoring args {args} and keyword args {kwargs}.")
         return scale  # do nothing
     else:
         scale = scale.lower()
         if scale not in mapping:
             raise ValueError(
-                f'Unknown axis scale {scale!r}. Options are '
-                + ', '.join(map(repr, mapping)) + '.'
+                f"Unknown axis scale {scale!r}. Options are "
+                + ", ".join(map(repr, mapping))
+                + "."
             )
         return mapping[scale](*args, **kwargs)
 

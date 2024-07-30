@@ -3669,7 +3669,9 @@ class PlotAxes(base.Axes):
         elif isinstance(alphas, float):
             alphas = xs.size * [alphas]
         elif len(alphas) != xs.size:
-            raise ValueError(f"Received {len(alphas)} values for alpha but needed {xs.size}")
+            raise ValueError(
+                f"Received {len(alphas)} values for alpha but needed {xs.size}"
+            )
         for i, n, x, h, w, b, kw in self._iter_arg_cols(xs, hs, ws, bs, **kw):
             kw = self._parse_cycle(n, **kw)
             # Adjust x or y coordinates for grouped and stacked bars
@@ -3813,8 +3815,15 @@ class PlotAxes(base.Axes):
         # Parse non-color properties
         # NOTE: Output dict keys are plural but we use singular for keyword args
         props = {}
-        for key in ("boxes", "whiskers", "caps", "fliers",
-            "medians", "means", "hatches"):
+        for key in (
+            "boxes",
+            "whiskers",
+            "caps",
+            "fliers",
+            "medians",
+            "means",
+            "hatches",
+        ):
             prefix = key.rstrip("es")  # singular form
             props[key] = iprops = _pop_props(kw, "line", prefix=prefix)
             iprops.setdefault("color", edgecolor)
@@ -3869,14 +3878,16 @@ class PlotAxes(base.Axes):
                 obj.update(iprops)
                 # "Filled" boxplot by adding patch beneath line path
                 if key == "boxes" and (
-                    fillcolor[i] is not None or fillalpha is not None or hatch[i] is not None
+                    fillcolor[i] is not None
+                    or fillalpha is not None
+                    or hatch[i] is not None
                 ):
                     patch = mpatches.PathPatch(
                         obj.get_path(),
                         linewidth=0.0,
                         facecolor=fillcolor[i],
                         alpha=fillalpha,
-                        hatch = hatch[i],
+                        hatch=hatch[i],
                     )
                     self.add_artist(patch)
                 # Outlier markers
@@ -4520,7 +4531,7 @@ class PlotAxes(base.Axes):
         """
         Iterate over columns of positional arguments.
         """
-        is_array = lambda data: hasattr(data, 'ndim') and hasattr(data, 'shape')
+        is_array = lambda data: hasattr(data, "ndim") and hasattr(data, "shape")
 
         # Determine the number of columns
         n = max(1 if not is_array(a) or a.ndim < 2 else a.shape[-1] for a in args)
@@ -4530,9 +4541,11 @@ class PlotAxes(base.Axes):
         if not np.iterable(labels) or isinstance(labels, str):
             labels = n * [labels]
         if len(labels) != n:
-            raise ValueError(f'Array has {n} columns but got {len(labels)} labels.')
+            raise ValueError(f"Array has {n} columns but got {len(labels)} labels.")
         if labels is not None:
-            labels = [str(_not_none(label, '')) for label in inputs._to_numpy_array(labels)]
+            labels = [
+                str(_not_none(label, "")) for label in inputs._to_numpy_array(labels)
+            ]
         else:
             labels = n * [None]
 

@@ -11,15 +11,15 @@ from .internals import ic  # noqa: F401
 from .internals import _not_none, _pop_params, _pop_props, _pop_rc, docstring
 
 __all__ = [
-    'figure',
-    'subplot',
-    'subplots',
-    'show',
-    'close',
-    'switch_backend',
-    'ion',
-    'ioff',
-    'isinteractive',
+    "figure",
+    "subplot",
+    "subplots",
+    "show",
+    "close",
+    "switch_backend",
+    "ion",
+    "ioff",
+    "isinteractive",
 ]
 
 
@@ -27,7 +27,7 @@ __all__ = [
 _pyplot_docstring = """
 This is included so you don't have to import `~matplotlib.pyplot`.
 """
-docstring._snippet_manager['ui.pyplot'] = _pyplot_docstring
+docstring._snippet_manager["ui.pyplot"] = _pyplot_docstring
 
 
 def _parse_figsize(kwargs):
@@ -36,15 +36,15 @@ def _parse_figsize(kwargs):
     """
     # WARNING: Cannot have Figure.__init__() interpret figsize() because
     # the figure manager fills it with the matplotlib default.
-    figsize = kwargs.pop('figsize', None)
-    figwidth = kwargs.pop('figwidth', None)
-    figheight = kwargs.pop('figheight', None)
+    figsize = kwargs.pop("figsize", None)
+    figwidth = kwargs.pop("figwidth", None)
+    figheight = kwargs.pop("figheight", None)
     if figsize is not None:
         figsize_width, figsize_height = figsize
         figwidth = _not_none(figwidth=figwidth, figsize_width=figsize_width)
         figheight = _not_none(figheight=figheight, figsize_height=figsize_height)
-    kwargs['figwidth'] = figwidth
-    kwargs['figheight'] = figheight
+    kwargs["figwidth"] = figwidth
+    kwargs["figheight"] = figheight
 
 
 @docstring._snippet_manager
@@ -174,11 +174,11 @@ def subplot(**kwargs):
     """
     _parse_figsize(kwargs)
     rc_kw, rc_mode = _pop_rc(kwargs)
-    kwsub = _pop_props(kwargs, 'patch')  # e.g. 'color'
+    kwsub = _pop_props(kwargs, "patch")  # e.g. 'color'
     kwsub.update(_pop_params(kwargs, pfigure.Figure._parse_proj))
     for sig in paxes.Axes._format_signatures.values():
         kwsub.update(_pop_params(kwargs, sig))
-    kwargs['aspect'] = kwsub.pop('aspect', None)  # keyword conflict
+    kwargs["aspect"] = kwsub.pop("aspect", None)  # keyword conflict
     fig = figure(rc_kw=rc_kw, **kwargs)
     ax = fig.add_subplot(rc_kw=rc_kw, **kwsub)
     return fig, ax
@@ -219,15 +219,15 @@ def subplots(*args, **kwargs):
     """
     _parse_figsize(kwargs)
     rc_kw, rc_mode = _pop_rc(kwargs)
-    kwsubs = _pop_props(kwargs, 'patch')  # e.g. 'color'
+    kwsubs = _pop_props(kwargs, "patch")  # e.g. 'color'
     kwsubs.update(_pop_params(kwargs, pfigure.Figure._add_subplots))
     kwsubs.update(_pop_params(kwargs, pgridspec.GridSpec._update_params))
     for sig in paxes.Axes._format_signatures.values():
         kwsubs.update(_pop_params(kwargs, sig))
-    for key in ('subplot_kw', 'gridspec_kw'):  # deprecated args
+    for key in ("subplot_kw", "gridspec_kw"):  # deprecated args
         if key in kwargs:
             kwsubs[key] = kwargs.pop(key)
-    kwargs['aspect'] = kwsubs.pop('aspect', None)  # keyword conflict
+    kwargs["aspect"] = kwsubs.pop("aspect", None)  # keyword conflict
     fig = figure(rc_kw=rc_kw, **kwargs)
     axs = fig.add_subplots(*args, rc_kw=rc_kw, **kwsubs)
     return fig, axs

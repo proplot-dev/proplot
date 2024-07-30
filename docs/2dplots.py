@@ -88,15 +88,19 @@ yedges = pplt.edges(y)
 data = state.rand(y.size, x.size)  # "center" coordinates
 lim = (np.min(xedges), np.max(xedges))
 
-with pplt.rc.context({'cmap': 'Grays', 'cmap.levels': 21}):
+with pplt.rc.context({"cmap": "Grays", "cmap.levels": 21}):
     # Figure
     fig = pplt.figure(refwidth=2.3, share=False)
     axs = fig.subplots(ncols=2, nrows=2)
     axs.format(
-        xlabel='xlabel', ylabel='ylabel',
-        xlim=lim, ylim=lim, xlocator=5, ylocator=5,
-        suptitle='Standardized input demonstration',
-        toplabels=('Coordinate centers', 'Coordinate edges'),
+        xlabel="xlabel",
+        ylabel="ylabel",
+        xlim=lim,
+        ylim=lim,
+        xlocator=5,
+        ylocator=5,
+        suptitle="Standardized input demonstration",
+        toplabels=("Coordinate centers", "Coordinate edges"),
     )
 
     # Plot using both centers and edges as coordinates
@@ -110,7 +114,7 @@ import proplot as pplt
 import numpy as np
 
 # Sample data
-cmap = 'turku_r'
+cmap = "turku_r"
 state = np.random.RandomState(51423)
 N = 80
 x = y = np.arange(N + 1)
@@ -119,25 +123,32 @@ xlim = ylim = (0, 25)
 
 # Plot the data
 fig, axs = pplt.subplots(
-    [[0, 1, 1, 0], [2, 2, 3, 3]], wratios=(1.3, 1, 1, 1.3), span=False, refwidth=2.2,
+    [[0, 1, 1, 0], [2, 2, 3, 3]],
+    wratios=(1.3, 1, 1, 1.3),
+    span=False,
+    refwidth=2.2,
 )
 axs[0].fill_between(
-    xlim, *ylim, zorder=3, edgecolor='red', facecolor=pplt.set_alpha('red', 0.2),
+    xlim,
+    *ylim,
+    zorder=3,
+    edgecolor="red",
+    facecolor=pplt.set_alpha("red", 0.2),
 )
 for i, ax in enumerate(axs):
     inbounds = i == 1
-    title = f'Restricted lims inbounds={inbounds}'
-    title += ' (default)' if inbounds else ''
+    title = f"Restricted lims inbounds={inbounds}"
+    title += " (default)" if inbounds else ""
     ax.format(
         xlim=(None if i == 0 else xlim),
         ylim=(None if i == 0 else ylim),
-        title=('Default axis limits' if i == 0 else title),
+        title=("Default axis limits" if i == 0 else title),
     )
     ax.pcolor(x, y, data, cmap=cmap, inbounds=inbounds)
 fig.format(
-    xlabel='xlabel',
-    ylabel='ylabel',
-    suptitle='Default vmin/vmax restricted to in-bounds data'
+    xlabel="xlabel",
+    ylabel="ylabel",
+    suptitle="Default vmin/vmax restricted to in-bounds data",
 )
 
 # %% [raw] raw_mimetype="text/restructuredtext"
@@ -180,51 +191,51 @@ import pandas as pd
 # DataArray
 state = np.random.RandomState(51423)
 linspace = np.linspace(0, np.pi, 20)
-data = 50 * state.normal(1, 0.2, size=(20, 20)) * (
-    np.sin(linspace * 2) ** 2
-    * np.cos(linspace + np.pi / 2)[:, None] ** 2
+data = (
+    50
+    * state.normal(1, 0.2, size=(20, 20))
+    * (np.sin(linspace * 2) ** 2 * np.cos(linspace + np.pi / 2)[:, None] ** 2)
 )
 lat = xr.DataArray(
-    np.linspace(-90, 90, 20),
-    dims=('lat',),
-    attrs={'units': '\N{DEGREE SIGN}N'}
+    np.linspace(-90, 90, 20), dims=("lat",), attrs={"units": "\N{DEGREE SIGN}N"}
 )
 plev = xr.DataArray(
     np.linspace(1000, 0, 20),
-    dims=('plev',),
-    attrs={'long_name': 'pressure', 'units': 'hPa'}
+    dims=("plev",),
+    attrs={"long_name": "pressure", "units": "hPa"},
 )
 da = xr.DataArray(
     data,
-    name='u',
-    dims=('plev', 'lat'),
-    coords={'plev': plev, 'lat': lat},
-    attrs={'long_name': 'zonal wind', 'units': 'm/s'}
+    name="u",
+    dims=("plev", "lat"),
+    coords={"plev": plev, "lat": lat},
+    attrs={"long_name": "zonal wind", "units": "m/s"},
 )
 
 # DataFrame
 data = state.rand(12, 20)
 df = pd.DataFrame(
     (data - 0.4).cumsum(axis=0).cumsum(axis=1)[::1, ::-1],
-    index=pd.date_range('2000-01', '2000-12', freq='MS')
+    index=pd.date_range("2000-01", "2000-12", freq="MS"),
 )
-df.name = 'temperature (\N{DEGREE SIGN}C)'
-df.index.name = 'date'
-df.columns.name = 'variable (units)'
+df.name = "temperature (\N{DEGREE SIGN}C)"
+df.index.name = "date"
+df.columns.name = "variable (units)"
 
 # %%
 import proplot as pplt
-fig = pplt.figure(refwidth=2.5, share=False, suptitle='Automatic subplot formatting')
+
+fig = pplt.figure(refwidth=2.5, share=False, suptitle="Automatic subplot formatting")
 
 # Plot DataArray
-cmap = pplt.Colormap('PuBu', left=0.05)
+cmap = pplt.Colormap("PuBu", left=0.05)
 ax = fig.subplot(121, yreverse=True)
-ax.contourf(da, cmap=cmap, colorbar='t', lw=0.7, ec='k')
+ax.contourf(da, cmap=cmap, colorbar="t", lw=0.7, ec="k")
 
 # Plot DataFrame
 ax = fig.subplot(122, yreverse=True)
-ax.contourf(df, cmap='YlOrRd', colorbar='t', lw=0.7, ec='k')
-ax.format(xtickminor=False, yformatter='%b', ytickminor=False)
+ax.contourf(df, cmap="YlOrRd", colorbar="t", lw=0.7, ec="k")
+ax.format(xtickminor=False, yformatter="%b", ytickminor=False)
 
 # %% [raw] raw_mimetype="text/restructuredtext"
 # .. _ug_apply_cmap:
@@ -263,23 +274,23 @@ state = np.random.RandomState(51423)
 data = np.cumsum(state.rand(N, N), axis=0)
 
 # Custom defaults of each type
-pplt.rc['cmap.sequential'] = 'PuBuGn'
-pplt.rc['cmap.diverging'] = 'PiYG'
-pplt.rc['cmap.cyclic'] = 'bamO'
-pplt.rc['cmap.qualitative'] = 'flatui'
+pplt.rc["cmap.sequential"] = "PuBuGn"
+pplt.rc["cmap.diverging"] = "PiYG"
+pplt.rc["cmap.cyclic"] = "bamO"
+pplt.rc["cmap.qualitative"] = "flatui"
 
 # Make plots. Note the default behavior is sequential=True or diverging=True
 # depending on whether data contains negative values (see below).
-fig = pplt.figure(refwidth=2.2, span=False, suptitle='Colormap types')
+fig = pplt.figure(refwidth=2.2, span=False, suptitle="Colormap types")
 axs = fig.subplots(ncols=2, nrows=2)
-axs.format(xformatter='none', yformatter='none')
-axs[0].pcolor(data, sequential=True, colorbar='l', extend='max')
-axs[1].pcolor(data - 5, diverging=True, colorbar='r', extend='both')
-axs[2].pcolor(data % 8, cyclic=True, colorbar='l')
-axs[3].pcolor(data, levels=pplt.arange(0, 12, 2), qualitative=True, colorbar='r')
-types = ('sequential', 'diverging', 'cyclic', 'qualitative')
+axs.format(xformatter="none", yformatter="none")
+axs[0].pcolor(data, sequential=True, colorbar="l", extend="max")
+axs[1].pcolor(data - 5, diverging=True, colorbar="r", extend="both")
+axs[2].pcolor(data % 8, cyclic=True, colorbar="l")
+axs[3].pcolor(data, levels=pplt.arange(0, 12, 2), qualitative=True, colorbar="r")
+types = ("sequential", "diverging", "cyclic", "qualitative")
 for ax, typ in zip(axs, types):
-    ax.format(title=typ.title() + ' colormap')
+    ax.format(title=typ.title() + " colormap")
 pplt.rc.reset()
 
 # %%
@@ -293,13 +304,13 @@ data = np.cumsum(state.rand(N, N), axis=1) - 6
 
 # Continuous "diverging" colormap
 fig = pplt.figure(refwidth=2.3, spanx=False)
-ax = fig.subplot(121, title="Diverging colormap with 'cmap'", xlabel='xlabel')
+ax = fig.subplot(121, title="Diverging colormap with 'cmap'", xlabel="xlabel")
 ax.contourf(
     data,
-    norm='div',
-    cmap=('cobalt', 'white', 'violet red'),
-    cmap_kw={'space': 'hsl', 'cut': 0.15},
-    colorbar='b',
+    norm="div",
+    cmap=("cobalt", "white", "violet red"),
+    cmap_kw={"space": "hsl", "cut": 0.15},
+    colorbar="b",
 )
 
 # Discrete "qualitative" colormap
@@ -307,10 +318,10 @@ ax = fig.subplot(122, title="Qualitative colormap with 'colors'")
 ax.contourf(
     data,
     levels=pplt.arange(-6, 9, 3),
-    colors=['red5', 'blue5', 'yellow5', 'gray5', 'violet5'],
-    colorbar='b',
+    colors=["red5", "blue5", "yellow5", "gray5", "violet5"],
+    colorbar="b",
 )
-fig.format(xlabel='xlabel', ylabel='ylabel', suptitle='On-the-fly colormaps')
+fig.format(xlabel="xlabel", ylabel="ylabel", suptitle="On-the-fly colormaps")
 
 # %% [raw] raw_mimetype="text/restructuredtext"
 # .. _ug_apply_norm:
@@ -342,13 +353,13 @@ data = 11 ** (0.25 * np.cumsum(state.rand(N, N), axis=0))
 
 # Create figure
 gs = pplt.GridSpec(ncols=2)
-fig = pplt.figure(refwidth=2.3, span=False, suptitle='Normalizer types')
+fig = pplt.figure(refwidth=2.3, span=False, suptitle="Normalizer types")
 
 # Different normalizers
-ax = fig.subplot(gs[0], title='Default linear normalizer')
-ax.pcolormesh(data, cmap='magma', colorbar='b')
+ax = fig.subplot(gs[0], title="Default linear normalizer")
+ax.pcolormesh(data, cmap="magma", colorbar="b")
 ax = fig.subplot(gs[1], title="Logarithmic normalizer with norm='log'")
-ax.pcolormesh(data, cmap='magma', norm='log', colorbar='b')
+ax.pcolormesh(data, cmap="magma", norm="log", colorbar="b")
 
 
 # %% [raw] raw_mimetype="text/restructuredtext"
@@ -391,15 +402,19 @@ data = 11 ** (2 * state.rand(20, 20).cumsum(axis=0) / 7)
 
 # Linear segmented norm
 fig, axs = pplt.subplots(ncols=2, refwidth=2.4)
-fig.format(suptitle='Segmented normalizer demo')
+fig.format(suptitle="Segmented normalizer demo")
 ticks = [5, 10, 20, 50, 100, 200, 500, 1000]
-for ax, norm in zip(axs, ('linear', 'segmented')):
+for ax, norm in zip(axs, ("linear", "segmented")):
     m = ax.contourf(
-        data, levels=ticks, extend='both',
-        cmap='Mako', norm=norm,
-        colorbar='b', colorbar_kw={'ticks': ticks},
+        data,
+        levels=ticks,
+        extend="both",
+        cmap="Mako",
+        norm=norm,
+        colorbar="b",
+        colorbar_kw={"ticks": ticks},
     )
-    ax.format(title=norm.title() + ' normalizer')
+    ax.format(title=norm.title() + " normalizer")
 
 # %%
 import proplot as pplt
@@ -411,21 +426,23 @@ data1 = (state.rand(20, 20) - 0.485).cumsum(axis=1).cumsum(axis=0)
 data2 = (state.rand(20, 20) - 0.515).cumsum(axis=0).cumsum(axis=1)
 
 # Figure
-fig, axs = pplt.subplots(nrows=2, ncols=2, refwidth=2.2, order='F')
-axs.format(suptitle='Diverging normalizer demo')
-cmap = pplt.Colormap('DryWet', cut=0.1)
+fig, axs = pplt.subplots(nrows=2, ncols=2, refwidth=2.2, order="F")
+axs.format(suptitle="Diverging normalizer demo")
+cmap = pplt.Colormap("DryWet", cut=0.1)
 
 # Diverging norms
 i = 0
 for data, mode, fair in zip(
-    (data1, data2), ('positive', 'negative'), ('fair', 'unfair'),
+    (data1, data2),
+    ("positive", "negative"),
+    ("fair", "unfair"),
 ):
-    for fair in ('fair', 'unfair'):
-        norm = pplt.Norm('diverging', fair=(fair == 'fair'))
+    for fair in ("fair", "unfair"):
+        norm = pplt.Norm("diverging", fair=(fair == "fair"))
         ax = axs[i]
         m = ax.contourf(data, cmap=cmap, norm=norm)
-        ax.colorbar(m, loc='b')
-        ax.format(title=f'{mode.title()}-skewed + {fair} scaling')
+        ax.colorbar(m, loc="b")
+        ax.format(title=f"{mode.title()}-skewed + {fair} scaling")
         i += 1
 
 # %% [raw] raw_mimetype="text/restructuredtext"
@@ -477,17 +494,17 @@ data = 10 + state.normal(0, 1, size=(33, 33)).cumsum(axis=0).cumsum(axis=1)
 
 # Figure
 fig, axs = pplt.subplots([[1, 1, 2, 2], [0, 3, 3, 0]], ref=3, refwidth=2.3)
-axs.format(yformatter='none', suptitle='Discrete vs. smooth colormap levels')
+axs.format(yformatter="none", suptitle="Discrete vs. smooth colormap levels")
 
 # Pcolor
-axs[0].pcolor(data, cmap='viridis', colorbar='l')
-axs[0].set_title('Pcolor plot\ndiscrete=True (default)')
-axs[1].pcolor(data, discrete=False, cmap='viridis', colorbar='r')
-axs[1].set_title('Pcolor plot\ndiscrete=False')
+axs[0].pcolor(data, cmap="viridis", colorbar="l")
+axs[0].set_title("Pcolor plot\ndiscrete=True (default)")
+axs[1].pcolor(data, discrete=False, cmap="viridis", colorbar="r")
+axs[1].set_title("Pcolor plot\ndiscrete=False")
 
 # Imshow
-m = axs[2].imshow(data, cmap='oslo', colorbar='b')
-axs[2].format(title='Imshow plot\ndiscrete=False (default)', yformatter='auto')
+m = axs[2].imshow(data, cmap="oslo", colorbar="b")
+axs[2].format(title="Imshow plot\ndiscrete=False (default)", yformatter="auto")
 
 # %%
 import proplot as pplt
@@ -501,22 +518,29 @@ levels = pplt.arange(0, 360, 45)
 # Figure
 gs = pplt.GridSpec(nrows=2, ncols=4, hratios=(1.5, 1))
 fig = pplt.figure(refwidth=2.4, right=2)
-fig.format(suptitle='DiscreteNorm end-color standardization')
+fig.format(suptitle="DiscreteNorm end-color standardization")
 
 # Cyclic colorbar with distinct end colors
-cmap = pplt.Colormap('twilight', shift=-90)
+cmap = pplt.Colormap("twilight", shift=-90)
 ax = fig.subplot(gs[0, 1:3], title='distinct "cyclic" end colors')
 ax.pcolormesh(
-    data, cmap=cmap, levels=levels,
-    colorbar='b', colorbar_kw={'locator': 90},
+    data,
+    cmap=cmap,
+    levels=levels,
+    colorbar="b",
+    colorbar_kw={"locator": 90},
 )
 
 # Colorbars with different extend values
-for i, extend in enumerate(('min', 'max', 'neither', 'both')):
-    ax = fig.subplot(gs[1, i], title=f'extend={extend!r}')
+for i, extend in enumerate(("min", "max", "neither", "both")):
+    ax = fig.subplot(gs[1, i], title=f"extend={extend!r}")
     ax.pcolormesh(
-        data[:, :10], levels=levels, cmap='oxy',
-        extend=extend, colorbar='b', colorbar_kw={'locator': 180}
+        data[:, :10],
+        levels=levels,
+        cmap="oxy",
+        extend=extend,
+        colorbar="b",
+        colorbar_kw={"locator": 180},
     )
 
 # %% [raw] raw_mimetype="text/restructuredtext" tags=[]
@@ -560,28 +584,28 @@ for i, extend in enumerate(('min', 'max', 'neither', 'both')):
 # %%
 import proplot as pplt
 import numpy as np
+
 N = 20
 state = np.random.RandomState(51423)
 data = N * 2 + (state.rand(N, N) - 0.45).cumsum(axis=0).cumsum(axis=1) * 10
 fig, axs = pplt.subplots(
-    nrows=2, ncols=2, refwidth=2,
-    suptitle='Auto normalization demo'
+    nrows=2, ncols=2, refwidth=2, suptitle="Auto normalization demo"
 )
 
 # Auto diverging
-pplt.rc['cmap.sequential'] = 'lapaz_r'
-pplt.rc['cmap.diverging'] = 'vik'
+pplt.rc["cmap.sequential"] = "lapaz_r"
+pplt.rc["cmap.diverging"] = "vik"
 for i, ax in enumerate(axs[:2]):
-    ax.pcolor(data - i * N * 6, colorbar='b')
-    ax.format(title='Diverging ' + ('on' if i else 'off'))
+    ax.pcolor(data - i * N * 6, colorbar="b")
+    ax.format(title="Diverging " + ("on" if i else "off"))
 
 # Auto range
-pplt.rc['cmap.sequential'] = 'lajolla'
+pplt.rc["cmap.sequential"] = "lajolla"
 data = data[::-1, :]
 data[-1, 0] = 2e3
 for i, ax in enumerate(axs[2:]):
-    ax.pcolor(data, robust=bool(i), colorbar='b')
-    ax.format(title='Robust ' + ('on' if i else 'off'))
+    ax.pcolor(data, robust=bool(i), colorbar="b")
+    ax.format(title="Robust " + ("on" if i else "off"))
 pplt.rc.reset()
 
 # %% [raw] raw_mimetype="text/restructuredtext"
@@ -610,39 +634,40 @@ import numpy as np
 # Sample data
 state = np.random.RandomState(51423)
 data = state.rand(6, 6)
-data = pd.DataFrame(data, index=pd.Index(['a', 'b', 'c', 'd', 'e', 'f']))
+data = pd.DataFrame(data, index=pd.Index(["a", "b", "c", "d", "e", "f"]))
 
 # Figure
 fig, axs = pplt.subplots(
     [[1, 1, 2, 2], [0, 3, 3, 0]],
-    refwidth=2.3, share='labels', span=False,
+    refwidth=2.3,
+    share="labels",
+    span=False,
 )
-axs.format(xlabel='xlabel', ylabel='ylabel', suptitle='Labels demo')
+axs.format(xlabel="xlabel", ylabel="ylabel", suptitle="Labels demo")
 
 # Heatmap with labeled boxes
 ax = axs[0]
 m = ax.heatmap(
-    data, cmap='rocket',
-    labels=True, precision=2, labels_kw={'weight': 'bold'}
+    data,
+    cmap="rocket",
+    labels=True,
+    precision=2,
+    labels_kw={"weight": "bold"},
 )
-ax.format(title='Heatmap with labels')
+ax.format(title="Heatmap with labels")
 
 # Filled contours with labels
 ax = axs[1]
 m = ax.contourf(
-    data.cumsum(axis=0), cmap='rocket',
-    labels=True, labels_kw={'weight': 'bold'}
+    data.cumsum(axis=0), cmap="rocket", labels=True, labels_kw={"weight": "bold"}
 )
-ax.format(title='Filled contours with labels')
+ax.format(title="Filled contours with labels")
 
 # Line contours with labels and no zero level
 data = 5 * (data - 0.45).cumsum(axis=0) - 2
 ax = axs[2]
-ax.contour(
-    data, nozero=True, color='gray8',
-    labels=True, labels_kw={'weight': 'bold'}
-)
-ax.format(title='Line contours with labels')
+ax.contour(data, nozero=True, color="gray8", labels=True, labels_kw={"weight": "bold"})
+ax.format(title="Line contours with labels")
 
 # %% [raw] raw_mimetype="text/restructuredtext"
 # .. _ug_heatmap:
@@ -670,17 +695,31 @@ data = state.normal(size=(10, 10)).cumsum(axis=0)
 data = (data - data.mean(axis=0)) / data.std(axis=0)
 data = (data.T @ data) / data.shape[0]
 data[np.tril_indices(data.shape[0], -1)] = np.nan  # fill half with empty boxes
-data = pd.DataFrame(data, columns=list('abcdefghij'), index=list('abcdefghij'))
+data = pd.DataFrame(data, columns=list("abcdefghij"), index=list("abcdefghij"))
 
 # Covariance matrix plot
 fig, ax = pplt.subplots(refwidth=4.5)
 m = ax.heatmap(
-    data, cmap='ColdHot', vmin=-1, vmax=1, N=100, lw=0.5, ec='k',
-    labels=True, precision=2, labels_kw={'weight': 'bold'},
+    data,
+    cmap="ColdHot",
+    vmin=-1,
+    vmax=1,
+    N=100,
+    lw=0.5,
+    ec="k",
+    labels=True,
+    precision=2,
+    labels_kw={"weight": "bold"},
     clip_on=False,  # turn off clipping so box edges are not cut in half
 )
 ax.format(
-    suptitle='Heatmap demo', title='Table of correlation coefficients',
-    xloc='top', yloc='right', yreverse=True, ticklabelweight='bold',
-    alpha=0, linewidth=0, tickpad=4,
+    suptitle="Heatmap demo",
+    title="Table of correlation coefficients",
+    xloc="top",
+    yloc="right",
+    yreverse=True,
+    ticklabelweight="bold",
+    alpha=0,
+    linewidth=0,
+    tickpad=4,
 )

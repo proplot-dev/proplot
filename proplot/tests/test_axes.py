@@ -23,6 +23,7 @@ def test_inset_colors_1():
     ix.format(xlim=(10, 20), ylim=(10, 20), grid=False)
     return fig
 
+
 @pytest.mark.mpl_image_compare
 def test_inset_colors_2():
     fig, ax = pplt.subplots()
@@ -34,7 +35,6 @@ def test_inset_colors_2():
     )
     ix.format(xlim=(10, 20), ylim=(10, 20))
     return fig
-
 
 
 @pytest.mark.mpl_image_compare
@@ -50,7 +50,6 @@ def test_inset_zoom_update():
     ix.format(xlim=(10, 20), ylim=(10, 30))
     ax.format(ylim=(0, 300))
     return fig
-
 
 
 @pytest.mark.mpl_image_compare
@@ -75,6 +74,7 @@ def test_panels_without_sharing_1():
     fig.format(ylabel="ylabel", xlabel="xlabel")
     return fig
 
+
 @pytest.mark.mpl_image_compare
 def test_panels_without_sharing_2():
     fig, axs = pplt.subplots(ncols=2, refwidth=1.5, includepanels=True)
@@ -83,8 +83,6 @@ def test_panels_without_sharing_2():
         p.format(xlabel="label")
     fig.format(xlabel="xlabel")
     return fig
-
-
 
 
 @pytest.mark.mpl_image_compare
@@ -96,11 +94,10 @@ def test_panels_suplabels_three_hor_panels():
     The xlabel should be centered along the main plot with the included side panels
     """
     fig = pplt.figure()
-    ax = fig.subplots(refwidth = 1.5, includepanels = True)
+    ax = fig.subplots(refwidth=1.5, includepanels=True)
     for _ in range(3):
         ax[0].panel("l")
     ax.format(xlabel="xlabel", ylabel="ylabel\nylabel\nylabel", suptitle="sup")
-    pplt.show(block = 1)
     return fig
 
 
@@ -111,15 +108,16 @@ def test_panels_suplabels_three_hor_panels_donotinlcude():
     The xlabel should be centered on the main plot
     """
     fig = pplt.figure()
-    ax = fig.subplots(refwidth = 1.5, includepanels = False)
+    ax = fig.subplots(refwidth=1.5, includepanels=False)
     for _ in range(3):
         ax[0].panel("l")
-    ax.format(xlabel="xlabel",
-              ylabel="ylabel\nylabel\nylabel",
-              suptitle="sup",
-              )
-    pplt.show(block = 1)
+    ax.format(
+        xlabel="xlabel",
+        ylabel="ylabel\nylabel\nylabel",
+        suptitle="sup",
+    )
     return fig
+
 
 @pytest.mark.mpl_image_compare
 def test_twin_axes_1():
@@ -142,6 +140,7 @@ def test_twin_axes_1():
     ax.alty(loc="r", color="r", labelcolor="red9", label="other", labelweight="bold")
     return fig
 
+
 @pytest.mark.mpl_image_compare
 def test_twin_axes_2():
     # Simple example but doesn't quite work. Figure out how to specify left vs. right
@@ -152,6 +151,7 @@ def test_twin_axes_2():
     ax.alty(color="red", label="Red", max=15, loc=("axes", -0.2))
     ax.alty(color="blue", label="Blue", max=5, loc=("axes", 1.2), ticklabeldir="out")
     return fig
+
 
 @pytest.mark.mpl_image_compare
 def test_twin_axes_3():

@@ -13,6 +13,7 @@ class _benchmark(object):
     """
     Context object for timing arbitrary blocks of code.
     """
+
     def __init__(self, message):
         self.message = message
 
@@ -22,4 +23,4 @@ class _benchmark(object):
 
     def __exit__(self, *args):  # noqa: U100
         if BENCHMARK:
-            print(f'{self.message}: {time.perf_counter() - self.time}s')
+            print(f"{self.message}: {time.perf_counter() - self.time}s")

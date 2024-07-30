@@ -19,7 +19,7 @@ def _transfer_label(src, dest):
     if not text.strip():  # WARNING: must test strip() (see _align_axis_labels())
         return
     dest.set_text(text)
-    src.set_text('')
+    src.set_text("")
 
 
 def _update_label(text, props=None, **kwargs):
@@ -32,19 +32,19 @@ def _update_label(text, props=None, **kwargs):
     props.update(kwargs)
 
     # Update border
-    border = props.pop('border', None)
-    bordercolor = props.pop('bordercolor', 'w')
-    borderinvert = props.pop('borderinvert', False)
-    borderwidth = props.pop('borderwidth', 2)
-    borderstyle = props.pop('borderstyle', 'miter')
+    border = props.pop("border", None)
+    bordercolor = props.pop("bordercolor", "w")
+    borderinvert = props.pop("borderinvert", False)
+    borderwidth = props.pop("borderwidth", 2)
+    borderstyle = props.pop("borderstyle", "miter")
     if border:
         facecolor, bgcolor = text.get_color(), bordercolor
         if borderinvert:
             facecolor, bgcolor = bgcolor, facecolor
         kw = {
-            'linewidth': borderwidth,
-            'foreground': bgcolor,
-            'joinstyle': borderstyle,
+            "linewidth": borderwidth,
+            "foreground": bgcolor,
+            "joinstyle": borderstyle,
         }
         text.set_color(facecolor)
         text.set_path_effects(
@@ -59,24 +59,24 @@ def _update_label(text, props=None, **kwargs):
     # NOTE: For some reason using pad / 10 results in perfect alignment for
     # med-large labels. Tried scaling to be font size relative but never works.
     pad = text.axes._title_pad / 10  # default pad
-    bbox = props.pop('bbox', None)
-    bboxcolor = props.pop('bboxcolor', 'w')
-    bboxstyle = props.pop('bboxstyle', 'round')
-    bboxalpha = props.pop('bboxalpha', 0.5)
-    bboxpad = props.pop('bboxpad', None)
+    bbox = props.pop("bbox", None)
+    bboxcolor = props.pop("bboxcolor", "w")
+    bboxstyle = props.pop("bboxstyle", "round")
+    bboxalpha = props.pop("bboxalpha", 0.5)
+    bboxpad = props.pop("bboxpad", None)
     bboxpad = pad if bboxpad is None else bboxpad
     if bbox is None:
         pass
     elif isinstance(bbox, dict):  # *native* matplotlib usage
-        props['bbox'] = bbox
+        props["bbox"] = bbox
     elif not bbox:
-        props['bbox'] = None  # disable the bbox
+        props["bbox"] = None  # disable the bbox
     else:
-        props['bbox'] = {
-            'edgecolor': 'black',
-            'facecolor': bboxcolor,
-            'boxstyle': bboxstyle,
-            'alpha': bboxalpha,
-            'pad': bboxpad,
+        props["bbox"] = {
+            "edgecolor": "black",
+            "facecolor": bboxcolor,
+            "boxstyle": bboxstyle,
+            "alpha": bboxalpha,
+            "pad": bboxpad,
         }
     return mtext.Text.update(text, props)

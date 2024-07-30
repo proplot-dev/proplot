@@ -22,14 +22,14 @@ def test_ignored_keywords():
     """
     Test ignored keywords and functions.
     """
-    with warnings.catch_warnings(record = True) as record:
+    with warnings.catch_warnings(record=True) as record:
         fig, ax = pplt.subplots(
             gridspec_kw={"left": 3},
             subplot_kw={"proj": "cart"},
             subplotpars={"left": 0.2},
         )
     assert len(record) == 3
-    with warnings.catch_warnings(record = True) as record:
+    with warnings.catch_warnings(record=True) as record:
         fig.subplots_adjust(left=0.2)
     assert len(record) == 1
 

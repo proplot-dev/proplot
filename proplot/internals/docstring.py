@@ -68,13 +68,13 @@ def _concatenate_inherited(func, prepend_summary=False):
     # NOTE: Do not bother inheriting from cartopy GeoAxes. Cartopy completely
     # truncates the matplotlib docstrings (which is kind of not great).
     qual = func.__qualname__
-    if 'Axes' in qual:
+    if "Axes" in qual:
         cls = maxes.Axes
-    elif 'Figure' in qual:
+    elif "Figure" in qual:
         cls = mfigure.Figure
     else:
-        raise ValueError(f'Unexpected method {qual!r}. Must be Axes or Figure method.')
-    doc = inspect.getdoc(func) or ''  # also dedents
+        raise ValueError(f"Unexpected method {qual!r}. Must be Axes or Figure method.")
+    doc = inspect.getdoc(func) or ""  # also dedents
     func_orig = getattr(cls, func.__name__, None)
     doc_orig = inspect.getdoc(func_orig)
     if not doc_orig:  # should never happen
@@ -82,10 +82,10 @@ def _concatenate_inherited(func, prepend_summary=False):
 
     # Optionally prepend the function summary
     # Concatenate docstrings only if this is not generated for website
-    regex = re.search(r'\.( | *\n|\Z)', doc_orig)
+    regex = re.search(r"\.( | *\n|\Z)", doc_orig)
     if regex and prepend_summary:
-        doc = doc_orig[:regex.start() + 1] + '\n\n' + doc
-    if not rc_matplotlib['docstring.hardcopy']:
+        doc = doc_orig[: regex.start() + 1] + "\n\n" + doc
+    if not rc_matplotlib["docstring.hardcopy"]:
         doc = f"""
 =====================
 Proplot documentation
@@ -111,6 +111,7 @@ class _SnippetManager(dict):
     """
     A simple database for handling documentation snippets.
     """
+
     def __call__(self, obj):
         """
         Add snippets to the string or object using ``%(name)s`` substitution. Here
@@ -130,7 +131,7 @@ class _SnippetManager(dict):
         should take care to import modules in the correct order.
         """
         value = self(value)
-        value = value.strip('\n')
+        value = value.strip("\n")
         super().__setitem__(key, value)
 
 

@@ -339,6 +339,7 @@ def test_segmented_norm():
     )
     return fig
 
+
 @pytest.mark.mpl_image_compare
 def test_triangular_functions():
     """
