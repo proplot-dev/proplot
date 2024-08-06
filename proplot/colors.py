@@ -3219,9 +3219,9 @@ class ColormapDatabase(MutableMapping, dict):
         key = key.lower()
         key = self._regex_grays.sub(r"greys\2", key)
         # Mirror diverging
-        reverse = key[-2:] == "_r"
+        reverse = key.endswith("_r")
         if reverse:
-            key = key[:-2]
+            key = key.rstrip("_r")
         if mirror and not self._has_item(key):  # avoid recursion here
             key_mirror = CMAPS_DIVERGING.get(key, None)
             if key_mirror and self._has_item(key_mirror):
@@ -3244,12 +3244,12 @@ class ColormapDatabase(MutableMapping, dict):
         # Sanitize key
         key = self._translate_deprecated(key)
         key = self._translate_key(key, mirror=True)
-        shift = key[-2:] == "_s" and not self._has_item(key)
+        shift = key.endswith("_s") and not self._has_item(key)
         if shift:
-            key = key[:-2]
-        reverse = key[-2:] == "_r" and not self._has_item(key)
+            key = key.rstrip("_s")
+        reverse = key.endswith("_r") and not self._has_item(key)
         if reverse:
-            key = key[:-2]
+            key = key.rstrip("_r")
         # Retrieve colormap
         try:
             value = dict.__getitem__(self, key)  # may raise keyerror
