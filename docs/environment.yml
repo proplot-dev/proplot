@@ -16,10 +16,10 @@ name: proplot-dev
 channels:
   - conda-forge
 dependencies:
-  - python==3.8
-  - matplotlib==3.2.2
-  - cartopy==0.20.2
-  - numpy
+  - python==3.12
+  - matplotlib==3.9.1
+  - cartopy==0.23
+  - numpy>=2.0
   - pandas
   - xarray
   - ipykernel

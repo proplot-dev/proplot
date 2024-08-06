@@ -11,7 +11,7 @@ sphinx:
 build:
   image: latest
 python:
-  version: 3.6
+  version: 3.12
   system_packages: true
 conda:
   environment: docs/environment.yml
