@@ -24,6 +24,7 @@ import matplotlib.patches as mpatches
 import matplotlib.ticker as mticker
 import numpy as np
 import numpy.ma as ma
+from numbers import Number
 
 from .. import colors as pcolors
 from .. import constructor, utils
@@ -3666,7 +3667,7 @@ class PlotAxes(base.Axes):
         alphas = kw.pop("alpha", None)
         if alphas is None:
             alphas = xs.size * [None]
-        elif isinstance(alphas, float):
+        elif isinstance(alphas, Number):
             alphas = xs.size * [alphas]
         elif len(alphas) != xs.size:
             raise ValueError(
