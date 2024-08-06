@@ -9,6 +9,16 @@ import proplot as pplt
 state = np.random.RandomState(51423)
 
 
+def test_axis_access():
+    # attempt to access the ax object 2d and linearly
+    fix, ax = pplt.subplots(ncols=2, nrows=2)
+    ax[0, 0]
+    ax[1, 0]
+    with pytest.raises(IndexError):
+        ax[0, 3]
+    ax[3]
+
+
 @pytest.mark.mpl_image_compare
 def test_inset_colors_1():
     """
