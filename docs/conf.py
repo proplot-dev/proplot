@@ -18,48 +18,50 @@ import datetime
 import subprocess
 
 # Update path for sphinx-automodapi and sphinxext extension
-sys.path.append(os.path.abspath('.'))
-sys.path.insert(0, os.path.abspath('..'))
+sys.path.append(os.path.abspath("."))
+sys.path.insert(0, os.path.abspath(".."))
 
 # Print available system fonts
 from matplotlib.font_manager import fontManager
-print('Font files:', end=' ')
-print(', '.join(os.path.basename(font.fname) for font in fontManager.ttflist))
+
+print("Font files:", end=" ")
+print(", ".join(os.path.basename(font.fname) for font in fontManager.ttflist))
 
 
 # -- Project information -------------------------------------------------------
 # The basic info
-project = 'ProPlot'
-copyright = f'{datetime.datetime.today().year}, Luke L. B. Davis'
-author = 'Luke L. B. Davis'
+project = "ProPlot"
+copyright = f"{datetime.datetime.today().year}, Luke L. B. Davis"
+author = "Luke L. B. Davis"
 
 # The short X.Y version
-version = ''
+version = ""
 
 # The full version, including alpha/beta/rc tags
-release = ''
+release = ""
 
 
 # -- Create files --------------------------------------------------------------
 
 # Create RST table and sample proplotrc file
 from proplot.config import rc
-folder = os.path.join(os.path.dirname(os.path.abspath(__file__)), '_static')
+
+folder = os.path.join(os.path.dirname(os.path.abspath(__file__)), "_static")
 if not os.path.isdir(folder):
     os.mkdir(folder)
-rc._save_rst(os.path.join(folder, 'rctable.rst'))
-rc._save_yaml(os.path.join(folder, 'proplotrc'))
+rc._save_rst(os.path.join(folder, "rctable.rst"))
+rc._save_yaml(os.path.join(folder, "proplotrc"))
 
 # -- Setup basemap --------------------------------------------------------------
 
 # Hack to get basemap to work
 # See: https://github.com/readthedocs/readthedocs.org/issues/5339
-if os.environ.get('READTHEDOCS', None) == 'True':
-    conda = os.path.join(os.environ['CONDA_ENVS_PATH'], os.environ['CONDA_DEFAULT_ENV'])
+if os.environ.get("READTHEDOCS", None) == "True":
+    conda = os.path.join(os.environ["CONDA_ENVS_PATH"], os.environ["CONDA_DEFAULT_ENV"])
 else:
-    conda = os.environ['CONDA_PREFIX']
-os.environ['GEOS_DIR'] = conda
-os.environ['PROJ_LIB'] = os.path.join(conda, 'share', 'proj')
+    conda = os.environ["CONDA_PREFIX"]
+os.environ["GEOS_DIR"] = conda
+os.environ["PROJ_LIB"] = os.path.join(conda, "share", "proj")
 
 # Install basemap if does not exist
 # Extremely ugly but impossible to install in environment.yml. Must set
@@ -82,36 +84,43 @@ except ImportError:
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom ones.
 extensions = [
     # 'matplotlib.sphinxext.plot_directive', # see: https://matplotlib.org/sampledoc/extensions.html  # noqa: E501
-    'sphinx.ext.autodoc',  # include documentation from docstrings
-    'sphinx.ext.doctest',  # >>> examples
-    'sphinx.ext.extlinks',  # for :pr:, :issue:, :commit:
-    'sphinx.ext.autosectionlabel',  # use :ref:`Heading` for any heading
-    'sphinx.ext.todo',  # Todo headers and todo:: directives
-    'sphinx.ext.mathjax',  # LaTeX style math
-    'sphinx.ext.viewcode',  # view code links
-    'sphinx.ext.napoleon',  # for NumPy style docstrings
-    'sphinx.ext.intersphinx',  # external links
-    'sphinx.ext.autosummary',  # autosummary directive
-    'sphinxext.custom_roles',  # local extension
-    'sphinx_automodapi.automodapi',  # fork of automodapi
-    'sphinx_rtd_light_dark',  # use custom theme
-    'sphinx_copybutton',  # add copy button to code
-    'nbsphinx',  # parse rst books
+    "sphinx.ext.autodoc",  # include documentation from docstrings
+    "sphinx.ext.doctest",  # >>> examples
+    "sphinx.ext.extlinks",  # for :pr:, :issue:, :commit:
+    "sphinx.ext.autosectionlabel",  # use :ref:`Heading` for any heading
+    "sphinx.ext.todo",  # Todo headers and todo:: directives
+    "sphinx.ext.mathjax",  # LaTeX style math
+    "sphinx.ext.viewcode",  # view code links
+    "sphinx.ext.napoleon",  # for NumPy style docstrings
+    "sphinx.ext.intersphinx",  # external links
+    "sphinx.ext.autosummary",  # autosummary directive
+    "sphinxext.custom_roles",  # local extension
+    "sphinx_automodapi.automodapi",  # fork of automodapi
+    "sphinx_rtd_light_dark",  # use custom theme
+    "sphinx_copybutton",  # add copy button to code
+    "nbsphinx",  # parse rst books
 ]
 
 # The master toctree document.
-master_doc = 'index'
+master_doc = "index"
 
 # The suffix(es) of source filenames, either a string or list.
-source_suffix = ['.rst', '.html']
+source_suffix = [".rst", ".html"]
 
 # Add any paths that contain templates here, relative to this directory.
-templates_path = ['_templates']
+templates_path = ["_templates"]
 
 # List of file patterns relative to source dir that should be ignored
 exclude_patterns = [
-    'conf.py', 'sphinxext', '_build', '_templates', '_themes',
-    '*.ipynb', '**.ipynb_checkpoints' '.DS_Store', 'trash', 'tmp',
+    "conf.py",
+    "sphinxext",
+    "_build",
+    "_templates",
+    "_themes",
+    "*.ipynb",
+    "**.ipynb_checkpoints" ".DS_Store",
+    "trash",
+    "tmp",
 ]
 
 # The language for content autogenerated by Sphinx. Refer to documentation
@@ -120,7 +129,7 @@ language = None
 
 # Role. Default family is py but can also set default role so don't need
 # :func:`name`, :module:`name`, etc.
-default_role = 'py:obj'
+default_role = "py:obj"
 
 # If true, the current module name will be prepended to all description
 # unit titles (such as .. function::).
@@ -128,7 +137,7 @@ add_module_names = False  # proplot imports everything in top-level namespace
 
 # Autodoc configuration. Here we concatenate class and __init__ docstrings
 # See: http://www.sphinx-doc.org/en/master/usage/extensions/autodoc.html
-autoclass_content = 'both'  # options are 'class', 'both', 'init'
+autoclass_content = "both"  # options are 'class', 'both', 'init'
 
 # Generate stub pages whenever ::autosummary directive encountered
 # This way don't have to call sphinx-autogen manually
@@ -137,40 +146,40 @@ autosummary_generate = True
 # Automodapi tool: https://sphinx-automodapi.readthedocs.io/en/latest/automodapi.html
 # Normally have to *enumerate* function names manually. This will document them
 # automatically. Just be careful to exclude public names from automodapi:: directive.
-automodapi_toctreedirnm = 'api'
+automodapi_toctreedirnm = "api"
 automodsumm_inherited_members = False
 
 # Doctest configuration. For now do not run tests, they are just to show syntax
 # and expected output may be graphical
-doctest_test_doctest_blocks = ''
+doctest_test_doctest_blocks = ""
 
 # Cupybutton configuration
 # See: https://sphinx-copybutton.readthedocs.io/en/latest/
-copybutton_prompt_text = r'>>> |\.\.\. |\$ |In \[\d*\]: | {2,5}\.\.\.: | {5,8}: '
+copybutton_prompt_text = r">>> |\.\.\. |\$ |In \[\d*\]: | {2,5}\.\.\.: | {5,8}: "
 copybutton_prompt_is_regexp = True
 copybutton_only_copy_prompt_lines = True
 copybutton_remove_prompts = True
 
 # Links for What's New github commits, issues, and pull requests
 extlinks = {
-    'issue': ('https://github.com/proplot-dev/proplot/issues/%s', 'GH#'),
-    'commit': ('https://github.com/proplot-dev/proplot/commit/%s', '@'),
-    'pr': ('https://github.com/proplot-dev/proplot/pull/%s', 'GH#'),
+    "issue": ("https://github.com/proplot-dev/proplot/issues/%s", "GH#"),
+    "commit": ("https://github.com/proplot-dev/proplot/commit/%s", "@"),
+    "pr": ("https://github.com/proplot-dev/proplot/pull/%s", "GH#"),
 }
 
 # Set up mapping for other projects' docs
 intersphinx_mapping = {
-    'cycler': ('https://matplotlib.org/cycler/', None),
-    'matplotlib': ('https://matplotlib.org/stable', None),
-    'sphinx': ('http://www.sphinx-doc.org/en/stable', None),
-    'python': ('https://docs.python.org/3', None),
-    'numpy': ('https://docs.scipy.org/doc/numpy', None),
-    'scipy': ('https://docs.scipy.org/doc/scipy/reference', None),
-    'xarray': ('http://xarray.pydata.org/en/stable', None),
-    'cartopy': ('https://scitools.org.uk/cartopy/docs/latest', None),
-    'basemap': ('https://matplotlib.org/basemap', None),
-    'pandas': ('https://pandas.pydata.org/pandas-docs/stable', None),
-    'pint': ('https://pint.readthedocs.io/en/stable/', None),
+    "cycler": ("https://matplotlib.org/cycler/", None),
+    "matplotlib": ("https://matplotlib.org/stable", None),
+    "sphinx": ("http://www.sphinx-doc.org/en/stable", None),
+    "python": ("https://docs.python.org/3", None),
+    "numpy": ("https://docs.scipy.org/doc/numpy", None),
+    "scipy": ("https://docs.scipy.org/doc/scipy/reference", None),
+    "xarray": ("http://xarray.pydata.org/en/stable", None),
+    "cartopy": ("https://scitools.org.uk/cartopy/docs/latest", None),
+    "basemap": ("https://matplotlib.org/basemap", None),
+    "pandas": ("https://pandas.pydata.org/pandas-docs/stable", None),
+    "pint": ("https://pint.readthedocs.io/en/stable/", None),
 }
 
 # Fix duplicate class member documentation from autosummary + numpydoc
@@ -198,21 +207,21 @@ napoleon_preprocess_types = True
 napoleon_type_aliases = {
     # Python or inherited terms
     # NOTE: built-in types are automatically included
-    'callable': ':py:func:`callable`',
-    'sequence': ':term:`sequence`',
-    'dict-like': ':term:`dict-like <mapping>`',
-    'path-like': ':term:`path-like <path-like object>`',
-    'array-like': ':term:`array-like <array_like>`',
+    "callable": ":py:func:`callable`",
+    "sequence": ":term:`sequence`",
+    "dict-like": ":term:`dict-like <mapping>`",
+    "path-like": ":term:`path-like <path-like object>`",
+    "array-like": ":term:`array-like <array_like>`",
     # Proplot defined terms
-    'unit-spec': ':py:func:`unit-spec <proplot.utils.units>`',
-    'locator-spec': ':py:func:`locator-spec <proplot.constructor.Locator>`',
-    'formatter-spec': ':py:func:`formatter-spec <proplot.constructor.Formatter>`',
-    'scale-spec': ':py:func:`scale-spec <proplot.constructor.Scale>`',
-    'colormap-spec': ':py:func:`colormap-spec <proplot.constructor.Colormap>`',
-    'cycle-spec': ':py:func:`cycle-spec <proplot.constructor.Cycle>`',
-    'norm-spec': ':py:func:`norm-spec <proplot.constructor.Norm>`',
-    'color-spec': ':py:func:`color-spec <matplotlib.colors.is_color_like>`',
-    'artist': ':py:func:`artist <matplotlib.artist.Artist>`',
+    "unit-spec": ":py:func:`unit-spec <proplot.utils.units>`",
+    "locator-spec": ":py:func:`locator-spec <proplot.constructor.Locator>`",
+    "formatter-spec": ":py:func:`formatter-spec <proplot.constructor.Formatter>`",
+    "scale-spec": ":py:func:`scale-spec <proplot.constructor.Scale>`",
+    "colormap-spec": ":py:func:`colormap-spec <proplot.constructor.Colormap>`",
+    "cycle-spec": ":py:func:`cycle-spec <proplot.constructor.Cycle>`",
+    "norm-spec": ":py:func:`norm-spec <proplot.constructor.Norm>`",
+    "color-spec": ":py:func:`color-spec <matplotlib.colors.is_color_like>`",
+    "artist": ":py:func:`artist <matplotlib.artist.Artist>`",
 }
 
 # Fail on error. Note nbsphinx compiles all notebooks in docs unless excluded
@@ -222,34 +231,34 @@ nbsphinx_allow_errors = False
 nbsphinx_timeout = 300
 
 # Add jupytext support to nbsphinx
-nbsphinx_custom_formats = {'.py': ['jupytext.reads', {'fmt': 'py:percent'}]}
+nbsphinx_custom_formats = {".py": ["jupytext.reads", {"fmt": "py:percent"}]}
 
 # The name of the Pygments (syntax highlighting) style to use.
 # The light-dark theme toggler overloads this, but set default anyway
-pygments_style = 'none'
+pygments_style = "none"
 
 
 # -- Options for HTML output -------------------------------------------------
 
 # Logo
-html_logo = os.path.join('_static', 'logo_square.png')
+html_logo = os.path.join("_static", "logo_square.png")
 
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 # Use modified RTD theme with overrides in custom.css and custom.js
-html_theme = 'sphinx_rtd_light_dark'
+html_theme = "sphinx_rtd_light_dark"
 html_theme_options = {
-    'logo_only': True,
-    'display_version': False,
-    'collapse_navigation': True,
-    'navigation_depth': 4,
-    'prev_next_buttons_location': 'bottom',  # top and bottom
+    "logo_only": True,
+    "display_version": False,
+    "collapse_navigation": True,
+    "navigation_depth": 4,
+    "prev_next_buttons_location": "bottom",  # top and bottom
 }
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
-html_static_path = ['_static']
+html_static_path = ["_static"]
 
 # Custom sidebar templates, must be a dictionary that maps document names
 # to template names.
@@ -263,12 +272,12 @@ html_static_path = ['_static']
 # docs.  This file should be a Windows icon file (.ico) being 16x16 or 32x32
 # pixels large. Static folder is for CSS and image files. Use ImageMagick to
 # convert png to ico on command line with 'convert image.png image.ico'
-html_favicon = os.path.join('_static', 'logo_blank.ico')
+html_favicon = os.path.join("_static", "logo_blank.ico")
 
 # -- Options for HTMLHelp output ---------------------------------------------
 
 # Output file base name for HTML help builder.
-htmlhelp_basename = 'proplotdoc'
+htmlhelp_basename = "proplotdoc"
 
 
 # -- Options for LaTeX output ------------------------------------------------
@@ -276,13 +285,10 @@ htmlhelp_basename = 'proplotdoc'
 latex_elements = {
     # The paper size ('letterpaper' or 'a4paper').
     # 'papersize': 'letterpaper',
-
     # The font size ('10pt', '11pt' or '12pt').
     # 'pointsize': '10pt',
-
     # Additional stuff for the LaTeX preamble.
     # 'preamble': '',
-
     # Latex figure (float) alignment
     # 'figure_align': 'htbp',
 }
@@ -291,8 +297,7 @@ latex_elements = {
 # (source start file, target name, title,
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
-    (master_doc, 'proplot.tex', 'ProPlot Documentation',
-     'Luke L. B. Davis', 'manual'),
+    (master_doc, "proplot.tex", "ProPlot Documentation", "Luke L. B. Davis", "manual"),
 ]
 
 
@@ -300,15 +305,7 @@ latex_documents = [
 
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
-man_pages = [
-    (
-        master_doc,
-        'proplot',
-        'ProPlot Documentation',
-        [author],
-        1
-    )
-]
+man_pages = [(master_doc, "proplot", "ProPlot Documentation", [author], 1)]
 
 
 # -- Options for Texinfo output ----------------------------------------------
@@ -319,13 +316,13 @@ man_pages = [
 texinfo_documents = [
     (
         master_doc,
-        'proplot',
-        'ProPlot Documentation',
+        "proplot",
+        "ProPlot Documentation",
         author,
-        'proplot',
-        'A succinct matplotlib wrapper for making beautiful, '
-        'publication-quality graphics.',
-        'Miscellaneous'
+        "proplot",
+        "A succinct matplotlib wrapper for making beautiful, "
+        "publication-quality graphics.",
+        "Miscellaneous",
     )
 ]
 
