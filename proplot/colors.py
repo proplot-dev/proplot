@@ -2870,8 +2870,8 @@ def _init_cmap_database():
             if not key.endswith("_r") and not key.endswith("_shifted")
         }
         database = ColormapDatabase(database)
-        setattr(mcm, "_colormaps", database)
-        setattr(mpl, "colormaps", database)
+        setattr(mcm, "_colormaps", database) # not sure if this is necessary since colormaps is a (shallow?) copy of _colormaps
+        setattr(mpl, "colormaps", database) # this is necessary
     return database
 
 
@@ -3090,6 +3090,10 @@ class ColormapDatabase(mcm.ColormapRegistry):
             The source dictionary.
         """
         super().__init__(kwargs)
+        # The colormap is initialized with all the base colormaps
+        # We have to change the classes internally to Perceptual, Continuous or Discrete
+        # such that proplot knows what these objects are. We piggy back on the registering mechanism
+        # by overriding matplotlib's behavior
         for name in self._cmaps:
             self.register(self._cmaps[name], name = name)
 
