@@ -3094,8 +3094,12 @@ class ColormapDatabase(mcm.ColormapRegistry):
         # We have to change the classes internally to Perceptual, Continuous or Discrete
         # such that proplot knows what these objects are. We piggy back on the registering mechanism
         # by overriding matplotlib's behavior
-        for name in self._cmaps:
-            self.register(self._cmaps[name], name = name)
+        oldmaps = self._cmaps.copy()
+        self._cmaps.clear()
+        for name, cmap in oldmaps.items():
+            self.register(cmap, name = name)
+        # overwrite the builtins
+        self._builtins = tuple(self._cmaps)
 
     def _translate_deprecated(self, key):
         """
@@ -3165,7 +3169,7 @@ class ColormapDatabase(mcm.ColormapRegistry):
             if reverse:
                 original_key = original_key + "_r"
         # If no match found, return the original key
-        return original_key
+        return key
 
     def _has_item(self, key):
         return key in self._cmaps
