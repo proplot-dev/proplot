@@ -177,6 +177,7 @@ class _SharedAxes(object):
                 kwlines["grid_color"] = gridcolor
 
             # Apply tick and gridline properties
+            kwticks.pop("ndivs", None)  # not in mpl
             self.tick_params(axis=axis, which=which, **kwticks, **kwlines, **kwtext)
 
         # Apply settings that can't be controlled with tick_params
