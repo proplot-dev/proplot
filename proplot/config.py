@@ -286,6 +286,7 @@ def _get_style_dict(style, filter=True):
         "mpl20": "default",
         "mpl15": "classic",
         "original": mpl.matplotlib_fname(),
+        "seaborn": "seaborn-v0_8",
     }
 
     # Always apply the default style *first* so styles are rigid
