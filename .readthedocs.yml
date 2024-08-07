@@ -2,16 +2,19 @@
 # Read the Docs configuration file
 version: 2
 
-# Sphinx config
-sphinx:
-  builder: html
-  configuration: docs/conf.py
 
 # Python config
 build:
+  os: ubuntu-22.04
   image: latest
 python:
   version: 3.12
   system_packages: true
 conda:
   environment: docs/environment.yml
+
+# Sphinx config
+sphinx:
+  builder: html
+  configuration: docs/conf.py
+
