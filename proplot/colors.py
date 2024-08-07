@@ -24,6 +24,7 @@ from numbers import Integral, Number
 from xml.etree import ElementTree
 
 import matplotlib.cm as mcm
+import matplotlib as mpl
 import matplotlib.colors as mcolors
 import numpy as np
 import numpy.ma as ma
@@ -2852,80 +2853,27 @@ def _init_cmap_database():
     """
     Initialize the subclassed database.
     """
-
-    # WARNING: Skip over the matplotlib native duplicate entries
-    # with suffixes '_r' and '_shifted'.
-    def get_correct_register(
-        props=[
-            "_cmap_registry",
-            "cmap_d",
-            "_colormaps",
-        ]
-    ):
-        # In matplotlib.cm as register is made under
-        # _colormaps (as of 3.9.1). It seems like they are
-        # moving towards using ColormapRegister as a static class
-        # so this may change in the future. This piece of code
-        # is to ensure that the correct object is used
-        # to register proplots colormaps
-        for prop in props:
-            if hasattr(mcm, prop):
-                return prop
-
-    attr = get_correct_register()
-    database = getattr(mcm, attr)
-    if mcm.get_cmap is not _get_cmap:
-        mcm.get_cmap = _get_cmap
-    # enable backward compatibility
-    if hasattr(mcm, "register_cmap"):
-        if mcm.register_cmap is not wrap_register_cmap:
-            mcm.register_cmap = wrap_register_cmap
-
+    # We override the matplotlib base class
+    # to add some functionality to it. Key features includes
+    # - key insensitive lookup
+    # - allow for dynamically generated shifted or reversed colormaps
+    # with the extensions _r and _s(hifted)
+    # This means we have to collect the base colormaps
+    # and register them under the new object
+    database = mcm._colormaps # shallow copy of mpl's colormaps
     if not isinstance(database, ColormapDatabase):
+        # Collect the mpl colormaps and include them
+        # in proplot's registry
         database = {
             key: value
             for key, value in database.items()
             if not key.endswith("_r") and not key.endswith("_shifted")
         }
         database = ColormapDatabase(database)
-        setattr(mcm, attr, database)
+        setattr(mcm, "_colormaps", database)
+        setattr(mpl, "colormaps", database)
     return database
 
-
-def wrap_register_cmap(*args, **kwargs):
-    # This function is merely to wrap register cmap
-    # to prevent adding unnecessary trigger warnings
-    original_register_cmap = mcm.register_cmap
-
-    @functools.wraps(original_register_cmap)  # noqa: E302
-    def _register_cmap(*args, **kwargs):
-        """
-        Monkey patch for `~matplotlib.cm.register_cmap`. Ignores warning
-        message when re-registering existing colormaps. This is unnecessary
-        and triggers 100 warnings when importing seaborn.
-        """
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", UserWarning)
-            return mcm.register_cmap(*args, **kwargs)
-
-    return wrapped_register_cmap
-
-
-@functools.wraps(mcm.get_cmap)
-def _get_cmap(name=None, lut=None):
-    """
-    Monkey patch for `~matplotlib.cm.get_cmap`. Permits case-insensitive
-    search of monkey-patched colormap database. This was broken in v3.2.0
-    because matplotlib now uses _check_in_list with cmap dictionary keys.
-    """
-    if name is None:
-        name = rc["image.cmap"]
-    if isinstance(name, mcolors.Colormap):
-        return name
-    cmap = _cmap_database[name]
-    if lut is not None:
-        cmap = cmap._resample(lut)
-    return cmap
 
 
 def _get_cmap_subtype(name, subtype):
@@ -2942,7 +2890,7 @@ def _get_cmap_subtype(name, subtype):
         cls = PerceptualColormap
     else:
         raise RuntimeError(f"Invalid subtype {subtype!r}.")
-    cmap = _cmap_database.get(name, None)
+    cmap = _cmap_database.get_cmap(name)
     if not isinstance(cmap, cls):
         names = sorted(k for k, v in _cmap_database.items() if isinstance(v, cls))
         raise ValueError(
@@ -3060,12 +3008,6 @@ class ColorDatabase(MutableMapping, dict):
         ("kelley", "kelly"),  # backwards compatibility to correct spelling
     )
 
-    def __iter__(self):
-        yield from dict.__iter__(self)
-
-    def __len__(self):
-        return dict.__len__(self)
-
     def __delitem__(self, key):
         key = self._parse_key(key)
         dict.__delitem__(self, key)
@@ -3130,7 +3072,7 @@ class ColorDatabase(MutableMapping, dict):
         return self._cache
 
 
-class ColormapDatabase(MutableMapping, dict):
+class ColormapDatabase(mcm.ColormapRegistry):
     """
     Dictionary subclass used to replace the matplotlib
     colormap registry. See `~ColormapDatabase.__getitem__` and
@@ -3140,16 +3082,6 @@ class ColormapDatabase(MutableMapping, dict):
     _regex_grays = re.compile(r"\A(grays)(_r|_s)*\Z", flags=re.IGNORECASE)
     _regex_suffix = re.compile(r"(_r|_s)*\Z", flags=re.IGNORECASE)
 
-    def __iter__(self):
-        yield from dict.__iter__(self)
-
-    def __len__(self):
-        return dict.__len__(self)
-
-    def __delitem__(self, key):
-        key = self._parse_key(key, mirror=True)
-        dict.__delitem__(self, key)
-
     def __init__(self, kwargs):
         """
         Parameters
@@ -3157,31 +3089,9 @@ class ColormapDatabase(MutableMapping, dict):
         kwargs : dict-like
             The source dictionary.
         """
-        for key, value in kwargs.items():
-            self.__setitem__(key, value)
-
-    def __getitem__(self, key):
-        """
-        Retrieve the colormap associated with the sanitized key name. The
-        key name is case insensitive.
-
-        * If the key ends in ``'_r'``, the result of ``cmap.reversed()`` is
-          returned for the colormap registered under the preceding name.
-        * If the key ends in ``'_s'``, the result of ``cmap.shifted(180)`` is
-          returned for the colormap registered under the preceding name.
-        * Reversed diverging colormaps can be requested with their "reversed"
-          name -- for example, ``'BuRd'`` is equivalent to ``'RdBu_r'``.
-        """
-        return self._get_item(key)
-
-    def __setitem__(self, key, value):
-        """
-        Store the colormap under its lowercase name. If the object is a
-        `matplotlib.colors.ListedColormap` and ``cmap.N`` is smaller than
-        :rc:`cmap.listedthresh`, it is converted to a `proplot.colors.DiscreteColormap`.
-        Otherwise, it is converted to a `proplot.colors.ContinuousColormap`.
-        """
-        self._set_item(key, value)
+        super().__init__(kwargs)
+        for name in self._cmaps:
+            self.register(self._cmaps[name], name = name)
 
     def _translate_deprecated(self, key):
         """
@@ -3199,7 +3109,7 @@ class ColormapDatabase(MutableMapping, dict):
             raise ValueError(
                 f"The colormap name {key!r} was removed in version {version}."
             )
-        if not self._has_item(test) and test in CMAPS_RENAMED:
+        if not self._has_item(test)and test in CMAPS_RENAMED:
             test_new, version = CMAPS_RENAMED[test]
             warnings._warn_proplot(
                 f"The colormap name {test!r} was deprecated in version {version} "
@@ -3209,35 +3119,57 @@ class ColormapDatabase(MutableMapping, dict):
             key = re.sub(test, test_new, key, flags=re.IGNORECASE)
         return key
 
-    def _translate_key(self, key, mirror=True):
+    def _translate_key(self, original_key, mirror=True):
         """
         Return the sanitized colormap name. Used for lookups and assignments.
         """
         # Sanitize key
-        if not isinstance(key, str):
-            raise KeyError(f"Invalid key {key!r}. Key must be a string.")
-        key = key.lower()
+        if not isinstance(original_key, str):
+            raise KeyError(f"Invalid key {original_key!r}. Key must be a string.")
+
+        key = original_key.lower()
         key = self._regex_grays.sub(r"greys\2", key)
-        # Mirror diverging
+
+        # Handle reversal
         reverse = key.endswith("_r")
         if reverse:
             key = key.rstrip("_r")
-        if mirror and not self._has_item(key):  # avoid recursion here
+
+        # Check if the key exists in builtin colormaps
+        if self._has_item(key):
+            return key + "_r" if reverse else key
+
+        # Mirror diverging colormaps
+        if mirror:
+            # Check for diverging colormaps
             key_mirror = CMAPS_DIVERGING.get(key, None)
             if key_mirror and self._has_item(key_mirror):
-                reverse = not reverse
-                key = key_mirror
-        if reverse:
-            key = key + "_r"
-        return key
+                return key_mirror + "_r" if not reverse else key_mirror
+
+            # Check for reversed builtin colormaps
+            if self._has_item(key + "_r"):
+                return key if reverse else key + "_r"
+
+            # Try mirroring the non-lowered key
+            if reverse:
+                original_key = original_key.strip("_r")
+            half = len(original_key) // 2
+            mirrored_key = original_key[half:] + original_key[:half]
+            if self._has_item(mirrored_key):
+                return mirrored_key + "_r" if not reverse else mirrored_key
+            # Restore key
+            if reverse:
+                original_key = original_key + "_r"
+        # If no match found, return the original key
+        return original_key
 
     def _has_item(self, key):
-        """
-        Redirect to unsanitized `dict.__contains__`.
-        """
-        return dict.__contains__(self, key)
+        return key in self._cmaps
 
-    def _get_item(self, key):
+    def get_cmap(self, cmap):
+        return self.__getitem__(cmap)
+
+    def __getitem__(self, key):
         """
         Get the colormap with flexible input keys.
         """
@@ -3248,12 +3180,13 @@ class ColormapDatabase(MutableMapping, dict):
         if shift:
             key = key.rstrip("_s")
         reverse = key.endswith("_r") and not self._has_item(key)
+
         if reverse:
             key = key.rstrip("_r")
         # Retrieve colormap
-        try:
-            value = dict.__getitem__(self, key)  # may raise keyerror
-        except KeyError:
+        if self._has_item(key):
+            value = self._cmaps[key].copy()
+        else:
             raise KeyError(
                 f"Invalid colormap or color cycle name {key!r}. Options are: "
                 + ", ".join(map(repr, self))
@@ -3266,17 +3199,21 @@ class ColormapDatabase(MutableMapping, dict):
             value = value.shifted(180)
         return value
 
-    def _set_item(self, key, value):
+    def register(self, cmap, *, name = None, force = False):
         """
         Add the colormap after validating and converting.
         """
-        if not isinstance(key, str):
-            raise KeyError(f"Invalid key {key!r}. Must be string.")
-        if not isinstance(value, mcolors.Colormap):
-            raise ValueError("Object is not a colormap.")
-        key = self._translate_key(key, mirror=False)
-        value = _translate_cmap(value)
-        dict.__setitem__(self, key, value)
+        if name is None:
+            raise ValueError("Please register the cmap under a string")
+        name = self._translate_key(name, mirror=False)
+        cmap = _translate_cmap(cmap)
+        # The builtin cmaps are a different class
+        # Proplot internally uses different classes for the different colormaps
+        if force and name in self._cmaps:
+            # surpress warning if the colormap is not generate by proplot
+            if name not in self._builtin_cmaps:
+                print(f"Overwriting {name!r} that was already registered")
+        self._cmaps[name] = cmap.copy()
 
 
 # Initialize databases
