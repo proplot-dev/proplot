@@ -7,11 +7,12 @@ version: 2
 build:
   os: ubuntu-22.04
   image: latest
-python:
-  version: 3.12
-  system_packages: true
-conda:
-  environment: docs/environment.yml
+  tools:
+    python:
+      version: 3.12
+      system_packages: true
+    conda:
+      environment: docs/environment.yml
 
 # Sphinx config
 sphinx:
