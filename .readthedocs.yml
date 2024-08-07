@@ -1,7 +1,6 @@
-# .readthedocs.yml
+ # .readthedocs.yml
 # Read the Docs configuration file
 version: 2
-
 
 # Python config
 build:
@@ -14,8 +13,13 @@ build:
     conda:
       environment: docs/environment.yml
 
+# Build command
+# This command is used to build the documentation
+# Ensure the command matches your project structure
+build:
+  command: sphinx-build -b html docs docs/_build/html
+
 # Sphinx config
 sphinx:
   builder: html
   configuration: docs/conf.py
-
