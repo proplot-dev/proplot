@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-The constructor functions used to build class instances from simple shorthand arguments.
+T"he constructor functions used to build class instances from simple shorthand arguments.
 """
 # NOTE: These functions used to be in separate files like crs.py and
 # ticker.py but makes more sense to group them together to ensure usage is
@@ -657,7 +657,7 @@ def Colormap(
                     arg = pcolors.ContinuousColormap.from_file(arg)
             else:
                 try:
-                    arg = pcolors._cmap_database[arg]
+                    arg = pcolors._cmap_database.get_cmap(arg)
                 except KeyError:
                     pass
 
@@ -750,7 +750,7 @@ def Colormap(
         cmap.name = name
     if not isinstance(name, str):
         raise ValueError("The colormap name must be a string.")
-    pcolors._cmap_database[name] = cmap
+    pcolors._cmap_database.register(cmap, name = name)
 
     # Save the colormap
     if save:

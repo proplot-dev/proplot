@@ -474,7 +474,7 @@ def register_cmaps(*args, user=None, local=None, default=False):
     paths = []
     for arg in args:
         if isinstance(arg, mcolors.Colormap):
-            pcolors._cmap_database[arg.name] = arg
+            pcolors._cmap_database.register(arg, name = arg.name)
         else:
             paths.append(arg)
 
@@ -485,14 +485,9 @@ def register_cmaps(*args, user=None, local=None, default=False):
         cmap = pcolors.ContinuousColormap.from_file(path, warn_on_failure=True)
         if not cmap:
             continue
-
         if i == 0 and cmap.name.lower() in pcolors.CMAPS_CYCLIC:
             cmap.set_cyclic(True)
-        pcolors._cmap_database[cmap.name] = cmap
-
-        # for mpl >= 3.7.2
-        if hasattr(mpl, "colormaps"):
-            mpl.colormaps.register(cmap, name=cmap.name)
+        pcolors._cmap_database.register(cmap, name = cmap.name)
 
 
 @docstring._snippet_manager
@@ -523,7 +518,7 @@ def register_cycles(*args, user=None, local=None, default=False):
     paths = []
     for arg in args:
         if isinstance(arg, mcolors.Colormap):
-            pcolors._cmap_database[arg.name] = arg
+            pcolors._cmap_database.register(arg, name = arg.name)
         else:
             paths.append(arg)
 
@@ -534,7 +529,7 @@ def register_cycles(*args, user=None, local=None, default=False):
         cmap = pcolors.DiscreteColormap.from_file(path, warn_on_failure=True)
         if not cmap:
             continue
-        pcolors._cmap_database[cmap.name] = cmap
+        pcolors._cmap_database.register(cmap, name = cmap.name)
 
 
 @docstring._snippet_manager
