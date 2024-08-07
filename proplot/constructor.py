@@ -656,6 +656,8 @@ def Colormap(
                 else:
                     arg = pcolors.ContinuousColormap.from_file(arg)
             else:
+                # FIXME: This error is baffling too me. Colors and colormaps
+                # are used interchangeable here
                 try:
                     arg = pcolors._cmap_database.get_cmap(arg)
                 except KeyError:
