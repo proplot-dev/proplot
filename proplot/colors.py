@@ -685,7 +685,6 @@ def _load_colors(path, warn_on_failure=True):
                 )
                 continue
             loaded[pair[0]] = pair[1]
-
     return loaded
 
 

@@ -63,7 +63,6 @@ for _src in (NORMS, LOCATORS, FORMATTERS, SCALES, PROJS):
     for _key, _cls in _src.items():
         if isinstance(_cls, type):  # i.e. not a scale preset
             _globals[_cls.__name__] = _cls  # may overwrite proplot names
-
 # Register objects
 from .config import register_cmaps, register_cycles, register_colors, register_fonts
 
@@ -80,6 +79,7 @@ with _benchmark("fonts"):
 # NOTE: cmap.sequential also updates siblings 'cmap' and 'image.cmap'
 from .config import rc
 from .internals import rcsetup, warnings
+
 
 rcsetup.VALIDATE_REGISTERED_CMAPS = True
 for _key in (

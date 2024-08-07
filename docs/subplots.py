@@ -78,26 +78,36 @@
 
 # %%
 import proplot as pplt
-fig = pplt.figure(space=0, refwidth='10em')
+
+fig = pplt.figure(space=0, refwidth="10em")
 axs = fig.subplots(nrows=3, ncols=3)
 axs.format(
-    abc='A.', abcloc='ul',
-    xticks='null', yticks='null', facecolor='gray5',
-    xlabel='x axis', ylabel='y axis',
-    suptitle='A-b-c label offsetting, borders, and boxes',
+    abc="A.",
+    abcloc="ul",
+    xticks="null",
+    yticks="null",
+    facecolor="gray5",
+    xlabel="x axis",
+    ylabel="y axis",
+    suptitle="A-b-c label offsetting, borders, and boxes",
 )
-axs[:3].format(abcloc='l', titleloc='l', title='Title')
+axs[:3].format(abcloc="l", titleloc="l", title="Title")
 axs[-3:].format(abcbbox=True)  # also disables abcborder
 # axs[:-3].format(abcborder=True)  # this is already the default
 
 # %%
 import proplot as pplt
+
 fig = pplt.figure(space=0, refwidth=0.7)
 axs = fig.subplots(nrows=8, ncols=8)
 axs.format(
-    abc=True, abcloc='ur',
-    xlabel='x axis', ylabel='y axis', xticks=[], yticks=[],
-    suptitle='A-b-c label stress test'
+    abc=True,
+    abcloc="ur",
+    xlabel="x axis",
+    ylabel="y axis",
+    xticks=[],
+    yticks=[],
+    suptitle="A-b-c label stress test",
 )
 
 
@@ -177,40 +187,44 @@ import numpy as np
 state = np.random.RandomState(51423)
 colors = np.tile(state.rand(8, 12, 1), (1, 1, 3))
 fig, axs = pplt.subplots(ncols=3, nrows=2, refwidth=1.7)
-fig.format(suptitle='Auto figure dimensions for grid of images')
+fig.format(suptitle="Auto figure dimensions for grid of images")
 for ax in axs:
     ax.imshow(colors)
 
 # Grid of cartopy projections
-fig, axs = pplt.subplots(ncols=2, nrows=3, proj='robin')
-axs.format(land=True, landcolor='k')
-fig.format(suptitle='Auto figure dimensions for grid of cartopy projections')
+fig, axs = pplt.subplots(ncols=2, nrows=3, proj="robin")
+axs.format(land=True, landcolor="k")
+fig.format(suptitle="Auto figure dimensions for grid of cartopy projections")
 
 
 # %%
 import proplot as pplt
-pplt.rc.update(grid=False, titleloc='uc', titleweight='bold', titlecolor='red9')
+
+pplt.rc.update(grid=False, titleloc="uc", titleweight="bold", titlecolor="red9")
 
 # Change the reference subplot width
-suptitle = 'Effect of subplot width on figure size'
-for refwidth in ('3cm', '5cm'):
-    fig, axs = pplt.subplots(ncols=2, refwidth=refwidth,)
-    axs[0].format(title=f'refwidth = {refwidth}', suptitle=suptitle)
+suptitle = "Effect of subplot width on figure size"
+for refwidth in ("3cm", "5cm"):
+    fig, axs = pplt.subplots(
+        ncols=2,
+        refwidth=refwidth,
+    )
+    axs[0].format(title=f"refwidth = {refwidth}", suptitle=suptitle)
 
 # Change the reference subplot aspect ratio
-suptitle = 'Effect of subplot aspect ratio on figure size'
+suptitle = "Effect of subplot aspect ratio on figure size"
 for refaspect in (1, 2):
     fig, axs = pplt.subplots(ncols=2, refwidth=1.6, refaspect=refaspect)
-    axs[0].format(title=f'refaspect = {refaspect}', suptitle=suptitle)
+    axs[0].format(title=f"refaspect = {refaspect}", suptitle=suptitle)
 
 # Change the reference subplot
-suptitle = 'Effect of reference subplot on figure size'
+suptitle = "Effect of reference subplot on figure size"
 for ref in (1, 2):  # with different width ratios
     fig, axs = pplt.subplots(ncols=3, wratios=(3, 2, 2), ref=ref, refwidth=1.1)
-    axs[ref - 1].format(title='reference', suptitle=suptitle)
+    axs[ref - 1].format(title="reference", suptitle=suptitle)
 for ref in (1, 2):  # with complex subplot grid
     fig, axs = pplt.subplots([[1, 2], [1, 3]], refnum=ref, refwidth=1.8)
-    axs[ref - 1].format(title='reference', suptitle=suptitle)
+    axs[ref - 1].format(title="reference", suptitle=suptitle)
 
 pplt.rc.reset()
 
@@ -272,25 +286,33 @@ import proplot as pplt
 # Stress test of the tight layout algorithm
 # This time override the algorithm between selected subplot rows/columns
 fig, axs = pplt.subplots(
-    ncols=4, nrows=3, refwidth=1.1, span=False,
-    bottom='5em', right='5em',  # margin spacing overrides
-    wspace=(0, 0, None), hspace=(0, None),  # column and row spacing overrides
+    ncols=4,
+    nrows=3,
+    refwidth=1.1,
+    span=False,
+    bottom="5em",
+    right="5em",  # margin spacing overrides
+    wspace=(0, 0, None),
+    hspace=(0, None),  # column and row spacing overrides
 )
 axs.format(
     grid=False,
-    xlocator=1, ylocator=1, tickdir='inout',
-    xlim=(-1.5, 1.5), ylim=(-1.5, 1.5),
-    suptitle='Tight layout with user overrides',
-    toplabels=('Column 1', 'Column 2', 'Column 3', 'Column 4'),
-    leftlabels=('Row 1', 'Row 2', 'Row 3'),
+    xlocator=1,
+    ylocator=1,
+    tickdir="inout",
+    xlim=(-1.5, 1.5),
+    ylim=(-1.5, 1.5),
+    suptitle="Tight layout with user overrides",
+    toplabels=("Column 1", "Column 2", "Column 3", "Column 4"),
+    leftlabels=("Row 1", "Row 2", "Row 3"),
 )
-axs[0, :].format(xtickloc='top')
-axs[2, :].format(xtickloc='both')
-axs[:, 1].format(ytickloc='neither')
-axs[:, 2].format(ytickloc='right')
-axs[:, 3].format(ytickloc='both')
-axs[-1, :].format(xlabel='xlabel', title='Title\nTitle\nTitle')
-axs[:, 0].format(ylabel='ylabel')
+axs[0, :].format(xtickloc="top")
+axs[2, :].format(xtickloc="both")
+axs[:, 1].format(ytickloc="neither")
+axs[:, 2].format(ytickloc="right")
+axs[:, 3].format(ytickloc="both")
+axs[-1, :].format(xlabel="xlabel", title="Title\nTitle\nTitle")
+axs[:, 0].format(ylabel="ylabel")
 
 
 # %%
@@ -298,26 +320,28 @@ import proplot as pplt
 
 # Stress test of the tight layout algorithm
 # Add large labels along the edge of one subplot
-equals = [('unequal', False), ('unequal', False), ('equal', True)]
-groups = [('grouped', True), ('ungrouped', False), ('grouped', True)]
+equals = [("unequal", False), ("unequal", False), ("equal", True)]
+groups = [("grouped", True), ("ungrouped", False), ("grouped", True)]
 for (name1, equal), (name2, group) in zip(equals, groups):
-    suffix = ' (default)' if group and not equal else ''
+    suffix = " (default)" if group and not equal else ""
     suptitle = f'Tight layout with "{name1}" and "{name2}" row-column spacing{suffix}'
     fig, axs = pplt.subplots(
-        nrows=3, ncols=3, refwidth=1.1, share=False, equal=equal, group=group,
+        nrows=3,
+        ncols=3,
+        refwidth=1.1,
+        share=False,
+        equal=equal,
+        group=group,
     )
-    axs[1].format(
-        xlabel='xlabel\nxlabel',
-        ylabel='ylabel\nylabel\nylabel\nylabel'
-    )
+    axs[1].format(xlabel="xlabel\nxlabel", ylabel="ylabel\nylabel\nylabel\nylabel")
     axs[3:6:2].format(
-        title='Title\nTitle',
-        titlesize='med',
+        title="Title\nTitle",
+        titlesize="med",
     )
     axs.format(
         grid=False,
-        toplabels=('Column 1', 'Column 2', 'Column 3'),
-        leftlabels=('Row 1', 'Row 2', 'Row 3'),
+        toplabels=("Column 1", "Column 2", "Column 3"),
+        leftlabels=("Row 1", "Row 2", "Row 3"),
         suptitle=suptitle,
     )
 
@@ -367,50 +391,59 @@ for (name1, equal), (name2, group) in zip(equals, groups):
 # %%
 import proplot as pplt
 import numpy as np
+
 N = 50
 M = 40
 state = np.random.RandomState(51423)
-cycle = pplt.Cycle('grays_r', M, left=0.1, right=0.8)
+cycle = pplt.Cycle("grays_r", M, left=0.1, right=0.8)
 datas = []
 for scale in (1, 3, 7, 0.2):
-    data = scale * (state.rand(N, M) - 0.5).cumsum(axis=0)[N // 2:, :]
+    data = scale * (state.rand(N, M) - 0.5).cumsum(axis=0)[N // 2 :, :]
     datas.append(data)
 
 # Plots with different sharing and spanning settings
 # Note that span=True and share=True are the defaults
 spans = (False, False, True, True)
-shares = (False, 'labels', 'limits', True)
+shares = (False, "labels", "limits", True)
 for i, (span, share) in enumerate(zip(spans, shares)):
     fig = pplt.figure(refaspect=1, refwidth=1.06, spanx=span, sharey=share)
     axs = fig.subplots(ncols=4)
     for ax, data in zip(axs, datas):
-        on = ('off', 'on')[int(span)]
+        on = ("off", "on")[int(span)]
         ax.plot(data, cycle=cycle)
         ax.format(
-            grid=False, xlabel='spanning axis', ylabel='shared axis',
-            suptitle=f'Sharing mode {share!r} (level {i}) with spanning labels {on}'
+            grid=False,
+            xlabel="spanning axis",
+            ylabel="shared axis",
+            suptitle=f"Sharing mode {share!r} (level {i}) with spanning labels {on}",
         )
 
 # %%
 import proplot as pplt
 import numpy as np
+
 state = np.random.RandomState(51423)
 
 # Plots with minimum and maximum sharing settings
 # Note that all x and y axis limits and ticks are identical
 spans = (False, True)
-shares = (False, 'all')
-titles = ('Minimum sharing', 'Maximum sharing')
+shares = (False, "all")
+titles = ("Minimum sharing", "Maximum sharing")
 for span, share, title in zip(spans, shares, titles):
     fig = pplt.figure(refwidth=1, span=span, share=share)
     axs = fig.subplots(nrows=4, ncols=4)
     for ax in axs:
         data = (state.rand(100, 20) - 0.4).cumsum(axis=0)
-        ax.plot(data, cycle='Set3')
+        ax.plot(data, cycle="Set3")
     axs.format(
-        abc=True, abcloc='ul', suptitle=title,
-        xlabel='xlabel', ylabel='ylabel',
-        grid=False, xticks=25, yticks=5
+        abc=True,
+        abcloc="ul",
+        suptitle=title,
+        xlabel="xlabel",
+        ylabel="ylabel",
+        grid=False,
+        xticks=25,
+        yticks=5,
     )
 
 
@@ -449,17 +482,27 @@ for span, share, title in zip(spans, shares, titles):
 # %%
 import proplot as pplt
 import numpy as np
-with pplt.rc.context(fontsize='12px'):  # depends on rc['figure.dpi']
+
+with pplt.rc.context(fontsize="12px"):  # depends on rc['figure.dpi']
     fig, axs = pplt.subplots(
-        ncols=3, figwidth='15cm', figheight='3in',
-        wspace=('10pt', '20pt'), right='10mm',
+        ncols=3,
+        figwidth="15cm",
+        figheight="3in",
+        wspace=("10pt", "20pt"),
+        right="10mm",
     )
     cb = fig.colorbar(
-        'Mono', loc='b', extend='both', label='colorbar',
-        width='2em', extendsize='3em', shrink=0.8,
+        "Mono",
+        loc="b",
+        extend="both",
+        label="colorbar",
+        width="2em",
+        extendsize="3em",
+        shrink=0.8,
     )
-    pax = axs[2].panel_axes('r', width='5en')
+    pax = axs[2].panel_axes("r", width="5en")
 axs.format(
-    suptitle='Arguments with arbitrary units',
-    xlabel='x axis', ylabel='y axis',
+    suptitle="Arguments with arbitrary units",
+    xlabel="x axis",
+    ylabel="y axis",
 )

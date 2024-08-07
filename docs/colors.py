@@ -55,6 +55,7 @@
 
 # %%
 import proplot as pplt
+
 fig, axs = pplt.show_colors()
 
 
@@ -87,32 +88,33 @@ import numpy as np
 state = np.random.RandomState(51423)
 fig, axs = pplt.subplots(ncols=3, axwidth=2)
 axs.format(
-    suptitle='Modifying colors',
-    toplabels=('Shifted hue', 'Scaled luminance', 'Scaled saturation'),
-    toplabelweight='normal',
-    xformatter='none', yformatter='none',
+    suptitle="Modifying colors",
+    toplabels=("Shifted hue", "Scaled luminance", "Scaled saturation"),
+    toplabelweight="normal",
+    xformatter="none",
+    yformatter="none",
 )
 
 # Shifted hue
 N = 50
 fmt = pplt.SimpleFormatter()
-marker = 'o'
+marker = "o"
 for shift in (0, -60, 60):
     x, y = state.rand(2, N)
-    color = pplt.shift_hue('grass', shift)
-    axs[0].scatter(x, y, marker=marker, c=color, legend='b', label=fmt(shift))
+    color = pplt.shift_hue("grass", shift)
+    axs[0].scatter(x, y, marker=marker, c=color, legend="b", label=fmt(shift))
 
 # Scaled luminance
 for scale in (0.2, 1, 2):
     x, y = state.rand(2, N)
-    color = pplt.scale_luminance('bright red', scale)
-    axs[1].scatter(x, y, marker=marker, c=color, legend='b', label=fmt(scale))
+    color = pplt.scale_luminance("bright red", scale)
+    axs[1].scatter(x, y, marker=marker, c=color, legend="b", label=fmt(scale))
 
 # Scaled saturation
 for scale in (0, 1, 3):
     x, y = state.rand(2, N)
-    color = pplt.scale_saturation('ocean blue', scale)
-    axs[2].scatter(x, y, marker=marker, c=color, legend='b', label=fmt(scale))
+    color = pplt.scale_saturation("ocean blue", scale)
+    axs[2].scatter(x, y, marker=marker, c=color, legend="b", label=fmt(scale))
 
 # %% [raw] raw_mimetype="text/restructuredtext"
 # .. _ug_colors_cmaps:
@@ -140,34 +142,44 @@ state = np.random.RandomState(51423)
 fig = pplt.figure(refwidth=2.2, share=False)
 
 # Drawing from colormaps
-name = 'Deep'
+name = "Deep"
 idxs = pplt.arange(0, 1, 0.2)
 state.shuffle(idxs)
-ax = fig.subplot(121, grid=True, title=f'Drawing from colormap {name!r}')
+ax = fig.subplot(121, grid=True, title=f"Drawing from colormap {name!r}")
 for idx in idxs:
     data = (state.rand(20) - 0.4).cumsum()
     h = ax.plot(
-        data, lw=5, color=(name, idx),
-        label=f'idx {idx:.1f}', legend='l', legend_kw={'ncols': 1}
+        data,
+        lw=5,
+        color=(name, idx),
+        label=f"idx {idx:.1f}",
+        legend="l",
+        legend_kw={"ncols": 1},
     )
-ax.colorbar(pplt.Colormap(name), loc='l', locator='none')
+ax.colorbar(pplt.Colormap(name), loc="l", locator="none")
 
 # Drawing from color cycles
-name = 'Qual1'
+name = "Qual1"
 idxs = np.arange(6)
 state.shuffle(idxs)
-ax = fig.subplot(122, title=f'Drawing from color cycle {name!r}')
+ax = fig.subplot(122, title=f"Drawing from color cycle {name!r}")
 for idx in idxs:
     data = (state.rand(20) - 0.4).cumsum()
     h = ax.plot(
-        data, lw=5, color=(name, idx),
-        label=f'idx {idx:.0f}', legend='r', legend_kw={'ncols': 1}
+        data,
+        lw=5,
+        color=(name, idx),
+        label=f"idx {idx:.0f}",
+        legend="r",
+        legend_kw={"ncols": 1},
     )
-ax.colorbar(pplt.Colormap(name), loc='r', locator='none')
+ax.colorbar(pplt.Colormap(name), loc="r", locator="none")
 fig.format(
-    abc='A.', titleloc='l',
-    suptitle='On-the-fly color selections',
-    xformatter='null', yformatter='null',
+    abc="A.",
+    titleloc="l",
+    suptitle="On-the-fly color selections",
+    xformatter="null",
+    yformatter="null",
 )
 
 

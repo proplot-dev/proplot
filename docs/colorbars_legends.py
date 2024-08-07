@@ -80,27 +80,30 @@
 # %%
 import proplot as pplt
 import numpy as np
+
 state = np.random.RandomState(51423)
 fig = pplt.figure(share=False, refwidth=2.3)
 
 # Colorbars
-ax = fig.subplot(121, title='Axes colorbars')
+ax = fig.subplot(121, title="Axes colorbars")
 data = state.rand(10, 10)
-m = ax.heatmap(data, cmap='dusk')
-ax.colorbar(m, loc='r')
-ax.colorbar(m, loc='t')  # title is automatically adjusted
-ax.colorbar(m, loc='ll', label='colorbar label')  # inset colorbar demonstration
+m = ax.heatmap(data, cmap="dusk")
+ax.colorbar(m, loc="r")
+ax.colorbar(m, loc="t")  # title is automatically adjusted
+ax.colorbar(m, loc="ll", label="colorbar label")  # inset colorbar demonstration
 
 # Legends
-ax = fig.subplot(122, title='Axes legends', titlepad='0em')
+ax = fig.subplot(122, title="Axes legends", titlepad="0em")
 data = (state.rand(10, 5) - 0.5).cumsum(axis=0)
-hs = ax.plot(data, lw=3, cycle='ggplot', labels=list('abcde'))
-ax.legend(loc='ll', label='legend label')  # automatically infer handles and labels
-ax.legend(hs, loc='t', ncols=5, frame=False)  # automatically infer labels from handles
-ax.legend(hs, list('jklmn'), loc='r', ncols=1, frame=False)  # manually override labels
+hs = ax.plot(data, lw=3, cycle="ggplot", labels=list("abcde"))
+ax.legend(loc="ll", label="legend label")  # automatically infer handles and labels
+ax.legend(hs, loc="t", ncols=5, frame=False)  # automatically infer labels from handles
+ax.legend(hs, list("jklmn"), loc="r", ncols=1, frame=False)  # manually override labels
 fig.format(
-    abc=True, xlabel='xlabel', ylabel='ylabel',
-    suptitle='Colorbar and legend location demo'
+    abc=True,
+    xlabel="xlabel",
+    ylabel="ylabel",
+    suptitle="Colorbar and legend location demo",
 )
 
 # %% [raw] raw_mimetype="text/restructuredtext"
@@ -132,60 +135,80 @@ fig.format(
 
 # %%
 import proplot as pplt
-labels = list('xyzpq')
+
+labels = list("xyzpq")
 state = np.random.RandomState(51423)
-fig = pplt.figure(share=0, refwidth=2.3, suptitle='On-the-fly colorbar and legend demo')
+fig = pplt.figure(share=0, refwidth=2.3, suptitle="On-the-fly colorbar and legend demo")
 
 # Legends
 data = (state.rand(30, 10) - 0.5).cumsum(axis=0)
-ax = fig.subplot(121, title='On-the-fly legend')
+ax = fig.subplot(121, title="On-the-fly legend")
 ax.plot(  # add all at once
-    data[:, :5], lw=2, cycle='Reds1', cycle_kw={'ls': ('-', '--'), 'left': 0.1},
-    labels=labels, legend='b', legend_kw={'title': 'legend title'}
+    data[:, :5],
+    lw=2,
+    cycle="Reds1",
+    cycle_kw={"ls": ("-", "--"), "left": 0.1},
+    labels=labels,
+    legend="b",
+    legend_kw={"title": "legend title"},
 )
 for i in range(5):
     ax.plot(  # add one-by-one
-        data[:, 5 + i], label=labels[i], linewidth=2,
-        cycle='Blues1', cycle_kw={'N': 5, 'ls': ('-', '--'), 'left': 0.1},
-        colorbar='ul', colorbar_kw={'label': 'colorbar from lines'}
+        data[:, 5 + i],
+        label=labels[i],
+        linewidth=2,
+        cycle="Blues1",
+        cycle_kw={"N": 5, "ls": ("-", "--"), "left": 0.1},
+        colorbar="ul",
+        colorbar_kw={"label": "colorbar from lines"},
     )
 
 # Colorbars
-ax = fig.subplot(122, title='On-the-fly colorbar')
+ax = fig.subplot(122, title="On-the-fly colorbar")
 data = state.rand(8, 8)
 ax.contourf(
-    data, cmap='Reds1', extend='both', colorbar='b',
-    colorbar_kw={'length': 0.8, 'label': 'colorbar label'},
+    data,
+    cmap="Reds1",
+    extend="both",
+    colorbar="b",
+    colorbar_kw={"length": 0.8, "label": "colorbar label"},
 )
 ax.contour(
-    data, color='gray7', lw=1.5,
-    label='contour', legend='ul', legend_kw={'label': 'legend from contours'},
+    data,
+    color="gray7",
+    lw=1.5,
+    label="contour",
+    legend="ul",
+    legend_kw={"label": "legend from contours"},
 )
 
 # %%
 import proplot as pplt
 import numpy as np
+
 N = 10
 state = np.random.RandomState(51423)
 fig, axs = pplt.subplots(
-    nrows=2, share=False,
-    refwidth='55mm', panelpad='1em',
-    suptitle='Stacked colorbars demo'
+    nrows=2,
+    share=False,
+    refwidth="55mm",
+    panelpad="1em",
+    suptitle="Stacked colorbars demo",
 )
 
 # Repeat for both axes
-args1 = (0, 0.5, 1, 1, 'grays', 0.5)
-args2 = (0, 0, 0.5, 0.5, 'reds', 1)
-args3 = (0.5, 0, 1, 0.5, 'blues', 2)
+args1 = (0, 0.5, 1, 1, "grays", 0.5)
+args2 = (0, 0, 0.5, 0.5, "reds", 1)
+args3 = (0.5, 0, 1, 0.5, "blues", 2)
 for j, ax in enumerate(axs):
-    ax.format(xlabel='data', xlocator=np.linspace(0, 0.8, 5), title=f'Subplot #{j+1}')
+    ax.format(xlabel="data", xlocator=np.linspace(0, 0.8, 5), title=f"Subplot #{j+1}")
     for i, (x0, y0, x1, y1, cmap, scale) in enumerate((args1, args2, args3)):
         if j == 1 and i == 0:
             continue
         data = state.rand(N, N) * scale
         x, y = np.linspace(x0, x1, N + 1), np.linspace(y0, y1, N + 1)
         m = ax.pcolormesh(x, y, data, cmap=cmap, levels=np.linspace(0, scale, 11))
-        ax.colorbar(m, loc='l', label=f'dataset #{i + 1}')
+        ax.colorbar(m, loc="l", label=f"dataset #{i + 1}")
 
 
 # %% [raw] raw_mimetype="text/restructuredtext"
@@ -212,50 +235,54 @@ for j, ax in enumerate(axs):
 # %%
 import proplot as pplt
 import numpy as np
+
 state = np.random.RandomState(51423)
 fig, axs = pplt.subplots(ncols=3, nrows=3, refwidth=1.4)
 for ax in axs:
     m = ax.pcolormesh(
-        state.rand(20, 20), cmap='grays',
-        levels=np.linspace(0, 1, 11), extend='both'
+        state.rand(20, 20), cmap="grays", levels=np.linspace(0, 1, 11), extend="both"
     )
 fig.format(
-    suptitle='Figure colorbars and legends demo',
-    abc='a.', abcloc='l', xlabel='xlabel', ylabel='ylabel'
+    suptitle="Figure colorbars and legends demo",
+    abc="a.",
+    abcloc="l",
+    xlabel="xlabel",
+    ylabel="ylabel",
 )
-fig.colorbar(m, label='column 1', ticks=0.5, loc='b', col=1)
-fig.colorbar(m, label='columns 2 and 3', ticks=0.2, loc='b', cols=(2, 3))
-fig.colorbar(m, label='stacked colorbar', ticks=0.1, loc='b', minorticks=0.05)
-fig.colorbar(m, label='colorbar with length <1', ticks=0.1, loc='r', length=0.7)
+fig.colorbar(m, label="column 1", ticks=0.5, loc="b", col=1)
+fig.colorbar(m, label="columns 2 and 3", ticks=0.2, loc="b", cols=(2, 3))
+fig.colorbar(m, label="stacked colorbar", ticks=0.1, loc="b", minorticks=0.05)
+fig.colorbar(m, label="colorbar with length <1", ticks=0.1, loc="r", length=0.7)
 
 # %%
 import proplot as pplt
 import numpy as np
+
 state = np.random.RandomState(51423)
 fig, axs = pplt.subplots(
-    ncols=2, nrows=2, order='F', refwidth=1.7, wspace=2.5, share=False
+    ncols=2, nrows=2, order="F", refwidth=1.7, wspace=2.5, share=False
 )
 
 # Plot data
 data = (state.rand(50, 50) - 0.1).cumsum(axis=0)
 for ax in axs[:2]:
-    m = ax.contourf(data, cmap='grays', extend='both')
+    m = ax.contourf(data, cmap="grays", extend="both")
 hs = []
-colors = pplt.get_colors('grays', 5)
-for abc, color in zip('ABCDEF', colors):
+colors = pplt.get_colors("grays", 5)
+for abc, color in zip("ABCDEF", colors):
     data = state.rand(10)
     for ax in axs[2:]:
-        h, = ax.plot(data, color=color, lw=3, label=f'line {abc}')
+        (h,) = ax.plot(data, color=color, lw=3, label=f"line {abc}")
     hs.append(h)
 
 # Add colorbars and legends
-fig.colorbar(m, length=0.8, label='colorbar label', loc='b', col=1, locator=5)
-fig.colorbar(m, label='colorbar label', loc='l')
-fig.legend(hs, ncols=2, center=True, frame=False, loc='b', col=2)
-fig.legend(hs, ncols=1, label='legend label', frame=False, loc='r')
-fig.format(abc='A', abcloc='ul', suptitle='Figure colorbars and legends demo')
-for ax, title in zip(axs, ('2D {} #1', '2D {} #2', 'Line {} #1', 'Line {} #2')):
-    ax.format(xlabel='xlabel', title=title.format('dataset'))
+fig.colorbar(m, length=0.8, label="colorbar label", loc="b", col=1, locator=5)
+fig.colorbar(m, label="colorbar label", loc="l")
+fig.legend(hs, ncols=2, center=True, frame=False, loc="b", col=2)
+fig.legend(hs, ncols=1, label="legend label", frame=False, loc="r")
+fig.format(abc="A", abcloc="ul", suptitle="Figure colorbars and legends demo")
+for ax, title in zip(axs, ("2D {} #1", "2D {} #2", "Line {} #1", "Line {} #2")):
+    ax.format(xlabel="xlabel", title=title.format("dataset"))
 
 
 # %% [raw] raw_mimetype="text/restructuredtext"
@@ -308,39 +335,42 @@ for ax, title in zip(axs, ('2D {} #1', '2D {} #2', 'Line {} #1', 'Line {} #2')):
 # %%
 import proplot as pplt
 import numpy as np
+
 fig = pplt.figure(share=False, refwidth=2)
 
 # Colorbars from lines
 ax = fig.subplot(121)
 state = np.random.RandomState(51423)
 data = 1 + (state.rand(12, 10) - 0.45).cumsum(axis=0)
-cycle = pplt.Cycle('algae')
+cycle = pplt.Cycle("algae")
 hs = ax.line(
-    data, lw=4, cycle=cycle, colorbar='lr',
-    colorbar_kw={'length': '8em', 'label': 'line colorbar'}
+    data,
+    lw=4,
+    cycle=cycle,
+    colorbar="lr",
+    colorbar_kw={"length": "8em", "label": "line colorbar"},
 )
-ax.colorbar(
-    hs, loc='t', values=np.arange(0, 10),
-    label='line colorbar', ticks=2
-)
+ax.colorbar(hs, loc="t", values=np.arange(0, 10), label="line colorbar", ticks=2)
 
 # Colorbars from a mappable
 ax = fig.subplot(122)
-m = ax.contourf(
-    data.T, extend='both', cmap='algae',
-    levels=pplt.arange(0, 3, 0.5)
-)
+m = ax.contourf(data.T, extend="both", cmap="algae", levels=pplt.arange(0, 3, 0.5))
 fig.colorbar(
-    m, loc='r', length=1,  # length is relative
-    label='interior ticks', tickloc='left'
+    m, loc="r", length=1, label="interior ticks", tickloc="left"  # length is relative
 )
 ax.colorbar(
-    m, loc='ul', length=6,  # length is em widths
-    label='inset colorbar', tickminor=True, alpha=0.5,
+    m,
+    loc="ul",
+    length=6,  # length is em widths
+    label="inset colorbar",
+    tickminor=True,
+    alpha=0.5,
 )
 fig.format(
-    suptitle='Colorbar formatting demo',
-    xlabel='xlabel', ylabel='ylabel', titleabove=False
+    suptitle="Colorbar formatting demo",
+    xlabel="xlabel",
+    ylabel="ylabel",
+    titleabove=False,
 )
 
 
@@ -400,9 +430,10 @@ fig.format(
 # %%
 import proplot as pplt
 import numpy as np
-pplt.rc.cycle = '538'
-fig, axs = pplt.subplots(ncols=2, span=False, share='labels', refwidth=2.3)
-labels = ['a', 'bb', 'ccc', 'dddd', 'eeeee']
+
+pplt.rc.cycle = "538"
+fig, axs = pplt.subplots(ncols=2, span=False, share="labels", refwidth=2.3)
+labels = ["a", "bb", "ccc", "dddd", "eeeee"]
 hs1, hs2 = [], []
 
 # On-the-fly legends
@@ -410,19 +441,26 @@ state = np.random.RandomState(51423)
 for i, label in enumerate(labels):
     data = (state.rand(20) - 0.45).cumsum(axis=0)
     h1 = axs[0].plot(
-        data, lw=4, label=label, legend='ul',
-        legend_kw={'order': 'F', 'title': 'column major'}
+        data,
+        lw=4,
+        label=label,
+        legend="ul",
+        legend_kw={"order": "F", "title": "column major"},
     )
     hs1.extend(h1)
     h2 = axs[1].plot(
-        data, lw=4, cycle='Set3', label=label, legend='r',
-        legend_kw={'lw': 8, 'ncols': 1, 'frame': False, 'title': 'modified\n handles'}
+        data,
+        lw=4,
+        cycle="Set3",
+        label=label,
+        legend="r",
+        legend_kw={"lw": 8, "ncols": 1, "frame": False, "title": "modified\n handles"},
     )
     hs2.extend(h2)
 
 # Outer legends
 ax = axs[0]
-ax.legend(hs1, loc='b', ncols=3, title='row major', order='C', facecolor='gray2')
+ax.legend(hs1, loc="b", ncols=3, title="row major", order="C", facecolor="gray2")
 ax = axs[1]
-ax.legend(hs2, loc='b', ncols=3, center=True, title='centered rows')
-axs.format(xlabel='xlabel', ylabel='ylabel', suptitle='Legend formatting demo')
+ax.legend(hs2, loc="b", ncols=3, center=True, title="centered rows")
+axs.format(xlabel="xlabel", ylabel="ylabel", suptitle="Legend formatting demo")

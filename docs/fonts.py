@@ -71,11 +71,13 @@
 
 # %%
 import proplot as pplt
-fig, axs = pplt.show_fonts(family='sans-serif')
+
+fig, axs = pplt.show_fonts(family="sans-serif")
 
 # %%
 import proplot as pplt
-fig, axs = pplt.show_fonts(family='tex-gyre')
+
+fig, axs = pplt.show_fonts(family="tex-gyre")
 
 # %% [raw] raw_mimetype="text/restructuredtext"
 # .. _ug_fonts_math:
@@ -119,7 +121,8 @@ fig, axs = pplt.show_fonts(family='tex-gyre')
 
 # %%
 import proplot as pplt
-fig, axs = pplt.show_fonts(family='sans-serif', math=True)
+
+fig, axs = pplt.show_fonts(family="sans-serif", math=True)
 
 # %% [raw] raw_mimetype="text/restructuredtext"
 # .. _ug_fonts_user:

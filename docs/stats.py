@@ -68,8 +68,8 @@ state = np.random.RandomState(51423)
 data = state.rand(20, 8).cumsum(axis=0).cumsum(axis=1)[:, ::-1]
 data = data + 20 * state.normal(size=(20, 8)) + 30
 data = pd.DataFrame(data, columns=np.arange(0, 16, 2))
-data.columns.name = 'column number'
-data.name = 'variable'
+data.columns.name = "column number"
+data.name = "variable"
 
 # Calculate error data
 # Passed to 'errdata' in the 3rd subplot example
@@ -85,51 +85,65 @@ import numpy as np
 # Loop through "vertical" and "horizontal" versions
 varray = [[1], [2], [3]]
 harray = [[1, 1], [2, 3], [2, 3]]
-for orientation, array in zip(('vertical', 'horizontal'), (varray, harray)):
+for orientation, array in zip(("vertical", "horizontal"), (varray, harray)):
     # Figure
     fig = pplt.figure(refwidth=4, refaspect=1.5, share=False)
     axs = fig.subplots(array, hratios=(2, 1, 1))
-    axs.format(abc='A.', suptitle=f'Indicating {orientation} error bounds')
+    axs.format(abc="A.", suptitle=f"Indicating {orientation} error bounds")
 
     # Medians and percentile ranges
     ax = axs[0]
     kw = dict(
-        color='light red', edgecolor='k', legend=True,
-        median=True, barpctile=90, boxpctile=True,
+        color="light red",
+        edgecolor="k",
+        legend=True,
+        median=True,
+        barpctile=90,
+        boxpctile=True,
         # median=True, barpctile=(5, 95), boxpctile=(25, 75)  # equivalent
     )
-    if orientation == 'horizontal':
+    if orientation == "horizontal":
         ax.barh(data, **kw)
     else:
         ax.bar(data, **kw)
-    ax.format(title='Bar plot')
+    ax.format(title="Bar plot")
 
     # Means and standard deviation range
     ax = axs[1]
     kw = dict(
-        color='denim', marker='x', markersize=8**2, linewidth=0.8,
-        label='mean', shadelabel=True,
-        mean=True, shadestd=1,
+        color="denim",
+        marker="x",
+        markersize=8**2,
+        linewidth=0.8,
+        label="mean",
+        shadelabel=True,
+        mean=True,
+        shadestd=1,
         # mean=True, shadestd=(-1, 1)  # equivalent
     )
-    if orientation == 'horizontal':
-        ax.scatterx(data, legend='b', legend_kw={'ncol': 1}, **kw)
+    if orientation == "horizontal":
+        ax.scatterx(data, legend="b", legend_kw={"ncol": 1}, **kw)
     else:
-        ax.scatter(data, legend='ll', **kw)
-    ax.format(title='Marker plot')
+        ax.scatter(data, legend="ll", **kw)
+    ax.format(title="Marker plot")
 
     # User-defined error bars
     ax = axs[2]
     kw = dict(
-        shadedata=shadedata, fadedata=fadedata,
-        label='mean', shadelabel='50% CI', fadelabel='90% CI',
-        color='ocean blue', barzorder=0, boxmarker=False,
+        shadedata=shadedata,
+        fadedata=fadedata,
+        label="mean",
+        shadelabel="50% CI",
+        fadelabel="90% CI",
+        color="ocean blue",
+        barzorder=0,
+        boxmarker=False,
     )
-    if orientation == 'horizontal':
-        ax.linex(means, legend='b', legend_kw={'ncol': 1}, **kw)
+    if orientation == "horizontal":
+        ax.linex(means, legend="b", legend_kw={"ncol": 1}, **kw)
     else:
-        ax.line(means, legend='ll', **kw)
-    ax.format(title='Line plot')
+        ax.line(means, legend="ll", **kw)
+    ax.format(title="Line plot")
 
 
 # %% [raw] raw_mimetype="text/restructuredtext"
@@ -158,31 +172,28 @@ import pandas as pd
 N = 500
 state = np.random.RandomState(51423)
 data1 = state.normal(size=(N, 5)) + 2 * (state.rand(N, 5) - 0.5) * np.arange(5)
-data1 = pd.DataFrame(data1, columns=pd.Index(list('abcde'), name='label'))
+data1 = pd.DataFrame(data1, columns=pd.Index(list("abcde"), name="label"))
 data2 = state.rand(100, 7)
-data2 = pd.DataFrame(data2, columns=pd.Index(list('abcdefg'), name='label'))
+data2 = pd.DataFrame(data2, columns=pd.Index(list("abcdefg"), name="label"))
 
 # Figure
 fig, axs = pplt.subplots([[1, 1, 2, 2], [0, 3, 3, 0]], span=False)
-axs.format(
-    abc='A.', titleloc='l', grid=False,
-    suptitle='Boxes and violins demo'
-)
+axs.format(abc="A.", titleloc="l", grid=False, suptitle="Boxes and violins demo")
 
 # Box plots
 ax = axs[0]
-obj1 = ax.box(data1, means=True, marker='x', meancolor='r', fillcolor='gray4')
-ax.format(title='Box plots')
+obj1 = ax.box(data1, means=True, marker="x", meancolor="r", fillcolor="gray4")
+ax.format(title="Box plots")
 
 # Violin plots
 ax = axs[1]
-obj2 = ax.violin(data1, fillcolor='gray6', means=True, points=100)
-ax.format(title='Violin plots')
+obj2 = ax.violin(data1, fillcolor="gray6", means=True, points=100)
+ax.format(title="Violin plots")
 
 # Boxes with different colors
 ax = axs[2]
-ax.boxh(data2, cycle='pastel2')
-ax.format(title='Multiple colors', ymargin=0.15)
+ax.boxh(data2, cycle="pastel2")
+ax.format(title="Multiple colors", ymargin=0.15)
 
 
 # %% [raw] raw_mimetype="text/restructuredtext" tags=[]
@@ -220,10 +231,16 @@ x = state.normal(size=(M, N)) + state.rand(M)[:, None] * np.arange(N) + 2 * np.a
 
 # Sample overlayed histograms
 fig, ax = pplt.subplots(refwidth=4, refaspect=(3, 2))
-ax.format(suptitle='Overlaid histograms', xlabel='distribution', ylabel='count')
+ax.format(suptitle="Overlaid histograms", xlabel="distribution", ylabel="count")
 res = ax.hist(
-    x, pplt.arange(-3, 8, 0.2), filled=True, alpha=0.7, edgecolor='k',
-    cycle=('indigo9', 'gray3', 'red9'), labels=list('abc'), legend='ul',
+    x,
+    pplt.arange(-3, 8, 0.2),
+    filled=True,
+    alpha=0.7,
+    edgecolor="k",
+    cycle=("indigo9", "gray3", "red9"),
+    labels=list("abc"),
+    legend="ul",
 )
 
 # %%
@@ -240,20 +257,30 @@ bins = pplt.arange(-3, 3, 0.25)
 # Histogram with marginal distributions
 fig, axs = pplt.subplots(ncols=2, refwidth=2.3)
 axs.format(
-    abc='A.', abcloc='l', titleabove=True,
-    ylabel='y axis', suptitle='Histograms with marginal distributions'
+    abc="A.",
+    abcloc="l",
+    titleabove=True,
+    ylabel="y axis",
+    suptitle="Histograms with marginal distributions",
 )
-colors = ('indigo9', 'red9')
-titles = ('Group 1', 'Group 2')
-for ax, which, color, title in zip(axs, 'lr', colors, titles):
+colors = ("indigo9", "red9")
+titles = ("Group 1", "Group 2")
+for ax, which, color, title in zip(axs, "lr", colors, titles):
     ax.hist2d(
-        x, y, bins, vmin=0, vmax=10, levels=50,
-        cmap=color, colorbar='b', colorbar_kw={'label': 'count'}
+        x,
+        y,
+        bins,
+        vmin=0,
+        vmax=10,
+        levels=50,
+        cmap=color,
+        colorbar="b",
+        colorbar_kw={"label": "count"},
     )
     color = pplt.scale_luminance(color, 1.5)  # histogram colors
     px = ax.panel(which, space=0)
-    px.histh(y, bins, color=color, fill=True, ec='k')
-    px.format(grid=False, xlocator=[], xreverse=(which == 'l'))
-    px = ax.panel('t', space=0)
-    px.hist(x, bins, color=color, fill=True, ec='k')
-    px.format(grid=False, ylocator=[], title=title, titleloc='l')
+    px.histh(y, bins, color=color, fill=True, ec="k")
+    px.format(grid=False, xlocator=[], xreverse=(which == "l"))
+    px = ax.panel("t", space=0)
+    px.hist(x, bins, color=color, fill=True, ec="k")
+    px.format(grid=False, ylocator=[], title=title, titleloc="l")

@@ -78,9 +78,10 @@
 # Simple subplot
 import numpy as np
 import proplot as pplt
+
 state = np.random.RandomState(51423)
 data = 2 * (state.rand(100, 5) - 0.5).cumsum(axis=0)
-fig, ax = pplt.subplot(suptitle='Single subplot', xlabel='x axis', ylabel='y axis')
+fig, ax = pplt.subplot(suptitle="Single subplot", xlabel="x axis", ylabel="y axis")
 # fig = pplt.figure(suptitle='Single subplot')  # equivalent to above
 # ax = fig.subplot(xlabel='x axis', ylabel='y axis')
 ax.plot(data, lw=2)
@@ -145,6 +146,7 @@ ax.plot(data, lw=2)
 # Simple subplot grid
 import numpy as np
 import proplot as pplt
+
 state = np.random.RandomState(51423)
 data = 2 * (state.rand(100, 5) - 0.5).cumsum(axis=0)
 fig = pplt.figure()
@@ -152,8 +154,7 @@ ax = fig.subplot(121)
 ax.plot(data, lw=2)
 ax = fig.subplot(122)
 fig.format(
-    suptitle='Simple subplot grid', title='Title',
-    xlabel='x axis', ylabel='y axis'
+    suptitle="Simple subplot grid", title="Title", xlabel="x axis", ylabel="y axis"
 )
 # fig.save('~/example1.png')  # save the figure
 # fig.savefig('~/example1.png')  # alternative
@@ -163,6 +164,7 @@ fig.format(
 # Complex grid
 import numpy as np
 import proplot as pplt
+
 state = np.random.RandomState(51423)
 data = 2 * (state.rand(100, 5) - 0.5).cumsum(axis=0)
 array = [  # the "picture" (0 == nothing, 1 == subplot A, 2 == subplot B, etc.)
@@ -172,8 +174,11 @@ array = [  # the "picture" (0 == nothing, 1 == subplot A, 2 == subplot B, etc.)
 fig = pplt.figure(refwidth=1.8)
 axs = fig.subplots(array)
 axs.format(
-    abc=True, abcloc='ul', suptitle='Complex subplot grid',
-    xlabel='xlabel', ylabel='ylabel'
+    abc=True,
+    abcloc="ul",
+    suptitle="Complex subplot grid",
+    xlabel="xlabel",
+    ylabel="ylabel",
 )
 axs[2].plot(data, lw=2)
 # fig.save('~/example2.png')  # save the figure
@@ -184,6 +189,7 @@ axs[2].plot(data, lw=2)
 # Really complex grid
 import numpy as np
 import proplot as pplt
+
 state = np.random.RandomState(51423)
 data = 2 * (state.rand(100, 5) - 0.5).cumsum(axis=0)
 array = [  # the "picture" (1 == subplot A, 2 == subplot B, etc.)
@@ -194,8 +200,7 @@ array = [  # the "picture" (1 == subplot A, 2 == subplot B, etc.)
 ]
 fig, axs = pplt.subplots(array, figwidth=5, span=False)
 axs.format(
-    suptitle='Really complex subplot grid',
-    xlabel='xlabel', ylabel='ylabel', abc=True
+    suptitle="Really complex subplot grid", xlabel="xlabel", ylabel="ylabel", abc=True
 )
 axs[0].plot(data, lw=2)
 # fig.save('~/example3.png')  # save the figure
@@ -205,6 +210,7 @@ axs[0].plot(data, lw=2)
 # Using a GridSpec
 import numpy as np
 import proplot as pplt
+
 state = np.random.RandomState(51423)
 data = 2 * (state.rand(100, 5) - 0.5).cumsum(axis=0)
 gs = pplt.GridSpec(nrows=2, ncols=2, pad=1)
@@ -214,8 +220,7 @@ ax.plot(data, lw=2)
 ax = fig.subplot(gs[0, 1])
 ax = fig.subplot(gs[1, 1])
 fig.format(
-    suptitle='Subplot grid with a GridSpec',
-    xlabel='xlabel', ylabel='ylabel', abc=True
+    suptitle="Subplot grid with a GridSpec", xlabel="xlabel", ylabel="ylabel", abc=True
 )
 # fig.save('~/example4.png')  # save the figure
 # fig.savefig('~/example4.png')  # alternative
@@ -265,29 +270,30 @@ fig.format(
 # %%
 import proplot as pplt
 import numpy as np
+
 state = np.random.RandomState(51423)
 
 # Selected subplots in a simple grid
 fig, axs = pplt.subplots(ncols=4, nrows=4, refwidth=1.2, span=True)
-axs.format(xlabel='xlabel', ylabel='ylabel', suptitle='Simple SubplotGrid')
+axs.format(xlabel="xlabel", ylabel="ylabel", suptitle="Simple SubplotGrid")
 axs.format(grid=False, xlim=(0, 50), ylim=(-4, 4))
-axs[:, 0].format(facecolor='blush', edgecolor='gray7', linewidth=1)  # eauivalent
-axs[:, 0].format(fc='blush', ec='gray7', lw=1)
-axs[0, :].format(fc='sky blue', ec='gray7', lw=1)
-axs[0].format(ec='black', fc='gray5', lw=1.4)
-axs[1:, 1:].format(fc='gray1')
+axs[:, 0].format(facecolor="blush", edgecolor="gray7", linewidth=1)  # eauivalent
+axs[:, 0].format(fc="blush", ec="gray7", lw=1)
+axs[0, :].format(fc="sky blue", ec="gray7", lw=1)
+axs[0].format(ec="black", fc="gray5", lw=1.4)
+axs[1:, 1:].format(fc="gray1")
 for ax in axs[1:, 1:]:
-    ax.plot((state.rand(50, 5) - 0.5).cumsum(axis=0), cycle='Grays', lw=2)
+    ax.plot((state.rand(50, 5) - 0.5).cumsum(axis=0), cycle="Grays", lw=2)
 
 # Selected subplots in a complex grid
 fig = pplt.figure(refwidth=1, refnum=5, span=False)
 axs = fig.subplots([[1, 1, 2], [3, 4, 2], [3, 4, 5]], hratios=[2.2, 1, 1])
-axs.format(xlabel='xlabel', ylabel='ylabel', suptitle='Complex SubplotGrid')
-axs[0].format(ec='black', fc='gray1', lw=1.4)
-axs[1, 1:].format(fc='blush')
-axs[1, :1].format(fc='sky blue')
-axs[-1, -1].format(fc='gray4', grid=False)
-axs[0].plot((state.rand(50, 10) - 0.5).cumsum(axis=0), cycle='Grays_r', lw=2)
+axs.format(xlabel="xlabel", ylabel="ylabel", suptitle="Complex SubplotGrid")
+axs[0].format(ec="black", fc="gray1", lw=1.4)
+axs[1, 1:].format(fc="blush")
+axs[1, :1].format(fc="sky blue")
+axs[-1, -1].format(fc="gray4", grid=False)
+axs[0].plot((state.rand(50, 10) - 0.5).cumsum(axis=0), cycle="Grays_r", lw=2)
 
 
 # %% [raw] raw_mimetype="text/restructuredtext"
@@ -332,17 +338,21 @@ state = np.random.RandomState(51423)
 data = N + (state.rand(N, N) - 0.55).cumsum(axis=0).cumsum(axis=1)
 
 # Example plots
-cycle = pplt.Cycle('greys', left=0.2, N=5)
+cycle = pplt.Cycle("greys", left=0.2, N=5)
 fig, axs = pplt.subplots(ncols=2, nrows=2, figwidth=5, share=False)
-axs[0].plot(data[:, :5], linewidth=2, linestyle='--', cycle=cycle)
-axs[1].scatter(data[:, :5], marker='x', cycle=cycle)
-axs[2].pcolormesh(data, cmap='greys')
-m = axs[3].contourf(data, cmap='greys')
+axs[0].plot(data[:, :5], linewidth=2, linestyle="--", cycle=cycle)
+axs[1].scatter(data[:, :5], marker="x", cycle=cycle)
+axs[2].pcolormesh(data, cmap="greys")
+m = axs[3].contourf(data, cmap="greys")
 axs.format(
-    abc='a.', titleloc='l', title='Title',
-    xlabel='xlabel', ylabel='ylabel', suptitle='Quick plotting demo'
+    abc="a.",
+    titleloc="l",
+    title="Title",
+    xlabel="xlabel",
+    ylabel="ylabel",
+    suptitle="Quick plotting demo",
 )
-fig.colorbar(m, loc='b', label='label')
+fig.colorbar(m, loc="b", label="label")
 
 
 # %% [raw] raw_mimetype="text/restructuredtext"
@@ -419,6 +429,7 @@ fig.colorbar(m, loc='b', label='label')
 # %%
 import proplot as pplt
 import numpy as np
+
 fig, axs = pplt.subplots(ncols=2, nrows=2, refwidth=2, share=False)
 state = np.random.RandomState(51423)
 N = 60
@@ -426,19 +437,31 @@ x = np.linspace(1, 10, N)
 y = (state.rand(N, 5) - 0.5).cumsum(axis=0)
 axs[0].plot(x, y, linewidth=1.5)
 axs.format(
-    suptitle='Format command demo',
-    abc='A.', abcloc='ul',
-    title='Main', ltitle='Left', rtitle='Right',  # different titles
-    ultitle='Title 1', urtitle='Title 2', lltitle='Title 3', lrtitle='Title 4',
-    toplabels=('Column 1', 'Column 2'),
-    leftlabels=('Row 1', 'Row 2'),
-    xlabel='xaxis', ylabel='yaxis',
-    xscale='log',
-    xlim=(1, 10), xticks=1,
-    ylim=(-3, 3), yticks=pplt.arange(-3, 3),
-    yticklabels=('a', 'bb', 'c', 'dd', 'e', 'ff', 'g'),
-    ytickloc='both', yticklabelloc='both',
-    xtickdir='inout', xtickminor=False, ygridminor=True,
+    suptitle="Format command demo",
+    abc="A.",
+    abcloc="ul",
+    title="Main",
+    ltitle="Left",
+    rtitle="Right",  # different titles
+    ultitle="Title 1",
+    urtitle="Title 2",
+    lltitle="Title 3",
+    lrtitle="Title 4",
+    toplabels=("Column 1", "Column 2"),
+    leftlabels=("Row 1", "Row 2"),
+    xlabel="xaxis",
+    ylabel="yaxis",
+    xscale="log",
+    xlim=(1, 10),
+    xticks=1,
+    ylim=(-3, 3),
+    yticks=pplt.arange(-3, 3),
+    yticklabels=("a", "bb", "c", "dd", "e", "ff", "g"),
+    ytickloc="both",
+    yticklabelloc="both",
+    xtickdir="inout",
+    xtickminor=False,
+    ygridminor=True,
 )
 
 # %% [raw] raw_mimetype="text/restructuredtext"
@@ -473,34 +496,39 @@ import proplot as pplt
 import numpy as np
 
 # Update global settings in several different ways
-pplt.rc.metacolor = 'gray6'
-pplt.rc.update({'fontname': 'Source Sans Pro', 'fontsize': 11})
-pplt.rc['figure.facecolor'] = 'gray3'
-pplt.rc.axesfacecolor = 'gray4'
+pplt.rc.metacolor = "gray6"
+pplt.rc.update({"fontname": "Source Sans Pro", "fontsize": 11})
+pplt.rc["figure.facecolor"] = "gray3"
+pplt.rc.axesfacecolor = "gray4"
 # pplt.rc.save()  # save the current settings to ~/.proplotrc
 
 # Apply settings to figure with context()
-with pplt.rc.context({'suptitle.size': 13}, toplabelcolor='gray6', metawidth=1.5):
-    fig = pplt.figure(figwidth=6, sharey='limits', span=False)
+with pplt.rc.context({"suptitle.size": 13}, toplabelcolor="gray6", metawidth=1.5):
+    fig = pplt.figure(figwidth=6, sharey="limits", span=False)
     axs = fig.subplots(ncols=2)
 
 # Plot lines with a custom cycler
 N, M = 100, 7
 state = np.random.RandomState(51423)
 values = np.arange(1, M + 1)
-cycle = pplt.get_colors('grays', M - 1) + ['red']
+cycle = pplt.get_colors("grays", M - 1) + ["red"]
 for i, ax in enumerate(axs):
     data = np.cumsum(state.rand(N, M) - 0.5, axis=0)
     lines = ax.plot(data, linewidth=3, cycle=cycle)
 
 # Apply settings to axes with format()
 axs.format(
-    grid=False, xlabel='xlabel', ylabel='ylabel',
-    toplabels=('Column 1', 'Column 2'),
-    suptitle='Rc settings demo',
-    suptitlecolor='gray7',
-    abc='[A]', abcloc='l',
-    title='Title', titleloc='r', titlecolor='gray7'
+    grid=False,
+    xlabel="xlabel",
+    ylabel="ylabel",
+    toplabels=("Column 1", "Column 2"),
+    suptitle="Rc settings demo",
+    suptitlecolor="gray7",
+    abc="[A]",
+    abcloc="l",
+    title="Title",
+    titleloc="r",
+    titlecolor="gray7",
 )
 
 # Reset persistent modifications from head of cell
@@ -510,6 +538,7 @@ pplt.rc.reset()
 # %%
 import proplot as pplt
 import numpy as np
+
 # pplt.rc.style = 'style'  # set the style everywhere
 
 # Sample data
@@ -518,10 +547,10 @@ data = state.rand(10, 5)
 
 # Set up figure
 fig, axs = pplt.subplots(ncols=2, nrows=2, span=False, share=False)
-axs.format(suptitle='Stylesheets demo')
-styles = ('ggplot', 'seaborn', '538', 'bmh')
+axs.format(suptitle="Stylesheets demo")
+styles = ("ggplot", "seaborn", "538", "bmh")
 
 # Apply different styles to different axes with format()
 for ax, style in zip(axs, styles):
-    ax.format(style=style, xlabel='xlabel', ylabel='ylabel', title=style)
+    ax.format(style=style, xlabel="xlabel", ylabel="ylabel", title=style)
     ax.plot(data, linewidth=3)

@@ -68,35 +68,35 @@ import numpy as np
 
 N = 5
 state = np.random.RandomState(51423)
-with pplt.rc.context({'axes.prop_cycle': pplt.Cycle('Grays', N=N, left=0.3)}):
+with pplt.rc.context({"axes.prop_cycle": pplt.Cycle("Grays", N=N, left=0.3)}):
     # Sample data
     x = np.linspace(-5, 5, N)
     y = state.rand(N, 5)
-    fig = pplt.figure(share=False, suptitle='Standardized input demonstration')
+    fig = pplt.figure(share=False, suptitle="Standardized input demonstration")
 
     # Plot by passing both x and y coordinates
-    ax = fig.subplot(121, title='Manual x coordinates')
+    ax = fig.subplot(121, title="Manual x coordinates")
     ax.area(x, -1 * y / N, stack=True)
     ax.bar(x, y, linewidth=0, alpha=1, width=0.8)
     ax.plot(x, y + 1, linewidth=2)
-    ax.scatter(x, y + 2, marker='s', markersize=5**2)
+    ax.scatter(x, y + 2, marker="s", markersize=5**2)
 
     # Plot by passing just y coordinates
     # Default x coordinates are inferred from DataFrame,
     # inferred from DataArray, or set to np.arange(0, y.shape[0])
-    ax = fig.subplot(122, title='Auto x coordinates')
+    ax = fig.subplot(122, title="Auto x coordinates")
     ax.area(-1 * y / N, stack=True)
     ax.bar(y, linewidth=0, alpha=1)
     ax.plot(y + 1, linewidth=2)
-    ax.scatter(y + 2, marker='s', markersize=5**2)
-    fig.format(xlabel='xlabel', ylabel='ylabel')
+    ax.scatter(y + 2, marker="s", markersize=5**2)
+    fig.format(xlabel="xlabel", ylabel="ylabel")
 
 # %%
 import proplot as pplt
 import numpy as np
 
 # Sample data
-cycle = pplt.Cycle('davos', right=0.8)
+cycle = pplt.Cycle("davos", right=0.8)
 state = np.random.RandomState(51423)
 N, M = 400, 20
 xmax = 20
@@ -107,21 +107,25 @@ y = 100 * (state.rand(N, M) - 0.42).cumsum(axis=0)
 fig = pplt.figure(refwidth=2.2, share=False)
 axs = fig.subplots([[0, 1, 1, 0], [2, 2, 3, 3]], wratios=(2, 1, 1, 2))
 axs[0].axvspan(
-    0, xmax, zorder=3, edgecolor='red', facecolor=pplt.set_alpha('red', 0.2),
+    0,
+    xmax,
+    zorder=3,
+    edgecolor="red",
+    facecolor=pplt.set_alpha("red", 0.2),
 )
 for i, ax in enumerate(axs):
     inbounds = i == 1
-    title = f'Restricted xlim inbounds={inbounds}'
-    title += ' (default)' if inbounds else ''
+    title = f"Restricted xlim inbounds={inbounds}"
+    title += " (default)" if inbounds else ""
     ax.format(
         xmax=(None if i == 0 else xmax),
-        title=('Default xlim' if i == 0 else title),
+        title=("Default xlim" if i == 0 else title),
     )
     ax.plot(x, y, cycle=cycle, inbounds=inbounds)
 fig.format(
-    xlabel='xlabel',
-    ylabel='ylabel',
-    suptitle='Default ylim restricted to in-bounds data'
+    xlabel="xlabel",
+    ylabel="ylabel",
+    suptitle="Default ylim restricted to in-bounds data",
 )
 
 
@@ -164,49 +168,43 @@ import pandas as pd
 
 # DataArray
 state = np.random.RandomState(51423)
-data = (
-    np.sin(np.linspace(0, 2 * np.pi, 20))[:, None]
-    + state.rand(20, 8).cumsum(axis=1)
-)
+data = np.sin(np.linspace(0, 2 * np.pi, 20))[:, None] + state.rand(20, 8).cumsum(axis=1)
 coords = {
-    'x': xr.DataArray(
+    "x": xr.DataArray(
         np.linspace(0, 1, 20),
-        dims=('x',),
-        attrs={'long_name': 'distance', 'units': 'km'}
+        dims=("x",),
+        attrs={"long_name": "distance", "units": "km"},
     ),
-    'num': xr.DataArray(
-        np.arange(0, 80, 10),
-        dims=('num',),
-        attrs={'long_name': 'parameter'}
-    )
+    "num": xr.DataArray(
+        np.arange(0, 80, 10), dims=("num",), attrs={"long_name": "parameter"}
+    ),
 }
 da = xr.DataArray(
-    data, dims=('x', 'num'), coords=coords, name='energy', attrs={'units': 'kJ'}
+    data, dims=("x", "num"), coords=coords, name="energy", attrs={"units": "kJ"}
 )
 
 # DataFrame
-data = (
-    (np.cos(np.linspace(0, 2 * np.pi, 20))**4)[:, None] + state.rand(20, 5) ** 2
-)
-ts = pd.date_range('1/1/2000', periods=20)
-df = pd.DataFrame(data, index=ts, columns=['foo', 'bar', 'baz', 'zap', 'baf'])
-df.name = 'data'
-df.index.name = 'date'
-df.columns.name = 'category'
+data = (np.cos(np.linspace(0, 2 * np.pi, 20)) ** 4)[:, None] + state.rand(20, 5) ** 2
+ts = pd.date_range("1/1/2000", periods=20)
+df = pd.DataFrame(data, index=ts, columns=["foo", "bar", "baz", "zap", "baf"])
+df.name = "data"
+df.index.name = "date"
+df.columns.name = "category"
 
 # %%
 import proplot as pplt
-fig = pplt.figure(share=False, suptitle='Automatic subplot formatting')
+
+fig = pplt.figure(share=False, suptitle="Automatic subplot formatting")
 
 # Plot DataArray
-cycle = pplt.Cycle('dark blue', space='hpl', N=da.shape[1])
+cycle = pplt.Cycle("dark blue", space="hpl", N=da.shape[1])
 ax = fig.subplot(121)
-ax.scatter(da, cycle=cycle, lw=3, colorbar='t', colorbar_kw={'locator': 20})
+ax.scatter(da, cycle=cycle, lw=3, colorbar="t", colorbar_kw={"locator": 20})
 
 # Plot Dataframe
-cycle = pplt.Cycle('dark green', space='hpl', N=df.shape[1])
+cycle = pplt.Cycle("dark green", space="hpl", N=df.shape[1])
 ax = fig.subplot(122)
-ax.plot(df, cycle=cycle, lw=3, legend='t', legend_kw={'frame': False})
+ax.plot(df, cycle=cycle, lw=3, legend="t", legend_kw={"frame": False})
 
 
 # %% [raw] raw_mimetype="text/restructuredtext"
@@ -244,25 +242,23 @@ data2 = (state.rand(M, N) - 0.48).cumsum(axis=1).cumsum(axis=0) * 1.5
 data1 += state.rand(M, N)
 data2 += state.rand(M, N)
 
-with pplt.rc.context({'lines.linewidth': 3}):
+with pplt.rc.context({"lines.linewidth": 3}):
     # Use property cycle for columns of 2D input data
     fig = pplt.figure(share=False)
-    ax = fig.subplot(121, title='Single plot call')
+    ax = fig.subplot(121, title="Single plot call")
     ax.plot(
         2 * data1 + data2,
-        cycle='black',  # cycle from monochromatic colormap
-        cycle_kw={'ls': ('-', '--', '-.', ':')}
+        cycle="black",  # cycle from monochromatic colormap
+        cycle_kw={"ls": ("-", "--", "-.", ":")},
     )
 
     # Use property cycle with successive plot() calls
-    ax = fig.subplot(122, title='Multiple plot calls')
+    ax = fig.subplot(122, title="Multiple plot calls")
     for i in range(data1.shape[1]):
-        ax.plot(data1[:, i], cycle='Reds', cycle_kw={'N': N, 'left': 0.3})
+        ax.plot(data1[:, i], cycle="Reds", cycle_kw={"N": N, "left": 0.3})
     for i in range(data1.shape[1]):
-        ax.plot(data2[:, i], cycle='Blues', cycle_kw={'N': N, 'left': 0.3})
-    fig.format(
-        xlabel='xlabel', ylabel='ylabel', suptitle='On-the-fly property cycles'
-    )
+        ax.plot(data2[:, i], cycle="Blues", cycle_kw={"N": N, "left": 0.3})
+    fig.format(xlabel="xlabel", ylabel="ylabel", suptitle="On-the-fly property cycles")
 
 
 # %% [raw] raw_mimetype="text/restructuredtext"
@@ -290,40 +286,41 @@ with pplt.rc.context({'lines.linewidth': 3}):
 # %%
 import proplot as pplt
 import numpy as np
+
 state = np.random.RandomState(51423)
 gs = pplt.GridSpec(nrows=3, ncols=2)
-fig = pplt.figure(refwidth=2.2, span=False, share='labels')
+fig = pplt.figure(refwidth=2.2, span=False, share="labels")
 
 # Vertical vs. horizontal
 data = (state.rand(10, 5) - 0.5).cumsum(axis=0)
-ax = fig.subplot(gs[0], title='Dependent x-axis')
-ax.line(data, lw=2.5, cycle='seaborn')
-ax = fig.subplot(gs[1], title='Dependent y-axis')
-ax.linex(data, lw=2.5, cycle='seaborn')
+ax = fig.subplot(gs[0], title="Dependent x-axis")
+ax.line(data, lw=2.5, cycle="seaborn")
+ax = fig.subplot(gs[1], title="Dependent y-axis")
+ax.linex(data, lw=2.5, cycle="seaborn")
 
 # Vertical lines
-gray = 'gray7'
+gray = "gray7"
 data = state.rand(20) - 0.5
-ax = fig.subplot(gs[2], title='Vertical lines')
+ax = fig.subplot(gs[2], title="Vertical lines")
 ax.area(data, color=gray, alpha=0.2)
 ax.vlines(data, negpos=True, lw=2)
 
 # Horizontal lines
-ax = fig.subplot(gs[3], title='Horizontal lines')
+ax = fig.subplot(gs[3], title="Horizontal lines")
 ax.areax(data, color=gray, alpha=0.2)
 ax.hlines(data, negpos=True, lw=2)
 
 # Step
-ax = fig.subplot(gs[4], title='Step plot')
+ax = fig.subplot(gs[4], title="Step plot")
 data = state.rand(20, 4).cumsum(axis=1).cumsum(axis=0)
-cycle = ('gray6', 'blue7', 'red7', 'gray4')
-ax.step(data, cycle=cycle, labels=list('ABCD'), legend='ul', legend_kw={'ncol': 2})
+cycle = ("gray6", "blue7", "red7", "gray4")
+ax.step(data, cycle=cycle, labels=list("ABCD"), legend="ul", legend_kw={"ncol": 2})
 
 # Stems
-ax = fig.subplot(gs[5], title='Stem plot')
+ax = fig.subplot(gs[5], title="Stem plot")
 data = state.rand(20)
 ax.stem(data)
-fig.format(suptitle='Line plots demo', xlabel='xlabel', ylabel='ylabel')
+fig.format(suptitle="Line plots demo", xlabel="xlabel", ylabel="ylabel")
 
 
 # %% [raw] raw_mimetype="text/restructuredtext"
@@ -371,35 +368,44 @@ import pandas as pd
 state = np.random.RandomState(51423)
 x = (state.rand(20) - 0).cumsum()
 data = (state.rand(20, 4) - 0.5).cumsum(axis=0)
-data = pd.DataFrame(data, columns=pd.Index(['a', 'b', 'c', 'd'], name='label'))
+data = pd.DataFrame(data, columns=pd.Index(["a", "b", "c", "d"], name="label"))
 
 # Figure
 gs = pplt.GridSpec(ncols=2, nrows=2)
-fig = pplt.figure(refwidth=2.2, share='labels', span=False)
+fig = pplt.figure(refwidth=2.2, share="labels", span=False)
 
 # Vertical vs. horizontal
-ax = fig.subplot(gs[0], title='Dependent x-axis')
-ax.scatter(data, cycle='538')
-ax = fig.subplot(gs[1], title='Dependent y-axis')
-ax.scatterx(data, cycle='538')
+ax = fig.subplot(gs[0], title="Dependent x-axis")
+ax.scatter(data, cycle="538")
+ax = fig.subplot(gs[1], title="Dependent y-axis")
+ax.scatterx(data, cycle="538")
 
 # Scatter plot with property cycler
-ax = fig.subplot(gs[2], title='With property cycle')
+ax = fig.subplot(gs[2], title="With property cycle")
 obj = ax.scatter(
-    x, data, legend='ul', legend_kw={'ncols': 2},
-    cycle='Set2', cycle_kw={'m': ['x', 'o', 'x', 'o'], 'ms': [5, 10, 20, 30]}
+    x,
+    data,
+    legend="ul",
+    legend_kw={"ncols": 2},
+    cycle="Set2",
+    cycle_kw={"m": ["x", "o", "x", "o"], "ms": [5, 10, 20, 30]},
 )
 
 # Scatter plot with colormap
-ax = fig.subplot(gs[3], title='With colormap')
+ax = fig.subplot(gs[3], title="With colormap")
 data = state.rand(2, 100)
 obj = ax.scatter(
     *data,
-    s=state.rand(100), smin=6, smax=60, marker='o',
-    c=data.sum(axis=0), cmap='maroon',
-    colorbar='lr', colorbar_kw={'label': 'label'},
+    s=state.rand(100),
+    smin=6,
+    smax=60,
+    marker="o",
+    c=data.sum(axis=0),
+    cmap="maroon",
+    colorbar="lr",
+    colorbar_kw={"label": "label"},
 )
-fig.format(suptitle='Scatter plot demo', xlabel='xlabel', ylabel='ylabel')
+fig.format(suptitle="Scatter plot demo", xlabel="xlabel", ylabel="ylabel")
 
 
 # %% [raw] raw_mimetype="text/restructuredtext"
@@ -421,10 +427,11 @@ fig.format(suptitle='Scatter plot demo', xlabel='xlabel', ylabel='ylabel')
 import proplot as pplt
 import numpy as np
 import pandas as pd
+
 gs = pplt.GridSpec(ncols=2, wratios=(2, 1))
-fig = pplt.figure(figwidth='16cm', refaspect=(2, 1), share=False)
-fig.format(suptitle='Parametric plots demo')
-cmap = 'IceFire'
+fig = pplt.figure(figwidth="16cm", refaspect=(2, 1), share=False)
+fig.format(suptitle="Parametric plots demo")
+cmap = "IceFire"
 
 # Sample data
 state = np.random.RandomState(51423)
@@ -432,15 +439,23 @@ N = 50
 x = (state.rand(N) - 0.52).cumsum()
 y = state.rand(N)
 c = np.linspace(-N / 2, N / 2, N)  # color values
-c = pd.Series(c, name='parametric coordinate')
+c = pd.Series(c, name="parametric coordinate")
 
 # Parametric line with smooth gradations
 ax = fig.subplot(gs[0])
 m = ax.parametric(
-    x, y, c, interp=10, capstyle='round', joinstyle='round',
-    lw=7, cmap=cmap, colorbar='b', colorbar_kw={'locator': 5}
+    x,
+    y,
+    c,
+    interp=10,
+    capstyle="round",
+    joinstyle="round",
+    lw=7,
+    cmap=cmap,
+    colorbar="b",
+    colorbar_kw={"locator": 5},
 )
-ax.format(xlabel='xlabel', ylabel='ylabel', title='Line with smooth gradations')
+ax.format(xlabel="xlabel", ylabel="ylabel", title="Line with smooth gradations")
 
 # Sample data
 N = 12
@@ -454,10 +469,13 @@ c = np.linspace(-N / 2, N / 2, N + 1)
 ax = fig.subplot(gs[1])
 m = ax.parametric(x, y, c, cmap=cmap, lw=15)
 ax.format(
-    xlim=(-1, 1), ylim=(-1, 1), title='Step gradations',
-    xlabel='cosine angle', ylabel='sine angle'
+    xlim=(-1, 1),
+    ylim=(-1, 1),
+    title="Step gradations",
+    xlabel="cosine angle",
+    ylabel="sine angle",
 )
-ax.colorbar(m, loc='b', locator=2, label='parametric coordinate')
+ax.colorbar(m, loc="b", locator=2, label="parametric coordinate")
 
 
 # %% [raw] raw_mimetype="text/restructuredtext"
@@ -509,29 +527,34 @@ import pandas as pd
 state = np.random.RandomState(51423)
 data = state.rand(5, 5).cumsum(axis=0).cumsum(axis=1)[:, ::-1]
 data = pd.DataFrame(
-    data, columns=pd.Index(np.arange(1, 6), name='column'),
-    index=pd.Index(['a', 'b', 'c', 'd', 'e'], name='row idx')
+    data,
+    columns=pd.Index(np.arange(1, 6), name="column"),
+    index=pd.Index(["a", "b", "c", "d", "e"], name="row idx"),
 )
 
 # Figure
-pplt.rc.abc = 'a.'
-pplt.rc.titleloc = 'l'
+pplt.rc.abc = "a."
+pplt.rc.titleloc = "l"
 gs = pplt.GridSpec(nrows=2, hratios=(3, 2))
 fig = pplt.figure(refaspect=2, refwidth=4.8, share=False)
 
 # Side-by-side bars
-ax = fig.subplot(gs[0], title='Side-by-side')
+ax = fig.subplot(gs[0], title="Side-by-side")
 obj = ax.bar(
-    data, cycle='Reds', edgecolor='red9', colorbar='ul', colorbar_kw={'frameon': False}
+    data, cycle="Reds", edgecolor="red9", colorbar="ul", colorbar_kw={"frameon": False}
 )
 ax.format(xlocator=1, xminorlocator=0.5, ytickminor=False)
 
 # Stacked bars
-ax = fig.subplot(gs[1], title='Stacked')
+ax = fig.subplot(gs[1], title="Stacked")
 obj = ax.barh(
-    data.iloc[::-1, :], cycle='Blues', edgecolor='blue9', legend='ur', stack=True,
+    data.iloc[::-1, :],
+    cycle="Blues",
+    edgecolor="blue9",
+    legend="ur",
+    stack=True,
 )
-fig.format(grid=False, suptitle='Bar plot demo')
+fig.format(grid=False, suptitle="Bar plot demo")
 pplt.rc.reset()
 
 # %%
@@ -541,27 +564,37 @@ import numpy as np
 # Sample data
 state = np.random.RandomState(51423)
 data = state.rand(5, 3).cumsum(axis=0)
-cycle = ('gray3', 'gray5', 'gray7')
+cycle = ("gray3", "gray5", "gray7")
 
 # Figure
-pplt.rc.abc = 'a.'
-pplt.rc.titleloc = 'l'
+pplt.rc.abc = "a."
+pplt.rc.titleloc = "l"
 fig = pplt.figure(refwidth=2.3, share=False)
 
 # Overlaid area patches
-ax = fig.subplot(121, title='Fill between columns')
+ax = fig.subplot(121, title="Fill between columns")
 ax.area(
-    np.arange(5), data, data + state.rand(5)[:, None], cycle=cycle, alpha=0.7,
-    legend='uc', legend_kw={'center': True, 'ncols': 2, 'labels': ['z', 'y', 'qqqq']},
+    np.arange(5),
+    data,
+    data + state.rand(5)[:, None],
+    cycle=cycle,
+    alpha=0.7,
+    legend="uc",
+    legend_kw={"center": True, "ncols": 2, "labels": ["z", "y", "qqqq"]},
 )
 
 # Stacked area patches
-ax = fig.subplot(122, title='Stack between columns')
+ax = fig.subplot(122, title="Stack between columns")
 ax.area(
-    np.arange(5), data, stack=True, cycle=cycle, alpha=0.8,
-    legend='ul', legend_kw={'center': True, 'ncols': 2, 'labels': ['z', 'y', 'qqqq']},
+    np.arange(5),
+    data,
+    stack=True,
+    cycle=cycle,
+    alpha=0.8,
+    legend="ul",
+    legend_kw={"center": True, "ncols": 2, "labels": ["z", "y", "qqqq"]},
 )
-fig.format(grid=False, xlabel='xlabel', ylabel='ylabel', suptitle='Area plot demo')
+fig.format(grid=False, xlabel="xlabel", ylabel="ylabel", suptitle="Area plot demo")
 pplt.rc.reset()
 
 # %% [raw] raw_mimetype="text/restructuredtext"
@@ -589,30 +622,33 @@ state = np.random.RandomState(51423)
 data = 4 * (state.rand(40) - 0.5)
 
 # Figure
-pplt.rc.abc = 'a.'
-pplt.rc.titleloc = 'l'
+pplt.rc.abc = "a."
+pplt.rc.titleloc = "l"
 fig, axs = pplt.subplots(nrows=3, refaspect=2, figwidth=5)
 axs.format(
-    xmargin=0, xlabel='xlabel', ylabel='ylabel', grid=True,
-    suptitle='Positive and negative colors demo',
+    xmargin=0,
+    xlabel="xlabel",
+    ylabel="ylabel",
+    grid=True,
+    suptitle="Positive and negative colors demo",
 )
 for ax in axs:
-    ax.axhline(0, color='k', linewidth=1)  # zero line
+    ax.axhline(0, color="k", linewidth=1)  # zero line
 
 # Line plot
 ax = axs[0]
 ax.vlines(data, linewidth=3, negpos=True)
-ax.format(title='Line plot')
+ax.format(title="Line plot")
 
 # Bar plot
 ax = axs[1]
-ax.bar(data, width=1, negpos=True, edgecolor='k')
-ax.format(title='Bar plot')
+ax.bar(data, width=1, negpos=True, edgecolor="k")
+ax.format(title="Bar plot")
 
 # Area plot
 ax = axs[2]
-ax.area(data, negpos=True, lw=0.5, edgecolor='k')
-ax.format(title='Area plot')
+ax.area(data, negpos=True, lw=0.5, edgecolor="k")
+ax.format(title="Area plot")
 
 # Reset title styles changed above
 pplt.rc.reset()

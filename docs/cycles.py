@@ -51,6 +51,7 @@
 
 # %%
 import proplot as pplt
+
 fig, axs = pplt.show_cycles(rasterized=True)
 
 
@@ -77,28 +78,28 @@ import numpy as np
 # Sample data
 state = np.random.RandomState(51423)
 data = (state.rand(12, 6) - 0.45).cumsum(axis=0)
-kwargs = {'legend': 'b', 'labels': list('abcdef')}
+kwargs = {"legend": "b", "labels": list("abcdef")}
 
 # Figure
 lw = 5
-pplt.rc.cycle = '538'
-fig = pplt.figure(refwidth=1.9, suptitle='Changing the color cycle')
+pplt.rc.cycle = "538"
+fig = pplt.figure(refwidth=1.9, suptitle="Changing the color cycle")
 
 # Modify the default color cycle
-ax = fig.subplot(131, title='Global color cycle')
+ax = fig.subplot(131, title="Global color cycle")
 ax.plot(data, lw=lw, **kwargs)
 
 # Pass the cycle to a plotting command
-ax = fig.subplot(132, title='Local color cycle')
-ax.plot(data, cycle='qual1', lw=lw, **kwargs)
+ax = fig.subplot(132, title="Local color cycle")
+ax.plot(data, cycle="qual1", lw=lw, **kwargs)
 
 # As above but draw each line individually
 # Note that passing cycle=name to successive plot calls does
 # not reset the cycle position if the cycle is unchanged
-ax = fig.subplot(133, title='Multiple plot calls')
-labels = kwargs['labels']
+ax = fig.subplot(133, title="Multiple plot calls")
+labels = kwargs["labels"]
 for i in range(data.shape[1]):
-    ax.plot(data[:, i], cycle='qual1', legend='b', label=labels[i], lw=lw)
+    ax.plot(data[:, i], cycle="qual1", legend="b", label=labels[i], lw=lw)
 
 
 # %% [raw] raw_mimetype="text/restructuredtext"
@@ -137,24 +138,25 @@ for i in range(data.shape[1]):
 # %%
 import proplot as pplt
 import numpy as np
+
 fig = pplt.figure(refwidth=2, share=False)
 state = np.random.RandomState(51423)
 data = (20 * state.rand(10, 21) - 10).cumsum(axis=0)
 
 # Cycle from on-the-fly monochromatic colormap
 ax = fig.subplot(121)
-lines = ax.plot(data[:, :5], cycle='plum', lw=5)
-fig.colorbar(lines, loc='b', col=1, values=np.arange(0, len(lines)))
-fig.legend(lines, loc='b', col=1, labels=np.arange(0, len(lines)))
-ax.format(title='Cycle from a single color')
+lines = ax.plot(data[:, :5], cycle="plum", lw=5)
+fig.colorbar(lines, loc="b", col=1, values=np.arange(0, len(lines)))
+fig.legend(lines, loc="b", col=1, labels=np.arange(0, len(lines)))
+ax.format(title="Cycle from a single color")
 
 # Cycle from registered colormaps
 ax = fig.subplot(122)
-cycle = pplt.Cycle('blues', 'reds', 'oranges', 15, left=0.1)
+cycle = pplt.Cycle("blues", "reds", "oranges", 15, left=0.1)
 lines = ax.plot(data[:, :15], cycle=cycle, lw=5)
-fig.colorbar(lines, loc='b', col=2, values=np.arange(0, len(lines)), locator=2)
-fig.legend(lines, loc='b', col=2, labels=np.arange(0, len(lines)), ncols=4)
-ax.format(title='Cycle from merged colormaps', suptitle='Color cycles from colormaps')
+fig.colorbar(lines, loc="b", col=2, values=np.arange(0, len(lines)), locator=2)
+fig.legend(lines, loc="b", col=2, labels=np.arange(0, len(lines)), ncols=4)
+ax.format(title="Cycle from merged colormaps", suptitle="Color cycles from colormaps")
 
 
 # %% [raw] raw_mimetype="text/restructuredtext"
@@ -182,13 +184,12 @@ cycle = pplt.Cycle(lw=3, dashes=[(1, 0.5), (1, 1.5), (3, 0.5), (3, 1.5)])
 # Sample data
 state = np.random.RandomState(51423)
 data = (state.rand(20, 4) - 0.5).cumsum(axis=0)
-data = pd.DataFrame(data, columns=pd.Index(['a', 'b', 'c', 'd'], name='label'))
+data = pd.DataFrame(data, columns=pd.Index(["a", "b", "c", "d"], name="label"))
 
 # Plot data
-fig, ax = pplt.subplots(refwidth=2.5, suptitle='Plot without color cycle')
+fig, ax = pplt.subplots(refwidth=2.5, suptitle="Plot without color cycle")
 obj = ax.plot(
-    data, cycle=cycle, legend='ll',
-    legend_kw={'ncols': 2, 'handlelength': 2.5}
+    data, cycle=cycle, legend="ll", legend_kw={"ncols": 2, "handlelength": 2.5}
 )
 
 
