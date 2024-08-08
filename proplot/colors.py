@@ -2859,7 +2859,7 @@ def _init_cmap_database():
     # with the extensions _r and _s(hifted)
     # This means we have to collect the base colormaps
     # and register them under the new object
-    database = mcm._colormaps # shallow copy of mpl's colormaps
+    database = mcm._colormaps  # shallow copy of mpl's colormaps
     if not isinstance(database, ColormapDatabase):
         # Collect the mpl colormaps and include them
         # in proplot's registry
@@ -2869,10 +2869,11 @@ def _init_cmap_database():
             if not key.endswith("_r") and not key.endswith("_shifted")
         }
         database = ColormapDatabase(database)
-        setattr(mcm, "_colormaps", database) # not sure if this is necessary since colormaps is a (shallow?) copy of _colormaps
-        setattr(mpl, "colormaps", database) # this is necessary
+        setattr(
+            mcm, "_colormaps", database
+        )  # not sure if this is necessary since colormaps is a (shallow?) copy of _colormaps
+        setattr(mpl, "colormaps", database)  # this is necessary
     return database
-
 
 
 def _get_cmap_subtype(name, subtype):
@@ -3112,7 +3113,7 @@ class ColormapDatabase(mcm.ColormapRegistry):
             raise ValueError(
                 f"The colormap name {key!r} was removed in version {version}."
             )
-        if not self._has_item(test)and test in CMAPS_RENAMED:
+        if not self._has_item(test) and test in CMAPS_RENAMED:
             test_new, version = CMAPS_RENAMED[test]
             warnings._warn_proplot(
                 f"The colormap name {test!r} was deprecated in version {version} "
