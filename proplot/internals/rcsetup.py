@@ -772,6 +772,7 @@ _rc_matplotlib_default = {
     "hatch.color": BLACK,
     "hatch.linewidth": LINEWIDTH,
     "image.cmap": CMAPSEQ,
+    "image.interpolation": "none",
     "lines.linestyle": "-",
     "lines.linewidth": 1.5,
     "lines.markersize": 6.0,
