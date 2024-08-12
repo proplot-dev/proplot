@@ -5,21 +5,12 @@ version: 2
 # Python config
 build:
   os: ubuntu-22.04
-  image: latest
   tools:
-    python:
-      version: 3.12
-      system_packages: true
-    conda:
-      environment: docs/environment.yml
+    python: mambaforge-latest
 
-# Build command
-# This command is used to build the documentation
-# Ensure the command matches your project structure
-build:
-  command: sphinx-build -b html docs docs/_build/html
+conda:
+  environment: ./docs/environment.yml
 
-# Sphinx config
 sphinx:
+  configuration: ./docs/conf.py
   builder: html
-  configuration: docs/conf.py

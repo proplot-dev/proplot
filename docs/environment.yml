@@ -19,7 +19,7 @@ dependencies:
   - python==3.12
   - matplotlib==3.9.1
   - cartopy==0.23
-  - numpy>=2.0
+  - numpy==126.4
   - pandas
   - xarray
   - ipykernel
@@ -36,4 +36,6 @@ dependencies:
     - markupsafe==2.0.1
     - nbsphinx==0.8.1
     - jupytext
-    - git+https://github.com/proplot-dev/sphinx-automodapi@proplot-mods
+    - basemap
+    - basemap-data-hires
+    # - git+https://github.com/proplot-dev/sphinx-automodapi@proplot-mods
