@@ -19,7 +19,7 @@ dependencies:
   - python==3.12
   - matplotlib==3.9.1
   - cartopy==0.23
-  - numpy==126.4
+  - numpy==1.26.4
   - pandas
   - xarray
   - ipykernel
