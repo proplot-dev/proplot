@@ -151,7 +151,7 @@ for idx in idxs:
     h = ax.plot(
         data,
         lw=5,
-        color=(name, idx),
+        color=(name, idx/255),
         label=f"idx {idx:.1f}",
         legend="l",
         legend_kw={"ncols": 1},
@@ -168,7 +168,7 @@ for idx in idxs:
     h = ax.plot(
         data,
         lw=5,
-        color=(name, idx),
+        color=(name, idx/255),
         label=f"idx {idx:.0f}",
         legend="r",
         legend_kw={"ncols": 1},
