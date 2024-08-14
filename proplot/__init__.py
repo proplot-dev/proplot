@@ -109,3 +109,4 @@ for _src in (rc_proplot, rc_matplotlib):
         except ValueError as err:
             warnings._warn_proplot(f"Invalid user rc file setting: {err}")
             _src[_key] = "black"  # fill value
+from .colors import _cmap_database as colormaps

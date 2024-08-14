@@ -311,6 +311,19 @@ def _preprocess_or_redirect(*keys, keywords=None, allow_extra=True):
                         if hasattr(ureg, "setup_matplotlib"):
                             ureg.setup_matplotlib(True)
 
+                # Sanitize colors
+                # Lookup can be a 2-tuple with colormap, and integer denoting the color from that map
+                # it also sanitizes if the second color is a float. Note that for float, the color
+                # will be picked proportional to idx/255
+                from .. import colors as pcolor
+                color = kwargs.pop("color", None)
+                if isinstance(color, tuple) and len(color) == 2:
+                    cmap, color = color
+                    color = pcolor._cmap_database.get_cmap(cmap)(color)
+                if color is not None:
+                    kwargs["color"] = color
+
+
                 # Call main function
                 return func(self, *args, **kwargs)  # call unbound method
 
