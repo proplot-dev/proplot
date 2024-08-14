@@ -51,15 +51,17 @@ folder = (Path(__file__).parent / "_static").absolute()
 if not folder.is_dir():
     folder.mkdir()
 
-rc._save_rst(folder/"rctable.rst")
-rc._save_yaml(folder/"proplotrc")
+rc._save_rst(str(folder / "rctable.rst"))
+rc._save_yaml(str(folder / "proplotrc"))
 
 # -- Setup basemap --------------------------------------------------------------
 
 # Hack to get basemap to work
 # See: https://github.com/readthedocs/readthedocs.org/issues/5339
 if os.environ.get("READTHEDOCS", None) == "True":
-    conda = (Path(os.environ["CONDA_ENVS_PATH"]) / os.environ["CONDA_DEFAULT_ENV"]).absolute()
+    conda = (
+        Path(os.environ["CONDA_ENVS_PATH"]) / os.environ["CONDA_DEFAULT_ENV"]
+    ).absolute()
 else:
     conda = Path(os.environ["CONDA_PREFIX"]).absolute()
 os.environ["GEOS_DIR"] = str(conda)
@@ -165,9 +167,9 @@ copybutton_remove_prompts = True
 
 # Links for What's New github commits, issues, and pull requests
 extlinks = {
-    "issue": ("https://github.com/proplot-dev/proplot/issues/%s", "GH#"),
-    "commit": ("https://github.com/proplot-dev/proplot/commit/%s", "@"),
-    "pr": ("https://github.com/proplot-dev/proplot/pull/%s", "GH#"),
+    "issue": ("https://github.com/proplot-dev/proplot/issues/%s", "GH#%s"),
+    "commit": ("https://github.com/proplot-dev/proplot/commit/%s", "@%s"),
+    "pr": ("https://github.com/proplot-dev/proplot/pull/%s", "GH#%s"),
 }
 
 # Set up mapping for other projects' docs
@@ -244,13 +246,15 @@ pygments_style = "none"
 # -- Options for HTML output -------------------------------------------------
 
 # Logo
-html_logo = Path("_static") / "logo_square.png"
+html_logo = str(Path("_static") / "logo_square.png")
 
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 # Use modified RTD theme with overrides in custom.css and custom.js
-html_theme = "sphinx_rtd_light_dark"
+# html_theme = "sphinx_rtd_light_dark"
+html_theme = "alabaster"
 html_theme_options = {
+    "style": "light-dark.css",
     "logo_only": True,
     "display_version": False,
     "collapse_navigation": True,
@@ -275,7 +279,7 @@ html_static_path = ["_static"]
 # docs.  This file should be a Windows icon file (.ico) being 16x16 or 32x32
 # pixels large. Static folder is for CSS and image files. Use ImageMagick to
 # convert png to ico on command line with 'convert image.png image.ico'
-html_favicon = Path("_static") / "logo_blank.ico"
+html_favicon = str(Path("_static") / "logo_blank.ico")
 
 # -- Options for HTMLHelp output ---------------------------------------------
 

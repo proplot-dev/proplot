@@ -15,27 +15,29 @@
 name: proplot-dev
 channels:
   - conda-forge
+  - defaults
 dependencies:
-  - python>=3.9
-  - matplotlib==3.9.1
-  - cartopy==0.23
-  - numpy==1.26.4
+  - python
+  - setuptools==72.1.0
+  - matplotlib>=3.9.1
+  - cartopy
+  - numpy>=1.26.0
   - pandas
   - xarray
   - ipykernel
   - pandoc
   - pip
+  - pyqt
+  - docutils
+  - sphinx
+  - sphinx-copybutton
+  - jinja2
+  - markupsafe
+  - nbsphinx
+  - jupytext
   - pip:
     - ..
-    - pyqt5
-    - docutils>=0.16
-    - sphinx>=3.0
-    - sphinx-copybutton
-    - sphinx-rtd-light-dark
-    - jinja2==2.11.3
-    - markupsafe>=2.0.1
-    - nbsphinx>=0.8.1
-    - jupytext
     - basemap
     - basemap-data-hires
-    # - git+https://github.com/proplot-dev/sphinx-automodapi@proplot-mods
+    - sphinx-rtd-light-dark
+    - git+https://github.com/proplot-dev/sphinx-automodapi@proplot-mods

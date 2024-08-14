@@ -3117,7 +3117,7 @@ class ColormapDatabase(mcm.ColormapRegistry):
             test_new, version = CMAPS_RENAMED[test]
             warnings._warn_proplot(
                 f"The colormap name {test!r} was deprecated in version {version} "
-                f"and may be removed in {warnings._next_release()}. Please use "
+                f"and may be removed in {warnings.next_release()}. Please use "
                 f"the colormap name {test_new!r} instead."
             )
             key = re.sub(test, test_new, key, flags=re.IGNORECASE)

@@ -551,7 +551,7 @@ class _RcParams(MutableMapping, dict):
             key_new, version = _rc_renamed[key]
             warnings._warn_proplot(
                 f"The rc setting {key!r} was deprecated in version {version} and may be "  # noqa: E501
-                f"removed in {warnings._next_release()}. Please use {key_new!r} instead."  # noqa: E501
+                f"removed in {warnings.next_release()}. Please use {key_new!r} instead."  # noqa: E501
             )
             if key == "basemap":  # special case
                 value = ("cartopy", "basemap")[int(bool(value))]

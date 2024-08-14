@@ -20,15 +20,17 @@ catch_warnings = warnings.catch_warnings
 simplefilter = warnings.simplefilter
 
 
-def _next_release():
+def next_release():
     """
-    Message indicating the next major release.
+    message indicating the next major release.
     """
     from .. import __version__
 
     try:
-        num = int(__version__[0]) + 1
-    except TypeError:
+        # Find the first digit in the version string
+        version_start = next(i for i, c in enumerate(__version__) if c.isdigit())
+        num = int(__version__[version_start]) + 1
+    except (StopIteration, ValueError, TypeError):
         string = "the next major release"
     else:
         which = "first" if num == 1 else "next"
@@ -62,7 +64,7 @@ def _rename_objs(version, **kwargs):
         new_name = new_obj.__name__
         message = (
             f"{old_name!r} was deprecated in version {version} and may be "
-            f"removed in {_next_release()}. Please use {new_name!r} instead."
+            f"removed in {next_release()}. Please use {new_name!r} instead."
         )
         if isinstance(new_obj, type):
 
@@ -111,7 +113,7 @@ def _rename_kwargs(version, **kwargs_rename):
                     key_new = key_new.format(value)
                 _warn_proplot(
                     f"Keyword {key_old!r} was deprecated in version {version} and may "
-                    f"be removed in {_next_release()}. Please use {key_new!r} instead."
+                    f"be removed in {next_release()}. Please use {key_new!r} instead."
                 )
             return func_orig(*args, **kwargs)
 

@@ -3,12 +3,15 @@
 A succinct matplotlib wrapper for making beautiful, publication-quality graphics.
 """
 # SCM versioning
-import pkg_resources as pkg
-
 name = "proplot"
+
 try:
-    version = __version__ = pkg.get_distribution(__name__).version
-except pkg.DistributionNotFound:
+    from importlib.metadata import version as get_version
+except ImportError:  # for Python < 3.8
+    from importlib_metadata import version as get_version
+try:
+    version = __version__ = get_version(name)
+except Exception:
     version = __version__ = "unknown"
 
 # Import dependencies early to isolate import times
