@@ -480,7 +480,7 @@ for ax, iargs, title, locator in zip(axs, args, titles, locators):
     for y, color in zip(ys, colors):
         ax.plot(x, y, lw=4, color=color)
     ax.format(
-        xscale=("cutoff", *iargs),
+        # xscale=("cutoff", *iargs),
         xlim=(0, 4 * np.pi),
         xlocator=locator,
         xformatter="pi",
