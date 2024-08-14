@@ -2,7 +2,6 @@ import proplot as plt, numpy as np
 import pytest
 
 
-@pytest.mark.skip(reason="TODO")
 @pytest.mark.mpl_image_compare
 def test_geographic_single_projection():
     fig = plt.figure(refwidth=3)
@@ -18,9 +17,8 @@ def test_geographic_single_projection():
     return fig
 
 
-@pytest.mark.skip(reason="TODO")
 @pytest.mark.mpl_image_compare
-def test_gegraphic_multiple_projections():
+def test_geographic_multiple_projections():
     fig = plt.figure()
     # Add projections
     gs = plt.GridSpec(ncols=2, nrows=3, hratios=(1, 1, 1.4))
@@ -46,7 +44,6 @@ def test_gegraphic_multiple_projections():
     return fig
 
 
-@pytest.mark.skip(reason="TODO")
 @pytest.mark.mpl_image_compare
 def test_drawing_in_projection_without_globe():
     # Fake data with unusual longitude seam location and without coverage over poles
@@ -83,7 +80,6 @@ def test_drawing_in_projection_without_globe():
     return fig
 
 
-@pytest.mark.skip(reason="TODO")
 @pytest.mark.mpl_image_compare
 def test_drawing_in_projection_with_globe():
     # Fake data with unusual longitude seam location and without coverage over poles
