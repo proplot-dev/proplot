@@ -16,6 +16,7 @@ import os
 import sys
 import datetime
 import subprocess
+from pathlib import Path
 
 # Update path for sphinx-automodapi and sphinxext extension
 sys.path.append(os.path.abspath("."))
@@ -46,22 +47,23 @@ release = ""
 # Create RST table and sample proplotrc file
 from proplot.config import rc
 
-folder = os.path.join(os.path.dirname(os.path.abspath(__file__)), "_static")
-if not os.path.isdir(folder):
-    os.mkdir(folder)
-rc._save_rst(os.path.join(folder, "rctable.rst"))
-rc._save_yaml(os.path.join(folder, "proplotrc"))
+folder = (Path(__file__).parent / "_static").absolute()
+if not folder.is_dir():
+    folder.mkdir()
+
+rc._save_rst(folder/"rctable.rst")
+rc._save_yaml(folder/"proplotrc")
 
 # -- Setup basemap --------------------------------------------------------------
 
 # Hack to get basemap to work
 # See: https://github.com/readthedocs/readthedocs.org/issues/5339
 if os.environ.get("READTHEDOCS", None) == "True":
-    conda = os.path.join(os.environ["CONDA_ENVS_PATH"], os.environ["CONDA_DEFAULT_ENV"])
+    conda = (Path(os.environ["CONDA_ENVS_PATH"]) / os.environ["CONDA_DEFAULT_ENV"]).absolute()
 else:
-    conda = os.environ["CONDA_PREFIX"]
-os.environ["GEOS_DIR"] = conda
-os.environ["PROJ_LIB"] = os.path.join(conda, "share", "proj")
+    conda = Path(os.environ["CONDA_PREFIX"]).absolute()
+os.environ["GEOS_DIR"] = str(conda)
+os.environ["PROJ_LIB"] = str((conda / "share" / "proj"))
 
 # Install basemap if does not exist
 # Extremely ugly but impossible to install in environment.yml. Must set
@@ -242,7 +244,7 @@ pygments_style = "none"
 # -- Options for HTML output -------------------------------------------------
 
 # Logo
-html_logo = os.path.join("_static", "logo_square.png")
+html_logo = Path("_static") / "logo_square.png"
 
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
@@ -273,7 +275,7 @@ html_static_path = ["_static"]
 # docs.  This file should be a Windows icon file (.ico) being 16x16 or 32x32
 # pixels large. Static folder is for CSS and image files. Use ImageMagick to
 # convert png to ico on command line with 'convert image.png image.ico'
-html_favicon = os.path.join("_static", "logo_blank.ico")
+html_favicon = Path("_static") / "logo_blank.ico"
 
 # -- Options for HTMLHelp output ---------------------------------------------
 
