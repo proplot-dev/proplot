@@ -1597,15 +1597,6 @@ def Proj(
             if kwargs.get(key, None) is None:  # allow e.g. boundinglat=None
                 kwargs[key] = value
 
-        # Initialize
-        if _version_mpl >= "3.3":
-            print(
-                "Basemap is no longer maintained and is incompatible with "
-                "matplotlib >= 3.3. Please use cartopy as your geographic "
-                "plotting backend or downgrade to matplotlib < 3.3."
-                " or install basemap from https://matplotlib.org/basemap/stable/users/installation.html"
-            )
-
         reso = _not_none(
             reso=kwargs.pop("reso", None),
             resolution=kwargs.pop("resolution", None),
