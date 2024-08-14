@@ -16,7 +16,7 @@ name: proplot-dev
 channels:
   - conda-forge
 dependencies:
-  - python==3.12
+  - python>=3.9
   - matplotlib==3.9.1
   - cartopy==0.23
   - numpy==1.26.4
@@ -28,13 +28,13 @@ dependencies:
   - pip:
     - ..
     - pyqt5
-    - docutils==0.16
+    - docutils>=0.16
     - sphinx>=3.0
     - sphinx-copybutton
     - sphinx-rtd-light-dark
     - jinja2==2.11.3
-    - markupsafe==2.0.1
-    - nbsphinx==0.8.1
+    - markupsafe>=2.0.1
+    - nbsphinx>=0.8.1
     - jupytext
     - basemap
     - basemap-data-hires
