@@ -251,10 +251,10 @@ html_logo = str(Path("_static") / "logo_square.png")
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 # Use modified RTD theme with overrides in custom.css and custom.js
-# html_theme = "sphinx_rtd_light_dark"
-html_theme = "alabaster"
+html_theme = "sphinx_rtd_light_dark"
+# html_theme = "alabaster"
+# html_theme = "sphinx_rtd_theme"
 html_theme_options = {
-    "style": "light-dark.css",
     "logo_only": True,
     "display_version": False,
     "collapse_navigation": True,

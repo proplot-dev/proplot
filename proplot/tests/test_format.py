@@ -177,13 +177,34 @@ def test_axes_colors():
     return fig
 
 
+@pytest.mark.parametrize("loc", ["en_US.UTF-8"])
 @pytest.mark.mpl_image_compare
-def test_locale_formatting():
+def test_locale_formatting(loc):
     """
     Ensure locale formatting works. Also zerotrim should account
     for non-period decimal separators.
     """
-    locale.setlocale(locale.LC_ALL, ("en_US", "UTF-8"))
+    # dealing with read the docs
+    original_locale = locale.getlocale()
+    try:
+        try:
+            locale.setlocale(locale.LC_ALL, loc)
+        except locale.Error:
+            pytest.skip(f"Locale {loc} not available on this system")
+
+        # Your test code that is sensitive to the locale settings
+        assert locale.getlocale() == (loc.split(".")[0], loc.split(".")[1])
+
+        pplt.rc["formatter.use_locale"] = False
+        pplt.rc["formatter.zerotrim"] = True
+        with pplt.rc.context({"formatter.use_locale": True}):
+            fig, ax = pplt.subplots()
+            ticks = pplt.arange(-1, 1, 0.1)
+            ax.format(ylim=(min(ticks), max(ticks)), yticks=ticks)
+        return fig
+    finally:
+        # Always reset to the original locale
+        locale.setlocale(locale.LC_ALL, original_locale)
     pplt.rc["formatter.use_locale"] = False
     pplt.rc["formatter.zerotrim"] = True
     with pplt.rc.context({"formatter.use_locale": True}):
