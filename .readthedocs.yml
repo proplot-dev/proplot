@@ -7,6 +7,10 @@ build:
   os: ubuntu-22.04
   tools:
     python: mambaforge-latest
+  jobs:
+    pre_build:
+      - pytest
+
 
 conda:
   environment: ./docs/environment.yml
