@@ -24,7 +24,7 @@ dependencies:
   - jupytext
   - markupsafe
   - matplotlib>=3.9.1
-  - numpy>=1.26.0
+  - numpy>=1.26.0,<2
   - pandas
   - pandoc
   - pint
