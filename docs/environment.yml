@@ -38,7 +38,7 @@ dependencies:
   - pip:
     - ..
     - basemap
-    - autoapi
+    - sphinx-autoapi
     - basemap-data-hires
     # - git+https://github.com/proplot-dev/sphinx-automodapi@proplot-mods
     - sphinx-automodapi
