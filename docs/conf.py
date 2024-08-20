@@ -88,8 +88,9 @@ except ImportError:
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom ones.
 extensions = [
-    # 'matplotlib.sphinxext.plot_directive', # see: https://matplotlib.org/sampledoc/extensions.html  # noqa: E501
-    "sphinx.ext.autodoc",  # include documentation from docstrings
+    "matplotlib.sphinxext.plot_directive",  # see: https://matplotlib.org/sampledoc/extensions.html  # noqa: E501
+    # "sphinx.ext.autodoc",  # include documentation from docstrings
+    "autoapi.extension",
     "sphinx.ext.doctest",  # >>> examples
     "sphinx.ext.extlinks",  # for :pr:, :issue:, :commit:
     "sphinx.ext.autosectionlabel",  # use :ref:`Heading` for any heading
@@ -105,6 +106,8 @@ extensions = [
     "sphinx_copybutton",  # add copy button to code
     "nbsphinx",  # parse rst books
 ]
+
+autoapi_dirs = ["../proplot/"]
 
 # The master toctree document.
 master_doc = "index"
