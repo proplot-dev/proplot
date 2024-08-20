@@ -14,6 +14,7 @@ import logging
 import os
 import re
 import sys
+import contextlib
 from collections import namedtuple
 from collections.abc import MutableMapping
 from numbers import Real
@@ -57,6 +58,7 @@ __all__ = [
     "rc_proplot",
     "rc_matplotlib",
     "use_style",
+    "context",
     "config_inline_backend",
     "register_cmaps",
     "register_cycles",
@@ -417,6 +419,44 @@ def config_inline_backend(fmt=None):
     ipython.magic("config InlineBackend.rc = {}")
     ipython.magic("config InlineBackend.close_figures = True")
     ipython.magic("config InlineBackend.print_figure_kwargs = {'bbox_inches': None}")
+
+
+@contextlib.contextmanager
+def context(style, after_reset=True):
+    """
+    Context manager for using style settings temporarily.
+
+    Parameters
+    ----------
+    style : str, dict, Path or list
+        A style specification. Valid options are:
+        ...
+    after_reset : bool
+        If True, apply style after resetting settings to their defaults;
+        otherwise, apply style on top of the current settings.
+    """
+
+    # Save the original rcProplot settings
+    import copy
+
+    orig_pro = copy.deepcopy(rc_proplot)
+    orig_mpl = copy.deepcopy(rc_matplotlib)
+
+    # Apply the style
+    kw_matplotlib = _get_style_dict(style)
+    rc_matplotlib.update(kw_matplotlib)
+    rc_proplot.update(_infer_proplot_dict(kw_matplotlib))
+
+    try:
+        # Yield control back to the with block
+        yield
+    finally:
+        # Reset to the original settings if after_reset is True
+        if after_reset:
+            rc_proplot.clear()
+            rc_matplotlib.clear()
+            rc_matplotlib.update(orig_mpl)
+            rc_proplot.update(orig_pro)
 
 
 def use_style(style):
