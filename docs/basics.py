@@ -506,6 +506,7 @@ pplt.rc.axesfacecolor = "gray4"
 with pplt.rc.context({"suptitle.size": 13}, toplabelcolor="gray6", metawidth=1.5):
     fig = pplt.figure(figwidth=6, sharey="limits", span=False)
     axs = fig.subplots(ncols=2)
+    fig.show()
 
 # Plot lines with a custom cycler
 N, M = 100, 7
@@ -530,6 +531,7 @@ axs.format(
     titleloc="r",
     titlecolor="gray7",
 )
+fig.show()
 
 # Reset persistent modifications from head of cell
 pplt.rc.reset()
@@ -554,3 +556,4 @@ styles = ("ggplot", "seaborn", "538", "bmh")
 for ax, style in zip(axs, styles):
     ax.format(style=style, xlabel="xlabel", ylabel="ylabel", title=style)
     ax.plot(data, linewidth=3)
+fig.show()

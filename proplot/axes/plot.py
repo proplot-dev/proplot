@@ -3449,8 +3449,6 @@ class PlotAxes(base.Axes):
             "linewidth": "linewidths",
         }
 
-        # Iterate over the columns
-        # NOTE: Use 'inbounds' for both cmap and axes 'inbounds' restriction
         kw = kwargs.copy()
         inbounds = kw.pop("inbounds", None)
         kw.update(_pop_props(kw, "collection"))
@@ -3458,23 +3456,30 @@ class PlotAxes(base.Axes):
         xs, ys, kw = self._parse_1d_args(xs, ys, vert=vert, autoreverse=False, **kw)
         ys, kw = inputs._dist_reduce(ys, **kw)
         ss, kw = self._parse_markersize(ss, **kw)  # parse 's'
-        infer_rgb = True
-        if cc is not None and not isinstance(cc, str):
-            test = np.atleast_1d(cc)  # for testing only
-            if (
-                any(_.ndim == 2 and _.shape[1] in (3, 4) for _ in (xs, ys))
-                and test.ndim == 2
-                and test.shape[1] in (3, 4)
-            ):
-                infer_rgb = False
-        cc, kw = self._parse_color(
-            xs, ys, cc, inbounds=inbounds, apply_cycle=False, infer_rgb=infer_rgb, **kw
-        )
+
+        # Move _parse_cycle before _parse_color
+        kw = self._parse_cycle(xs.shape[1] if xs.ndim > 1 else 1, **kw)
+
+        # Only parse color if explicitly provided
+        if cc is not None:
+            infer_rgb = True
+            if not isinstance(cc, str):
+                test = np.atleast_1d(cc)
+                if (
+                    any(_.ndim == 2 and _.shape[1] in (3, 4) for _ in (xs, ys))
+                    and test.ndim == 2
+                    and test.shape[1] in (3, 4)
+                ):
+                    infer_rgb = False
+            cc, kw = self._parse_color(xs, ys, cc, inbounds=inbounds, apply_cycle=False, infer_rgb=infer_rgb, **kw)
+
         guide_kw = _pop_params(kw, self._update_guide)
         objs = []
         for _, n, x, y, s, c, kw in self._iter_arg_cols(xs, ys, ss, cc, **kw):
-            kw["s"], kw["c"] = s, c  # make _parse_cycle() detect these
-            kw = self._parse_cycle(n, cycle_manually=cycle_manually, **kw)
+            # Don't set 'c' explicitly unless it was provided
+            kw["s"] = s
+            if c is not None:
+                kw["c"] = c
             *eb, kw = self._add_error_bars(x, y, vert=vert, default_barstds=True, **kw)
             *es, kw = self._add_error_shading(x, y, vert=vert, color_key="c", **kw)
             if not vert:
