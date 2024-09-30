@@ -127,7 +127,6 @@ fig.format(
     ylabel="ylabel",
     suptitle="Default ylim restricted to in-bounds data",
 )
-fig.show()
 
 # %% [raw] raw_mimetype="text/restructuredtext"
 # .. _ug_1dintegration:
@@ -205,7 +204,6 @@ ax.scatter(da, cycle=cycle, lw=3, colorbar="t", colorbar_kw={"locator": 20})
 cycle = pplt.Cycle("dark green", space="hpl", N=df.shape[1])
 ax = fig.subplot(122)
 ax.plot(df, cycle=cycle, lw=3, legend="t", legend_kw={"frame": False})
-fig.show()
 
 
 # %% [raw] raw_mimetype="text/restructuredtext"
@@ -322,7 +320,6 @@ ax = fig.subplot(gs[5], title="Stem plot")
 data = state.rand(20)
 ax.stem(data)
 fig.format(suptitle="Line plots demo", xlabel="xlabel", ylabel="ylabel")
-fig.show()
 
 
 # %% [raw] raw_mimetype="text/restructuredtext"
@@ -408,7 +405,6 @@ obj = ax.scatter(
     colorbar_kw={"label": "label"},
 )
 fig.format(suptitle="Scatter plot demo", xlabel="xlabel", ylabel="ylabel")
-fig.show()
 
 
 # %% [raw] raw_mimetype="text/restructuredtext"
@@ -479,7 +475,6 @@ ax.format(
     ylabel="sine angle",
 )
 ax.colorbar(m, loc="b", locator=2, label="parametric coordinate")
-fig.show()
 
 
 # %% [raw] raw_mimetype="text/restructuredtext"
@@ -559,7 +554,6 @@ obj = ax.barh(
     stack=True,
 )
 fig.format(grid=False, suptitle="Bar plot demo")
-fig.show()
 pplt.rc.reset()
 
 # %%
@@ -600,7 +594,6 @@ ax.area(
     legend_kw={"center": True, "ncols": 2, "labels": ["z", "y", "qqqq"]},
 )
 fig.format(grid=False, xlabel="xlabel", ylabel="ylabel", suptitle="Area plot demo")
-fig.show()
 pplt.rc.reset()
 
 # %% [raw] raw_mimetype="text/restructuredtext"
@@ -655,7 +648,6 @@ ax.format(title="Bar plot")
 ax = axs[2]
 ax.area(data, negpos=True, lw=0.5, edgecolor="k")
 ax.format(title="Area plot")
-fig.show()
 
 # Reset title styles changed above
 pplt.rc.reset()
