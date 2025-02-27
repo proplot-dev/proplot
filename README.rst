@@ -6,6 +6,11 @@
 A succinct `matplotlib <https://matplotlib.org/>`__ wrapper for making beautiful,
 publication-quality graphics.
 
+Ultraplot: Proplot's Spiritual Successor
+========================================
+
+Development on ``proplot`` has been indefinitely halted since summer 2023. A spiritual successor in ``ultraplot`` has been launched. It uses the ``proplot`` codebase and has modernized it to support recent versions of ``matplotlib``, ``cartopy``, ``python``, etc. and is adding new features and enhancements. Check out the project over at the `ultraplot repo <https://github.com/Ultraplot/ultraplot>`__ and `ultraplot docs <https://ultraplot.readthedocs.io/en/latest/>`__!
+
 Documentation
 =============
 
