@@ -1193,6 +1193,8 @@ class Figure(mfigure.Figure):
             axs = ax._get_span_axes(pos, panels=False)  # returns panel or main axes
             if any(getattr(ax, '_share' + x) for ax in axs):
                 continue  # nothing to align or axes have parents
+            _ref_label_text = getattr(ax, x + 'axis').label.get_text()
+            axs = list(_ax for _ax in axs if getattr(_ax, x + 'axis').label.get_text() == _ref_label_text)
             seen.update(axs)
             if span or align:
                 if hasattr(self, '_align_label_groups'):
