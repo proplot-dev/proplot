@@ -8,35 +8,18 @@ import functools
 import re
 from numbers import Integral, Real
 
-import matplotlib.colors as mcolors
 import matplotlib.font_manager as mfonts
 import numpy as np
 from matplotlib import rcParams as rc_matplotlib
 
-from .externals import hsluv
 from .internals import ic  # noqa: F401
-from .internals import _not_none, docstring, warnings
+from .internals import _not_none, warnings
 
 __all__ = [
     'arange',
     'edges',
     'edges2d',
-    'get_colors',
-    'set_hue',
-    'set_saturation',
-    'set_luminance',
-    'set_alpha',
-    'shift_hue',
-    'scale_saturation',
-    'scale_luminance',
-    'to_hex',
-    'to_rgb',
-    'to_xyz',
-    'to_rgba',
-    'to_xyza',
     'units',
-    'shade',  # deprecated
-    'saturate',  # deprecated
 ]
 
 UNIT_REGEX = re.compile(
@@ -54,47 +37,6 @@ UNIT_DICT = {
     'pt': 1 / 72.0,
     'ly': 3.725e17,
 }
-
-
-# Color docstrings
-_docstring_rgba = """
-color : color-spec
-    The color. Sanitized with `to_rgba`.
-"""
-_docstring_to_rgb = """
-color : color-spec
-    The color. Can be a 3-tuple or 4-tuple of channel values, a hex
-    string, a registered color name, a cycle color like ``'C0'``, or
-    a 2-tuple colormap coordinate specification like ``('magma', 0.5)``
-    (see `~proplot.colors.ColorDatabase` for details).
-
-    If `space` is ``'rgb'``, this is a tuple of RGB values, and any
-    channels are larger than ``2``, the channels are assumed to be
-    on the ``0`` to ``255`` scale and are divided by ``255``.
-space : {'rgb', 'hsv', 'hcl', 'hpl', 'hsl'}, optional
-    The colorspace for the input channel values. Ignored unless `color`
-    is a tuple of numbers.
-cycle : str, default: :rcraw:`cycle`
-    The registered color cycle name used to interpret colors that
-    look like ``'C0'``, ``'C1'``, etc.
-clip : bool, default: True
-    Whether to clip channel values into the valid ``0`` to ``1`` range.
-    Setting this to ``False`` can result in invalid colors.
-"""
-_docstring_space = """
-space : {'hcl', 'hpl', 'hsl', 'hsv'}, optional
-    The hue-saturation-luminance-like colorspace used to transform the color.
-    Default is the strictly perceptually uniform colorspace ``'hcl'``.
-"""
-_docstring_hex = """
-color : str
-    An 8-digit HEX string indicating the
-    red, green, blue, and alpha channel values.
-"""
-docstring._snippet_manager['utils.color'] = _docstring_rgba
-docstring._snippet_manager['utils.hex'] = _docstring_hex
-docstring._snippet_manager['utils.space'] = _docstring_space
-docstring._snippet_manager['utils.to'] = _docstring_to_rgb
 
 
 def _keep_units(func):
@@ -280,464 +222,6 @@ def get_colors(*args, **kwargs):
     return colors
 
 
-def _transform_color(func, color, space):
-    """
-    Standardize input for color transformation functions.
-    """
-    *color, opacity = to_rgba(color)
-    color = to_xyz(color, space=space)
-    color = func(list(color))  # apply transform
-    return to_hex((*color, opacity), space=space)
-
-
-@docstring._snippet_manager
-def shift_hue(color, shift=0, space='hcl'):
-    """
-    Shift the hue channel of a color.
-
-    Parameters
-    ----------
-    %(utils.color)s
-    shift : float, optional
-        The HCL hue channel is offset by this value.
-    %(utils.space)s
-
-    Returns
-    -------
-    %(utils.hex)s
-
-    See also
-    --------
-    set_hue
-    set_saturation
-    set_luminance
-    set_alpha
-    scale_saturation
-    scale_luminance
-    """
-    def func(channels):
-        channels[0] += shift
-        channels[0] %= 360
-        return channels
-
-    return _transform_color(func, color, space)
-
-
-@docstring._snippet_manager
-def scale_saturation(color, scale=1, space='hcl'):
-    """
-    Scale the saturation channel of a color.
-
-    Parameters
-    ----------
-    %(utils.color)s
-    scale : float, optional
-        The HCL saturation channel is multiplied by this value.
-    %(utils.space)s
-
-    Returns
-    -------
-    %(utils.hex)s
-
-    See also
-    --------
-    set_hue
-    set_saturation
-    set_luminance
-    set_alpha
-    shift_hue
-    scale_luminance
-    """
-    def func(channels):
-        channels[1] *= scale
-        return channels
-
-    return _transform_color(func, color, space)
-
-
-@docstring._snippet_manager
-def scale_luminance(color, scale=1, space='hcl'):
-    """
-    Scale the luminance channel of a color.
-
-    Parameters
-    ----------
-    %(utils.color)s
-    scale : float, optional
-        The luminance channel is multiplied by this value.
-    %(utils.space)s
-
-    Returns
-    -------
-    %(utils.hex)s
-
-    See also
-    --------
-    set_hue
-    set_saturation
-    set_luminance
-    set_alpha
-    shift_hue
-    scale_saturation
-    """
-    def func(channels):
-        channels[2] *= scale
-        return channels
-
-    return _transform_color(func, color, space)
-
-
-@docstring._snippet_manager
-def set_hue(color, hue, space='hcl'):
-    """
-    Return a color with a different hue and the same luminance and saturation
-    as the input color.
-
-    Parameters
-    ----------
-    %(utils.color)s
-    hue : float, optional
-        The new hue. Should lie between ``0`` and ``360`` degrees.
-    %(utils.space)s
-
-    Returns
-    -------
-    %(utils.hex)s
-
-    See also
-    --------
-    set_saturation
-    set_luminance
-    set_alpha
-    shift_hue
-    scale_saturation
-    scale_luminance
-    """
-    def func(channels):
-        channels[0] = hue
-        return channels
-
-    return _transform_color(func, color, space)
-
-
-@docstring._snippet_manager
-def set_saturation(color, saturation, space='hcl'):
-    """
-    Return a color with a different saturation and the same hue and luminance
-    as the input color.
-
-    Parameters
-    ----------
-    %(utils.color)s
-    saturation : float, optional
-        The new saturation. Should lie between ``0`` and ``360`` degrees.
-    %(utils.space)s
-
-    Returns
-    -------
-    %(utils.hex)s
-
-    See also
-    --------
-    set_hue
-    set_luminance
-    set_alpha
-    shift_hue
-    scale_saturation
-    scale_luminance
-    """
-    def func(channels):
-        channels[1] = saturation
-        return channels
-
-    return _transform_color(func, color, space)
-
-
-@docstring._snippet_manager
-def set_luminance(color, luminance, space='hcl'):
-    """
-    Return a color with a different luminance and the same hue and saturation
-    as the input color.
-
-    Parameters
-    ----------
-    %(utils.color)s
-    luminance : float, optional
-        The new luminance. Should lie between ``0`` and ``100``.
-    %(utils.space)s
-
-    Returns
-    -------
-    %(utils.hex)s
-
-    See also
-    --------
-    set_hue
-    set_saturation
-    set_alpha
-    shift_hue
-    scale_saturation
-    scale_luminance
-    """
-    def func(channels):
-        channels[2] = luminance
-        return channels
-
-    return _transform_color(func, color, space)
-
-
-@docstring._snippet_manager
-def set_alpha(color, alpha):
-    """
-    Return a color with the opacity channel set to the specified value.
-
-    Parameters
-    ----------
-    %(utils.color)s
-    alpha : float, optional
-        The new opacity. Should be between ``0`` and ``1``.
-
-    Returns
-    -------
-    %(utils.hex)s
-
-    See also
-    --------
-    set_hue
-    set_saturation
-    set_luminance
-    shift_hue
-    scale_saturation
-    scale_luminance
-    """
-    color = list(to_rgba(color))
-    color[3] = alpha
-    return to_hex(color)
-
-
-def _translate_cycle_color(color, cycle=None):
-    """
-    Parse the input cycle color.
-    """
-    if isinstance(cycle, str):
-        from .colors import _cmap_database
-        try:
-            cycle = _cmap_database[cycle].colors
-        except (KeyError, AttributeError):
-            cycles = sorted(
-                name
-                for name, cmap in _cmap_database.items()
-                if isinstance(cmap, mcolors.ListedColormap)
-            )
-            raise ValueError(
-                f'Invalid color cycle {cycle!r}. Options are: '
-                + ', '.join(map(repr, cycles))
-                + '.'
-            )
-    elif cycle is None:
-        cycle = rc_matplotlib['axes.prop_cycle'].by_key()
-        if 'color' not in cycle:
-            cycle = ['k']
-        else:
-            cycle = cycle['color']
-    else:
-        raise ValueError(f'Invalid cycle {cycle!r}.')
-
-    return cycle[int(color[-1]) % len(cycle)]
-
-
-@docstring._snippet_manager
-def to_hex(color, space='rgb', cycle=None, keep_alpha=True):
-    """
-    Translate the color from an arbitrary colorspace to a HEX string.
-    This is a generalization of `matplotlib.colors.to_hex`.
-
-    Parameters
-    ----------
-    %(utils.to)s
-    keep_alpha : bool, default: True
-        Whether to keep the opacity channel. If ``True`` an 8-digit HEX
-        is returned. Otherwise a 6-digit HEX is returned.
-
-    Returns
-    -------
-    %(utils.hex)s
-
-    See also
-    --------
-    to_rgb
-    to_rgba
-    to_xyz
-    to_xyza
-    """
-    rgba = to_rgba(color, space=space, cycle=cycle)
-    return mcolors.to_hex(rgba, keep_alpha=keep_alpha)
-
-
-@docstring._snippet_manager
-def to_rgb(color, space='rgb', cycle=None):
-    """
-    Translate the color from an arbitrary colorspace to an RGB tuple. This is
-    a generalization of `matplotlib.colors.to_rgb` and the inverse of `to_xyz`.
-
-    Parameters
-    ----------
-    %(utils.to)s
-
-    Returns
-    -------
-    color : 3-tuple
-        An RGB tuple.
-
-    See also
-    --------
-    to_hex
-    to_rgba
-    to_xyz
-    to_xyza
-    """
-    return to_rgba(color, space=space, cycle=cycle)[:3]
-
-
-@docstring._snippet_manager
-def to_rgba(color, space='rgb', cycle=None, clip=True):
-    """
-    Translate the color from an arbitrary colorspace to an RGBA tuple. This is
-    a generalization of `matplotlib.colors.to_rgba` and the inverse of `to_xyz`.
-
-    Parameters
-    ----------
-    %(utils.to)s
-
-    Returns
-    -------
-    color : 4-tuple
-        An RGBA tuple.
-
-    See also
-    --------
-    to_hex
-    to_rgb
-    to_xyz
-    to_xyza
-    """
-    # Translate color cycle strings
-    if isinstance(color, str) and re.match(r'\AC[0-9]\Z', color):
-        color = _translate_cycle_color(color, cycle=cycle)
-
-    # Translate RGB strings and (colormap, index) tuples
-    # NOTE: Cannot use is_color_like because might have HSL channel values
-    opacity = 1
-    if (
-        isinstance(color, str)
-        or np.iterable(color) and len(color) == 2
-    ):
-        color = mcolors.to_rgba(color)  # also enforced validity
-    if (
-        not np.iterable(color)
-        or len(color) not in (3, 4)
-        or not all(isinstance(c, Real) for c in color)
-    ):
-        raise ValueError(f'Invalid color-spec {color!r}.')
-    if len(color) == 4:
-        *color, opacity = color
-
-    # Translate arbitrary colorspaces
-    if space == 'rgb':
-        if any(c > 2 for c in color):
-            color = tuple(c / 255 for c in color)  # scale to within 0-1
-        else:
-            pass
-    elif space == 'hsv':
-        color = hsluv.hsl_to_rgb(*color)
-    elif space == 'hcl':
-        color = hsluv.hcl_to_rgb(*color)
-    elif space == 'hsl':
-        color = hsluv.hsluv_to_rgb(*color)
-    elif space == 'hpl':
-        color = hsluv.hpluv_to_rgb(*color)
-    else:
-        raise ValueError(f'Invalid colorspace {space!r}.')
-
-    # Clip values. This should only be disabled when testing
-    # translation functions.
-    if clip:
-        color = np.clip(color, 0, 1)  # clip to valid range
-
-    # Return RGB or RGBA
-    return (*color, opacity)
-
-
-@docstring._snippet_manager
-def to_xyz(color, space='hcl'):
-    """
-    Translate color in *any* format to a tuple of channel values in *any*
-    colorspace. This is the inverse of `to_rgb`.
-
-    Parameters
-    ----------
-    %(utils.color)s
-    space : {'hcl', 'hpl', 'hsl', 'hsv', 'rgb'}, optional
-        The colorspace for the output channel values.
-
-    Returns
-    -------
-    color : 3-tuple
-        Tuple of channel values for the colorspace `space`.
-
-    See also
-    --------
-    to_hex
-    to_rgb
-    to_rgba
-    to_xyza
-    """
-    return to_xyza(color, space)[:3]
-
-
-@docstring._snippet_manager
-def to_xyza(color, space='hcl'):
-    """
-    Translate color in *any* format to a tuple of channel values in *any*
-    colorspace. This is the inverse of `to_rgba`.
-
-    Parameters
-    ----------
-    %(utils.color)s
-    space : {'hcl', 'hpl', 'hsl', 'hsv', 'rgb'}, optional
-        The colorspace for the output channel values.
-
-    Returns
-    -------
-    color : 3-tuple
-        Tuple of channel values for the colorspace `space`.
-
-    See also
-    --------
-    to_hex
-    to_rgb
-    to_rgba
-    to_xyz
-    """
-    # Run tuple conversions
-    # NOTE: Don't pass color tuple, because we may want to permit
-    # out-of-bounds RGB values to invert conversion
-    *color, opacity = to_rgba(color)
-    if space == 'rgb':
-        pass
-    elif space == 'hsv':
-        color = hsluv.rgb_to_hsl(*color)  # rgb_to_hsv would also work
-    elif space == 'hcl':
-        color = hsluv.rgb_to_hcl(*color)
-    elif space == 'hsl':
-        color = hsluv.rgb_to_hsluv(*color)
-    elif space == 'hpl':
-        color = hsluv.rgb_to_hpluv(*color)
-    else:
-        raise ValueError(f'Invalid colorspace {space}.')
-    return (*color, opacity)
-
-
 def _fontsize_to_pt(size):
     """
     Translate font preset size or unit string to points.
@@ -897,9 +381,48 @@ def units(
     return result[0] if singleton else result
 
 
-# Deprecations
-shade, saturate = warnings._rename_objs(
-    '0.6.0',
-    shade=scale_luminance,
-    saturate=scale_saturation,
-)
+# Deprecation function
+def _deprecate_color_func(arg):
+    """
+    Deprecate the color transformation function.
+    """
+    if isinstance(arg, str):
+        attr = dest = arg
+    else:
+        attr, dest = arg
+
+    def _wrapper(color, *args, **kwargs):
+        warnings._warn_proplot(
+            f'pplt.{attr}() was deprecated in version 0.10.0 and will be removed '
+            'in a future release. Please use pplt.Color(color).{dest}() instead. '
+            'You may also be able to accomplish this transformation by passing keyword '
+            'arguments to Color() (see the pplt.Color documentation for details).'
+        )
+        from .colors import Color
+        color = Color(color)
+        return getattr(color, dest)(*args, **kwargs)
+
+    _wrapper.__name__ = attr
+    __all__.append(attr)
+    globals()[attr] = _wrapper
+
+
+# Add the deprecated functions
+for _color_func in (
+    'get_colors',
+    'set_hue',
+    'set_saturation',
+    'set_luminance',
+    'set_alpha',
+    'shift_hue',
+    'scale_saturation',
+    'scale_luminance',
+    'to_hex',
+    'to_rgb',
+    'to_xyz',
+    'to_rgba',
+    'to_xyza',
+    ('shade', 'scale_luminance'),
+    ('saturate', 'scale_saturation'),
+):
+    _deprecate_color_func(_color_func)
