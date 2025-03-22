@@ -1,11 +1,20 @@
-# Travis Continuos Integration
-# Currently only tests notebook files
-# Based on https://conda.pydata.org/docs/travis.html
-sudo: false # use container based build
+# Travis Continuous Integration
+# Mamba links:
+# https://mamba.readthedocs.io/en/latest/installation.html
+# Sample travis file:
+# https://conda.pydata.org/docs/travis.html
+# Avoiding duplicate branch-pr triggers:
+# https://github.com/travis-ci/travis-ci/issues/1147#issuecomment-160820262
+dist: xenial
+sudo: false  # use container based build
 language: python
-dist: focal
+
 notifications:
   email: false
+
+branches:
+  only:
+    - master
 
 python:
   - "3.7"
@@ -18,25 +27,22 @@ before_install:
           echo "Only doc files were updated, not running the CI."
           exit
         fi
-  - wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh
-  - bash miniconda.sh -b -p $HOME/miniconda
-  - export PATH="$HOME/miniconda/bin:$PATH"
-  - hash -r
-  - conda config --set always_yes yes --set changeps1 no --set show_channel_urls true
-  - conda update -q conda
-  - conda info -a
+  - curl micro.mamba.pm/install.sh | bash
+  - export PATH="$HOME/micromamba/bin:$PATH"
+  - micromamba config set always_yes true
+  - micromamba config set changeps1 false
+  - micromamba config set show_channel_urls true
+  - micromamba shell init --shell=bash --prefix=~/micromamba
 
 install:
-  - conda env create --file ci/environment.yml
-  - source activate proplot-dev
-  - conda list
-  - which conda
+  - . ~/.bashrc
   - which python
+  - which micromamba
+  - micromamba env create --file ci/environment.yml
+  - micromamba activate proplot-dev
   - python setup.py sdist bdist_wheel
   - pip install --user ./dist/*.whl
+  - micromamba list
 
 script:
   - ci/run-linter.sh
-  - pushd docs
-  - make html
-  - popd
